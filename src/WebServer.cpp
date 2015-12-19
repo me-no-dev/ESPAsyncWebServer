@@ -35,7 +35,6 @@ void AsyncWebServer::_handleRequest(AsyncWebServerRequest *request){
       return;
     }
   }
-  request->addInterestingHeader("ANY");
   request->setHandler(_catchAllHandler);
 }
 

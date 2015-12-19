@@ -53,6 +53,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       if(_uri.length() > 1 && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
         return false;
 
+      request->addInterestingHeader("ANY");
       return true;
     }
     void handleRequest(AsyncWebServerRequest *request){
