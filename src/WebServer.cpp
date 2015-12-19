@@ -68,7 +68,10 @@ void AsyncWebServer::on(const char* uri, WebRequestMethod method, ArRequestHandl
 }
 
 void AsyncWebServer::on(const char* uri, ArRequestHandlerFunction onRequest){
-  on(uri, HTTP_ANY, onRequest);
+  AsyncCallbackWebHandler* handler = new AsyncCallbackWebHandler();
+  handler->setUri(uri);
+  handler->onRequest(onRequest);
+  addHandler(handler);
 }
 
 void AsyncWebServer::serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_header){
