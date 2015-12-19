@@ -72,7 +72,7 @@ class AsyncWebHeader {
  * REQUEST :: Each incoming Client is wrapped inside a Request and both live together until disconnect
  * */
 
-typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
+typedef std::function<size_t(uint8_t*, size_t)> AwsResponseFiller;
 
 class AsyncWebServerRequest {
   private:

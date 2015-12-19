@@ -17,37 +17,44 @@ class AsyncBasicResponse: public AsyncWebServerResponse {
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
 };
 
-class AsyncFileResponse: public AsyncWebServerResponse {
+class AsyncAbstractResponse: public AsyncWebServerResponse {
+  private:
+    String _head;
+  public:
+    void _respond(AsyncWebServerRequest *request);
+    size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
+    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen){ return 0; }
+    virtual bool _sourceValid(){ return false; }
+};
+
+class AsyncFileResponse: public AsyncAbstractResponse {
   private:
     File _content;
     String _path;
-    String _head;
     void _setContentType(String path);
   public:
     AsyncFileResponse(FS &fs, String path, String contentType=String(), bool download=false);
     ~AsyncFileResponse();
-    void _respond(AsyncWebServerRequest *request);
-    size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
+    bool _sourceValid(){ return !!(_content); }
+    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
 };
 
-class AsyncStreamResponse: public AsyncWebServerResponse {
+class AsyncStreamResponse: public AsyncAbstractResponse {
   private:
     Stream *_content;
-    String _head;
   public:
     AsyncStreamResponse(Stream &stream, String contentType, size_t len);
-    void _respond(AsyncWebServerRequest *request);
-    size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
+    bool _sourceValid(){ return !!(_content); }
+    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
 };
 
-class AsyncCallbackResponse: public AsyncWebServerResponse {
+class AsyncCallbackResponse: public AsyncAbstractResponse {
   private:
     AwsResponseFiller _content;
-    String _head;
   public:
     AsyncCallbackResponse(String contentType, size_t len, AwsResponseFiller callback);
-    void _respond(AsyncWebServerRequest *request);
-    size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
+    bool _sourceValid(){ return !!(_content); }
+    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
 };
 
 #endif /* ASYNCWEBSERVERRESPONSEIMPL_H_ */
