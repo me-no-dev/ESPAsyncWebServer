@@ -121,8 +121,9 @@ const char* http_password = "admin";
 extern "C" void system_set_os_print(uint8 onoff);
 extern "C" void ets_install_putc1(void* routine);
 
+//Use the internal hardware buffer
 static void _u0_putc(char c){
-  while(((U0S >> USTXC) & 0x7F) != 0);
+  while(((U0S >> USTXC) & 0x7F) == 0x7F);
   U0F = c;
 }
 
@@ -130,9 +131,6 @@ void initSerial(){
   Serial.begin(115200);
   ets_install_putc1((void *) &_u0_putc);
   system_set_os_print(1);
-}
-
-void initWiFi(){
 }
 
 void setup(){
