@@ -79,7 +79,6 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
 }
 
 void AsyncWebServerRequest::_onData(void *buf, size_t len){
-  //os_printf("r:%u\n", len);
   if(_parseState < PARSE_REQ_BODY){
     size_t i;
     for(i=0; i<len; i++){
@@ -291,7 +290,8 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data){
 void AsyncWebServerRequest::_handleUploadByte(uint8_t data, bool last){
   _itemBuffer[_itemBufferIndex++] = data;
   if(last){
-    if(_handler) _handler->handleUpload(this, _itemFilename, _itemSize - _itemBufferIndex, _itemBuffer, _itemBufferIndex, false);
+    if(_handler)
+      _handler->handleUpload(this, _itemFilename, _itemSize - _itemBufferIndex, _itemBuffer, _itemBufferIndex, false);
     _itemBufferIndex = 0;
   }
 }
@@ -312,6 +312,7 @@ enum {
 
 void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
 #define itemWriteByte(b) do { _itemSize++; if(_itemIsFile) _handleUploadByte(b, last); else _itemValue+=(char)(b); } while(0)
+
   if(!_parsedLength){
     _multiParseState = EXPECT_BOUNDARY;
     _temp = String();
@@ -377,8 +378,8 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
         _itemValue = String();
         if(_itemIsFile){
           if(_itemBuffer)
-            os_free(_itemBuffer);
-          _itemBuffer = (uint8_t*)os_malloc(1460);
+            free(_itemBuffer);
+          _itemBuffer = (uint8_t*)malloc(1460);
           _itemBufferIndex = 0;
         }
       }
@@ -429,13 +430,14 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
           _itemBufferIndex = 0;
           _addParam(new AsyncWebParameter(_itemName, _itemFilename, true, true, _itemSize));
         }
-        os_free(_itemBuffer);
+        free(_itemBuffer);
       }
 
     } else {
       _boundaryPosition++;
     }
   } else if(_multiParseState == DASH3_OR_RETURN2){
+    os_printf("X:%u:'%c'\n",_contentLength - _parsedLength - 4,data);
     if(data == '\r'){
       _multiParseState = EXPECT_FEED2;
     } else if(data == '-' && _contentLength == (_parsedLength + 4)){

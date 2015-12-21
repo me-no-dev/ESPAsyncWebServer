@@ -30,7 +30,7 @@ class SPIFFSEditor: public AsyncWebHandler {
     }
 
     void handleRequest(AsyncWebServerRequest *request){
-      if(_username.length() && (request->method() != HTTP_GET || (request->url() != "/edit" && request->url() != "/list")) && !request->authenticate(_username.c_str(),_password.c_str()))
+      if(_username.length() && (request->method() != HTTP_GET || request->url() == "/edit" || request->url() == "/list") && !request->authenticate(_username.c_str(),_password.c_str()))
         return request->requestAuthentication();
 
       if(request->method() == HTTP_GET && request->url() == "/edit"){

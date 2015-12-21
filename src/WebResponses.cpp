@@ -218,11 +218,11 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
   if(_state == RESPONSE_CONTENT){
     size_t remaining = _contentLength - _sentLength;
     size_t outLen = (remaining > space)?space:remaining;
-    uint8_t *buf = (uint8_t *)os_malloc(outLen);
+    uint8_t *buf = (uint8_t *)malloc(outLen);
     outLen = _fillBuffer(buf, outLen);
     request->client()->write((const char*)buf, outLen);
     _sentLength += outLen;
-    os_free(buf);
+    free(buf);
     if(_sentLength == _contentLength){
       _state = RESPONSE_WAIT_ACK;
     }
