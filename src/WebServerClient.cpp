@@ -9,9 +9,7 @@
 #include "AsyncWebServerResponseImpl.h"
 #include <libb64/cencode.h>
 
-bool __is_param_char(char c){
-  return c && (c != '{') && (c != '[') && (c != '&') && (c != '=');
-}
+#define __is_param_char(c) ((c) && ((c) != '{') && ((c) != '[') && ((c) != '&') && ((c) != '='))
 
 enum { PARSE_REQ_START, PARSE_REQ_HEADERS, PARSE_REQ_BODY, PARSE_REQ_END, PARSE_REQ_FAIL };
 
@@ -48,12 +46,12 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _itemBufferIndex(0)
   , _itemIsFile(false)
 {
-  c->onError([](void *r, AsyncClient* c, err_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
+  c->onError([](void *r, AsyncClient* c, int8_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
   c->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onAck(len, time); }, this);
   c->onDisconnect([](void *r, AsyncClient* c){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onDisconnect(); }, this);
   c->onTimeout([](void *r, AsyncClient* c, uint32_t time){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onTimeout(time); }, this);
   c->onData([](void *r, AsyncClient* c, void *buf, size_t len){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onData(buf, len); }, this);
-  c->onPoll([](void *r, AsyncClient* c){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onPoll(); }, this);
+  //c->onPoll([](void *r, AsyncClient* c){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onPoll(); }, this);
 }
 
 AsyncWebServerRequest::~AsyncWebServerRequest(){
@@ -144,7 +142,7 @@ void AsyncWebServerRequest::_onAck(size_t len, uint32_t time){
   }
 }
 
-void AsyncWebServerRequest::_onError(err_t error){
+void AsyncWebServerRequest::_onError(int8_t error){
   os_printf("e:%d:%u\n", error, _client->state());
 }
 

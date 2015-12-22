@@ -5,7 +5,7 @@
 
 #include <functional>
 #include <ESPAsyncTCP.h>
-#include <FS.h>
+#include "FS.h"
 
 #include "StringArray.h"
 
@@ -114,7 +114,7 @@ class AsyncWebServerRequest {
 
     void _onPoll();
     void _onAck(size_t len, uint32_t time);
-    void _onError(err_t error);
+    void _onError(int8_t error);
     void _onTimeout(uint32_t time);
     void _onDisconnect();
     void _onData(void *buf, size_t len);
