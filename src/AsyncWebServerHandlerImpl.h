@@ -50,7 +50,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       if(_method != HTTP_ANY && request->method() != _method)
         return false;
 
-      if(_uri.length() > 1 && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
+      if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
         return false;
 
       request->addInterestingHeader("ANY");
