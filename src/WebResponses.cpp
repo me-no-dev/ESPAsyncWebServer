@@ -1,5 +1,7 @@
 #include "ESPAsyncWebServer.h"
 #include "AsyncWebServerResponseImpl.h"
+#include "cbuf.h"
+
 
 /*
  * Abstract Response
@@ -220,7 +222,8 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     size_t outLen = (remaining > space)?space:remaining;
     uint8_t *buf = (uint8_t *)malloc(outLen);
     outLen = _fillBuffer(buf, outLen);
-    request->client()->write((const char*)buf, outLen);
+    if(outLen)
+      request->client()->write((const char*)buf, outLen);
     _sentLength += outLen;
     free(buf);
     if(_sentLength == _contentLength){
@@ -335,5 +338,30 @@ size_t AsyncCallbackResponse::_fillBuffer(uint8_t *data, size_t len){
 }
 
 
+/*
+ * Response Stream (You can print/write/printf to it, up to the contentLen bytes)
+ * */
 
+AsyncResponseStream::AsyncResponseStream(String contentType, size_t len){
+  _code = 200;
+  _contentLength = len;
+  _contentType = contentType;
+  _content = new cbuf(1460);
+}
+
+AsyncResponseStream::~AsyncResponseStream(){
+  delete _content;
+}
+
+size_t AsyncResponseStream::_fillBuffer(uint8_t *buf, size_t maxLen){
+  return _content->read((char*)buf, maxLen);
+}
+
+size_t AsyncResponseStream::write(const uint8_t *data, size_t len){
+  return _content->write((const char*)data, len);
+}
+
+size_t AsyncResponseStream::write(uint8_t data){
+  return write(&data, 1);
+}
 

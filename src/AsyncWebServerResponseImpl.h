@@ -57,4 +57,16 @@ class AsyncCallbackResponse: public AsyncAbstractResponse {
     size_t _fillBuffer(uint8_t *buf, size_t maxLen);
 };
 
+class AsyncResponseStream: public AsyncAbstractResponse, public Print {
+  private:
+    cbuf *_content;
+  public:
+    AsyncResponseStream(String contentType, size_t len);
+    ~AsyncResponseStream();
+    bool _sourceValid(){ return (_state < RESPONSE_END); }
+    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
+    size_t write(const uint8_t *data, size_t len);
+    size_t write(uint8_t data);
+};
+
 #endif /* ASYNCWEBSERVERRESPONSEIMPL_H_ */
