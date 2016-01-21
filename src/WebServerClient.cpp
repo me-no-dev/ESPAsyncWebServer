@@ -439,7 +439,10 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
       _boundaryPosition++;
     }
   } else if(_multiParseState == DASH3_OR_RETURN2){
-    //os_printf("X:%u:'%c'\n",_contentLength - _parsedLength - 4,data);
+    if(data == '-' && (_contentLength - _parsedLength - 4) != 0){
+      os_printf("ERROR: The parser got to the end of the POST but is expecting % bytes more!\nDrop an issue so we can have more info on the matter!\n", _contentLength - _parsedLength - 4);
+      _contentLength = _parsedLength + 4;//lets close the request gracefully
+    }
     if(data == '\r'){
       _multiParseState = EXPECT_FEED2;
     } else if(data == '-' && _contentLength == (_parsedLength + 4)){
