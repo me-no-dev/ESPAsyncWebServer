@@ -25,6 +25,8 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request){
     }
     if(path.endsWith("/"))
       path += "index.htm";
+  } else {
+    path = _path;
   }
 
   if(_fs.exists(path) || _fs.exists(path+".gz")){
