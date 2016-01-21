@@ -147,11 +147,11 @@ void AsyncWebServerRequest::_onAck(size_t len, uint32_t time){
 }
 
 void AsyncWebServerRequest::_onError(int8_t error){
-  os_printf("e:%d:%u\n", error, _client->state());
+  //os_printf("e:%d:%u\n", error, _client->state());
 }
 
 void AsyncWebServerRequest::_onTimeout(uint32_t time){
-  os_printf("t:%u\n", time);
+  //os_printf("t:%u\n", time);
   _client->close();
 }
 
@@ -439,7 +439,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
       _boundaryPosition++;
     }
   } else if(_multiParseState == DASH3_OR_RETURN2){
-    os_printf("X:%u:'%c'\n",_contentLength - _parsedLength - 4,data);
+    //os_printf("X:%u:'%c'\n",_contentLength - _parsedLength - 4,data);
     if(data == '\r'){
       _multiParseState = EXPECT_FEED2;
     } else if(data == '-' && _contentLength == (_parsedLength + 4)){

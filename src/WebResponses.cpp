@@ -354,7 +354,6 @@ AsyncResponseStream::~AsyncResponseStream(){
 }
 
 size_t AsyncResponseStream::_fillBuffer(uint8_t *buf, size_t maxLen){
-  os_printf("fb:%u\n",maxLen);
   return _content->read((char*)buf, maxLen);
 }
 
