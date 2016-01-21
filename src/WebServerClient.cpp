@@ -280,7 +280,7 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data){
     _temp = _urlDecode(_temp);
     String name = "body";
     String value = _temp;
-    if(_temp.indexOf('=') > 0){
+    if(!_temp.startsWith("{") && !_temp.startsWith("[") && _temp.indexOf('=') > 0){
       name = _temp.substring(0, _temp.indexOf('='));
       value = _temp.substring(_temp.indexOf('=') + 1);
     }
