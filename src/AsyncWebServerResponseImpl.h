@@ -67,6 +67,7 @@ class AsyncResponseStream: public AsyncAbstractResponse, public Print {
     size_t _fillBuffer(uint8_t *buf, size_t maxLen);
     size_t write(const uint8_t *data, size_t len);
     size_t write(uint8_t data);
+    using Print::write;
 };
 
 #endif /* ASYNCWEBSERVERRESPONSEIMPL_H_ */

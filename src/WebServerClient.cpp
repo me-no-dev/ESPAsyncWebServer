@@ -45,6 +45,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _itemBuffer(0)
   , _itemBufferIndex(0)
   , _itemIsFile(false)
+  , next(NULL)
 {
   c->onError([](void *r, AsyncClient* c, int8_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
   c->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onAck(len, time); }, this);
@@ -609,6 +610,12 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, St
 
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(String contentType, size_t len, AwsResponseFiller callback){
   return new AsyncCallbackResponse(contentType, len, callback);
+}
+
+AsyncResponseStream * AsyncWebServerRequest::getResponseStream(String contentType, size_t len){
+  AsyncResponseStream * r = new AsyncResponseStream(contentType, len);
+  send(r);
+  return r;
 }
 
 void AsyncWebServerRequest::send(int code, String contentType, String content){
