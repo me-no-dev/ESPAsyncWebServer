@@ -274,12 +274,12 @@ bool AsyncWebServerRequest::_parseReqHeader(){
 }
 
 void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data){
-  if(data && (char)data != '\r' && (char)data != '\n' && (char)data != '&')
+  if(data && (char)data != '&')
     _temp += (char)data;
-  if(!data || (char)data == '\n' || (char)data == '&' || _parsedLength == _contentLength){
+  if(!data || (char)data == '&' || _parsedLength == _contentLength){
     _temp = _urlDecode(_temp);
-    String name = _temp;
-    String value = "";
+    String name = "body";
+    String value = _temp;
     if(_temp.indexOf('=') > 0){
       name = _temp.substring(0, _temp.indexOf('='));
       value = _temp.substring(_temp.indexOf('=') + 1);
