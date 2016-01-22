@@ -173,7 +173,7 @@ void AsyncWebServerRequest::_addParam(AsyncWebParameter *p){
 }
 
 void AsyncWebServerRequest::_addGetParam(String param){
-  param = _urlDecode(param);
+  param = urlDecode(param);
   String name = param;
   String value = "";
   if(param.indexOf('=') > 0){
@@ -277,7 +277,7 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data){
   if(data && (char)data != '&')
     _temp += (char)data;
   if(!data || (char)data == '&' || _parsedLength == _contentLength){
-    _temp = _urlDecode(_temp);
+    _temp = urlDecode(_temp);
     String name = "body";
     String value = _temp;
     if(!_temp.startsWith("{") && !_temp.startsWith("[") && _temp.indexOf('=') > 0){
@@ -440,7 +440,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
     }
   } else if(_multiParseState == DASH3_OR_RETURN2){
     if(data == '-' && (_contentLength - _parsedLength - 4) != 0){
-      os_printf("ERROR: The parser got to the end of the POST but is expecting % bytes more!\nDrop an issue so we can have more info on the matter!\n", _contentLength - _parsedLength - 4);
+      os_printf("ERROR: The parser got to the end of the POST but is expecting %u bytes more!\nDrop an issue so we can have more info on the matter!\n", _contentLength - _parsedLength - 4);
       _contentLength = _parsedLength + 4;//lets close the request gracefully
     }
     if(data == '\r'){
@@ -728,28 +728,23 @@ bool AsyncWebServerRequest::hasHeader(const char* name){
 }
 
 
-String AsyncWebServerRequest::_urlDecode(const String& text){
+String AsyncWebServerRequest::urlDecode(const String& text){
   String decoded = "";
   char temp[] = "0x00";
   unsigned int len = text.length();
   unsigned int i = 0;
-  while (i < len)
-  {
+  while (i < len){
     char decodedChar;
     char encodedChar = text.charAt(i++);
-    if ((encodedChar == '%') && (i + 1 < len))
-    {
+    if ((encodedChar == '%') && (i + 1 < len)){
       temp[2] = text.charAt(i++);
       temp[3] = text.charAt(i++);
 
       decodedChar = strtol(temp, NULL, 16);
-    }
-    else {
-      if (encodedChar == '+')
-      {
+    } else {
+      if (encodedChar == '+'){
         decodedChar = ' ';
-      }
-      else {
+      } else {
         decodedChar = encodedChar;  // normal ascii char
       }
     }

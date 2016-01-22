@@ -38,5 +38,3 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request){
     request->send(404);
   path = String();
 }
-
-

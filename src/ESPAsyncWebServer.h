@@ -121,7 +121,6 @@ class AsyncWebServerRequest {
     void _onData(void *buf, size_t len);
 
     void _addParam(AsyncWebParameter*);
-    String _urlDecode(const String& text);
 
     bool _parseReqHead();
     bool _parseReqHeader();
@@ -190,6 +189,7 @@ class AsyncWebServerRequest {
     String headerName(int i);          // get request header name by number
     bool hasHeader(const char* name);  // check if header exists
 
+    String urlDecode(const String& text);
 };
 
 /*
