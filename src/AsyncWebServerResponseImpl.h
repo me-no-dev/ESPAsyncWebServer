@@ -57,6 +57,8 @@ class AsyncCallbackResponse: public AsyncAbstractResponse {
     size_t _fillBuffer(uint8_t *buf, size_t maxLen);
 };
 
+class cbuf;
+
 class AsyncResponseStream: public AsyncAbstractResponse, public Print {
   private:
     cbuf *_content;

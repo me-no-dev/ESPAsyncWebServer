@@ -147,11 +147,12 @@ void AsyncWebServerRequest::_onAck(size_t len, uint32_t time){
 }
 
 void AsyncWebServerRequest::_onError(int8_t error){
-  //os_printf("e:%d:%u\n", error, _client->state());
+  if(error != -11)
+    os_printf("ERROR[%d] %s, state: %s\n", error, _client->errorToString(error), _client->stateToString());
 }
 
 void AsyncWebServerRequest::_onTimeout(uint32_t time){
-  //os_printf("t:%u\n", time);
+  os_printf("TIMEOUT: %u, state: %s\n", time, _client->stateToString());
   _client->close();
 }
 
@@ -640,7 +641,7 @@ void AsyncWebServerRequest::send(String contentType, size_t len, AwsResponseFill
 
 bool AsyncWebServerRequest::authenticate(const char * username, const char * password){
   if(_authorization.length()){
-      char toencodeLen = strlen(username)+strlen(password)+1;
+      char toencodeLen = os_strlen(username)+os_strlen(password)+1;
       char *toencode = new char[toencodeLen];
       if(toencode == NULL){
         return false;
