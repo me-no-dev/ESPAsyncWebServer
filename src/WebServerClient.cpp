@@ -9,6 +9,10 @@
 #include "AsyncWebServerResponseImpl.h"
 #include <libb64/cencode.h>
 
+#ifndef ESP8266
+#define os_strlen strlen
+#endif
+
 #define __is_param_char(c) ((c) && ((c) != '{') && ((c) != '[') && ((c) != '&') && ((c) != '='))
 
 enum { PARSE_REQ_START, PARSE_REQ_HEADERS, PARSE_REQ_BODY, PARSE_REQ_END, PARSE_REQ_FAIL };
