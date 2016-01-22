@@ -166,7 +166,7 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse *beginResponse(FS &fs, String path, String contentType=String(), bool download=false);
     AsyncWebServerResponse *beginResponse(Stream &stream, String contentType, size_t len);
     AsyncWebServerResponse *beginResponse(String contentType, size_t len, AwsResponseFiller callback);
-    AsyncResponseStream *getResponseStream(String contentType, size_t len);
+    AsyncResponseStream *beginResponseStream(String contentType, size_t len, size_t bufferSize=1460);
 
     int headers();                     // get header count
     bool hasHeader(String name);

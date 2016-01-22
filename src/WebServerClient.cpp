@@ -615,10 +615,8 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(String contentType
   return new AsyncCallbackResponse(contentType, len, callback);
 }
 
-AsyncResponseStream * AsyncWebServerRequest::getResponseStream(String contentType, size_t len){
-  AsyncResponseStream * r = new AsyncResponseStream(contentType, len);
-  send(r);
-  return r;
+AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(String contentType, size_t len, size_t bufferSize){
+  return new AsyncResponseStream(contentType, len, bufferSize);
 }
 
 void AsyncWebServerRequest::send(int code, String contentType, String content){

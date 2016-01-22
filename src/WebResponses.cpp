@@ -342,11 +342,11 @@ size_t AsyncCallbackResponse::_fillBuffer(uint8_t *data, size_t len){
  * Response Stream (You can print/write/printf to it, up to the contentLen bytes)
  * */
 
-AsyncResponseStream::AsyncResponseStream(String contentType, size_t len){
+AsyncResponseStream::AsyncResponseStream(String contentType, size_t len, size_t bufferSize){
   _code = 200;
   _contentLength = len;
   _contentType = contentType;
-  _content = new cbuf(1460);
+  _content = new cbuf(bufferSize);
 }
 
 AsyncResponseStream::~AsyncResponseStream(){
