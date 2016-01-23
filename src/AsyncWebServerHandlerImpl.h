@@ -21,7 +21,7 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
   public:
     AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header)
       : _fs(fs), _uri(uri), _path(path), _cache_header(cache_header){
-      _isFile = _fs.exists(path);
+      _isFile = _fs.exists(path) || _fs.exists(path+".gz");
     }
     bool canHandle(AsyncWebServerRequest *request);
     void handleRequest(AsyncWebServerRequest *request);
