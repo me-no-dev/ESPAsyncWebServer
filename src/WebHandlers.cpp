@@ -21,28 +21,28 @@ bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
 void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
 {
   String path = request->url();
-//  os_printf("[AsyncStaticWebHandler::handleRequest]\n");
-//  os_printf("  [stored] _uri = %s, _path = %s\n" , _uri.c_str(), _path.c_str() ) ;
-//  os_printf("  [request] url = %s\n", request->url().c_str() );
+  DEBUGF("[AsyncStaticWebHandler::handleRequest]\n");
+  DEBUGF("  [stored] _uri = %s, _path = %s\n" , _uri.c_str(), _path.c_str() ) ;
+  DEBUGF("  [request] url = %s\n", request->url().c_str() );
 
   if (!_isFile) {
-      //os_printf("   _isFile = false\n");
+      DEBUGF("   _isFile = false\n");
       String baserequestUrl = request->url().substring(_uri.length());  // this is the request - stored _uri...  /espman/ 
-      //os_printf("  baserequestUrl = %s\n", baserequestUrl.c_str()); 
+      DEBUGF("  baserequestUrl = %s\n", baserequestUrl.c_str()); 
 
       if (baserequestUrl.length()) {
         path = _path + baserequestUrl;
-        //os_printf("  baserequestUrl length > 0: path = path + baserequestUrl, path = %s\n", path.c_str()); 
+        DEBUGF("  baserequestUrl length > 0: path = path + baserequestUrl, path = %s\n", path.c_str()); 
       }
     if (path.endsWith("/")) {
-        //os_printf("  3 path ends with / : path = index.htm \n");
+        DEBUGF("  3 path ends with / : path = index.htm \n");
       path += "index.htm";
     }
   } else {
     path = _path;
   }
    
-//  os_printf("[AsyncStaticWebHandler::handleRequest] final path = %s\n", path.c_str());
+  DEBUGF("[AsyncStaticWebHandler::handleRequest] final path = %s\n", path.c_str());
 
   if (_fs.exists(path) || _fs.exists(path + ".gz")) {
     AsyncWebServerResponse * response = request->beginResponse(_fs, path);
@@ -54,6 +54,6 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
   }
   path = String();
 
-//  os_printf("[AsyncStaticWebHandler::handleRequest] END\n\n");
+  DEBUGF("[AsyncStaticWebHandler::handleRequest] END\n\n");
 
 }

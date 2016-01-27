@@ -8,6 +8,7 @@
 #ifndef ASYNCWEBSERVERHANDLERIMPL_H_
 #define ASYNCWEBSERVERHANDLERIMPL_H_
 
+
 #include "stddef.h"
 
 class AsyncStaticWebHandler: public AsyncWebHandler {
@@ -25,11 +26,11 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
       _isFile = _fs.exists(path) || _fs.exists((String(path)+".gz").c_str());
       if (_uri != "/" && _uri.endsWith("/")) {
         _uri = _uri.substring(0, _uri.length() - 1); 
-        //os_printf("[AsyncStaticWebHandler] _uri / removed"); 
+        DEBUGF("[AsyncStaticWebHandler] _uri / removed"); 
       }
       if (_path != "/" && _path.endsWith("/")) {
         _path = _path.substring(0, _path.length() - 1); 
-        //os_printf("[AsyncStaticWebHandler] _path / removed"); 
+        DEBUGF("[AsyncStaticWebHandler] _path / removed"); 
       }
 
 
