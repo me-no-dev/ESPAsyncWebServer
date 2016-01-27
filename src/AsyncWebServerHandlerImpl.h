@@ -13,6 +13,7 @@
 
 class AsyncStaticWebHandler: public AsyncWebHandler {
   private:
+    String _getPath(AsyncWebServerRequest *request); 
   protected:
     FS _fs;
     String _uri;
@@ -37,6 +38,7 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     }
     bool canHandle(AsyncWebServerRequest *request);
     void handleRequest(AsyncWebServerRequest *request);
+    
 };
 
 class AsyncCallbackWebHandler: public AsyncWebHandler {
