@@ -9,7 +9,7 @@
 #define STRINGARRAY_H_
 
 #include "stddef.h"
-#include "String.h"
+#include "WString.h"
 
 class StringArrayItem;
 class StringArrayItem {

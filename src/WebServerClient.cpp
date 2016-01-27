@@ -9,6 +9,10 @@
 #include "AsyncWebServerResponseImpl.h"
 #include <libb64/cencode.h>
 
+#ifndef ESP8266
+#define os_strlen strlen
+#endif
+
 #define __is_param_char(c) ((c) && ((c) != '{') && ((c) != '[') && ((c) != '&') && ((c) != '='))
 
 enum { PARSE_REQ_START, PARSE_REQ_HEADERS, PARSE_REQ_BODY, PARSE_REQ_END, PARSE_REQ_FAIL };
@@ -21,6 +25,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _interestingHeaders(new StringArray())
   , _temp()
   , _parseState(0)
+  , _version(0)
   , _method(HTTP_ANY)
   , _url()
   , _host()
@@ -147,11 +152,12 @@ void AsyncWebServerRequest::_onAck(size_t len, uint32_t time){
 }
 
 void AsyncWebServerRequest::_onError(int8_t error){
-  //os_printf("e:%d:%u\n", error, _client->state());
+  if(error != -11)
+    os_printf("ERROR[%d] %s, state: %s\n", error, _client->errorToString(error), _client->stateToString());
 }
 
 void AsyncWebServerRequest::_onTimeout(uint32_t time){
-  //os_printf("t:%u\n", time);
+  os_printf("TIMEOUT: %u, state: %s\n", time, _client->stateToString());
   _client->close();
 }
 
@@ -224,6 +230,9 @@ bool AsyncWebServerRequest::_parseReqHead(){
     }
   }
 
+  _temp = _temp.substring(_temp.indexOf(' ')+1);
+  if(_temp.startsWith("HTTP/1.1"))
+    _version = 1;
   _temp = String();
   return true;
 }
@@ -615,32 +624,42 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(String contentType
   return new AsyncCallbackResponse(contentType, len, callback);
 }
 
+AsyncWebServerResponse * AsyncWebServerRequest::beginChunkedResponse(String contentType, AwsResponseFiller callback){
+  if(_version)
+    return new AsyncChunkedResponse(contentType, callback);
+  return new AsyncCallbackResponse(contentType, 0, callback);
+}
+
 AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(String contentType, size_t len, size_t bufferSize){
   return new AsyncResponseStream(contentType, len, bufferSize);
 }
 
 void AsyncWebServerRequest::send(int code, String contentType, String content){
-  send(new AsyncBasicResponse(code, contentType, content));
+  send(beginResponse(code, contentType, content));
 }
 
 void AsyncWebServerRequest::send(FS &fs, String path, String contentType, bool download){
   if(fs.exists(path) || (!download && fs.exists(path+".gz"))){
-    send(new AsyncFileResponse(fs, path, contentType, download));
+    send(beginResponse(fs, path, contentType, download));
   } else send(404);
 }
 
 void AsyncWebServerRequest::send(Stream &stream, String contentType, size_t len){
-  send(new AsyncStreamResponse(stream, contentType, len));
+  send(beginResponse(stream, contentType, len));
 }
 
 void AsyncWebServerRequest::send(String contentType, size_t len, AwsResponseFiller callback){
-  send(new AsyncCallbackResponse(contentType, len, callback));
+  send(beginResponse(contentType, len, callback));
+}
+
+void AsyncWebServerRequest::sendChunked(String contentType, AwsResponseFiller callback){
+  send(beginChunkedResponse(contentType, callback));
 }
 
 
 bool AsyncWebServerRequest::authenticate(const char * username, const char * password){
   if(_authorization.length()){
-      char toencodeLen = strlen(username)+strlen(password)+1;
+      char toencodeLen = os_strlen(username)+os_strlen(password)+1;
       char *toencode = new char[toencodeLen];
       if(toencode == NULL){
         return false;

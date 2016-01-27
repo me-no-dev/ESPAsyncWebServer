@@ -1,0 +1,366 @@
+<!-- 
+  FSWebServer - Example Index Page
+  Copyright (c) 2015 Hristo Gochkov. All rights reserved.
+  This file is part of the ESP8266WebServer library for Arduino environment.
+ 
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+  <title>ESP Monitor</title>
+  <script type="text/javascript" src="graphs.js"></script>
+  <script type="text/javascript">
+    if (typeof XMLHttpRequest === "undefined") {
+    	XMLHttpRequest = function () {
+      	try { return new ActiveXObject("Msxml2.XMLHTTP.6.0"); } catch (e) {}
+      	try { return new ActiveXObject("Msxml2.XMLHTTP.3.0"); } catch (e) {}
+      	try { return new ActiveXObject("Microsoft.XMLHTTP"); } catch (e) {}
+      	throw new Error("This browser does not support XMLHttpRequest.");
+    	};
+    }
+    
+    var QueuedRequester = function () {
+      this.queue = [];
+    	this.running = false;
+    	this.xmlhttp = null;
+    }
+    QueuedRequester.prototype = {
+      _request: function(req){
+    		this.running = true;
+    		if(!req instanceof Object) return;
+    		var that = this;
+    		
+    		function scriptCb(d){ return function(e){
+    		  d.callback(e);
+    		  if(that.queue.length === 0) that.running = false;
+    		  if(that.running) that._request(that.queue.shift());
+    		}}
+    		
+    		function ajaxCb(x,d){ return function(){
+  				if (x.readyState == 4){
+  					if(x.status == 200){
+  						if(d.type === "json") d.callback(JSON.parse(x.responseText));
+  						else if(d.type === "xml") d.callback(x.responseXML);
+  						else d.callback(x.responseText);
+  					}
+  					if(that.queue.length === 0) that.running = false;
+  					if(that.running) that._request(that.queue.shift());
+  				}
+    		}}
+        
+    		var p = "";
+    		if(req.params instanceof Object){
+    			for (var key in req.params) {
+    				if(p === "")
+    					p += (req.method === "GET" || req.method === "SCRIPT")?"?":"";
+    				else
+    					p += "&";
+    				p += key+"="+req.params[key];
+    			};
+    		}
+    		
+    		if(req.method === "SCRIPT"){
+    		  var head = document.getElementsByTagName('head')[0];
+  		  	if(req.type === "css"){
+    				var c = document.createElement('link');
+    				c.setAttribute('href', req.url+p);
+    				c.setAttribute('rel', 'stylesheet');
+    				c.setAttribute('type', 'text/css');
+    				c.setAttribute('async', 'true');
+    				c.addEventListener('load', scriptCb(req), false);
+    				head.appendChild(c);
+  		  	} else if(req.type === "javascript"){
+  			    var s = document.createElement('script');
+  			    s.setAttribute('src', req.url+p);
+		        s.setAttribute('type', 'text/javascript');
+		        s.setAttribute('async', 'true');
+		        s.addEventListener('load', scriptCb(req), false);
+		        head.appendChild(s);
+  		  	}
+  		  	return;
+    		}
+    		
+    		this.xmlhttp = new XMLHttpRequest();
+    		this.xmlhttp.onreadystatechange = ajaxCb(this.xmlhttp, req);
+    		if(req.method === "GET"){
+    			this.xmlhttp.open(req.method, req.url+p, true);
+    			this.xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    			this.xmlhttp.send();
+    		} else {
+    			this.xmlhttp.open(req.method, req.url, true);
+    			this.xmlhttp.send(p);
+    		}
+    	},
+    	stop: function(){
+    		if(this.running) this.running = false;
+    		if(this.xmlhttp && this.xmlhttp.readyState < 4){
+    			this.xmlhttp.abort();
+    		}
+    	},
+    	add: function(url, method, params, type, callback){
+    		this.queue.push({url:url,method:method,params:params,type:type,callback:callback});
+    		if(!this.running){
+    			this._request(this.queue.shift());
+    		}
+    	}
+    }
+    
+    var requests = new QueuedRequester();
+    var heap,temp,digi,rssi;
+    var reloadPeriod = 1000;
+    var running = false;
+    
+    function ipStr(ip){
+      return (ip & 0xFF) + "." + ((ip >> 8) & 0xFF) + "." + ((ip >> 16) & 0xFF) + "." + ((ip >> 24) & 0xFF);
+    }
+    function statusStr(status){
+      if(status === 0) return "IDLE";
+      else if(status === 1) return "CONNECTING";
+      else if(status === 2) return "WRONG_PASSWORD";
+      else if(status === 3) return "NO_AP_FOUND";
+      else if(status === 4) return "CONNECT_FAILED";
+      else if(status === 5) return "CONNECTED";
+      else return "UNKNOWN";
+    }
+    
+    function securityStr(status){
+      if(status === 7) return "";
+      else if(status === 8) return "WPA/WPA2";
+      else if(status === 2) return "WPA";
+      else if(status === 4) return "WPA2";
+      else if(status === 5) return "WEP";
+      else return "UNKNOWN";
+    }
+    
+    function loadValues(){
+      if(!running) return;
+      requests.add("/wificonf", "GET", null, "json", function(res){
+        if(res){
+          wifiState(res);
+          //rssi.add(res.rssi);
+          //heap.add(res.heap);
+          //temp.add(res.analog);
+          //digi.add(res.gpio);
+          if(running) setTimeout(loadValues, reloadPeriod);
+        } else running = false;
+      });
+    };
+    
+    function loadAvailables(){
+      if(!running) return;
+      requests.add("/scan", "GET", null, "json", function(res){
+        if(res){
+          wifiScan(res);
+          if(running) setTimeout(loadAvailables, 10*1000);
+        } else running = false;
+      });
+    };
+    /*
+    var avrParts = null;
+    var signature = null;
+    var lfuse = null;
+    var hfuse = null;
+    var efuse = null;
+    var lock = null;
+    var part = null;
+    
+    function onNoPart(){
+      document.getElementById("avr-info").innerText = "AVR Part not found";
+    }
+    
+    function onPart(){
+      document.getElementById("avr-info").innerText = ("Part: id:"+part.id+" name:"+part.name+", signature:"+part.signature+", flash:"+part.flash+"B, eeprom:"+part.eeprom+"B, low:"+((part.fuses.low)?lfuse:"")+", high:"+((part.fuses.high)?hfuse:"")+", ext:"+((part.fuses.ext)?efuse:"")+", lock:"+((part.fuses.lock)?lock:"")+"");
+    }
+    
+    function avrInfo(){
+      requests.add("/avr/info", "GET", null, "json", function(res){
+        var sig = (res.sig0 << 16) + (res.sig1 << 8) + res.sig2;
+        if(sig == 0){
+          onNoPart();
+          return;
+        }
+        signature = "0x"+sig.toString(16);
+        lfuse = res.low.toString(16);
+        hfuse = res.high.toString(16);
+        efuse = res.ext.toString(16);
+        lock = res.lock.toString(16);
+        if(avrParts == null){
+          requests.add("/avrs.json", "GET", null, "json", function(res){
+            if(!res) return;
+            avrParts = res;
+            for(p in avrParts){
+              if(avrParts[p].signature === signature){
+                part = avrParts[p];
+                onPart();
+              }
+            }
+          });
+        } else {
+          for(p in avrParts){
+            if(avrParts[p].signature === signature){
+              part = avrParts[p];
+              onPart();
+            }
+          }
+        }
+      });
+    };
+    */
+    function run(){
+      if(!running){
+        running = true;
+        loadValues();
+        loadAvailables();
+      }
+    }
+    
+    function onBodyLoad(){
+      var refreshInput = document.getElementById("refresh-rate");
+      refreshInput.value = reloadPeriod;
+      refreshInput.onchange = function(e){
+        var value = parseInt(e.target.value);
+        reloadPeriod = (value > 0)?value:0;
+        e.target.value = reloadPeriod;
+      }
+      var stopButton = document.getElementById("stop-button");
+      stopButton.onclick = function(e){
+        running = false;
+        requests.stop();
+      }
+      var startButton = document.getElementById("start-button");
+      startButton.onclick = function(e){
+        run();
+      }
+      
+      // Example with 10K thermistor
+      //function calcThermistor(v) {
+      //  var t = Math.log(((10230000 / v) - 10000));
+      //  t = (1/(0.001129148+(0.000234125*t)+(0.0000000876741*t*t*t)))-273.15;
+      //  return (t>120)?0:Math.round(t*10)/10;
+      //}
+      //temp = createGraph(document.getElementById("analog"), "Temperature", 100, 128, 10, 40, false, "cyan", calcThermistor);
+      
+      //temp = createGraph(document.getElementById("analog"), "Analog Input", 100, 128, 0, 1023, false, "cyan");
+      rssi = createGraph(document.getElementById("rssi"), "WiFi RSSI", 100, 116, -100, -10, false, "green");
+      //heap = createGraph(document.getElementById("heap"), "Current Heap", 100, 125, 0, 40000, true, "orange");
+      //digi = createDigiGraph(document.getElementById("digital"), "GPIO", 100, 146, [0, 4, 5, 16], "gold");
+      //run();
+      //avrInfo();
+    }
+    
+    
+    function wifiState(res){
+      if(!res) return;
+      document.getElementsByName("ssid")[0].value = res.sta.ssid;
+      document.getElementsByName("bssid")[0].value = res.sta.bssid;
+      document.getElementsByName("channel")[0].value = res.sta.channel;
+      
+      rssi.add(res.sta.rssi);
+      document.getElementsByName("status")[0].value = statusStr(res.sta.status);
+      document.getElementsByName("rssi")[0].value = res.sta.rssi;
+      document.getElementsByName("mac")[0].value = res.sta.mac;
+      
+      document.getElementsByName("ip")[0].value = ipStr(res.sta.ip);
+      document.getElementsByName("mask")[0].value = ipStr(res.sta.netmask);
+      document.getElementsByName("gateway")[0].value = ipStr(res.sta.gateway);
+      document.getElementsByName("dns")[0].value = ipStr(res.sta.dns);
+    }
+    
+    function wifiScan(res){
+      if(!res || !res.length) return;
+      var table = document.getElementById("available");
+      table.innerHTML = "";
+      for (var i=0; i<res.length; i++){
+        var row = document.createElement("tr");
+        row.innerHTML = "<td>"+(i+1)+"</td><td>"+res[i].ssid+"</td><td>"+res[i].bssid+"</td><td>"+res[i].channel+"</td><td>"+securityStr(res[i].secure)+"</td><td>"+res[i].hidden+"</td><td>"+res[i].rssi+"</td>";
+        table.appendChild(row);
+      }
+    }
+    
+  </script>
+  <style>
+    #wifi-state {
+      display: block;
+      border: 1px solid rgb(68, 68, 68);
+      padding: 5px;
+      margin: 5px;
+      width: 500px;
+      background-color: rgb(238, 238, 238);
+    }
+    
+    #wifi-state label {
+      width:100px;
+      display:inline-block;
+      font:14px Verdana;
+    }
+    #wifi-state input {
+      margin:1px;
+    }
+    table {
+      border: 1px solid rgb(68, 68, 68);
+      padding: 5px;
+      margin: 5px;
+    }
+    th {
+      background-color:#CCCCCC;
+    }
+  </style>
+</head>
+<body id="index" style="margin:0; padding:0;" onload="onBodyLoad()">
+  <!--div id="avr-info"></div-->
+  <div>
+    <div>
+      <div id="controls" style="display: block; border: 1px solid rgb(68, 68, 68); padding: 5px; margin: 5px; width: 362px; background-color: rgb(238, 238, 238);">
+        <label>Period (ms):</label>
+        <input type="number" id="refresh-rate"/>
+        <input type="button" id="start-button" value="Start"/>
+        <input type="button" id="stop-button" value="Stop"/>
+      </div>
+      <div id="rssi"></div>
+    </div>
+    <div style="display:inline-block">
+      <div id="wifi-form">
+        <form id="wifi-state">
+          <label>SSID:</label><input type="text" name="ssid" disabled="true"/><label>MAC:</label><input type="text" name="mac" disabled="true"/><br />
+          <label>BSSID:</label><input type="text" name="bssid" disabled="true"/><label>IP:</label><input type="text" name="ip" disabled="true"/><br />
+          <label>Channel:</label><input type="text" name="channel" disabled="true"/><label>Netmask:</label><input type="text" name="mask" disabled="true"/><br />
+          <label>Status:</label><input type="text" name="status" disabled="true"/><label>Gateway:</label><input type="text" name="gateway" disabled="true"/><br />
+          <label>RSSI:</label><input type="text" name="rssi" disabled="true"/><label>DNS:</label><input type="text" name="dns" disabled="true"/>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div>
+  <table>
+    <thead>
+      <tr>
+        <th>&nbsp;&nbsp;&nbsp;</th>
+        <th style="width:200px">SSID</th>
+        <th style="width:150px">BSSID</th>
+        <th>Channel</th>
+        <th style="width:80px">Secure</th>
+        <th>Hidden</th>
+        <th>RSSI</th>
+      </tr>
+    </thead>
+    <tbody  id="available"></tbody>
+  </table>
+  </div>
+  <!--div id="heap"></div>
+  <div id="analog"></div>
+  <div id="digital"></div-->
+</body>
+</html>
+
