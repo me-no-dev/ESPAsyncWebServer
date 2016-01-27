@@ -359,8 +359,8 @@ size_t AsyncResponseStream::_fillBuffer(uint8_t *buf, size_t maxLen){
 size_t AsyncResponseStream::write(const uint8_t *data, size_t len){
   if(_finished() || (_content->room() == 0 && ETS_INTR_WITHINISR()))
     return 0;
-  if(len > _content->getSize())
-    len = _content->getSize();
+  if(len > _content->available())
+    len = _content->available();
   while(_content->room() < len) delay(0);
   return _content->write((const char*)data, len);
 }
