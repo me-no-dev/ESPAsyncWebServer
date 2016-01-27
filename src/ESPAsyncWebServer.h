@@ -86,6 +86,7 @@ class AsyncWebServerRequest {
     String _temp;
     uint8_t _parseState;
 
+    uint8_t _version;
     WebRequestMethod _method;
     String _url;
     String _host;
@@ -142,6 +143,7 @@ class AsyncWebServerRequest {
     ~AsyncWebServerRequest();
 
     AsyncClient* client(){ return _client; }
+    uint8_t version(){ return _version; }
     WebRequestMethod method(){ return _method; }
     String url(){ return _url; }
     String host(){ return _host; }
@@ -166,6 +168,7 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse *beginResponse(FS &fs, String path, String contentType=String(), bool download=false);
     AsyncWebServerResponse *beginResponse(Stream &stream, String contentType, size_t len);
     AsyncWebServerResponse *beginResponse(String contentType, size_t len, AwsResponseFiller callback);
+    AsyncWebServerResponse *beginChunkedResponse(String contentType, AwsResponseFiller callback);
     AsyncResponseStream *beginResponseStream(String contentType, size_t len, size_t bufferSize=1460);
 
     int headers();                     // get header count
@@ -221,6 +224,8 @@ class AsyncWebServerResponse {
     AsyncWebHeader *_headers;
     String _contentType;
     size_t _contentLength;
+    bool _sendContentLength;
+    bool _chunked;
     size_t _headLength;
     size_t _sentLength;
     size_t _ackedLength;
@@ -230,8 +235,10 @@ class AsyncWebServerResponse {
   public:
     AsyncWebServerResponse();
     virtual ~AsyncWebServerResponse();
+    virtual void setContentLength(size_t len);
+    virtual void setContentType(String type);
     virtual void addHeader(String name, String value);
-    virtual String _assembleHead();
+    virtual String _assembleHead(uint8_t version);
     virtual bool _finished();
     virtual bool _failed();
     virtual void _respond(AsyncWebServerRequest *request);

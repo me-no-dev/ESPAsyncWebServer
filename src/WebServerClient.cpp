@@ -25,6 +25,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _interestingHeaders(new StringArray())
   , _temp()
   , _parseState(0)
+  , _version(0)
   , _method(HTTP_ANY)
   , _url()
   , _host()
@@ -229,6 +230,9 @@ bool AsyncWebServerRequest::_parseReqHead(){
     }
   }
 
+  _temp = _temp.substring(_temp.indexOf(' ')+1);
+  if(_temp.startsWith("HTTP/1.1"))
+    _version = 1;
   _temp = String();
   return true;
 }
@@ -618,6 +622,12 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, St
 
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(String contentType, size_t len, AwsResponseFiller callback){
   return new AsyncCallbackResponse(contentType, len, callback);
+}
+
+AsyncWebServerResponse * AsyncWebServerRequest::beginChunkedResponse(String contentType, AwsResponseFiller callback){
+  if(_version)
+    return new AsyncChunkedResponse(contentType, callback);
+  return new AsyncCallbackResponse(contentType, 0, callback);
 }
 
 AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(String contentType, size_t len, size_t bufferSize){

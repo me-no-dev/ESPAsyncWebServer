@@ -52,14 +52,16 @@ const char* AsyncWebServerResponse::_responseCodeToString(int code) {
 }
 
 AsyncWebServerResponse::AsyncWebServerResponse()
-:_code(0)
-,_headers(NULL)
-,_contentType()
-,_contentLength(0)
-,_headLength(0)
-,_sentLength(0)
-,_ackedLength(0)
-,_state(RESPONSE_SETUP)
+  : _code(0)
+  , _headers(NULL)
+  , _contentType()
+  , _contentLength(0)
+  , _sendContentLength(true)
+  , _chunked(false)
+  , _headLength(0)
+  , _sentLength(0)
+  , _ackedLength(0)
+  , _state(RESPONSE_SETUP)
 {
   addHeader("Connection","close");
   addHeader("Access-Control-Allow-Origin","*");
@@ -73,6 +75,16 @@ AsyncWebServerResponse::~AsyncWebServerResponse(){
   }
 }
 
+void AsyncWebServerResponse::setContentLength(size_t len){
+  if(_state == RESPONSE_SETUP)
+    _contentLength = len;
+}
+
+void AsyncWebServerResponse::setContentType(String type){
+  if(_state == RESPONSE_SETUP)
+    _contentType = type;
+}
+
 void AsyncWebServerResponse::addHeader(String name, String value){
   AsyncWebHeader *header = new AsyncWebHeader(name, value);
   if(_headers == NULL){
@@ -84,12 +96,19 @@ void AsyncWebServerResponse::addHeader(String name, String value){
   }
 }
 
-String AsyncWebServerResponse::_assembleHead(){
-  String out = "HTTP/1.1 " + String(_code) + " " + _responseCodeToString(_code) + "\r\n";
-  out += "Content-Length: " + String(_contentLength) + "\r\n";
-  if(_contentType.length()){
-    out += "Content-Type: " + _contentType + "\r\n";
+String AsyncWebServerResponse::_assembleHead(uint8_t version){
+  if(version){
+    addHeader("Accept-Ranges","none");
+    if(_chunked)
+      addHeader("Transfer-Encoding","chunked");
   }
+  String out = "HTTP/1." + String(version) + " " + String(_code) + " " + _responseCodeToString(_code) + "\r\n";
+  if(_sendContentLength)
+    out += "Content-Length: " + String(_contentLength) + "\r\n";
+
+  if(_contentType.length())
+    out += "Content-Type: " + _contentType + "\r\n";
+
   AsyncWebHeader *h;
   while(_headers != NULL){
     h = _headers;
@@ -123,7 +142,7 @@ AsyncBasicResponse::AsyncBasicResponse(int code, String contentType, String cont
 
 void AsyncBasicResponse::_respond(AsyncWebServerRequest *request){
   _state = RESPONSE_HEADERS;
-  String out = _assembleHead();
+  String out = _assembleHead(request->version());
   size_t outLen = out.length();
   size_t space = request->client()->space();
   if(!_contentLength && space >= outLen){
@@ -192,7 +211,7 @@ void AsyncAbstractResponse::_respond(AsyncWebServerRequest *request){
     request->send(500);
     return;
   }
-  _head = _assembleHead();
+  _head = _assembleHead(request->version());
   _state = RESPONSE_HEADERS;
   size_t outLen = _head.length();
   size_t space = request->client()->space();
@@ -217,18 +236,42 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
   _ackedLength += len;
   size_t space = request->client()->space();
   if(_state == RESPONSE_CONTENT){
-    size_t remaining = _contentLength - _sentLength;
-    size_t outLen = (remaining > space)?space:remaining;
+    size_t outLen;
+    size_t readLen = 0;
+
+    if(_chunked || !_sendContentLength){
+      outLen = space;
+    } else {
+      size_t remaining = _contentLength - _sentLength;
+      outLen = (remaining > space)?space:remaining;
+    }
     uint8_t *buf = (uint8_t *)malloc(outLen);
-    outLen = _fillBuffer(buf, outLen);
+
+    if(_chunked){
+      readLen = _fillBuffer(buf, outLen - 8);
+      char pre[6];
+      sprintf(pre, "%x\r\n", readLen);
+      size_t preLen = strlen(pre);
+      memmove(buf+preLen, buf, preLen);
+      for(size_t i=0; i<preLen; i++)
+        buf[i] = pre[i];
+      outLen = preLen + readLen;
+      buf[outLen++] = '\r';
+      buf[outLen++] = '\n';
+    } else {
+      outLen = _fillBuffer(buf, outLen);
+    }
+
     if(outLen)
-      request->client()->write((const char*)buf, outLen);
+      outLen = request->client()->write((const char*)buf, outLen);
     _sentLength += outLen;
     free(buf);
-    if(_sentLength == _contentLength){
+
+    if((_chunked && readLen == 0) || (!_sendContentLength && outLen == 0) || _sentLength == _contentLength){
       _state = RESPONSE_WAIT_ACK;
     }
     return outLen;
+
   } else if(_state == RESPONSE_HEADERS){
     size_t outLen = _head.length();
     if(space >= outLen){
@@ -243,8 +286,10 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
       return out.length();
     }
   } else if(_state == RESPONSE_WAIT_ACK){
-    if(_ackedLength >= (_headLength+_contentLength)){
+    if(!_sendContentLength || _ackedLength >= (_headLength+_contentLength)){
       _state = RESPONSE_END;
+      if(!_chunked && !_sendContentLength)
+        request->client()->close();
     }
   }
   return 0;
@@ -329,10 +374,29 @@ AsyncCallbackResponse::AsyncCallbackResponse(String contentType, size_t len, Aws
   _code = 200;
   _content = callback;
   _contentLength = len;
+  if(!len)
+    _sendContentLength = false;
   _contentType = contentType;
 }
 
 size_t AsyncCallbackResponse::_fillBuffer(uint8_t *data, size_t len){
+  return _content(data, len);
+}
+
+/*
+ * Chunked Response
+ * */
+
+AsyncChunkedResponse::AsyncChunkedResponse(String contentType, AwsResponseFiller callback){
+  _code = 200;
+  _content = callback;
+  _contentLength = 0;
+  _contentType = contentType;
+  _sendContentLength = false;
+  _chunked = true;
+}
+
+size_t AsyncChunkedResponse::_fillBuffer(uint8_t *data, size_t len){
   return _content(data, len);
 }
 
@@ -344,6 +408,8 @@ size_t AsyncCallbackResponse::_fillBuffer(uint8_t *data, size_t len){
 AsyncResponseStream::AsyncResponseStream(String contentType, size_t len, size_t bufferSize){
   _code = 200;
   _contentLength = len;
+  if(!len)
+    _sendContentLength = false;
   _contentType = contentType;
   _content = new cbuf(bufferSize);
 }

@@ -57,6 +57,15 @@ class AsyncCallbackResponse: public AsyncAbstractResponse {
     size_t _fillBuffer(uint8_t *buf, size_t maxLen);
 };
 
+class AsyncChunkedResponse: public AsyncAbstractResponse {
+  private:
+    AwsResponseFiller _content;
+  public:
+    AsyncChunkedResponse(String contentType, AwsResponseFiller callback);
+    bool _sourceValid(){ return !!(_content); }
+    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
+};
+
 class cbuf;
 
 class AsyncResponseStream: public AsyncAbstractResponse, public Print {
