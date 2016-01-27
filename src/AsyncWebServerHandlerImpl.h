@@ -13,6 +13,7 @@
 
 class AsyncStaticWebHandler: public AsyncWebHandler {
   private:
+    String _getPath(AsyncWebServerRequest *request); 
   protected:
     FS _fs;
     String _uri;
@@ -26,17 +27,18 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
       _isFile = _fs.exists(path) || _fs.exists((String(path)+".gz").c_str());
       if (_uri != "/" && _uri.endsWith("/")) {
         _uri = _uri.substring(0, _uri.length() - 1); 
-        DEBUGF("[AsyncStaticWebHandler] _uri / removed"); 
+        DEBUGF("[AsyncStaticWebHandler] _uri / removed\n"); 
       }
       if (_path != "/" && _path.endsWith("/")) {
         _path = _path.substring(0, _path.length() - 1); 
-        DEBUGF("[AsyncStaticWebHandler] _path / removed"); 
+        DEBUGF("[AsyncStaticWebHandler] _path / removed\n"); 
       }
 
 
     }
     bool canHandle(AsyncWebServerRequest *request);
     void handleRequest(AsyncWebServerRequest *request);
+    
 };
 
 class AsyncCallbackWebHandler: public AsyncWebHandler {
