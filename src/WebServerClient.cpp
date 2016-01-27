@@ -635,21 +635,25 @@ AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(String contentT
 }
 
 void AsyncWebServerRequest::send(int code, String contentType, String content){
-  send(new AsyncBasicResponse(code, contentType, content));
+  send(beginResponse(code, contentType, content));
 }
 
 void AsyncWebServerRequest::send(FS &fs, String path, String contentType, bool download){
   if(fs.exists(path) || (!download && fs.exists(path+".gz"))){
-    send(new AsyncFileResponse(fs, path, contentType, download));
+    send(beginResponse(fs, path, contentType, download));
   } else send(404);
 }
 
 void AsyncWebServerRequest::send(Stream &stream, String contentType, size_t len){
-  send(new AsyncStreamResponse(stream, contentType, len));
+  send(beginResponse(stream, contentType, len));
 }
 
 void AsyncWebServerRequest::send(String contentType, size_t len, AwsResponseFiller callback){
-  send(new AsyncCallbackResponse(contentType, len, callback));
+  send(beginResponse(contentType, len, callback));
+}
+
+void AsyncWebServerRequest::sendChunked(String contentType, AwsResponseFiller callback){
+  send(beginChunkedResponse(contentType, callback));
 }
 
 

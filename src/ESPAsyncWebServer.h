@@ -163,6 +163,7 @@ class AsyncWebServerRequest {
     void send(FS &fs, String path, String contentType=String(), bool download=false);
     void send(Stream &stream, String contentType, size_t len);
     void send(String contentType, size_t len, AwsResponseFiller callback);
+    void sendChunked(String contentType, AwsResponseFiller callback);
 
     AsyncWebServerResponse *beginResponse(int code, String contentType=String(), String content=String());
     AsyncWebServerResponse *beginResponse(FS &fs, String path, String contentType=String(), bool download=false);
