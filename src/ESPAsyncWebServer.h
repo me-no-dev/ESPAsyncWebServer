@@ -9,6 +9,9 @@
 
 #include "StringArray.h"
 
+#define DEBUGF(...) //os_printf(__VA_ARGS__)
+
+
 class AsyncWebServer;
 class AsyncWebServerRequest;
 class AsyncWebServerResponse;
