@@ -9,7 +9,7 @@
 
 #include "StringArray.h"
 
-#define DEBUGF(...) //os_printf(__VA_ARGS__)
+#define DEBUGF(...) //Serial.printf(__VA_ARGS__)
 
 
 class AsyncWebServer;

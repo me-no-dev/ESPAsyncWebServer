@@ -30,10 +30,13 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
       String baserequestUrl = request->url().substring(_uri.length());  // this is the request - stored _uri...  /espman/ 
       DEBUGF("  baserequestUrl = %s\n", baserequestUrl.c_str()); 
 
-      if (baserequestUrl.length()) {
-        path = _path + baserequestUrl;
-        DEBUGF("  baserequestUrl length > 0: path = path + baserequestUrl, path = %s\n", path.c_str()); 
+      if (!baserequestUrl.length()) {
+        baserequestUrl += "/"; 
       }
+
+        path = _path + baserequestUrl;
+        DEBUGF("  path = path + baserequestUrl, path = %s\n", path.c_str()); 
+      
     if (path.endsWith("/")) {
         DEBUGF("  3 path ends with / : path = index.htm \n");
       path += "index.htm";
