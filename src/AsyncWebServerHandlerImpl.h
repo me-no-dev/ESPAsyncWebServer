@@ -22,6 +22,16 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header)
       : _fs(fs), _uri(uri), _path(path), _cache_header(cache_header){
       _isFile = _fs.exists(path);
+      if (_uri != "/" && _uri.endsWith("/")) {
+        _uri = _uri.substring(0, _uri.length() - 1); 
+        //os_printf("[AsyncStaticWebHandler] _uri / removed"); 
+      }
+      if (_path != "/" && _path.endsWith("/")) {
+        _path = _path.substring(0, _path.length() - 1); 
+        //os_printf("[AsyncStaticWebHandler] _path / removed"); 
+      }
+
+
     }
     bool canHandle(AsyncWebServerRequest *request);
     void handleRequest(AsyncWebServerRequest *request);
