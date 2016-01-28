@@ -18,15 +18,15 @@
   });
 
 */
-
-#pragma once
+#ifndef ASYNC_JSON_H_
+#define ASYNC_JSON_H_
 #include <ArduinoJson.h> 
 
 /*
  * Json Response
  * */
 
-class ChunkPrint : public Print{
+class ChunkPrint : public Print {
   private:
     uint8_t* _destination;
     size_t _to_skip;
@@ -35,7 +35,7 @@ class ChunkPrint : public Print{
   public:
     ChunkPrint(uint8_t* destination, size_t from, size_t len)
       : _destination(destination), _to_skip(from), _to_write(len), _pos{0} {}
-    virtual ~ChunkPrint(); 
+    virtual ~ChunkPrint(){}
     size_t write(uint8_t c){
       if (_to_skip > 0) {
         _to_skip--;
@@ -75,3 +75,4 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
       return len; 
     }
 };
+#endif
