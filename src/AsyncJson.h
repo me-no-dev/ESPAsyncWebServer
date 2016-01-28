@@ -38,7 +38,7 @@ class ChunkPrint : public Print{
     size_t write(uint8_t c){
       if (_to_skip > 0) {
         _to_skip--;
-        return 0; 
+        return 1; 
       } else if (_to_write > 0) {
         _to_write--;
         _destination[_pos++] = c;
@@ -59,10 +59,10 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
       _contentType = "text/json";
       _root = _jsonBuffer.createObject();
     }
-    ~AsyncJsonResponse() {}
+    virtual ~AsyncJsonResponse() {}
     JsonVariant & getRoot() { return _root; }
     bool _sourceValid() { return _isValid; }
-    bool setLength() { 
+    void setLength() { 
 
       _contentLength = _root.measureLength();
       if (_contentLength) { _isValid = true; }
