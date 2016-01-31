@@ -252,7 +252,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
       char pre[6];
       sprintf(pre, "%x\r\n", readLen);
       size_t preLen = strlen(pre);
-      memmove(buf+preLen, buf, preLen);
+      memmove(buf+preLen, buf, readLen);
       for(size_t i=0; i<preLen; i++)
         buf[i] = pre[i];
       outLen = preLen + readLen;

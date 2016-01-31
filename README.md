@@ -248,7 +248,7 @@ request->send(response);
 ### Chunked Response
 Used when content length is unknown. Works best if the client supports HTTP/1.1
 ```cpp
-AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", [](uint8_t buffer, size_t maxLen) -> size_t {
+AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", [](uint8_t *buffer, size_t maxLen) -> size_t {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
   //You will be asked for more data until 0 is returned
   //Keep in mind that you can not delay or yield waiting for more data!
