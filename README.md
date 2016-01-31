@@ -108,15 +108,15 @@ for(int i=0;i<params;i++){
 }
 
 //Check if GET parameter exists
-bool exists = hasParam("download");
+bool exists = request->hasParam("download");
 AsyncWebParameter* p = request->getParam("download");
 
 //Check if POST (but not File) parameter exists
-bool exists = hasParam("download", true);
+bool exists = request->hasParam("download", true);
 AsyncWebParameter* p = request->getParam("download", true);
 
 //Check if FILE was uploaded
-bool exists = hasParam("download", true, true);
+bool exists = request->hasParam("download", true, true);
 AsyncWebParameter* p = request->getParam("download", true, true);
 ```
 
