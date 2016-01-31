@@ -427,7 +427,6 @@ size_t AsyncResponseStream::write(const uint8_t *data, size_t len){
     return 0;
   if(len > _content->available())
     len = _content->available();
-  while(_content->room() < len) delay(0);
   return _content->write((const char*)data, len);
 }
 
