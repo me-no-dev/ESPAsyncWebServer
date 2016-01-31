@@ -279,6 +279,62 @@ response->setLength();
 request->send(response);
 ```
 
+## Setting up the server
+```cpp
+#include "ESPAsyncTCP.h"
+#include "ESPAsyncWebServer.h"
+AsyncWebServer server(80);
+const char* ssid = "your-ssid";
+const char* password = "your-pass";
+const char* http_username = "admin";
+const char* http_password = "admin";
 
+
+void setup(){
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    Serial.printf("WiFi Failed!\n");
+    return;
+  }
+  
+  // respond to GET requests on URL /heap
+  server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/plain", String(ESP.getFreeHeap()));
+  });
+  
+  // upload a file to /upload
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
+    request->send(200);
+  }, handleUpload);
+  
+  // send a file when /index is requested
+  server.on("/index", HTTP_ANY, [](AsyncWebServerRequest *request){
+    request->send(SPIFFS, "/index.htm");
+  });
+  
+  // HTTP basic authentication
+  server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
+    if(!request->authenticate(http_username, http_password))
+        return request->requestAuthentication();
+    request->send(200, "text/plain", "Login Success!");
+  });
+  
+  // attach filesystem root at URL /fs 
+  server.serveStatic("/fs", SPIFFS, "/");
+  
+  // Catch-All Handlers
+  // Any request that can not find a Handler that canHandle it
+  // ends in the callbacks below.
+  server.onNotFound(onRequest);
+  server.onFileUpload(onUpload);
+  server.onRequestBody(onBody);
+  
+  server.begin();
+}
+
+void loop(){}
+```
 
 
