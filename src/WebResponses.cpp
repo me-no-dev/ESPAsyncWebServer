@@ -289,7 +289,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     if(!_sendContentLength || _ackedLength >= (_headLength+_contentLength)){
       _state = RESPONSE_END;
       if(!_chunked && !_sendContentLength)
-        request->client()->close();
+        request->client()->close(true);
     }
   }
   return 0;
@@ -423,10 +423,13 @@ size_t AsyncResponseStream::_fillBuffer(uint8_t *buf, size_t maxLen){
 }
 
 size_t AsyncResponseStream::write(const uint8_t *data, size_t len){
-  if(_finished() || (_content->room() == 0 && ETS_INTR_WITHINISR()))
+  if(_finished())
     return 0;
-  if(len > _content->available())
-    len = _content->available();
+
+  if(len > _content->room()){
+    size_t needed = len - _content->room();
+    _content->resizeAdd(needed);
+  }
   return _content->write((const char*)data, len);
 }
 
