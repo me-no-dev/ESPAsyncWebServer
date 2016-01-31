@@ -25,36 +25,36 @@ To use this library you need to have the latest git versions of either ESP8266 o
 
 ### The Async Web server
 - Listens for connections
-- Wraps the new clients into Request
+- Wraps the new clients into ```Request```
 - Keeps track of clients and cleans memory
-- Manages Handlers and attaches them to Requests
+- Manages ```Handlers``` and attaches them to Requests
 
 ### Request Life Cycle
 - TCP connection is received by the server
-- The connection is wrapped inside AsyncRequest object
+- The connection is wrapped inside ```Request``` object
 - When the request head is received (type, url, get params, http version and host),
-  the server goes through all attached Handlers(in the order they are attached) trying to find one
-  that canHandle the given request. If none are found, the default(catch-all) handler is attached.
-- The rest of the request is received, calling the handleUpload or handleBody methods of the Handler if they are needed (POST+File/Body)
-- When the whole request is parsed, the result is given to the handleRequest method of the Handler and is ready to be responded to
-- In the handleRequest method, to the Request is attached a Response object (see below) that will serve the response data back to the client
-- When the response is sent, the client is closed and freed from the memory together with the Response
+  the server goes through all attached ```Handlers```(in the order they are attached) trying to find one
+  that ```canHandle``` the given request. If none are found, the default(catch-all) handler is attached.
+- The rest of the request is received, calling the ```handleUpload``` or ```handleBody``` methods of the ```Handler``` if they are needed (POST+File/Body)
+- When the whole request is parsed, the result is given to the ```handleRequest``` method of the ```Handler``` and is ready to be responded to
+- In the ```handleRequest``` method, to the ```Request``` is attached a ```Response``` object (see below) that will serve the response data back to the client
+- When the ```Response``` is sent, the client is closed and freed from the memory
 
 ### Handlers and how do they work
-- The Handlers are used for executing specific actions to particular requests
-- One Handler instance can be attached to any request and lives together with the server
-- The canHandle method is used for filtering the requests that can be handled
-  and declaring any interesting headers that the Request should collect 
+- The ```Handlers``` are used for executing specific actions to particular requests
+- One ```Handler``` instance can be attached to any request and lives together with the server
+- The ```canHandle``` method is used for filtering the requests that can be handled
+  and declaring any interesting headers that the ```Request``` should collect 
 - Decision can be based on request method, request url, http version, request host/port/target host and GET parameters
-- Once a Handler is attached to given Request (canHandle returned true)
-  that handler takes care to receive any file/data upload and attach a Response
-  once the request have been fully parsed
-- Handler's canHandle is called in the order they are attached to the server.
-  If a handler attached earlier returns true on canHandle, then this Hander's canHandle will never be called
+- Once a ```Handler``` is attached to given ```Request``` (```canHandle``` returned true)
+  that ```Handler``` takes care to receive any file/data upload and attach a ```Response```
+  once the ```Request``` has been fully parsed
+- ```Handler's``` ```canHandle``` is called in the order they are attached to the server.
+  If a ```Handler``` attached earlier returns ```true``` on ```canHandle```, then this ```Hander's``` ```canHandle``` will never be called
 
 ### Responses and how do they work
-- The Response objects are used to send the response data back to the client
-- The Response object lives with the Request and is freed on end or disconnect
+- The ```Response``` objects are used to send the response data back to the client
+- The ```Response``` object lives with the ```Request``` and is freed on end or disconnect
 - Different techniques are used depending on the response type to send the data in packets
   returning back almost immediately and sending the next packet when this one is received.
   Any time in between is spent to run the user loop and handle other network packets
@@ -278,6 +278,30 @@ root["ssid"] = WiFi.SSID();
 response->setLength();
 request->send(response);
 ```
+
+## Bad Responses
+Some responses that are implemented but you should not use as they do not conform to HTTP
+The following two examples will lead to unclean close of the connection and more time wasted
+than providing the length of the content
+
+### Respond with content using a callback without content length
+```cpp
+//This is used as fallback for chunked responses to HTTP/1.0 Clients
+request->send("text/plain", 0, [](uint8_t buffer, size_t maxLen) -> size_t {
+  //Write up to "maxLen" bytes into "buffer" and return the amount written.
+  //You will be asked for more data until 0 is returned
+  //Keep in mind that you can not delay or yield waiting for more data!
+  return mySource.read(buffer, maxLen);
+});
+```
+
+### Print to response without content length
+```cpp
+AsyncResponseStream *response = request->beginResponseStream("text/plain", 0);
+response->print("Hello World!");
+request->send(response);
+```
+
 
 ## Setting up the server
 ```cpp
