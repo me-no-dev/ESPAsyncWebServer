@@ -23,17 +23,17 @@ script:
   - git clone https://github.com/esp8266/Arduino.git esp8266
   - cd esp8266/tools
   - python get.py
-  - arduino --board esp8266com:esp8266:generic --save-prefs
-  - arduino --get-pref sketchbook.path
-  - source $TRAVIS_BUILD_DIR/travis/common.sh
-  - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp8266
   - cd $HOME/arduino_ide/hardware
   - mkdir espressif
   - cd espressif
-  - git clone https://github.com/me-no-deb/ESP31B.git esp31b
+  - git clone https://github.com/me-no-dev/ESP31B.git esp31b
   - cd esp31b/tools
   - wget http://static.ficeto.com/xtensa-esp108-elf-linux32.tar.gz
   - tar zxf xtensa-esp108-elf-linux32.tar.gz
+  - source $TRAVIS_BUILD_DIR/travis/common.sh
+  - arduino --board esp8266com:esp8266:generic --save-prefs
+  - arduino --get-pref sketchbook.path
+  - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp8266
   - arduino --board espressif:esp31b:esp31b --save-prefs
   - arduino --get-pref sketchbook.path
   - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp31b
