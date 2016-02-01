@@ -4,27 +4,39 @@ os:
   - linux
 
 script:
+  - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
+  - sleep 3
+  - export DISPLAY=:1.0
+  
   - wget http://downloads.arduino.cc/arduino-1.6.5-linux64.tar.xz
   - tar xf arduino-1.6.5-linux64.tar.xz
   - mv arduino-1.6.5 $HOME/arduino_ide
+  - export PATH="$HOME/arduino_ide:$PATH"
+  - which arduino
+  - mkdir -p $HOME/Arduino/libraries
+  - cp -r $TRAVIS_BUILD_DIR $HOME/Arduino/libraries/ESPAsyncWebServer
+  - git clone https://github.com/bblanchon/ArduinoJson $HOME/Arduino/libraries/ArduinoJson
+  - git clone https://github.com/me-no-dev/ESPAsyncTCP $HOME/Arduino/libraries/ESPAsyncTCP
   - cd $HOME/arduino_ide/hardware
   - mkdir esp8266com
   - cd esp8266com
   - git clone https://github.com/esp8266/Arduino.git esp8266
   - cd esp8266/tools
   - python get.py
-  - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
-  - sleep 3
-  - export DISPLAY=:1.0
-  - export PATH="$HOME/arduino_ide:$PATH"
-  - which arduino
-  - cd $TRAVIS_BUILD_DIR
-  - source travis/common.sh
   - arduino --board esp8266com:esp8266:generic --save-prefs
   - arduino --get-pref sketchbook.path
-  - install_libraries
-  - cp -r $TRAVIS_BUILD_DIR $HOME/Arduino/libraries/ESPAsyncWebServer
+  - source $TRAVIS_BUILD_DIR/travis/common.sh
   - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp8266
+  - cd $HOME/arduino_ide/hardware
+  - mkdir espressif
+  - cd espressif
+  - git clone https://github.com/me-no-deb/ESP31B.git esp31b
+  - cd esp31b/tools
+  - wget http://static.ficeto.com/xtensa-esp108-elf-linux32.tar.gz
+  - tar zxf xtensa-esp108-elf-linux32.tar.gz
+  - arduino --board espressif:esp31b:esp31b --save-prefs
+  - arduino --get-pref sketchbook.path
+  - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp31b
 
 notifications:
   email:

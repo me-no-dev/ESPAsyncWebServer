@@ -21,15 +21,3 @@ function build_sketches()
         fi
     done
 }
-
-function install_libraries()
-{
-    mkdir -p $HOME/Arduino/libraries
-    pushd $HOME/Arduino/libraries
-    
-    # install ArduinoJson library
-    git clone https://github.com/bblanchon/ArduinoJson
-    git clone https://github.com/me-no-dev/ESPAsyncTCP
-    
-    popd
-}
