@@ -153,7 +153,7 @@ void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_
 }
 ```
 
-## Basic Responses
+## Responses
 
 ### Basic response with HTTP Code
 ```cpp
@@ -246,8 +246,6 @@ response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
-## Advanced Responses
-
 ### Chunked Response
 Used when content length is unknown. Works best if the client supports HTTP/1.1
 ```cpp
@@ -257,12 +255,14 @@ AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", [
   //Keep in mind that you can not delay or yield waiting for more data!
   return mySource.read(buffer, maxLen);
 });
+response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
 ### Print to response
 ```cpp
 AsyncResponseStream *response = request->beginResponseStream("text/html");
+response->addHeader("Server","ESP Async Web Server");
 response->printf("<!DOCTYPE html><html><head><title>Webpage at %s</title></head><body>", request->url().c_str());
 
 response->print("<h2>Hello ");
@@ -271,7 +271,7 @@ response->print("</h2>");
 
 response->print("<h3>General</h3>");
 response->print("<ul>");
-response->printf("<li>Version: %s</li>", request->version()?"HTTP/1.0":"HTTP/1.1");
+response->printf("<li>Version: HTTP/1.%u</li>", request->version());
 response->printf("<li>Method: %s</li>", request->methodToString());
 response->printf("<li>URL: %s</li>", request->url().c_str());
 response->printf("<li>Host: %s</li>", request->host().c_str());
@@ -309,17 +309,38 @@ response->print("</body></html>");
 request->send(response);
 ```
 
-### ArduinoJson Response
+### ArduinoJson Basic Response
+This way of sending Json is great for when the result is below 4KB 
+```cpp
+#include "AsyncJson.h"
+#include "ArduinoJson.h"
+
+
+AsyncResponseStream *response = request->beginResponseStream("text/json");
+DynamicJsonBuffer jsonBuffer;
+JsonObject &root = jsonBuffer.createObject();
+root["heap"] = ESP.getFreeHeap();
+root["ssid"] = WiFi.SSID();
+root.printTo(*response);
+request->send(response);
+```
+
+### ArduinoJson Advanced Response
+This response can handle really large Json objects (tested to 40KB)
+There isn't any noticeable speed decrease for small results with the method above
+Since ArduinoJson does not allow reading parts of the string, the whole Json has to
+be passed every time a chunks needs to be sent, which shows speed decrease proportional
+to the resulting json packets
 ```cpp
 #include "AsyncJson.h"
 #include "ArduinoJson.h"
 
 
 AsyncJsonResponse * response = new AsyncJsonResponse();
+response->addHeader("Server","ESP Async Web Server");
 JsonObject& root = response->getRoot();
 root["heap"] = ESP.getFreeHeap();
 root["ssid"] = WiFi.SSID();
-
 response->setLength();
 request->send(response);
 ```
