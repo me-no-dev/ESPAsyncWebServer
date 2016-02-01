@@ -1,10 +1,12 @@
 # ESPAsyncWebServer
 
-[![Join the chat at https://gitter.im/me-no-dev/ESPAsyncWebServer](https://badges.gitter.im/me-no-dev/ESPAsyncWebServer.svg)](https://gitter.im/me-no-dev/ESPAsyncWebServer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-Async Web Server for ESP8266 Arduino
+For help and support [![Join the chat at https://gitter.im/me-no-dev/ESPAsyncWebServer](https://badges.gitter.im/me-no-dev/ESPAsyncWebServer.svg)](https://gitter.im/me-no-dev/ESPAsyncWebServer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+Async Web Server for ESP8266 and ESP31B Arduino
+
 Requires [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP) to work
 
-To use this library you need to have the latest git versions of either ESP8266 or ESP31B Arduino Core
+To use this library you need to have the latest git versions of either [ESP8266](https://github.com/esp8266/Arduino) or [ESP31B](https://github.com/me-no-dev/ESP31B) Arduino Core
 
 ## Why should you care
 - Using asynchronous network means that you can handle more than one connection at the same time
@@ -14,6 +16,7 @@ To use this library you need to have the latest git versions of either ESP8266 o
 - Speed is OMG
 - Easy to use API, HTTP Basic Authentication, ChunkedResponse
 - Easily extendible to handle any type of content
+- Supports Continue 100
 
 ## Important things to remember
 - This is fully asynchronous server and as such does not run on the loop thread.
@@ -220,7 +223,7 @@ request->send(response);
 ### Respond with content using a callback
 ```cpp
 //send 128 bytes as plain text
-request->send("text/plain", 128, [](uint8_t buffer, size_t maxLen) -> size_t {
+request->send("text/plain", 128, [](uint8_t *buffer, size_t maxLen) -> size_t {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
   //You will not be asked for more bytes once the content length has been reached.
   //Keep in mind that you can not delay or yield waiting for more data!
@@ -232,7 +235,7 @@ request->send("text/plain", 128, [](uint8_t buffer, size_t maxLen) -> size_t {
 ### Respond with content using a callback and extra headers
 ```cpp
 //send 128 bytes as plain text
-AsyncWebServerResponse *response = request->beginResponse("text/plain", 128, [](uint8_t buffer, size_t maxLen) -> size_t {
+AsyncWebServerResponse *response = request->beginResponse("text/plain", 128, [](uint8_t *buffer, size_t maxLen) -> size_t {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
   //You will not be asked for more bytes once the content length has been reached.
   //Keep in mind that you can not delay or yield waiting for more data!
@@ -280,14 +283,14 @@ request->send(response);
 ```
 
 ## Bad Responses
-Some responses that are implemented but you should not use as they do not conform to HTTP
+Some responses that are implemented but you should not use as they do not conform to HTTP.
 The following two examples will lead to unclean close of the connection and more time wasted
 than providing the length of the content
 
 ### Respond with content using a callback without content length
 ```cpp
 //This is used as fallback for chunked responses to HTTP/1.0 Clients
-request->send("text/plain", 0, [](uint8_t buffer, size_t maxLen) -> size_t {
+request->send("text/plain", 0, [](uint8_t *buffer, size_t maxLen) -> size_t {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
   //You will be asked for more data until 0 is returned
   //Keep in mind that you can not delay or yield waiting for more data!
