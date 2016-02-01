@@ -1,3 +1,7 @@
+#ifdef ESP8266
+void begin(){}
+void loop(){}
+#else
 #include <ESP31BWiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -196,4 +200,4 @@ void setup(){
 }
 
 void loop(){}
-
+#endif

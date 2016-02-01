@@ -1,3 +1,7 @@
+#ifdef ESP31B
+void begin(){}
+void loop(){}
+#else
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
@@ -220,4 +224,4 @@ void setup(){
 void loop(){
   ArduinoOTA.handle();
 }
-
+#endif
