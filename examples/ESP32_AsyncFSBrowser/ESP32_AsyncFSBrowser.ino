@@ -1,4 +1,7 @@
 #ifdef ESP8266
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 void begin(){}
 void loop(){}
 #else

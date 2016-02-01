@@ -1,4 +1,7 @@
 #ifdef ESP31B
+#include <ESP31BWiFi.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 void begin(){}
 void loop(){}
 #else

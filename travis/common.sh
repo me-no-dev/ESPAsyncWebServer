@@ -6,11 +6,6 @@ function build_sketches()
     local srcpath=$2
     local sketches=$(find $srcpath -name *.ino)
     for sketch in $sketches; do
-        local sketchdir=$(dirname $sketch)
-        if [[ -f "$sketchdir/.test.skip" ]]; then
-            echo -e "\n\n ------------ Skipping $sketch ------------ \n\n";
-            continue
-        fi
         echo -e "\n\n ------------ Building $sketch ------------ \n\n";
         $arduino --verify $sketch;
         local result=$?
