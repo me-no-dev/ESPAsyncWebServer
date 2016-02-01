@@ -2,7 +2,7 @@
 #include <ESP31BWiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-void begin(){}
+void setup(){}
 void loop(){}
 #else
 #include <ESP8266WiFi.h>
