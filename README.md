@@ -262,8 +262,50 @@ request->send(response);
 
 ### Print to response
 ```cpp
-AsyncResponseStream *response = request->beginResponseStream("text/plain", 12);
-response->print("Hello World!");
+AsyncResponseStream *response = request->beginResponseStream("text/html");
+response->printf("<!DOCTYPE html><html><head><title>Webpage at %s</title></head><body>", request->url().c_str());
+
+response->print("<h2>Hello ");
+response->print(request->client()->remoteIP());
+response->print("</h2>");
+
+response->print("<h3>General</h3>");
+response->print("<ul>");
+response->printf("<li>Version: %s</li>", request->version()?"HTTP/1.0":"HTTP/1.1");
+response->printf("<li>Method: %s</li>", request->methodToString());
+response->printf("<li>URL: %s</li>", request->url().c_str());
+response->printf("<li>Host: %s</li>", request->host().c_str());
+response->printf("<li>ContentType: %s</li>", request->contentType().c_str());
+response->printf("<li>ContentLength: %u</li>", request->contentLength());
+response->printf("<li>Multipart: %s</li>", request->multipart()?"true":"false");
+response->print("</ul>");
+
+response->print("<h3>Headers</h3>");
+response->print("<ul>");
+int headers = request->headers();
+for(int i=0;i<headers;i++){
+  AsyncWebHeader* h = request->getHeader(i);
+  response->printf("<li>%s: %s</li>", h->name().c_str(), h->value().c_str());
+}
+response->print("</ul>");
+
+response->print("<h3>Parameters</h3>");
+response->print("<ul>");
+int params = request->params();
+for(int i=0;i<params;i++){
+  AsyncWebParameter* p = request->getParam(i);
+  if(p->isFile()){
+    response->printf("<li>FILE[%s]: %s, size: %u</li>", p->name().c_str(), p->value().c_str(), p->size());
+  } else if(p->isPost()){
+    response->printf("<li>POST[%s]: %s</li>", p->name().c_str(), p->value().c_str());
+  } else {
+    response->printf("<li>GET[%s]: %s</li>", p->name().c_str(), p->value().c_str());
+  }
+}
+response->print("</ul>");
+
+response->print("</body></html>");
+//send the response last
 request->send(response);
 ```
 
@@ -296,13 +338,6 @@ request->send("text/plain", 0, [](uint8_t *buffer, size_t maxLen) -> size_t {
   //Keep in mind that you can not delay or yield waiting for more data!
   return mySource.read(buffer, maxLen);
 });
-```
-
-### Print to response without content length
-```cpp
-AsyncResponseStream *response = request->beginResponseStream("text/plain", 0);
-response->print("Hello World!");
-request->send(response);
 ```
 
 

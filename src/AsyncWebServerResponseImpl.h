@@ -72,7 +72,7 @@ class AsyncResponseStream: public AsyncAbstractResponse, public Print {
   private:
     cbuf *_content;
   public:
-    AsyncResponseStream(String contentType, size_t len, size_t bufferSize);
+    AsyncResponseStream(String contentType, size_t bufferSize);
     ~AsyncResponseStream();
     bool _sourceValid(){ return (_state < RESPONSE_END); }
     size_t _fillBuffer(uint8_t *buf, size_t maxLen);

@@ -121,6 +121,7 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version){
   return out;
 }
 
+bool AsyncWebServerResponse::_started(){ return _state > RESPONSE_SETUP; }
 bool AsyncWebServerResponse::_finished(){ return _state > RESPONSE_WAIT_ACK; }
 bool AsyncWebServerResponse::_failed(){ return _state == RESPONSE_FAILED; }
 void AsyncWebServerResponse::_respond(AsyncWebServerRequest *request){ _state = RESPONSE_END; request->client()->close(); }
@@ -405,11 +406,9 @@ size_t AsyncChunkedResponse::_fillBuffer(uint8_t *data, size_t len){
  * Response Stream (You can print/write/printf to it, up to the contentLen bytes)
  * */
 
-AsyncResponseStream::AsyncResponseStream(String contentType, size_t len, size_t bufferSize){
+AsyncResponseStream::AsyncResponseStream(String contentType, size_t bufferSize){
   _code = 200;
-  _contentLength = len;
-  if(!len)
-    _sendContentLength = false;
+  _contentLength = 0;
   _contentType = contentType;
   _content = new cbuf(bufferSize);
 }
@@ -423,14 +422,16 @@ size_t AsyncResponseStream::_fillBuffer(uint8_t *buf, size_t maxLen){
 }
 
 size_t AsyncResponseStream::write(const uint8_t *data, size_t len){
-  if(_finished())
+  if(_started())
     return 0;
 
   if(len > _content->room()){
     size_t needed = len - _content->room();
     _content->resizeAdd(needed);
   }
-  return _content->write((const char*)data, len);
+  size_t written = _content->write((const char*)data, len);
+  _contentLength += written;
+  return written;
 }
 
 size_t AsyncResponseStream::write(uint8_t data){

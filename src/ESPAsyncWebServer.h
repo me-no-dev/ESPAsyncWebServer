@@ -153,6 +153,7 @@ class AsyncWebServerRequest {
     String contentType(){ return _contentType; }
     size_t contentLength(){ return _contentLength; }
     bool multipart(){ return _isMultipart; }
+    const char * methodToString();
 
     bool authenticate(const char * username, const char * password);
     bool authenticate(const char * hash);
@@ -173,7 +174,7 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse *beginResponse(Stream &stream, String contentType, size_t len);
     AsyncWebServerResponse *beginResponse(String contentType, size_t len, AwsResponseFiller callback);
     AsyncWebServerResponse *beginChunkedResponse(String contentType, AwsResponseFiller callback);
-    AsyncResponseStream *beginResponseStream(String contentType, size_t len, size_t bufferSize=1460);
+    AsyncResponseStream *beginResponseStream(String contentType, size_t bufferSize=1460);
 
     int headers();                     // get header count
     bool hasHeader(String name);
@@ -243,6 +244,7 @@ class AsyncWebServerResponse {
     virtual void setContentType(String type);
     virtual void addHeader(String name, String value);
     virtual String _assembleHead(uint8_t version);
+    virtual bool _started();
     virtual bool _finished();
     virtual bool _failed();
     virtual void _respond(AsyncWebServerRequest *request);

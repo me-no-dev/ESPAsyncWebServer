@@ -630,8 +630,8 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginChunkedResponse(String cont
   return new AsyncCallbackResponse(contentType, 0, callback);
 }
 
-AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(String contentType, size_t len, size_t bufferSize){
-  return new AsyncResponseStream(contentType, len, bufferSize);
+AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(String contentType, size_t bufferSize){
+  return new AsyncResponseStream(contentType, bufferSize);
 }
 
 void AsyncWebServerRequest::send(int code, String contentType, String content){
@@ -770,3 +770,15 @@ String AsyncWebServerRequest::urlDecode(const String& text){
   return decoded;
 }
 
+
+const char * AsyncWebServerRequest::methodToString(){
+  if(_method == HTTP_ANY) return "ANY";
+  else if(_method == HTTP_GET) return "GET";
+  else if(_method == HTTP_POST) return "POST";
+  else if(_method == HTTP_DELETE) return "DELETE";
+  else if(_method == HTTP_PUT) return "PUT";
+  else if(_method == HTTP_PATCH) return "PATCH";
+  else if(_method == HTTP_HEAD) return "HEAD";
+  else if(_method == HTTP_OPTIONS) return "OPTIONS";
+  return "UNKNOWN";
+}
