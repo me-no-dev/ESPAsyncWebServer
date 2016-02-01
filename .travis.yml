@@ -27,7 +27,7 @@ script:
   - mkdir espressif
   - cd espressif
   - git clone https://github.com/me-no-dev/ESP31B.git ESP31B
-  - cd esp31b/tools
+  - cd ESP31B/tools
   - wget http://static.ficeto.com/xtensa-esp108-elf-linux32.tar.gz
   - tar zxvf xtensa-esp108-elf-linux32.tar.gz
   - mv xtensa-esp108-elf* xtensa-esp108-elf
