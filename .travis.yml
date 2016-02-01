@@ -10,7 +10,7 @@ script:
   - cd $HOME/arduino_ide/hardware
   - mkdir esp8266com
   - cd esp8266com
-  - ln -s $TRAVIS_BUILD_DIR esp8266
+  - git clone https://github.com/esp8266/Arduino.git esp8266
   - cd esp8266/tools
   - python get.py
   - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
@@ -23,7 +23,8 @@ script:
   - arduino --board esp8266com:esp8266:generic --save-prefs
   - arduino --get-pref sketchbook.path
   - install_libraries
-  - build_sketches arduino $TRAVIS_BUILD_DIR
+  - cp -r $TRAVIS_BUILD_DIR $HOME/Arduino/libraries/ESPAsyncWebServer
+  - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer
 
 notifications:
   email:

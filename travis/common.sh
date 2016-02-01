@@ -3,7 +3,7 @@
 function build_sketches()
 {
     local arduino=$1
-    local srcpath=$HOME/Arduino/libraries/ESPAsyncWebServer/examples
+    local srcpath=$2
     local sketches=$(find $srcpath -name *.ino)
     for sketch in $sketches; do
         local sketchdir=$(dirname $sketch)
@@ -29,7 +29,6 @@ function install_libraries()
     # install ArduinoJson library
     git clone https://github.com/bblanchon/ArduinoJson
     git clone https://github.com/me-no-dev/ESPAsyncTCP
-    git clone https://github.com/me-no-dev/ESPAsyncWebServer
     
     popd
 }
