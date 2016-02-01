@@ -1,10 +1,3 @@
-#ifdef ESP31B
-#include <ESP31BWiFi.h>
-#include <ESPAsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-void setup(){}
-void loop(){}
-#else
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
@@ -227,4 +220,3 @@ void setup(){
 void loop(){
   ArduinoOTA.handle();
 }
-#endif

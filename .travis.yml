@@ -24,7 +24,7 @@ script:
   - arduino --get-pref sketchbook.path
   - install_libraries
   - cp -r $TRAVIS_BUILD_DIR $HOME/Arduino/libraries/ESPAsyncWebServer
-  - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer
+  - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp8266
 
 notifications:
   email:
