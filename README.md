@@ -235,7 +235,7 @@ request->send("text/plain", 128, [](uint8_t *buffer, size_t maxLen) -> size_t {
 ### Respond with content using a callback and extra headers
 ```cpp
 //send 128 bytes as plain text
-AsyncWebServerResponse *response = request->beginResponse("text/plain", 128, [](uint8_t *buffer, size_t maxLen) -> size_t {
+AsyncWebServerResponse *response = request->beginResponse("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
   //You will not be asked for more bytes once the content length has been reached.
   //Keep in mind that you can not delay or yield waiting for more data!
@@ -249,7 +249,7 @@ request->send(response);
 ### Chunked Response
 Used when content length is unknown. Works best if the client supports HTTP/1.1
 ```cpp
-AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", [](uint8_t *buffer, size_t maxLen) -> size_t {
+AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
   //You will be asked for more data until 0 is returned
   //Keep in mind that you can not delay or yield waiting for more data!
@@ -307,6 +307,28 @@ response->print("</ul>");
 response->print("</body></html>");
 //send the response last
 request->send(response);
+```
+
+### Send a large webpage from PROGMEM using chunked response
+Example provided by [@nouser2013](https://github.com/nouser2013)
+```cpp
+const char indexhtml[] PROGMEM = "..."; // large char array, tested with 5k
+AsyncWebServerResponse *response = request->beginResponse(
+  String("text/html"),
+  strlen_P(indexhtml),
+  [](uint8_t *buffer, size_t maxLen, size_t alreadySent) -> size_t {
+    if (strlen_P(indexhtml+sentCounter)>maxLen) {
+      // We have more to read than fits in maxLen Buffer
+      memcpy_P((char*)buffer, indexhtml+sentCounter, maxLen);
+      return maxLen;
+    }
+    // Ok, last chunk
+    memcpy_P((char*)buffer, indexhtml+sentCounter, strlen_P(indexhtml+sentCounter));
+    return strlen_P(indexhtml+sentCounter); // Return from here to end of indexhtml
+  }
+);
+response->addHeader("Server", "MyServerString");
+request->send(response);  
 ```
 
 ### ArduinoJson Basic Response
