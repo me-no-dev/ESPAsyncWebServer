@@ -223,8 +223,9 @@ request->send(response);
 ### Respond with content using a callback
 ```cpp
 //send 128 bytes as plain text
-request->send("text/plain", 128, [](uint8_t *buffer, size_t maxLen) -> size_t {
+request->send("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
+  //index equals the amount of bytes that have been already sent
   //You will not be asked for more bytes once the content length has been reached.
   //Keep in mind that you can not delay or yield waiting for more data!
   //Send what you currently have and you will be asked for more again
@@ -377,7 +378,7 @@ than providing the length of the content
 ### Respond with content using a callback without content length
 ```cpp
 //This is used as fallback for chunked responses to HTTP/1.0 Clients
-request->send("text/plain", 0, [](uint8_t *buffer, size_t maxLen) -> size_t {
+request->send("text/plain", 0, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
   //You will be asked for more data until 0 is returned
   //Keep in mind that you can not delay or yield waiting for more data!
