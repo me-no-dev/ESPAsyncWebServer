@@ -7,6 +7,7 @@ script:
   - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
   - sleep 3
   - export DISPLAY=:1.0
+  
   - wget http://downloads.arduino.cc/arduino-1.6.5-linux64.tar.xz
   - tar xf arduino-1.6.5-linux64.tar.xz
   - mv arduino-1.6.5 $HOME/arduino_ide
@@ -27,7 +28,7 @@ script:
   - cd espressif
   - git clone https://github.com/me-no-dev/ESP31B.git ESP31B
   - cd ESP31B/tools
-  - wget https://github.com/me-no-dev/ESP31B/releases/download/0.0.1/xtensa-esp108-elf-linux64.tar.gz
+  - wget http://static.ficeto.com/xtensa-esp108-elf-linux64.tar.gz
   - tar zxvf xtensa-esp108-elf-linux64.tar.gz
   - chmod +x xtensa-esp108-elf/bin/*
   - chmod +x xtensa-esp108-elf/xtensa-esp108-elf/bin/*

@@ -1,25 +1,5 @@
-/*
-  Asynchronous WebServer library for Espressif MCUs
-
-  Copyright (c) 2016 Hristo Gochkov. All rights reserved.
-  This file is part of the esp8266 core for Arduino environment.
-
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
-
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
-#include <WebResponseImpl.h>
 #include "ESPAsyncWebServer.h"
+#include "AsyncWebServerResponseImpl.h"
 #include "cbuf.h"
 
 /*
@@ -285,10 +265,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
 
     if(outLen)
       outLen = request->client()->write((const char*)buf, outLen);
-    if(_chunked)
-      _sentLength += readLen;
-    else
-      _sentLength += outLen;
+    _sentLength += outLen;
     free(buf);
 
     if((_chunked && readLen == 0) || (!_sendContentLength && outLen == 0) || _sentLength == _contentLength){
@@ -313,7 +290,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     if(!_sendContentLength || _ackedLength >= (_headLength+_contentLength)){
       _state = RESPONSE_END;
       if(!_chunked && !_sendContentLength)
-        request->client()->close(false);
+        request->client()->close(true);
     }
   }
   return 0;
@@ -404,7 +381,7 @@ AsyncCallbackResponse::AsyncCallbackResponse(String contentType, size_t len, Aws
 }
 
 size_t AsyncCallbackResponse::_fillBuffer(uint8_t *data, size_t len){
-  return _content(data, len, _sentLength);
+  return _content(data, len);
 }
 
 /*
@@ -421,7 +398,7 @@ AsyncChunkedResponse::AsyncChunkedResponse(String contentType, AwsResponseFiller
 }
 
 size_t AsyncChunkedResponse::_fillBuffer(uint8_t *data, size_t len){
-  return _content(data, len, _sentLength);
+  return _content(data, len);
 }
 
 

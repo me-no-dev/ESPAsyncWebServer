@@ -1,42 +1,27 @@
 /*
-  Asynchronous WebServer library for Espressif MCUs
-
-  Copyright (c) 2016 Hristo Gochkov. All rights reserved.
-  This file is part of the esp8266 core for Arduino environment.
-
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2.1 of the License, or (at your option) any later version.
-
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ * AsyncWebServerHandlerImpl.h
+ *
+ *  Created on: 19.12.2015 г.
+ *      Author: ficeto
+ */
 
 #ifndef ASYNCWEBSERVERHANDLERIMPL_H_
 #define ASYNCWEBSERVERHANDLERIMPL_H_
 
 
 #include "stddef.h"
-#include "ESPAsyncWebServer.h"
 
 class AsyncStaticWebHandler: public AsyncWebHandler {
   private:
     String _getPath(AsyncWebServerRequest *request); 
   protected:
-    fs::FS _fs;
+    FS _fs;
     String _uri;
     String _path;
     String _cache_header;
     bool _isFile;
   public:
-    AsyncStaticWebHandler(fs::FS& fs, const char* path, const char* uri, const char* cache_header)
+    AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header)
       : _fs(fs), _uri(uri), _path(path), _cache_header(cache_header){
 
       _isFile = _fs.exists(path) || _fs.exists((String(path)+".gz").c_str());
