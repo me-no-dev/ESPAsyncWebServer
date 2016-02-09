@@ -325,8 +325,8 @@ AsyncWebServerResponse *response = request->beginResponse(
       return maxLen;
     }
     // Ok, last chunk
-    memcpy_P((char*)buffer, indexhtml+sentCounter, strlen_P(indexhtml+sentCounter));
-    return strlen_P(indexhtml+sentCounter); // Return from here to end of indexhtml
+    memcpy_P((char*)buffer, indexhtml+alreadySent, strlen_P(indexhtml+alreadySent));
+    return strlen_P(indexhtml+alreadySent); // Return from here to end of indexhtml
   }
 );
 response->addHeader("Server", "MyServerString");
