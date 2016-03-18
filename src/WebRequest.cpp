@@ -673,7 +673,7 @@ void AsyncWebServerRequest::sendChunked(String contentType, AwsResponseFiller ca
 bool AsyncWebServerRequest::authenticate(const char * username, const char * password){
   if(_authorization.length()){
       char toencodeLen = os_strlen(username)+os_strlen(password)+1;
-      char *toencode = new char[toencodeLen];
+      char *toencode = new char[toencodeLen+1];
       if(toencode == NULL){
         return false;
       }
