@@ -146,7 +146,7 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
 
 void AsyncWebServerRequest::_onPoll(){
   //os_printf("p\n");
-  if(_response != NULL && !_response->_finished() && _client->canSend()){
+  if(_response != NULL && _client != NULL && _client->canSend() && !_response->_finished()){
     _response->_ack(this, 0, 0);
   }
 }
@@ -165,8 +165,7 @@ void AsyncWebServerRequest::_onAck(size_t len, uint32_t time){
 }
 
 void AsyncWebServerRequest::_onError(int8_t error){
-  if(error != -11)
-    os_printf("ERROR[%d] %s, state: %s\n", error, _client->errorToString(error), _client->stateToString());
+
 }
 
 void AsyncWebServerRequest::_onTimeout(uint32_t time){
