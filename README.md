@@ -371,11 +371,11 @@ request->send(response);
 ```
 
 ## Bad Responses
-Some responses that are implemented but you should not use as they do not conform to HTTP.
-The following two examples will lead to unclean close of the connection and more time wasted
+Some responses are implemented, but you should not use them, because they do not conform to HTTP.
+The following example will lead to unclean close of the connection and more time wasted
 than providing the length of the content
 
-### Respond with content using a callback without content length
+### Respond with content using a callback without content length to HTTP/1.0 clients
 ```cpp
 //This is used as fallback for chunked responses to HTTP/1.0 Clients
 request->send("text/plain", 0, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
