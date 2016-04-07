@@ -267,6 +267,10 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
       outLen = (remaining > space)?space:remaining;
     }
     uint8_t *buf = (uint8_t *)malloc(outLen);
+    if (!buf) {
+      // os_printf("_ack malloc %d failed\n", outLen);
+      return 0;
+    }
 
     if(_chunked){
       readLen = _fillBuffer(buf, outLen - 8);
