@@ -267,6 +267,7 @@ class AsyncWebServerResponse {
     virtual bool _started();
     virtual bool _finished();
     virtual bool _failed();
+    virtual bool _sourceValid();
     virtual void _respond(AsyncWebServerRequest *request);
     virtual size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
 };

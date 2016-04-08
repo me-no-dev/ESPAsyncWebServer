@@ -144,6 +144,7 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version){
 bool AsyncWebServerResponse::_started(){ return _state > RESPONSE_SETUP; }
 bool AsyncWebServerResponse::_finished(){ return _state > RESPONSE_WAIT_ACK; }
 bool AsyncWebServerResponse::_failed(){ return _state == RESPONSE_FAILED; }
+bool AsyncWebServerResponse::_sourceValid(){ return false; }
 void AsyncWebServerResponse::_respond(AsyncWebServerRequest *request){ _state = RESPONSE_END; request->client()->close(); }
 size_t AsyncWebServerResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time){ return 0; }
 
@@ -227,11 +228,6 @@ size_t AsyncBasicResponse::_ack(AsyncWebServerRequest *request, size_t len, uint
  * */
 
 void AsyncAbstractResponse::_respond(AsyncWebServerRequest *request){
-  if(!_sourceValid()){
-    _state = RESPONSE_FAILED;
-    request->send(500);
-    return;
-  }
   _head = _assembleHead(request->version());
   _state = RESPONSE_HEADERS;
   _ack(request, 0, 0);

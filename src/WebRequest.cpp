@@ -181,6 +181,8 @@ void AsyncWebServerRequest::_onDisconnect(){
 }
 
 void AsyncWebServerRequest::_addParam(AsyncWebParameter *p){
+  if(p == NULL)
+    return;
   if(_params == NULL)
     _params = p;
   else {
@@ -252,6 +254,8 @@ bool AsyncWebServerRequest::_parseReqHead(){
 bool AsyncWebServerRequest::_parseReqHeader(){
   if(_temp.indexOf(':')){
     AsyncWebHeader *h = new AsyncWebHeader(_temp);
+    if(h == NULL)
+      return false;
     if(h->name() == "Host"){
       _host = h->value();
       delete h;
@@ -610,13 +614,18 @@ void AsyncWebServerRequest::addInterestingHeader(String name){
   if(!_interestingHeaders->contains(name)) _interestingHeaders->add(name);
 }
 
-
 void AsyncWebServerRequest::send(AsyncWebServerResponse *response){
   _response = response;
-  _response->_respond(this);
+  if(_response == NULL){
+    _client->close(true);
+    _onDisconnect();
+    return;
+  }
+  if(!_response->_sourceValid())
+    send(500);
+  else
+    _response->_respond(this);
 }
-
-
 
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(int code, String contentType, String content){
   return new AsyncBasicResponse(code, contentType, content);

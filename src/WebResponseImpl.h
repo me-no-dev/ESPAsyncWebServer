@@ -28,6 +28,7 @@ class AsyncBasicResponse: public AsyncWebServerResponse {
     AsyncBasicResponse(int code, String contentType=String(), String content=String());
     void _respond(AsyncWebServerRequest *request);
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
+    bool _sourceValid(){ return true; }
 };
 
 class AsyncAbstractResponse: public AsyncWebServerResponse {
@@ -36,8 +37,8 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
   public:
     void _respond(AsyncWebServerRequest *request);
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
+    bool _sourceValid(){ return false; }
     virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen){ return 0; }
-    virtual bool _sourceValid(){ return false; }
 };
 
 class AsyncFileResponse: public AsyncAbstractResponse {

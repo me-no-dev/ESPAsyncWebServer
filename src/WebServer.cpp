@@ -22,9 +22,19 @@
 #include "WebHandlerImpl.h"
 
 
-AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _handlers(0), _catchAllHandler(new AsyncCallbackWebHandler()){
+AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _handlers(0){
+  _catchAllHandler = new AsyncCallbackWebHandler();
+  if(_catchAllHandler == NULL)
+    return;
   _server.onClient([](void *s, AsyncClient* c){
-    new AsyncWebServerRequest((AsyncWebServer*)s, c);
+    if(c == NULL)
+      return;
+    AsyncWebServerRequest *r = new AsyncWebServerRequest((AsyncWebServer*)s, c);
+    if(r == NULL){
+      c->close(true);
+      c->free();
+      delete c;
+    }
   }, this);
 }
 
