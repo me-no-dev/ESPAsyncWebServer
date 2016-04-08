@@ -234,18 +234,7 @@ void AsyncAbstractResponse::_respond(AsyncWebServerRequest *request){
   }
   _head = _assembleHead(request->version());
   _state = RESPONSE_HEADERS;
-  size_t outLen = _head.length();
-  size_t space = request->client()->space();
-  if(space >= outLen){
-    request->client()->write(_head.c_str(), outLen);
-    _head = String();
-    _state = RESPONSE_CONTENT;
-  } else {
-    String out = _head.substring(0, space);
-    _head = _head.substring(space);
-    request->client()->write(out.c_str(), out.length());
-    out = String();
-  }
+  _ack(request, 0, 0);
 }
 
 size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time){
@@ -256,43 +245,64 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
   }
   _ackedLength += len;
   size_t space = request->client()->space();
+
+  size_t headLen = _head.length();
+  if(_state == RESPONSE_HEADERS){
+    if(space >= headLen){
+      _state = RESPONSE_CONTENT;
+      space -= headLen;
+    } else {
+      String out = _head.substring(0, space);
+      _head = _head.substring(space);
+      request->client()->write(out.c_str(), out.length());
+      return out.length();
+    }
+  }
+
   if(_state == RESPONSE_CONTENT){
     size_t outLen;
-    size_t readLen = 0;
-
     if(_chunked || !_sendContentLength){
       outLen = space;
     } else {
-      size_t remaining = _contentLength - _sentLength;
-      outLen = (remaining > space)?space:remaining;
+      outLen = ((_contentLength - _sentLength) > space)?space:(_contentLength - _sentLength);
     }
-    uint8_t *buf = (uint8_t *)malloc(outLen);
+
+    uint8_t *buf = (uint8_t *)malloc(outLen+headLen);
     if (!buf) {
-      // os_printf("_ack malloc %d failed\n", outLen);
+      // os_printf("_ack malloc %d failed\n", outLen+headLen);
       return 0;
     }
 
+    if(headLen){
+      sprintf((char*)buf, "%s", _head.c_str());
+      _head = String();
+    }
+
+    size_t readLen = 0;
+
     if(_chunked){
-      readLen = _fillBuffer(buf, outLen - 8);
+      readLen = _fillBuffer(buf+headLen, outLen - 8);
       char pre[6];
       sprintf(pre, "%x\r\n", readLen);
       size_t preLen = strlen(pre);
-      memmove(buf+preLen, buf, readLen);
+      memmove(buf+headLen+preLen, buf+headLen, readLen);
       for(size_t i=0; i<preLen; i++)
-        buf[i] = pre[i];
-      outLen = preLen + readLen;
+        buf[i+headLen] = pre[i];
+      outLen = preLen + readLen + headLen;
       buf[outLen++] = '\r';
       buf[outLen++] = '\n';
     } else {
-      outLen = _fillBuffer(buf, outLen);
+      outLen = _fillBuffer(buf+headLen, outLen) + headLen;
     }
 
     if(outLen)
       outLen = request->client()->write((const char*)buf, outLen);
+
     if(_chunked)
       _sentLength += readLen;
     else
-      _sentLength += outLen;
+      _sentLength += outLen - headLen;
+
     free(buf);
 
     if((_chunked && readLen == 0) || (!_sendContentLength && outLen == 0) || _sentLength == _contentLength){
@@ -300,19 +310,6 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     }
     return outLen;
 
-  } else if(_state == RESPONSE_HEADERS){
-    size_t outLen = _head.length();
-    if(space >= outLen){
-      request->client()->write(_head.c_str(), outLen);
-      _head = String();
-      _state = RESPONSE_CONTENT;
-      return outLen;
-    } else {
-      String out = _head.substring(0, space);
-      _head = _head.substring(space);
-      request->client()->write(out.c_str(), out.length());
-      return out.length();
-    }
   } else if(_state == RESPONSE_WAIT_ACK){
     if(!_sendContentLength || _ackedLength >= (_headLength+_contentLength)){
       _state = RESPONSE_END;
