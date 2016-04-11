@@ -621,8 +621,11 @@ void AsyncWebServerRequest::send(AsyncWebServerResponse *response){
     _onDisconnect();
     return;
   }
-  if(!_response->_sourceValid())
+  if(!_response->_sourceValid()){
+    delete response;
+    _response = NULL;
     send(500);
+  }
   else
     _response->_respond(this);
 }
