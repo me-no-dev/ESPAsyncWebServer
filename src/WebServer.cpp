@@ -65,6 +65,7 @@ void AsyncWebServer::_handleRequest(AsyncWebServerRequest *request){
       return;
     }
   }
+  request->addInterestingHeader("ANY");
   request->setHandler(_catchAllHandler);
 }
 
@@ -118,5 +119,3 @@ void AsyncWebServer::onFileUpload(ArUploadHandlerFunction fn){
 void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
   ((AsyncCallbackWebHandler*)_catchAllHandler)->onBody(fn);
 }
-
-
