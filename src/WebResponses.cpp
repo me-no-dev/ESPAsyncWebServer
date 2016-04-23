@@ -82,10 +82,7 @@ AsyncWebServerResponse::AsyncWebServerResponse()
   , _sentLength(0)
   , _ackedLength(0)
   , _state(RESPONSE_SETUP)
-{
-  addHeader("Connection","close");
-  addHeader("Access-Control-Allow-Origin","*");
-}
+{}
 
 AsyncWebServerResponse::~AsyncWebServerResponse(){
   while(_headers != NULL){
@@ -160,6 +157,8 @@ AsyncBasicResponse::AsyncBasicResponse(int code, String contentType, String cont
     if(!_contentType.length())
       _contentType = "text/plain";
   }
+  addHeader("Connection","close");
+  addHeader("Access-Control-Allow-Origin","*");
 }
 
 void AsyncBasicResponse::_respond(AsyncWebServerRequest *request){
@@ -228,6 +227,8 @@ size_t AsyncBasicResponse::_ack(AsyncWebServerRequest *request, size_t len, uint
  * */
 
 void AsyncAbstractResponse::_respond(AsyncWebServerRequest *request){
+  addHeader("Connection","close");
+  addHeader("Access-Control-Allow-Origin","*");
   _head = _assembleHead(request->version());
   _state = RESPONSE_HEADERS;
   _ack(request, 0, 0);

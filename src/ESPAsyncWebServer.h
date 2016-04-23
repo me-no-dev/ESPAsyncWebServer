@@ -308,5 +308,6 @@ class AsyncWebServer {
 };
 
 #include "WebResponseImpl.h"
+#include "AsyncWebSocket.h"
 
 #endif /* _AsyncWebServer_H_ */
