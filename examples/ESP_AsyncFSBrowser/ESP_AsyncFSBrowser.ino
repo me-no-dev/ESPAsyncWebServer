@@ -2,6 +2,7 @@
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
 #include <FS.h>
+#include <Hash.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
