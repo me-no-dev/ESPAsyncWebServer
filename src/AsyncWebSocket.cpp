@@ -806,6 +806,7 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request){
 
 /*
  * Response to Web Socket request - sends the authorization and detaches the TCP Client from the web server
+ * Authentication code from https://github.com/Links2004/arduinoWebSockets/blob/master/src/WebSockets.cpp#L480
  */
 
 AsyncWebSocketResponse::AsyncWebSocketResponse(String key, AsyncWebSocket *server){
