@@ -479,7 +479,7 @@ size_t AsyncWebSocketClient::printf(const char *format, ...) {
   //ToDo: figure out a way around this
   size_t len = 1440;
 #else
-  size_t len = vsnprintf(NULL, 0, format, arg);
+  size_t len = vsnprintf(NULL, 0, format, arg)+1;
 #endif
   char * msg = (char*)malloc(len+1);
   if(msg == NULL){
@@ -695,7 +695,7 @@ size_t AsyncWebSocket::printfAll(const char *format, ...) {
   //ToDo: figure out a way around this
   size_t len = 1440;
 #else
-  size_t len = vsnprintf(NULL, 0, format, arg);
+  size_t len = vsnprintf(NULL, 0, format, arg)+1;
 #endif
   char * msg = (char*)malloc(len+1);
   if(msg == NULL){
