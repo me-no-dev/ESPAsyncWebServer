@@ -2,7 +2,7 @@
 
 For help and support [![Join the chat at https://gitter.im/me-no-dev/ESPAsyncWebServer](https://badges.gitter.im/me-no-dev/ESPAsyncWebServer.svg)](https://gitter.im/me-no-dev/ESPAsyncWebServer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Async Web Server for ESP8266 and ESP31B Arduino
+Async HTTP and WebSocket Server for ESP8266 and ESP31B Arduino
 
 Requires [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP) to work
 
@@ -17,6 +17,7 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - Easy to use API, HTTP Basic Authentication, ChunkedResponse
 - Easily extendible to handle any type of content
 - Supports Continue 100
+- Async WebSocket plugin offering different locations without extra servers or ports
 
 ## Important things to remember
 - This is fully asynchronous server and as such does not run on the loop thread.
@@ -386,12 +387,124 @@ request->send("text/plain", 0, [](uint8_t *buffer, size_t maxLen, size_t index) 
 });
 ```
 
+## Async WebSocket Plugin
+The server includes a web socket plugin which lets you define different WebSocket locations to connect to
+without starting another listening service or using different port
+
+### Async WebSocket Event
+```cpp
+
+void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
+  if(type == WS_EVT_CONNECT){
+    //client connected
+    os_printf("ws[%s][%u] connect\n", server->url(), client->id());
+    client->printf("Hello Client %u :)", client->id());
+    client->ping();
+  } else if(type == WS_EVT_DISCONNECT){
+    //client disconnected
+    os_printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
+  } else if(type == WS_EVT_ERROR){
+    //error was received from the other end
+    os_printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+  } else if(type == WS_EVT_PONG){
+    //pong message was received (in response to a ping request maybe)
+    os_printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
+  } else if(type == WS_EVT_DATA){
+    //data packet
+    AwsFrameInfo * info = (AwsFrameInfo*)arg;
+    if(info->final && info->index == 0 && info->len == len){
+      //the whole message is in a single frame and we got all of it's data
+      os_printf("ws[%s][%u] %s-message[%llu]: ", server->url(), client->id(), (info->opcode == WS_TEXT)?"text":"binary", info->len);
+      if(info->opcode == WS_TEXT){
+        data[len] = 0;
+        os_printf("%s\n", (char*)data);
+      } else {
+        for(size_t i=0; i < info->len; i++){
+          os_printf("%02x ", data[i]);
+        }
+        os_printf("\n");
+      }
+      if(info->opcode == WS_TEXT)
+        client->text("I got your text message");
+      else
+        client->binary("I got your binary message");
+    } else {
+      //message is comprised of multiple frames or the frame is split into multiple packets
+      if(info->index == 0){
+        if(info->num == 0)
+          os_printf("ws[%s][%u] %s-message start\n", server->url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
+        os_printf("ws[%s][%u] frame[%u] start[%llu]\n", server->url(), client->id(), info->num, info->len);
+      }
+
+      os_printf("ws[%s][%u] frame[%u] %s[%llu - %llu]: ", server->url(), client->id(), info->num, (info->message_opcode == WS_TEXT)?"text":"binary", info->index, info->index + len);
+      if(info->message_opcode == WS_TEXT){
+        data[len] = 0;
+        os_printf("%s\n", (char*)data);
+      } else {
+        for(size_t i=0; i < len; i++){
+          os_printf("%02x ", data[i]);
+        }
+        os_printf("\n");
+      }
+
+      if((info->index + len) == info->len){
+        os_printf("ws[%s][%u] frame[%u] end[%llu]\n", server->url(), client->id(), info->num, info->len);
+        if(info->final){
+          os_printf("ws[%s][%u] %s-message end\n", server->url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
+          if(info->message_opcode == WS_TEXT)
+            client->text("I got your text message");
+          else
+            client->binary("I got your binary message");
+        }
+      }
+    }
+  }
+}
+```
+
+### Methods for sending data to a socket client
+```cpp
+//Server methods
+AsyncWebSocket ws("/ws");
+//printf to a client
+ws.printf([client id], [arguments...])
+//printf to all clients
+ws.printfAll([arguments...])
+//send text to a client
+ws.text([client id], [(char*)text])
+ws.text([client id], [text], [len])
+//send text to all clients
+ws.textAll([(char*text])
+ws.textAll([text], [len])
+//send binary to a client
+ws.binary([client id], [(char*)binary])
+ws.binary([client id], [binary], [len])
+//send binary to all clients
+ws.binaryAll([(char*binary])
+ws.binaryAll([binary], [len])
+
+//client methods
+AsyncWebSocketClient * client;
+//printf to a client
+client->printf([arguments...])
+//send text to a client
+client->text([(char*)text])
+client->text([text], [len])
+//send binary to a client
+client->binary([(char*)binary])
+client->binary([binary], [len])
+
+```
+
 
 ## Setting up the server
 ```cpp
 #include "ESPAsyncTCP.h"
 #include "ESPAsyncWebServer.h"
+
 AsyncWebServer server(80);
+AsyncWebSocket ws("/ws"); // access at ws://[esp ip]/ws
+
 const char* ssid = "your-ssid";
 const char* password = "your-pass";
 const char* http_username = "admin";
@@ -410,6 +523,10 @@ void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uin
   //Handle upload
 }
 
+void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
+  //Handle WebSocket event
+}
+
 void setup(){
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
@@ -418,6 +535,10 @@ void setup(){
     Serial.printf("WiFi Failed!\n");
     return;
   }
+  
+  // attach AsyncWebSocket
+  ws.onEvent(onEvent);
+  server.addHandler(&ws);
   
   // respond to GET requests on URL /heap
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
