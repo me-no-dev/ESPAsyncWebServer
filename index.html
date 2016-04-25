@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>ESPAsyncWebServer by me-no-dev</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">ESPAsyncWebServer</h1>
+      <h2 class="project-tagline">Async HTTP and WebSocket Server for ESP8266 and ESP32 Arduino</h2>
+      <a href="https://github.com/me-no-dev/ESPAsyncWebServer" class="btn">View on GitHub</a>
+      <a href="https://github.com/me-no-dev/ESPAsyncWebServer/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/me-no-dev/ESPAsyncWebServer/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="espasyncwebserver" class="anchor" href="#espasyncwebserver" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ESPAsyncWebServer</h1>
+
+<p>Async HTTP and WebSocket Server for ESP8266 and ESP32/ESP31B Arduino</p>
+
+<p>Requires <a href="https://github.com/me-no-dev/ESPAsyncTCP">ESPAsyncTCP</a> to work</p>
+
+<h2>
+<a id="why-should-you-care" class="anchor" href="#why-should-you-care" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why should you care</h2>
+
+<ul>
+<li>Using asynchronous network means that you can handle more than one connection at the same time</li>
+<li>You are called once the request is ready and parsed</li>
+<li>When you send the response, you are immediately ready to handle other connections
+while the server is taking care of sending the response in the background</li>
+<li>Speed is OMG</li>
+<li>Easy to use API, HTTP Basic Authentication, ChunkedResponse</li>
+<li>Easily extendible to handle any type of content</li>
+<li>Supports Continue 100</li>
+<li>Async WebSocket plugin offering different locations without extra servers or ports</li>
+</ul>
+
+<h2>
+<a id="important-things-to-remember" class="anchor" href="#important-things-to-remember" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Important things to remember</h2>
+
+<ul>
+<li>This is fully asynchronous server and as such does not run on the loop thread.</li>
+<li>You can not use yield or delay or any function that uses them inside the callbacks</li>
+<li>The server is smart enough to know when to close the connection and free resources</li>
+<li>You can not send more than one response to a single request</li>
+</ul>
+
+<h2>
+<a id="principles-of-operation" class="anchor" href="#principles-of-operation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Principles of operation</h2>
+
+<h3>
+<a id="the-async-web-server" class="anchor" href="#the-async-web-server" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The Async Web server</h3>
+
+<ul>
+<li>Listens for connections</li>
+<li>Wraps the new clients into <code>Request</code>
+</li>
+<li>Keeps track of clients and cleans memory</li>
+<li>Manages <code>Handlers</code> and attaches them to Requests</li>
+</ul>
+
+<h3>
+<a id="request-life-cycle" class="anchor" href="#request-life-cycle" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Request Life Cycle</h3>
+
+<ul>
+<li>TCP connection is received by the server</li>
+<li>The connection is wrapped inside <code>Request</code> object</li>
+<li>When the request head is received (type, url, get params, http version and host),
+the server goes through all attached <code>Handlers</code>(in the order they are attached) trying to find one
+that <code>canHandle</code> the given request. If none are found, the default(catch-all) handler is attached.</li>
+<li>The rest of the request is received, calling the <code>handleUpload</code> or <code>handleBody</code> methods of the <code>Handler</code> if they are needed (POST+File/Body)</li>
+<li>When the whole request is parsed, the result is given to the <code>handleRequest</code> method of the <code>Handler</code> and is ready to be responded to</li>
+<li>In the <code>handleRequest</code> method, to the <code>Request</code> is attached a <code>Response</code> object (see below) that will serve the response data back to the client</li>
+<li>When the <code>Response</code> is sent, the client is closed and freed from the memory</li>
+</ul>
+
+<h3>
+<a id="handlers-and-how-do-they-work" class="anchor" href="#handlers-and-how-do-they-work" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Handlers and how do they work</h3>
+
+<ul>
+<li>The <code>Handlers</code> are used for executing specific actions to particular requests</li>
+<li>One <code>Handler</code> instance can be attached to any request and lives together with the server</li>
+<li>The <code>canHandle</code> method is used for filtering the requests that can be handled
+and declaring any interesting headers that the <code>Request</code> should collect </li>
+<li>Decision can be based on request method, request url, http version, request host/port/target host and GET parameters</li>
+<li>Once a <code>Handler</code> is attached to given <code>Request</code> (<code>canHandle</code> returned true)
+that <code>Handler</code> takes care to receive any file/data upload and attach a <code>Response</code>
+once the <code>Request</code> has been fully parsed</li>
+<li>
+<code>Handler's</code> <code>canHandle</code> is called in the order they are attached to the server.
+If a <code>Handler</code> attached earlier returns <code>true</code> on <code>canHandle</code>, then this <code>Hander's</code> <code>canHandle</code> will never be called</li>
+</ul>
+
+<h3>
+<a id="responses-and-how-do-they-work" class="anchor" href="#responses-and-how-do-they-work" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Responses and how do they work</h3>
+
+<ul>
+<li>The <code>Response</code> objects are used to send the response data back to the client</li>
+<li>The <code>Response</code> object lives with the <code>Request</code> and is freed on end or disconnect</li>
+<li>Different techniques are used depending on the response type to send the data in packets
+returning back almost immediately and sending the next packet when this one is received.
+Any time in between is spent to run the user loop and handle other network packets</li>
+<li>Responding asynchronously is probably the most difficult thing for most to understand</li>
+<li>Many different options exist for the user to make responding a background task</li>
+</ul>
+
+<h2>
+<a id="request-variables" class="anchor" href="#request-variables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Request Variables</h2>
+
+<h3>
+<a id="common-variables" class="anchor" href="#common-variables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Common Variables</h3>
+
+<div class="highlight highlight-source-c++"><pre>request-&gt;<span class="pl-en">version</span>();       <span class="pl-c">// uint8_t: 0 = HTTP/1.0, 1 = HTTP/1.1</span>
+request-&gt;<span class="pl-en">method</span>();        <span class="pl-c">// enum:    HTTP_GET, HTTP_POST, HTTP_DELETE, HTTP_PUT, HTTP_PATCH, HTTP_HEAD, HTTP_OPTIONS</span>
+request-&gt;<span class="pl-en">url</span>();           <span class="pl-c">// String:  URL of the request (not including host, port or GET parameters) </span>
+request-&gt;<span class="pl-en">host</span>();          <span class="pl-c">// String:  The requested host (can be used for virtual hosting)</span>
+request-&gt;<span class="pl-en">contentType</span>();   <span class="pl-c">// String:  ContentType of the request (not avaiable in Handler::canHandle)</span>
+request-&gt;<span class="pl-en">contentLength</span>(); <span class="pl-c">// size_t:  ContentLength of the request (not avaiable in Handler::canHandle)</span>
+request-&gt;<span class="pl-en">multipart</span>();     <span class="pl-c">// bool:    True if the request has content type "multipart"</span></pre></div>
+
+<h3>
+<a id="headers" class="anchor" href="#headers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Headers</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//List all collected headers</span>
+<span class="pl-k">int</span> headers = request-&gt;<span class="pl-en">headers</span>();
+<span class="pl-k">int</span> i;
+<span class="pl-k">for</span>(i=<span class="pl-c1">0</span>;i&lt;headers;i++){
+  AsyncWebHeader* h = request-&gt;<span class="pl-c1">getHeader</span>(i);
+  Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>HEADER[<span class="pl-c1">%s</span>]: <span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, h-&gt;<span class="pl-c1">name</span>().<span class="pl-c1">c_str</span>(), h-&gt;<span class="pl-c1">value</span>().<span class="pl-c1">c_str</span>());
+}
+
+<span class="pl-c">//get specific header by name</span>
+<span class="pl-k">if</span>(request-&gt;<span class="pl-en">hasHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>MyHeader<span class="pl-pds">"</span></span>)){
+  AsyncWebHeader* h = request-&gt;<span class="pl-c1">getHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>MyHeader<span class="pl-pds">"</span></span>);
+  Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>MyHeader: <span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, h-&gt;<span class="pl-c1">value</span>().<span class="pl-c1">c_str</span>());
+}</pre></div>
+
+<h3>
+<a id="get-post-and-file-parameters" class="anchor" href="#get-post-and-file-parameters" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>GET, POST and FILE parameters</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//List all parameters</span>
+<span class="pl-k">int</span> params = request-&gt;<span class="pl-en">params</span>();
+<span class="pl-k">for</span>(<span class="pl-k">int</span> i=<span class="pl-c1">0</span>;i&lt;params;i++){
+  AsyncWebParameter* p = request-&gt;<span class="pl-c1">getParam</span>(i);
+  <span class="pl-k">if</span>(p-&gt;<span class="pl-c1">isFile</span>()){ <span class="pl-c">//p-&gt;isPost() is also true</span>
+    Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>FILE[<span class="pl-c1">%s</span>]: <span class="pl-c1">%s</span>, size: <span class="pl-c1">%u</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, p-&gt;<span class="pl-c1">name</span>().<span class="pl-c1">c_str</span>(), p-&gt;<span class="pl-c1">value</span>().<span class="pl-c1">c_str</span>(), p-&gt;<span class="pl-c1">size</span>());
+  } <span class="pl-k">else</span> <span class="pl-k">if</span>(p-&gt;<span class="pl-c1">isPost</span>()){
+    Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>POST[<span class="pl-c1">%s</span>]: <span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, p-&gt;<span class="pl-c1">name</span>().<span class="pl-c1">c_str</span>(), p-&gt;<span class="pl-c1">value</span>().<span class="pl-c1">c_str</span>());
+  } <span class="pl-k">else</span> {
+    Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>GET[<span class="pl-c1">%s</span>]: <span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, p-&gt;<span class="pl-c1">name</span>().<span class="pl-c1">c_str</span>(), p-&gt;<span class="pl-c1">value</span>().<span class="pl-c1">c_str</span>());
+  }
+}
+
+<span class="pl-c">//Check if GET parameter exists</span>
+<span class="pl-k">bool</span> exists = request-&gt;<span class="pl-en">hasParam</span>(<span class="pl-s"><span class="pl-pds">"</span>download<span class="pl-pds">"</span></span>);
+AsyncWebParameter* p = request-&gt;<span class="pl-en">getParam</span>(<span class="pl-s"><span class="pl-pds">"</span>download<span class="pl-pds">"</span></span>);
+
+<span class="pl-c">//Check if POST (but not File) parameter exists</span>
+<span class="pl-k">bool</span> exists = request-&gt;<span class="pl-en">hasParam</span>(<span class="pl-s"><span class="pl-pds">"</span>download<span class="pl-pds">"</span></span>, <span class="pl-c1">true</span>);
+AsyncWebParameter* p = request-&gt;<span class="pl-en">getParam</span>(<span class="pl-s"><span class="pl-pds">"</span>download<span class="pl-pds">"</span></span>, <span class="pl-c1">true</span>);
+
+<span class="pl-c">//Check if FILE was uploaded</span>
+<span class="pl-k">bool</span> exists = request-&gt;<span class="pl-en">hasParam</span>(<span class="pl-s"><span class="pl-pds">"</span>download<span class="pl-pds">"</span></span>, <span class="pl-c1">true</span>, <span class="pl-c1">true</span>);
+AsyncWebParameter* p = request-&gt;<span class="pl-en">getParam</span>(<span class="pl-s"><span class="pl-pds">"</span>download<span class="pl-pds">"</span></span>, <span class="pl-c1">true</span>, <span class="pl-c1">true</span>);</pre></div>
+
+<h3>
+<a id="file-upload-handling" class="anchor" href="#file-upload-handling" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>FILE Upload handling</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-k">void</span> <span class="pl-en">handleUpload</span>(AsyncWebServerRequest *request, String filename, <span class="pl-c1">size_t</span> index, <span class="pl-c1">uint8_t</span> *data, <span class="pl-c1">size_t</span> len, <span class="pl-k">bool</span> final){
+  <span class="pl-k">if</span>(!<span class="pl-c1">index</span>){
+    Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>UploadStart: <span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, filename.<span class="pl-c1">c_str</span>());
+  }
+  <span class="pl-k">for</span>(<span class="pl-c1">size_t</span> i=<span class="pl-c1">0</span>; i&lt;len; i++){
+    Serial.<span class="pl-c1">write</span>(data[i]);
+  }
+  <span class="pl-k">if</span>(final){
+    Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>UploadEnd: <span class="pl-c1">%s</span>, <span class="pl-c1">%u</span> B<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, filename.<span class="pl-c1">c_str</span>(), <span class="pl-c1">index</span>+len);
+  }
+}</pre></div>
+
+<h3>
+<a id="body-data-handling" class="anchor" href="#body-data-handling" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Body data handling</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-k">void</span> <span class="pl-en">handleBody</span>(AsyncWebServerRequest *request, <span class="pl-c1">uint8_t</span> *data, <span class="pl-c1">size_t</span> len, <span class="pl-c1">size_t</span> index, <span class="pl-c1">size_t</span> total){
+  <span class="pl-k">if</span>(!<span class="pl-c1">index</span>){
+    Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>BodyStart: <span class="pl-c1">%u</span> B<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, total);
+  }
+  <span class="pl-k">for</span>(<span class="pl-c1">size_t</span> i=<span class="pl-c1">0</span>; i&lt;len; i++){
+    Serial.<span class="pl-c1">write</span>(data[i]);
+  }
+  <span class="pl-k">if</span>(<span class="pl-c1">index</span> + len == total){
+    Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>BodyEnd: <span class="pl-c1">%u</span> B<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, total);
+  }
+}</pre></div>
+
+<h2>
+<a id="responses" class="anchor" href="#responses" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Responses</h2>
+
+<h3>
+<a id="basic-response-with-http-code" class="anchor" href="#basic-response-with-http-code" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Basic response with HTTP Code</h3>
+
+<div class="highlight highlight-source-c++"><pre>request-&gt;<span class="pl-en">send</span>(<span class="pl-c1">404</span>); <span class="pl-c">//Sends 404 File Not Found</span></pre></div>
+
+<h3>
+<a id="basic-response-with-http-code-and-extra-headers" class="anchor" href="#basic-response-with-http-code-and-extra-headers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Basic response with HTTP Code and extra headers</h3>
+
+<div class="highlight highlight-source-c++"><pre>AsyncWebServerResponse *response = request-&gt;<span class="pl-en">beginResponse</span>(<span class="pl-c1">404</span>); <span class="pl-c">//Sends 404 File Not Found</span>
+response-&gt;<span class="pl-en">addHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>Server<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>ESP Async Web Server<span class="pl-pds">"</span></span>);
+request-&gt;<span class="pl-en">send</span>(response);</pre></div>
+
+<h3>
+<a id="basic-response-with-string-content" class="anchor" href="#basic-response-with-string-content" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Basic response with string content</h3>
+
+<div class="highlight highlight-source-c++"><pre>request-&gt;<span class="pl-en">send</span>(<span class="pl-c1">200</span>, <span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Hello World!<span class="pl-pds">"</span></span>);</pre></div>
+
+<h3>
+<a id="basic-response-with-string-content-and-extra-headers" class="anchor" href="#basic-response-with-string-content-and-extra-headers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Basic response with string content and extra headers</h3>
+
+<div class="highlight highlight-source-c++"><pre>AsyncWebServerResponse *response = request-&gt;<span class="pl-en">beginResponse</span>(<span class="pl-c1">200</span>, <span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Hello World!<span class="pl-pds">"</span></span>);
+response-&gt;<span class="pl-en">addHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>Server<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>ESP Async Web Server<span class="pl-pds">"</span></span>);
+request-&gt;<span class="pl-en">send</span>(response);</pre></div>
+
+<h3>
+<a id="respond-with-content-coming-from-a-stream" class="anchor" href="#respond-with-content-coming-from-a-stream" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Respond with content coming from a Stream</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//read 12 bytes from Serial and send them as Content Type text/plain</span>
+request-&gt;<span class="pl-en">send</span>(Serial, <span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, <span class="pl-c1">12</span>);</pre></div>
+
+<h3>
+<a id="respond-with-content-coming-from-a-stream-and-extra-headers" class="anchor" href="#respond-with-content-coming-from-a-stream-and-extra-headers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Respond with content coming from a Stream and extra headers</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//read 12 bytes from Serial and send them as Content Type text/plain</span>
+AsyncWebServerResponse *response = request-&gt;<span class="pl-en">beginResponse</span>(Serial, <span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, <span class="pl-c1">12</span>);
+response-&gt;<span class="pl-en">addHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>Server<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>ESP Async Web Server<span class="pl-pds">"</span></span>);
+request-&gt;<span class="pl-en">send</span>(response);</pre></div>
+
+<h3>
+<a id="respond-with-content-coming-from-a-file" class="anchor" href="#respond-with-content-coming-from-a-file" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Respond with content coming from a File</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//Send index.htm with default content type</span>
+request-&gt;<span class="pl-en">send</span>(SPIFFS, <span class="pl-s"><span class="pl-pds">"</span>/index.htm<span class="pl-pds">"</span></span>);
+
+<span class="pl-c">//Send index.htm as text</span>
+request-&gt;<span class="pl-en">send</span>(SPIFFS, <span class="pl-s"><span class="pl-pds">"</span>/index.htm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>);
+
+<span class="pl-c">//Download index.htm</span>
+request-&gt;<span class="pl-en">send</span>(SPIFFS, <span class="pl-s"><span class="pl-pds">"</span>/index.htm<span class="pl-pds">"</span></span>, String(), true);</pre></div>
+
+<h3>
+<a id="respond-with-content-coming-from-a-file-and-extra-headers" class="anchor" href="#respond-with-content-coming-from-a-file-and-extra-headers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Respond with content coming from a File and extra headers</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//Send index.htm with default content type</span>
+AsyncWebServerResponse *response = request-&gt;<span class="pl-en">beginResponse</span>(SPIFFS, <span class="pl-s"><span class="pl-pds">"</span>/index.htm<span class="pl-pds">"</span></span>);
+
+<span class="pl-c">//Send index.htm as text</span>
+AsyncWebServerResponse *response = request-&gt;<span class="pl-en">beginResponse</span>(SPIFFS, <span class="pl-s"><span class="pl-pds">"</span>/index.htm<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>);
+
+<span class="pl-c">//Download index.htm</span>
+AsyncWebServerResponse *response = request-&gt;<span class="pl-en">beginResponse</span>(SPIFFS, <span class="pl-s"><span class="pl-pds">"</span>/index.htm<span class="pl-pds">"</span></span>, String(), true);
+
+response-&gt;<span class="pl-en">addHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>Server<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>ESP Async Web Server<span class="pl-pds">"</span></span>);
+request-&gt;<span class="pl-en">send</span>(response);</pre></div>
+
+<h3>
+<a id="respond-with-content-using-a-callback" class="anchor" href="#respond-with-content-using-a-callback" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Respond with content using a callback</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//send 128 bytes as plain text</span>
+request-&gt;<span class="pl-en">send</span>(<span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, <span class="pl-c1">128</span>, [](<span class="pl-c1">uint8_t</span> *buffer, <span class="pl-c1">size_t</span> maxLen, <span class="pl-c1">size_t</span> index) -&gt; size_t {
+  <span class="pl-c">//Write up to "maxLen" bytes into "buffer" and return the amount written.</span>
+  <span class="pl-c">//index equals the amount of bytes that have been already sent</span>
+  <span class="pl-c">//You will not be asked for more bytes once the content length has been reached.</span>
+  <span class="pl-c">//Keep in mind that you can not delay or yield waiting for more data!</span>
+  <span class="pl-c">//Send what you currently have and you will be asked for more again</span>
+  <span class="pl-k">return</span> mySource.<span class="pl-c1">read</span>(buffer, maxLen);
+});</pre></div>
+
+<h3>
+<a id="respond-with-content-using-a-callback-and-extra-headers" class="anchor" href="#respond-with-content-using-a-callback-and-extra-headers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Respond with content using a callback and extra headers</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//send 128 bytes as plain text</span>
+AsyncWebServerResponse *response = request-&gt;<span class="pl-en">beginResponse</span>(<span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, <span class="pl-c1">128</span>, [](<span class="pl-c1">uint8_t</span> *buffer, <span class="pl-c1">size_t</span> maxLen, <span class="pl-c1">size_t</span> index) -&gt; size_t {
+  <span class="pl-c">//Write up to "maxLen" bytes into "buffer" and return the amount written.</span>
+  <span class="pl-c">//index equals the amount of bytes that have been already sent</span>
+  <span class="pl-c">//You will not be asked for more bytes once the content length has been reached.</span>
+  <span class="pl-c">//Keep in mind that you can not delay or yield waiting for more data!</span>
+  <span class="pl-c">//Send what you currently have and you will be asked for more again</span>
+  <span class="pl-k">return</span> mySource.<span class="pl-c1">read</span>(buffer, maxLen);
+});
+response-&gt;<span class="pl-en">addHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>Server<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>ESP Async Web Server<span class="pl-pds">"</span></span>);
+request-&gt;<span class="pl-en">send</span>(response);</pre></div>
+
+<h3>
+<a id="chunked-response" class="anchor" href="#chunked-response" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Chunked Response</h3>
+
+<p>Used when content length is unknown. Works best if the client supports HTTP/1.1</p>
+
+<div class="highlight highlight-source-c++"><pre>AsyncWebServerResponse *response = request-&gt;<span class="pl-en">beginChunkedResponse</span>(<span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, [](<span class="pl-c1">uint8_t</span> *buffer, <span class="pl-c1">size_t</span> maxLen, <span class="pl-c1">size_t</span> index) -&gt; size_t {
+  <span class="pl-c">//Write up to "maxLen" bytes into "buffer" and return the amount written.</span>
+  <span class="pl-c">//index equals the amount of bytes that have been already sent</span>
+  <span class="pl-c">//You will be asked for more data until 0 is returned</span>
+  <span class="pl-c">//Keep in mind that you can not delay or yield waiting for more data!</span>
+  <span class="pl-k">return</span> mySource.<span class="pl-c1">read</span>(buffer, maxLen);
+});
+response-&gt;<span class="pl-en">addHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>Server<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>ESP Async Web Server<span class="pl-pds">"</span></span>);
+request-&gt;<span class="pl-en">send</span>(response);</pre></div>
+
+<h3>
+<a id="print-to-response" class="anchor" href="#print-to-response" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Print to response</h3>
+
+<div class="highlight highlight-source-c++"><pre>AsyncResponseStream *response = request-&gt;<span class="pl-en">beginResponseStream</span>(<span class="pl-s"><span class="pl-pds">"</span>text/html<span class="pl-pds">"</span></span>);
+response-&gt;<span class="pl-en">addHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>Server<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>ESP Async Web Server<span class="pl-pds">"</span></span>);
+response-&gt;<span class="pl-en">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;title&gt;Webpage at <span class="pl-c1">%s</span>&lt;/title&gt;&lt;/head&gt;&lt;body&gt;<span class="pl-pds">"</span></span>, request-&gt;<span class="pl-en">url</span>().c_str());
+
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;h2&gt;Hello <span class="pl-pds">"</span></span>);
+response-&gt;<span class="pl-en">print</span>(request-&gt;<span class="pl-en">client</span>()-&gt;remoteIP());
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;/h2&gt;<span class="pl-pds">"</span></span>);
+
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;h3&gt;General&lt;/h3&gt;<span class="pl-pds">"</span></span>);
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;ul&gt;<span class="pl-pds">"</span></span>);
+response-&gt;<span class="pl-en">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;Version: HTTP/1.<span class="pl-c1">%u</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, request-&gt;<span class="pl-en">version</span>());
+response-&gt;<span class="pl-en">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;Method: <span class="pl-c1">%s</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, request-&gt;<span class="pl-en">methodToString</span>());
+response-&gt;<span class="pl-en">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;URL: <span class="pl-c1">%s</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, request-&gt;<span class="pl-en">url</span>().c_str());
+response-&gt;<span class="pl-en">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;Host: <span class="pl-c1">%s</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, request-&gt;<span class="pl-en">host</span>().c_str());
+response-&gt;<span class="pl-en">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;ContentType: <span class="pl-c1">%s</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, request-&gt;<span class="pl-en">contentType</span>().c_str());
+response-&gt;<span class="pl-en">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;ContentLength: <span class="pl-c1">%u</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, request-&gt;<span class="pl-en">contentLength</span>());
+response-&gt;<span class="pl-en">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;Multipart: <span class="pl-c1">%s</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, request-&gt;<span class="pl-en">multipart</span>()?"true":"false");
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;/ul&gt;<span class="pl-pds">"</span></span>);
+
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;h3&gt;Headers&lt;/h3&gt;<span class="pl-pds">"</span></span>);
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;ul&gt;<span class="pl-pds">"</span></span>);
+<span class="pl-k">int</span> headers = request-&gt;<span class="pl-en">headers</span>();
+<span class="pl-k">for</span>(<span class="pl-k">int</span> i=<span class="pl-c1">0</span>;i&lt;headers;i++){
+  AsyncWebHeader* h = request-&gt;<span class="pl-c1">getHeader</span>(i);
+  response-&gt;<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;<span class="pl-c1">%s</span>: <span class="pl-c1">%s</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, h-&gt;<span class="pl-c1">name</span>().<span class="pl-c1">c_str</span>(), h-&gt;<span class="pl-c1">value</span>().<span class="pl-c1">c_str</span>());
+}
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;/ul&gt;<span class="pl-pds">"</span></span>);
+
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;h3&gt;Parameters&lt;/h3&gt;<span class="pl-pds">"</span></span>);
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;ul&gt;<span class="pl-pds">"</span></span>);
+<span class="pl-k">int</span> params = request-&gt;<span class="pl-en">params</span>();
+<span class="pl-k">for</span>(<span class="pl-k">int</span> i=<span class="pl-c1">0</span>;i&lt;params;i++){
+  AsyncWebParameter* p = request-&gt;<span class="pl-c1">getParam</span>(i);
+  <span class="pl-k">if</span>(p-&gt;<span class="pl-c1">isFile</span>()){
+    response-&gt;<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;FILE[<span class="pl-c1">%s</span>]: <span class="pl-c1">%s</span>, size: <span class="pl-c1">%u</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, p-&gt;<span class="pl-c1">name</span>().<span class="pl-c1">c_str</span>(), p-&gt;<span class="pl-c1">value</span>().<span class="pl-c1">c_str</span>(), p-&gt;<span class="pl-c1">size</span>());
+  } <span class="pl-k">else</span> <span class="pl-k">if</span>(p-&gt;<span class="pl-c1">isPost</span>()){
+    response-&gt;<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;POST[<span class="pl-c1">%s</span>]: <span class="pl-c1">%s</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, p-&gt;<span class="pl-c1">name</span>().<span class="pl-c1">c_str</span>(), p-&gt;<span class="pl-c1">value</span>().<span class="pl-c1">c_str</span>());
+  } <span class="pl-k">else</span> {
+    response-&gt;<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;li&gt;GET[<span class="pl-c1">%s</span>]: <span class="pl-c1">%s</span>&lt;/li&gt;<span class="pl-pds">"</span></span>, p-&gt;<span class="pl-c1">name</span>().<span class="pl-c1">c_str</span>(), p-&gt;<span class="pl-c1">value</span>().<span class="pl-c1">c_str</span>());
+  }
+}
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;/ul&gt;<span class="pl-pds">"</span></span>);
+
+response-&gt;<span class="pl-en">print</span>(<span class="pl-s"><span class="pl-pds">"</span>&lt;/body&gt;&lt;/html&gt;<span class="pl-pds">"</span></span>);
+<span class="pl-c">//send the response last</span>
+request-&gt;<span class="pl-en">send</span>(response);</pre></div>
+
+<h3>
+<a id="send-a-large-webpage-from-progmem-using-callback-response" class="anchor" href="#send-a-large-webpage-from-progmem-using-callback-response" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Send a large webpage from PROGMEM using callback response</h3>
+
+<p>Example provided by <a href="https://github.com/nouser2013">@nouser2013</a></p>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-k">const</span> <span class="pl-k">char</span> indexhtml[] PROGMEM = <span class="pl-s"><span class="pl-pds">"</span>...<span class="pl-pds">"</span></span>; <span class="pl-c">// large char array, tested with 5k</span>
+AsyncWebServerResponse *response = request-&gt;<span class="pl-en">beginResponse</span>(
+  <span class="pl-en">String</span>(<span class="pl-s"><span class="pl-pds">"</span>text/html<span class="pl-pds">"</span></span>),
+  strlen_P(indexhtml),
+  [](<span class="pl-c1">uint8_t</span> *buffer, <span class="pl-c1">size_t</span> maxLen, <span class="pl-c1">size_t</span> alreadySent) -&gt; size_t {
+    <span class="pl-k">if</span> (<span class="pl-c1">strlen_P</span>(indexhtml+alreadySent)&gt;maxLen) {
+      <span class="pl-c">// We have more to read than fits in maxLen Buffer</span>
+      <span class="pl-c1">memcpy_P</span>((<span class="pl-k">char</span>*)buffer, indexhtml+alreadySent, maxLen);
+      <span class="pl-k">return</span> maxLen;
+    }
+    <span class="pl-c">// Ok, last chunk</span>
+    <span class="pl-c1">memcpy_P</span>((<span class="pl-k">char</span>*)buffer, indexhtml+alreadySent, <span class="pl-c1">strlen_P</span>(indexhtml+alreadySent));
+    <span class="pl-k">return</span> <span class="pl-c1">strlen_P</span>(indexhtml+alreadySent); <span class="pl-c">// Return from here to end of indexhtml</span>
+  }
+);
+response-&gt;<span class="pl-en">addHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>Server<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>MyServerString<span class="pl-pds">"</span></span>);
+request-&gt;<span class="pl-en">send</span>(response);  </pre></div>
+
+<h3>
+<a id="arduinojson-basic-response" class="anchor" href="#arduinojson-basic-response" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ArduinoJson Basic Response</h3>
+
+<p>This way of sending Json is great for when the result is below 4KB </p>
+
+<div class="highlight highlight-source-c++"><pre>#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>AsyncJson.h<span class="pl-pds">"</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>ArduinoJson.h<span class="pl-pds">"</span></span>
+
+
+AsyncResponseStream *response = request-&gt;<span class="pl-en">beginResponseStream</span>(<span class="pl-s"><span class="pl-pds">"</span>text/json<span class="pl-pds">"</span></span>);
+DynamicJsonBuffer jsonBuffer;
+JsonObject &amp;root = jsonBuffer.createObject();
+root[<span class="pl-s"><span class="pl-pds">"</span>heap<span class="pl-pds">"</span></span>] = ESP.getFreeHeap();
+root[<span class="pl-s"><span class="pl-pds">"</span>ssid<span class="pl-pds">"</span></span>] = WiFi.SSID();
+root.printTo(*response);
+request-&gt;<span class="pl-en">send</span>(response);</pre></div>
+
+<h3>
+<a id="arduinojson-advanced-response" class="anchor" href="#arduinojson-advanced-response" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ArduinoJson Advanced Response</h3>
+
+<p>This response can handle really large Json objects (tested to 40KB)
+There isn't any noticeable speed decrease for small results with the method above
+Since ArduinoJson does not allow reading parts of the string, the whole Json has to
+be passed every time a chunks needs to be sent, which shows speed decrease proportional
+to the resulting json packets</p>
+
+<div class="highlight highlight-source-c++"><pre>#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>AsyncJson.h<span class="pl-pds">"</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>ArduinoJson.h<span class="pl-pds">"</span></span>
+
+
+AsyncJsonResponse * response = <span class="pl-k">new</span> AsyncJsonResponse();
+response-&gt;<span class="pl-en">addHeader</span>(<span class="pl-s"><span class="pl-pds">"</span>Server<span class="pl-pds">"</span></span>,<span class="pl-s"><span class="pl-pds">"</span>ESP Async Web Server<span class="pl-pds">"</span></span>);
+JsonObject&amp; root = response-&gt;<span class="pl-en">getRoot</span>();
+root[<span class="pl-s"><span class="pl-pds">"</span>heap<span class="pl-pds">"</span></span>] = ESP.getFreeHeap();
+root[<span class="pl-s"><span class="pl-pds">"</span>ssid<span class="pl-pds">"</span></span>] = WiFi.SSID();
+response-&gt;<span class="pl-en">setLength</span>();
+request-&gt;<span class="pl-en">send</span>(response);</pre></div>
+
+<h2>
+<a id="bad-responses" class="anchor" href="#bad-responses" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Bad Responses</h2>
+
+<p>Some responses are implemented, but you should not use them, because they do not conform to HTTP.
+The following example will lead to unclean close of the connection and more time wasted
+than providing the length of the content</p>
+
+<h3>
+<a id="respond-with-content-using-a-callback-without-content-length-to-http10-clients" class="anchor" href="#respond-with-content-using-a-callback-without-content-length-to-http10-clients" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Respond with content using a callback without content length to HTTP/1.0 clients</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//This is used as fallback for chunked responses to HTTP/1.0 Clients</span>
+request-&gt;<span class="pl-en">send</span>(<span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, <span class="pl-c1">0</span>, [](<span class="pl-c1">uint8_t</span> *buffer, <span class="pl-c1">size_t</span> maxLen, <span class="pl-c1">size_t</span> index) -&gt; size_t {
+  <span class="pl-c">//Write up to "maxLen" bytes into "buffer" and return the amount written.</span>
+  <span class="pl-c">//You will be asked for more data until 0 is returned</span>
+  <span class="pl-c">//Keep in mind that you can not delay or yield waiting for more data!</span>
+  <span class="pl-k">return</span> mySource.<span class="pl-c1">read</span>(buffer, maxLen);
+});</pre></div>
+
+<h2>
+<a id="async-websocket-plugin" class="anchor" href="#async-websocket-plugin" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Async WebSocket Plugin</h2>
+
+<p>The server includes a web socket plugin which lets you define different WebSocket locations to connect to
+without starting another listening service or using different port</p>
+
+<h3>
+<a id="async-websocket-event" class="anchor" href="#async-websocket-event" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Async WebSocket Event</h3>
+
+<div class="highlight highlight-source-c++"><pre>
+<span class="pl-k">void</span> <span class="pl-en">onEvent</span>(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, <span class="pl-k">void</span> * arg, <span class="pl-c1">uint8_t</span> *data, <span class="pl-c1">size_t</span> len){
+  <span class="pl-k">if</span>(type == WS_EVT_CONNECT){
+    <span class="pl-c">//client connected</span>
+    <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] connect<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>());
+    client-&gt;<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>Hello Client <span class="pl-c1">%u</span> :)<span class="pl-pds">"</span></span>, client-&gt;<span class="pl-c1">id</span>());
+    client-&gt;<span class="pl-c1">ping</span>();
+  } <span class="pl-k">else</span> <span class="pl-k">if</span>(type == WS_EVT_DISCONNECT){
+    <span class="pl-c">//client disconnected</span>
+    <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] disconnect: <span class="pl-c1">%u</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>());
+  } <span class="pl-k">else</span> <span class="pl-k">if</span>(type == WS_EVT_ERROR){
+    <span class="pl-c">//error was received from the other end</span>
+    <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] error(<span class="pl-c1">%u</span>): <span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>(), *((<span class="pl-c1">uint16_t</span>*)arg), (<span class="pl-k">char</span>*)data);
+  } <span class="pl-k">else</span> <span class="pl-k">if</span>(type == WS_EVT_PONG){
+    <span class="pl-c">//pong message was received (in response to a ping request maybe)</span>
+    <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] pong[<span class="pl-c1">%u</span>]: <span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>(), len, (len)?(<span class="pl-k">char</span>*)data:<span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>);
+  } <span class="pl-k">else</span> <span class="pl-k">if</span>(type == WS_EVT_DATA){
+    <span class="pl-c">//data packet</span>
+    AwsFrameInfo * info = (AwsFrameInfo*)arg;
+    <span class="pl-k">if</span>(info-&gt;num == <span class="pl-c1">0</span> &amp;&amp; info-&gt;final &amp;&amp; info-&gt;<span class="pl-c1">index</span> == <span class="pl-c1">0</span> &amp;&amp; info-&gt;len == len){
+      <span class="pl-c">//the whole message is in a single frame and we got all of it's data</span>
+      <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] <span class="pl-c1">%s</span>-message[<span class="pl-c1">%llu</span>]: <span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>(), (info-&gt;opcode == WS_TEXT)?<span class="pl-s"><span class="pl-pds">"</span>text<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>binary<span class="pl-pds">"</span></span>, info-&gt;len);
+      <span class="pl-k">if</span>(info-&gt;opcode == WS_TEXT){
+        data[len] = <span class="pl-c1">0</span>;
+        <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, (<span class="pl-k">char</span>*)data);
+      } <span class="pl-k">else</span> {
+        <span class="pl-k">for</span>(<span class="pl-c1">size_t</span> i=<span class="pl-c1">0</span>; i &lt; info-&gt;len; i++){
+          <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-c1">%02x</span> <span class="pl-pds">"</span></span>, data[i]);
+        }
+        <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
+      }
+      <span class="pl-k">if</span>(info-&gt;opcode == WS_TEXT)
+        client-&gt;<span class="pl-c1">text</span>(<span class="pl-s"><span class="pl-pds">"</span>I got your text message<span class="pl-pds">"</span></span>);
+      <span class="pl-k">else</span>
+        client-&gt;<span class="pl-c1">binary</span>(<span class="pl-s"><span class="pl-pds">"</span>I got your binary message<span class="pl-pds">"</span></span>);
+    } <span class="pl-k">else</span> {
+      <span class="pl-c">//message is comprised of multiple frames or the frame is split into multiple packets</span>
+      <span class="pl-k">if</span>(info-&gt;<span class="pl-c1">index</span> == <span class="pl-c1">0</span>){
+        <span class="pl-k">if</span>(info-&gt;num == <span class="pl-c1">0</span>)
+          <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] <span class="pl-c1">%s</span>-message start<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>(), (info-&gt;message_opcode == WS_TEXT)?<span class="pl-s"><span class="pl-pds">"</span>text<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>binary<span class="pl-pds">"</span></span>);
+        <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] frame[<span class="pl-c1">%u</span>] start[<span class="pl-c1">%llu</span>]<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>(), info-&gt;num, info-&gt;len);
+      }
+
+      <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] frame[<span class="pl-c1">%u</span>] <span class="pl-c1">%s</span>[<span class="pl-c1">%llu</span> - <span class="pl-c1">%llu</span>]: <span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>(), info-&gt;num, (info-&gt;message_opcode == WS_TEXT)?<span class="pl-s"><span class="pl-pds">"</span>text<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>binary<span class="pl-pds">"</span></span>, info-&gt;<span class="pl-c1">index</span>, info-&gt;<span class="pl-c1">index</span> + len);
+      <span class="pl-k">if</span>(info-&gt;message_opcode == WS_TEXT){
+        data[len] = <span class="pl-c1">0</span>;
+        <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-c1">%s</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, (<span class="pl-k">char</span>*)data);
+      } <span class="pl-k">else</span> {
+        <span class="pl-k">for</span>(<span class="pl-c1">size_t</span> i=<span class="pl-c1">0</span>; i &lt; len; i++){
+          <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-c1">%02x</span> <span class="pl-pds">"</span></span>, data[i]);
+        }
+        <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span><span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
+      }
+
+      <span class="pl-k">if</span>((info-&gt;<span class="pl-c1">index</span> + len) == info-&gt;len){
+        <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] frame[<span class="pl-c1">%u</span>] end[<span class="pl-c1">%llu</span>]<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>(), info-&gt;num, info-&gt;len);
+        <span class="pl-k">if</span>(info-&gt;final){
+          <span class="pl-c1">os_printf</span>(<span class="pl-s"><span class="pl-pds">"</span>ws[<span class="pl-c1">%s</span>][<span class="pl-c1">%u</span>] <span class="pl-c1">%s</span>-message end<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>, server-&gt;<span class="pl-c1">url</span>(), client-&gt;<span class="pl-c1">id</span>(), (info-&gt;message_opcode == WS_TEXT)?<span class="pl-s"><span class="pl-pds">"</span>text<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>binary<span class="pl-pds">"</span></span>);
+          <span class="pl-k">if</span>(info-&gt;message_opcode == WS_TEXT)
+            client-&gt;<span class="pl-c1">text</span>(<span class="pl-s"><span class="pl-pds">"</span>I got your text message<span class="pl-pds">"</span></span>);
+          <span class="pl-k">else</span>
+            client-&gt;<span class="pl-c1">binary</span>(<span class="pl-s"><span class="pl-pds">"</span>I got your binary message<span class="pl-pds">"</span></span>);
+        }
+      }
+    }
+  }
+}</pre></div>
+
+<h3>
+<a id="methods-for-sending-data-to-a-socket-client" class="anchor" href="#methods-for-sending-data-to-a-socket-client" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Methods for sending data to a socket client</h3>
+
+<div class="highlight highlight-source-c++"><pre><span class="pl-c">//Server methods</span>
+AsyncWebSocket <span class="pl-en">ws</span>(<span class="pl-s"><span class="pl-pds">"</span>/ws<span class="pl-pds">"</span></span>);
+<span class="pl-c">//printf to a client</span>
+ws.printf([client id], [arguments...])
+<span class="pl-c">//printf to all clients</span>
+ws.printfAll([arguments...])
+<span class="pl-c">//send text to a client</span>
+ws.text([client id], [(<span class="pl-k">char</span>*)text])
+ws.text([client id], [text], [len])
+<span class="pl-c">//send text to all clients</span>
+ws.textAll([(<span class="pl-k">char</span>*text])
+ws.textAll([text], [len])
+<span class="pl-c">//send binary to a client</span>
+ws.binary([client id], [(<span class="pl-k">char</span>*)binary])
+ws.binary([client id], [binary], [len])
+<span class="pl-c">//send binary to all clients</span>
+ws.binaryAll([(<span class="pl-k">char</span>*binary])
+ws.binaryAll([binary], [len])
+
+<span class="pl-c">//client methods</span>
+AsyncWebSocketClient * client;
+<span class="pl-c">//printf to a client</span>
+client-&gt;<span class="pl-en">printf</span>([arguments...])
+<span class="pl-c">//send text to a client</span>
+client-&gt;text([(<span class="pl-k">char</span>*)text])
+client-&gt;text([text], [len])
+<span class="pl-c">//send binary to a client</span>
+client-&gt;binary([(<span class="pl-k">char</span>*)binary])
+client-&gt;binary([binary], [len])
+</pre></div>
+
+<h2>
+<a id="setting-up-the-server" class="anchor" href="#setting-up-the-server" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setting up the server</h2>
+
+<div class="highlight highlight-source-c++"><pre>#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>ESPAsyncTCP.h<span class="pl-pds">"</span></span>
+#<span class="pl-k">include</span> <span class="pl-s"><span class="pl-pds">"</span>ESPAsyncWebServer.h<span class="pl-pds">"</span></span>
+
+AsyncWebServer <span class="pl-en">server</span>(<span class="pl-c1">80</span>);
+AsyncWebSocket <span class="pl-en">control_ws</span>(<span class="pl-s"><span class="pl-pds">"</span>/control<span class="pl-pds">"</span></span>); <span class="pl-c">// access at ws://[esp ip]/control</span>
+AsyncWebSocket <span class="pl-en">data_ws</span>(<span class="pl-s"><span class="pl-pds">"</span>/data<span class="pl-pds">"</span></span>); <span class="pl-c">// access at ws://[esp ip]/data</span>
+
+<span class="pl-k">const</span> <span class="pl-k">char</span>* ssid = <span class="pl-s"><span class="pl-pds">"</span>your-ssid<span class="pl-pds">"</span></span>;
+<span class="pl-k">const</span> <span class="pl-k">char</span>* password = <span class="pl-s"><span class="pl-pds">"</span>your-pass<span class="pl-pds">"</span></span>;
+<span class="pl-k">const</span> <span class="pl-k">char</span>* http_username = <span class="pl-s"><span class="pl-pds">"</span>admin<span class="pl-pds">"</span></span>;
+<span class="pl-k">const</span> <span class="pl-k">char</span>* http_password = <span class="pl-s"><span class="pl-pds">"</span>admin<span class="pl-pds">"</span></span>;
+
+<span class="pl-k">void</span> <span class="pl-en">onRequest</span>(AsyncWebServerRequest *request){
+  <span class="pl-c">//Handle Unknown Request</span>
+  request-&gt;<span class="pl-c1">send</span>(<span class="pl-c1">404</span>);
+}
+
+<span class="pl-k">void</span> <span class="pl-en">onBody</span>(AsyncWebServerRequest *request, <span class="pl-c1">uint8_t</span> *data, <span class="pl-c1">size_t</span> len, <span class="pl-c1">size_t</span> index, <span class="pl-c1">size_t</span> total){
+  <span class="pl-c">//Handle body</span>
+}
+
+<span class="pl-k">void</span> <span class="pl-en">onUpload</span>(AsyncWebServerRequest *request, String filename, <span class="pl-c1">size_t</span> index, <span class="pl-c1">uint8_t</span> *data, <span class="pl-c1">size_t</span> len, <span class="pl-k">bool</span> final){
+  <span class="pl-c">//Handle upload</span>
+}
+
+<span class="pl-k">void</span> <span class="pl-en">onEvent</span>(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, <span class="pl-k">void</span> * arg, <span class="pl-c1">uint8_t</span> *data, <span class="pl-c1">size_t</span> len){
+  <span class="pl-c">//Handle WebSocket event</span>
+}
+
+<span class="pl-k">void</span> <span class="pl-en">setup</span>(){
+  Serial.<span class="pl-c1">begin</span>(<span class="pl-c1">115200</span>);
+  WiFi.<span class="pl-c1">mode</span>(WIFI_STA);
+  WiFi.<span class="pl-c1">begin</span>(ssid, password);
+  <span class="pl-k">if</span> (WiFi.<span class="pl-c1">waitForConnectResult</span>() != WL_CONNECTED) {
+    Serial.<span class="pl-c1">printf</span>(<span class="pl-s"><span class="pl-pds">"</span>WiFi Failed!<span class="pl-cce">\n</span><span class="pl-pds">"</span></span>);
+    <span class="pl-k">return</span>;
+  }
+
+  <span class="pl-c">// attach Async WebSockets</span>
+  control_ws.<span class="pl-c1">onEvent</span>(onEvent);
+  server.<span class="pl-c1">addHandler</span>(&amp;control_ws);
+  data_ws.<span class="pl-c1">onEvent</span>(onEvent);
+  server.<span class="pl-c1">addHandler</span>(&amp;data_ws);
+
+  <span class="pl-c">// respond to GET requests on URL /heap</span>
+  server.<span class="pl-c1">on</span>(<span class="pl-s"><span class="pl-pds">"</span>/heap<span class="pl-pds">"</span></span>, HTTP_GET, [](AsyncWebServerRequest *request){
+    request-&gt;<span class="pl-c1">send</span>(<span class="pl-c1">200</span>, <span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, <span class="pl-c1">String</span>(ESP.<span class="pl-c1">getFreeHeap</span>()));
+  });
+
+  <span class="pl-c">// upload a file to /upload</span>
+  server.<span class="pl-c1">on</span>(<span class="pl-s"><span class="pl-pds">"</span>/upload<span class="pl-pds">"</span></span>, HTTP_POST, [](AsyncWebServerRequest *request){
+    request-&gt;<span class="pl-c1">send</span>(<span class="pl-c1">200</span>);
+  }, handleUpload);
+
+  <span class="pl-c">// send a file when /index is requested</span>
+  server.<span class="pl-c1">on</span>(<span class="pl-s"><span class="pl-pds">"</span>/index<span class="pl-pds">"</span></span>, HTTP_ANY, [](AsyncWebServerRequest *request){
+    request-&gt;<span class="pl-c1">send</span>(SPIFFS, <span class="pl-s"><span class="pl-pds">"</span>/index.htm<span class="pl-pds">"</span></span>);
+  });
+
+  <span class="pl-c">// HTTP basic authentication</span>
+  server.<span class="pl-c1">on</span>(<span class="pl-s"><span class="pl-pds">"</span>/login<span class="pl-pds">"</span></span>, HTTP_GET, [](AsyncWebServerRequest *request){
+    <span class="pl-k">if</span>(!request-&gt;<span class="pl-c1">authenticate</span>(http_username, http_password))
+        <span class="pl-k">return</span> request-&gt;<span class="pl-c1">requestAuthentication</span>();
+    request-&gt;<span class="pl-c1">send</span>(<span class="pl-c1">200</span>, <span class="pl-s"><span class="pl-pds">"</span>text/plain<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Login Success!<span class="pl-pds">"</span></span>);
+  });
+
+  <span class="pl-c">// attach filesystem root at URL /fs </span>
+  server.<span class="pl-c1">serveStatic</span>(<span class="pl-s"><span class="pl-pds">"</span>/fs<span class="pl-pds">"</span></span>, SPIFFS, <span class="pl-s"><span class="pl-pds">"</span>/<span class="pl-pds">"</span></span>);
+
+  <span class="pl-c">// Catch-All Handlers</span>
+  <span class="pl-c">// Any request that can not find a Handler that canHandle it</span>
+  <span class="pl-c">// ends in the callbacks below.</span>
+  server.<span class="pl-c1">onNotFound</span>(onRequest);
+  server.<span class="pl-c1">onFileUpload</span>(onUpload);
+  server.<span class="pl-c1">onRequestBody</span>(onBody);
+
+  server.<span class="pl-c1">begin</span>();
+}
+
+<span class="pl-k">void</span> <span class="pl-en">loop</span>(){}</pre></div>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/me-no-dev/ESPAsyncWebServer">ESPAsyncWebServer</a> is maintained by <a href="https://github.com/me-no-dev">me-no-dev</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
