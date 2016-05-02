@@ -8,19 +8,19 @@
    server.on("/json", HTTP_ANY, [](AsyncWebServerRequest * request) {
 
     AsyncJsonResponse * response = new AsyncJsonResponse();
-    JsonObject& root = response->getRoot(); 
+    JsonObject& root = response->getRoot();
     root["key1"] = "key number one";
-    JsonObject& nested = root.createNestedObject("nested"); 
+    JsonObject& nested = root.createNestedObject("nested");
     nested["key1"] = "key number one";
 
     response->setLength();
-    request->send(response); 
+    request->send(response);
   });
 
 */
 #ifndef ASYNC_JSON_H_
 #define ASYNC_JSON_H_
-#include <ArduinoJson.h> 
+#include <ArduinoJson.h>
 
 /*
  * Json Response
@@ -39,40 +39,42 @@ class ChunkPrint : public Print {
     size_t write(uint8_t c){
       if (_to_skip > 0) {
         _to_skip--;
-        return 1; 
+        return 1;
       } else if (_to_write > 0) {
         _to_write--;
         _destination[_pos++] = c;
-        return 1; 
+        return 1;
       }
       return 0;
     }
 };
-    
+
 class AsyncJsonResponse: public AsyncAbstractResponse {
   private:
     DynamicJsonBuffer _jsonBuffer;
     JsonVariant _root;
-    bool _isValid; 
+    bool _isValid;
   public:
-    AsyncJsonResponse(): _isValid{false} {
+    AsyncJsonResponse(bool isArray): _isValid{false} {
       _code = 200;
       _contentType = "text/json";
-      _root = _jsonBuffer.createObject();
+      if(isArray)
+        _root = _jsonBuffer.createArray();
+      else
+        _root = _jsonBuffer.createObject();
     }
     ~AsyncJsonResponse() {}
     JsonVariant & getRoot() { return _root; }
     bool _sourceValid() { return _isValid; }
-    void setLength() { 
-
+    void setLength() {
       _contentLength = _root.measureLength();
       if (_contentLength) { _isValid = true; }
     }
-        
+
     size_t _fillBuffer(uint8_t *data, size_t len){
-      ChunkPrint dest(data, _sentLength, len); 
+      ChunkPrint dest(data, _sentLength, len);
       _root.printTo( dest ) ;
-      return len; 
+      return len;
     }
 };
 #endif
