@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>ESP8266 WebSocket2Serial</title>
+    <meta name="Description" content="ESP8266 WebSocket to Serial Terminal Proxy."/>
+    <link rel="shortcut icon" href="favicon.ico"/>
+    <script src="js/jquery-1.12.3.min.js"></script>
+    <script src="js/jquery.mousewheel-min.js"></script>
+    <script src="js/jquery.terminal-min.js"></script>
+    <link href="css/jquery.terminal-min.css" rel="stylesheet"/>
+  </head>
+<body>
+
+<script>
+jQuery(document).ready(function($) {
+  var id = 1;
+  var ws = null;
+
+  function stopWS() {
+    if (ws) {
+      ws.close();
+      ws = null;
+    }    
+  }
+
+  function startWS(url) {
+    if (url === undefined )
+      url = document.location.host;
+
+    stopWS();
+    ws = new WebSocket('ws://'+url+'/ws');
+    //ws.binaryType = "arraybuffer";
+
+    ws.onopen = function(e) {
+      console.log("ws connected", e);
+      term.echo("[[b;green;]Connected to "+url+"] Press ctrl-d or type close to disconnect");
+      term.set_prompt("[[b;green;]"+url+"]>");
+    };
+    ws.onclose = function(e){
+      term.echo("[[b;red;]Disconnected]");
+      term.set_prompt('>');
+    };
+    ws.onerror = function(e){
+      console.log("ws error", e);
+      term.echo("Error");
+    };
+
+    ws.onmessage = function(e){
+      var msg = "";
+      if(e.data instanceof ArrayBuffer){
+        msg = "BIN:";
+        var bytes = new Uint8Array(e.data);
+        for (var i = 0; i < bytes.length; i++) {
+          msg += String.fromCharCode(bytes[i]);
+        }
+      } else {
+        msg = "TXT:"+e.data;
+      }
+      term.echo(msg);
+    };
+  }
+  // Instanciate the terminal
+  var term = $('body').terminal( {
+          help: function() {
+            this.echo("available commands are mysql, js, test"); 
+          },
+          close: function() { 
+            stopWS(); 
+          },
+          connect: function(arg1) { 
+            startWS(arg1); 
+            this.push(function(command, term) { 
+              ws.send(command); 
+            } ,
+            {
+              onExit: function() { stopWS(); }
+            });
+          },
+        }, 
+
+        {  prompt: '>', 
+         checkArity : false,
+         greetings: "ESP8266 WebSocket To Serial terminal demo\n" + 
+                    "Type help to see available commands\n" +
+                    "Type connect to connect to " + document.location.host
+        }
+  );
+
+});
+
+</script>
+</body>
