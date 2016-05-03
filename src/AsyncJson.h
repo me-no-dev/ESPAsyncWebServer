@@ -55,7 +55,7 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
     JsonVariant _root;
     bool _isValid;
   public:
-    AsyncJsonResponse(bool isArray): _isValid{false} {
+    AsyncJsonResponse(bool isArray=false): _isValid{false} {
       _code = 200;
       _contentType = "text/json";
       if(isArray)
