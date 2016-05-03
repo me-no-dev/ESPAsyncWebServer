@@ -87,6 +87,10 @@ class AsyncWebSocketClient {
     //client id increments for the given server
     uint32_t id(){ return _clientId; }
     AwsClientStatus status(){ return _status; }
+    AsyncClient* client(){ return _client; }
+
+    IPAddress remoteIP();
+    uint16_t  remotePort();
 
     //control frames
     void close(uint16_t code=0, const char * message=NULL);

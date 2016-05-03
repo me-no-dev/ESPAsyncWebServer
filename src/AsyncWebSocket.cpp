@@ -64,7 +64,6 @@ size_t webSocketSendFrame(AsyncClient *client, bool final, uint8_t opcode, bool 
     mbuf[1] = rand() % 0xFF;
     mbuf[2] = rand() % 0xFF;
     mbuf[3] = rand() % 0xFF;
-    os_printf("frame mask: 0x%02x 0x%02x 0x%02x 0x%02x\n", mbuf[0], mbuf[1], mbuf[2], mbuf[3]);
   }
   if(len > 125)
     headLen += 2;
@@ -76,7 +75,7 @@ size_t webSocketSendFrame(AsyncClient *client, bool final, uint8_t opcode, bool 
 
   uint8_t *buf = (uint8_t*)malloc(headLen);
   if(buf == NULL){
-    os_printf("could not malloc %u bytes for frame header\n", headLen);
+    //os_printf("could not malloc %u bytes for frame header\n", headLen);
     return 0;
   }
 
@@ -95,7 +94,7 @@ size_t webSocketSendFrame(AsyncClient *client, bool final, uint8_t opcode, bool 
     memcpy(buf + (headLen - 4), mbuf, 4);
   }
   if(client->add((const char *)buf, headLen) != headLen){
-    os_printf("error adding %lu header bytes\n", headLen);
+    //os_printf("error adding %lu header bytes\n", headLen);
     free(buf);
     return 0;
   }
@@ -103,18 +102,17 @@ size_t webSocketSendFrame(AsyncClient *client, bool final, uint8_t opcode, bool 
 
   if(len){
     if(len && mask){
-      os_printf("masking the payload: %lu\n", len);
       size_t i;
       for(i=0;i<len;i++)
         data[i] = data[i] ^ mbuf[i%4];
     }
     if(client->add((const char *)data, len) != len){
-      os_printf("error adding %lu data bytes\n", len);
+      //os_printf("error adding %lu data bytes\n", len);
       return 0;
     }
   }
   if(!client->send()){
-    os_printf("error sending frame: %lu\n", headLen+len);
+    //os_printf("error sending frame: %lu\n", headLen+len);
     return 0;
   }
   return len;
@@ -379,13 +377,10 @@ void AsyncWebSocketClient::ping(uint8_t *data, size_t len){
     _queueControl(new AsyncWebSocketControl(WS_PING, data, len));
 }
 
-void AsyncWebSocketClient::_onError(int8_t){
-
-}
+void AsyncWebSocketClient::_onError(int8_t){}
 
 void AsyncWebSocketClient::_onTimeout(uint32_t time){
-  os_printf("_onTimeout: %u, state: %s\n", time, _client->stateToString());
-  _client->close();
+  _client->close(true);
 }
 
 void AsyncWebSocketClient::_onDisconnect(){
@@ -467,7 +462,7 @@ void AsyncWebSocketClient::_onData(void *buf, size_t plen){
       _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, (uint8_t*)data, plen);
     }
   } else {
-    os_printf("frame error: len: %u, index: %llu, total: %llu\n", plen, _pinfo.index, _pinfo.len);
+    //os_printf("frame error: len: %u, index: %llu, total: %llu\n", plen, _pinfo.index, _pinfo.len);
     //what should we do?
   }
 }
@@ -526,6 +521,19 @@ void AsyncWebSocketClient::binary(String &message){
   binary(message.c_str(), message.length());
 }
 
+IPAddress AsyncWebSocketClient::remoteIP() {
+    if(!_client) {
+        return IPAddress(0U);
+    }
+    return _client->remoteIP();
+}
+
+uint16_t AsyncWebSocketClient::remotePort() {
+    if(!_client) {
+        return 0;
+    }
+    return _client->remotePort();
+}
 
 
 
@@ -561,7 +569,6 @@ void AsyncWebSocket::_addClient(AsyncWebSocketClient * client){
 
 void AsyncWebSocket::_handleDisconnect(AsyncWebSocketClient * client){
   if(_clients == NULL){
-    os_printf("we have no clients to disconnect!");
     return;
   }
   if(_clients->id() == client->id()){
@@ -572,7 +579,6 @@ void AsyncWebSocket::_handleDisconnect(AsyncWebSocketClient * client){
   AsyncWebSocketClient * c = _clients;
   while(c->next != NULL && c->next->id() != client->id()) c = c->next;
   if(c->next == NULL){
-    os_printf("we could not find client [%u] to disconnect!", client->id());
     return;
   }
   c->next = client->next;
