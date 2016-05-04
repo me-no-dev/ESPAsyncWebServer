@@ -28,17 +28,25 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
     os_printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
   } else if(type == WS_EVT_DATA){
     AwsFrameInfo * info = (AwsFrameInfo*)arg;
-
-    Serial.print(info->opcode==WS_TEXT?"text:":"Binary (HEX):");
+    char buff[3];
+    String str = "";
 
     // Grab all data
     for(size_t i=0; i < info->len; i++) {
-      if (info->opcode == WS_TEXT )
-        Serial.print( (char) data[i]);
-      else
-        Serial.printf("%02x ", (uint8_t) data[i]);
+      if (info->opcode == WS_TEXT ) {
+        str += (char) data[i];
+      } else {
+        sprintf(buff, "%02x ", (uint8_t) data[i]);
+        str += buff ;
+      }
     }
-    Serial.println();
+
+    if (str == "ping")
+      client->printf("pong");
+    else if (str!="") {
+      Serial.print(info->opcode==WS_TEXT?"Text:":"Binary 0x:");
+      Serial.println(str);
+    }
   }
 }
 

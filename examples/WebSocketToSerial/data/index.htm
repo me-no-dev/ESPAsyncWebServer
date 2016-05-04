@@ -11,12 +11,12 @@
     <link href="css/jquery.terminal-min.css" rel="stylesheet"/>
   </head>
 <body>
-
 <script>
 jQuery(document).ready(function($) {
   var id = 1;
   var ws = null;
 
+  // Stop WebSocket
   function stopWS() {
     if (ws) {
       ws.close();
@@ -24,23 +24,26 @@ jQuery(document).ready(function($) {
     }    
   }
 
+  // Start WebSocket
   function startWS(url) {
     if (url === undefined )
       url = document.location.host;
-
     stopWS();
     ws = new WebSocket('ws://'+url+'/ws');
-    //ws.binaryType = "arraybuffer";
+    ws.binaryType = "arraybuffer";
 
     ws.onopen = function(e) {
       console.log("ws connected", e);
-      term.echo("[[b;green;]Connected to "+url+"] Press ctrl-d or type close to disconnect");
-      term.set_prompt("[[b;green;]"+url+"]>");
+      term.echo("[[b;green;]Connected to "+url+"] Press ctrl-d or type [[b;blue;]!close] to disconnect");
+      term.echo("Type [[b;blue;]ping] so see pong response");
+      term.set_prompt(url+"[[;green;] #]");
     };
+
     ws.onclose = function(e){
       term.echo("[[b;red;]Disconnected]");
-      term.set_prompt('>');
+      term.set_prompt('[[;red;]>]');
     };
+
     ws.onerror = function(e){
       console.log("ws error", e);
       term.echo("Error");
@@ -49,45 +52,58 @@ jQuery(document).ready(function($) {
     ws.onmessage = function(e){
       var msg = "";
       if(e.data instanceof ArrayBuffer){
-        msg = "BIN:";
+        // WS binary in blue
+        color = 'blue';
         var bytes = new Uint8Array(e.data);
         for (var i = 0; i < bytes.length; i++) {
           msg += String.fromCharCode(bytes[i]);
         }
       } else {
-        msg = "TXT:"+e.data;
+        // WS text in green
+        color = 'green';
+        msg = e.data;
       }
-      term.echo(msg);
+      // remove \r and \n terminal echo them
+      msg.replace(/(\r\n|\n|\r)/gm,"");
+      term.echo("[[;"+color+";]"+msg+"]");
     };
   }
-  // Instanciate the terminal
+
+  // Instanciate the terminal object
   var term = $('body').terminal( {
           help: function() {
-            this.echo("available commands are mysql, js, test"); 
-          },
-          close: function() { 
-            stopWS(); 
+            this.echo("available commands are [[b;blue;]connect], [[b;blue;]help]\n" + 
+                      "connect is done trough WebSocket so real URI is [[bu;;]ws://host:port/ws]\n" +
+                      "as soon as you're connected to Internet you can connect anywhere\n" +
+                      "examples: [[b;blue;]connect]                connect to same host than in browser url\n" +
+                      "          [[b;blue;]connect 192.168.1.22]   connect to 192.168.1.22\n" +
+                      "          [[b;blue;]connect mywebsocket:81] connect to mywebsocket:81"); 
           },
           connect: function(arg1) { 
             startWS(arg1); 
             this.push(function(command, term) { 
-              ws.send(command); 
-            } ,
-            {
-              onExit: function() { stopWS(); }
-            });
+
+              // Interpreter command, don't send but interpret
+              if ( command.charAt(0) == '!' ) {
+                if (command == "!close") {
+                  stopWS(); 
+                  this.pop(); 
+                }
+              // Send to WebSocket
+              } else {
+                ws.send(command); 
+              }
+            },{ onExit: function(){stopWS();}});
           },
         }, 
 
-        {  prompt: '>', 
+        {  prompt: '[[;red;]>]', 
          checkArity : false,
          greetings: "ESP8266 WebSocket To Serial terminal demo\n" + 
-                    "Type help to see available commands\n" +
-                    "Type connect to connect to " + document.location.host
+                    "Type [[b;blue;]help] to see available commands\n" +
+                    "Type [[b;blue;]connect] to connect to [[bu;;]" + document.location.host + "]"
         }
   );
-
 });
-
 </script>
 </body>
