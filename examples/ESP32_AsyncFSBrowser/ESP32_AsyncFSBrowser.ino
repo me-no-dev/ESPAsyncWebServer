@@ -182,8 +182,8 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
   }
 }
 
-const char* ssid = "**********";
-const char* password = "************";
+const char* ssid = "*******";
+const char* password = "*******";
 const char* http_username = "admin";
 const char* http_password = "admin";
 
