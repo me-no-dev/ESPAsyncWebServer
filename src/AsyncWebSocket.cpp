@@ -544,7 +544,7 @@ uint16_t AsyncWebSocketClient::remotePort() {
 AsyncWebSocket::AsyncWebSocket(String url)
   :_url(url)
   ,_clients(NULL)
-  ,_cNextId(0)
+  ,_cNextId(1)
 {
   _eventHandler = NULL;
 }
