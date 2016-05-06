@@ -125,18 +125,22 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
     os_printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
   } else if(type == WS_EVT_DATA){
     AwsFrameInfo * info = (AwsFrameInfo*)arg;
+    String msg = "";
     if(info->final && info->index == 0 && info->len == len){
       //the whole message is in a single frame and we got all of it's data
       os_printf("ws[%s][%u] %s-message[%llu]: ", server->url(), client->id(), (info->opcode == WS_TEXT)?"text":"binary", info->len);
       if(info->opcode == WS_TEXT){
-        data[len] = 0;
-        os_printf("%s\n", (char*)data);
-      } else {
-        for(size_t i=0; i < info->len; i++){
-          os_printf("%02x ", data[i]);
+        for(size_t i=0; i < info->len; i++) {
+          msg += (char) data[i];
         }
-        os_printf("\n");
+      } else {
+        char buff[3];
+        for(size_t i=0; i < info->len; i++) {
+          sprintf(buff, "%02x ", (uint8_t) data[i]);
+          msg += buff ;
+        }
       }
+      os_printf("%s\n",msg.c_str());
       if(info->opcode == WS_TEXT)
         client->text("I got your text message");
       else
@@ -150,15 +154,19 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
       }
 
       os_printf("ws[%s][%u] frame[%u] %s[%llu - %llu]: ", server->url(), client->id(), info->num, (info->message_opcode == WS_TEXT)?"text":"binary", info->index, info->index + len);
-      if(info->message_opcode == WS_TEXT){
-        data[len] = 0;
-        os_printf("%s\n", (char*)data);
-      } else {
-        for(size_t i=0; i < len; i++){
-          os_printf("%02x ", data[i]);
+      if(info->opcode == WS_TEXT){
+        for(size_t i=0; i < info->len; i++) {
+          msg += (char) data[i];
         }
-        os_printf("\n");
+      } else {
+        char buff[3];
+        for(size_t i=0; i < info->len; i++) {
+          sprintf(buff, "%02x ", (uint8_t) data[i]);
+          msg += buff ;
+        }
       }
+      os_printf("%s\n",msg.c_str());
+
 
       if((info->index + len) == info->len){
         os_printf("ws[%s][%u] frame[%u] end[%llu]\n", server->url(), client->id(), info->num, info->len);
