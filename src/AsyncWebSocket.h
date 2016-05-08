@@ -103,12 +103,14 @@ class AsyncWebSocketClient {
 
     void text(const char * message, size_t len);
     void text(const char * message);
+    void text(const __FlashStringHelper *data);
     void text(uint8_t * message, size_t len);
     void text(char * message);
     void text(String &message);
 
     void binary(const char * message, size_t len);
     void binary(const char * message);
+    void binary(const __FlashStringHelper *data);
     void binary(uint8_t * message, size_t len);
     void binary(char * message);
     void binary(String &message);

@@ -495,6 +495,21 @@ void AsyncWebSocketClient::text(const char * message, size_t len){
 void AsyncWebSocketClient::text(const char * message){
   text(message, strlen(message));
 }
+void AsyncWebSocketClient::text(const __FlashStringHelper *data){
+  PGM_P p = reinterpret_cast<PGM_P>(data);
+  size_t n = 0;
+  while (1) {
+    if (pgm_read_byte(p+n) == 0) break;
+      n += 1;
+  }
+  char * message = (char*) malloc(n+1);
+  if(message){
+    for(size_t b=0; b<n; b++)
+      message[b] = pgm_read_byte(p++);
+    message[n] = 0;
+    text(message, n);
+  }
+}
 void AsyncWebSocketClient::text(uint8_t * message, size_t len){
   text((const char *)message, len);
 }
@@ -510,6 +525,21 @@ void AsyncWebSocketClient::binary(const char * message, size_t len){
 }
 void AsyncWebSocketClient::binary(const char * message){
   binary(message, strlen(message));
+}
+void AsyncWebSocketClient::binary(const __FlashStringHelper *data){
+  PGM_P p = reinterpret_cast<PGM_P>(data);
+  size_t n = 0;
+  while (1) {
+    if (pgm_read_byte(p+n) == 0) break;
+      n += 1;
+  }
+  char * message = (char*) malloc(n+1);
+  if(message){
+    for(size_t b=0; b<n; b++)
+      message[b] = pgm_read_byte(p++);
+    message[n] = 0;
+    text(message, n);
+  }
 }
 void AsyncWebSocketClient::binary(uint8_t * message, size_t len){
   binary((const char *)message, len);
@@ -737,7 +767,6 @@ void AsyncWebSocket::text(uint32_t id, const __FlashStringHelper *data) {
     for(size_t b=0; b<n; b++)
       message[b] = pgm_read_byte(p++);
     message[n] = 0;
-    Serial.printf("text[#%d](%d,%s)\n", id, n, message);
     text(id, message, n);
   }
 }
