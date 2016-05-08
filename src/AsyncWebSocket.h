@@ -148,6 +148,7 @@ class AsyncWebSocket: public AsyncWebHandler {
 
     void text(uint32_t id, const char * message, size_t len);
     void text(uint32_t id, const char * message);
+    void text(uint32_t id, const __FlashStringHelper *data);
     void text(uint32_t id, uint8_t * message, size_t len);
     void text(uint32_t id, char * message);
     void text(uint32_t id, String &message);
@@ -160,6 +161,7 @@ class AsyncWebSocket: public AsyncWebHandler {
 
     void binary(uint32_t id, const char * message, size_t len);
     void binary(uint32_t id, const char * message);
+    void binary(uint32_t id, const __FlashStringHelper *data);
     void binary(uint32_t id, uint8_t * message, size_t len);
     void binary(uint32_t id, char * message);
     void binary(uint32_t id, String &message);

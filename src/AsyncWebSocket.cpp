@@ -725,6 +725,22 @@ void AsyncWebSocket::text(uint32_t id, uint8_t * message, size_t len){
 void AsyncWebSocket::text(uint32_t id, char * message){
   text(id, message, strlen(message));
 }
+void AsyncWebSocket::text(uint32_t id, const __FlashStringHelper *data) {
+  PGM_P p = reinterpret_cast<PGM_P>(data);
+  size_t n = 0;
+  while (1) {
+    if (pgm_read_byte(p+n) == 0) break;
+      n += 1;
+  }
+  char * message = (char*) malloc(n+1);
+  if(message){
+    for(size_t b=0; b<n; b++)
+      message[b] = pgm_read_byte(p++);
+    message[n] = 0;
+    Serial.printf("text[#%d](%d,%s)\n", id, n, message);
+    text(id, message, n);
+  }
+}
 void AsyncWebSocket::text(uint32_t id, String &message){
   text(id, message.c_str(), message.length());
 }
@@ -748,6 +764,21 @@ void AsyncWebSocket::binary(uint32_t id, uint8_t * message, size_t len){
 }
 void AsyncWebSocket::binary(uint32_t id, char * message){
   binary(id, message, strlen(message));
+}
+void AsyncWebSocket::binary(uint32_t id, const __FlashStringHelper *data) {
+  PGM_P p = reinterpret_cast<PGM_P>(data);
+  size_t n = 0;
+  while (1) {
+    if (pgm_read_byte(n) == 0) break;
+      n += 1;
+  }
+  char * message = (char*) malloc(n+1);
+  if(message){
+    for(size_t b=0; b<n; b++)
+      message[b] = pgm_read_byte(p++);
+    message[n] = 0;
+    text(id, message, n);
+  }
 }
 void AsyncWebSocket::binary(uint32_t id, String &message){
   binary(id, message.c_str(), message.length());
