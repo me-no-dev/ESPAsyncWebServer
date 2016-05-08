@@ -464,36 +464,48 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
 
 ### Methods for sending data to a socket client
 ```cpp
+
+
+
 //Server methods
 AsyncWebSocket ws("/ws");
 //printf to a client
-ws.printf([client id], [arguments...])
+ws.printf([client id], [arguments...]);
 //printf to all clients
-ws.printfAll([arguments...])
+ws.printfAll([arguments...]);
 //send text to a client
-ws.text([client id], [(char*)text])
-ws.text([client id], [text], [len])
+ws.text([client id], [(char*)text]);
+ws.text([client id], [text], [len]);
+const char flash_text[] PROGMEM = "Text to send"
+ws.text([client id], [PSTR("text")]);
+ws.text([client id], [FPSTR(flash_text)]);
 //send text to all clients
-ws.textAll([(char*text])
-ws.textAll([text], [len])
+ws.textAll([(char*text]);
+ws.textAll([text], [len]);
 //send binary to a client
-ws.binary([client id], [(char*)binary])
-ws.binary([client id], [binary], [len])
+ws.binary([client id], [(char*)binary]);
+ws.binary([client id], [binary], [len]);
+const uint8_t flash_binary[] PROGMEM = { 0x01, 0x02, 0x03, 0x04 };
+ws.binary([client id], [flash_binary], [len]);
 //send binary to all clients
-ws.binaryAll([(char*binary])
-ws.binaryAll([binary], [len])
+ws.binaryAll([(char*binary]);
+ws.binaryAll([binary], [len]);
 
 //client methods
 AsyncWebSocketClient * client;
 //printf to a client
-client->printf([arguments...])
+client->printf([arguments...]);
 //send text to a client
-client->text([(char*)text])
-client->text([text], [len])
+client->text([(char*)text]);
+client->text([text], [len]);
+const char flash_text[] PROGMEM = "Text to send";
+client->text([PSTR("text")]);
+client->text([FPSTR(flash_text)]);
 //send binary to a client
-client->binary([(char*)binary])
-client->binary([binary], [len])
-
+client->binary([(char*)binary]);
+client->binary([binary], [len]);
+const uint8_t flash_binary[] PROGMEM = { 0x01, 0x02, 0x03, 0x04 };
+client->binary([flash_binary], [len]);
 ```
 
 
