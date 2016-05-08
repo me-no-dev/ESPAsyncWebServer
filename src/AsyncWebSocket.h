@@ -110,7 +110,7 @@ class AsyncWebSocketClient {
 
     void binary(const char * message, size_t len);
     void binary(const char * message);
-    void binary(const __FlashStringHelper *data);
+    void binary(const __FlashStringHelper *data, size_t len);
     void binary(uint8_t * message, size_t len);
     void binary(char * message);
     void binary(String &message);
@@ -163,7 +163,7 @@ class AsyncWebSocket: public AsyncWebHandler {
 
     void binary(uint32_t id, const char * message, size_t len);
     void binary(uint32_t id, const char * message);
-    void binary(uint32_t id, const __FlashStringHelper *data);
+    void binary(uint32_t id, const __FlashStringHelper *data, size_t len);
     void binary(uint32_t id, uint8_t * message, size_t len);
     void binary(uint32_t id, char * message);
     void binary(uint32_t id, String &message);

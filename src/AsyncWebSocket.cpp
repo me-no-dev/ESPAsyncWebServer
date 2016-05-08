@@ -526,19 +526,13 @@ void AsyncWebSocketClient::binary(const char * message, size_t len){
 void AsyncWebSocketClient::binary(const char * message){
   binary(message, strlen(message));
 }
-void AsyncWebSocketClient::binary(const __FlashStringHelper *data){
+void AsyncWebSocketClient::binary(const __FlashStringHelper *data, size_t len){
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = 0;
-  while (1) {
-    if (pgm_read_byte(p+n) == 0) break;
-      n += 1;
-  }
-  char * message = (char*) malloc(n+1);
+  char * message = (char*) malloc(len);
   if(message){
-    for(size_t b=0; b<n; b++)
+    for(size_t b=0; b<len; b++)
       message[b] = pgm_read_byte(p++);
-    message[n] = 0;
-    text(message, n);
+    binary(message, len);
   }
 }
 void AsyncWebSocketClient::binary(uint8_t * message, size_t len){
@@ -794,19 +788,13 @@ void AsyncWebSocket::binary(uint32_t id, uint8_t * message, size_t len){
 void AsyncWebSocket::binary(uint32_t id, char * message){
   binary(id, message, strlen(message));
 }
-void AsyncWebSocket::binary(uint32_t id, const __FlashStringHelper *data) {
+void AsyncWebSocket::binary(uint32_t id, const __FlashStringHelper *data, size_t len) {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = 0;
-  while (1) {
-    if (pgm_read_byte(n) == 0) break;
-      n += 1;
-  }
-  char * message = (char*) malloc(n+1);
+  char * message = (char*) malloc(len);
   if(message){
-    for(size_t b=0; b<n; b++)
+    for(size_t b=0; b<len; b++)
       message[b] = pgm_read_byte(p++);
-    message[n] = 0;
-    text(id, message, n);
+    binary(id, message, len);
   }
 }
 void AsyncWebSocket::binary(uint32_t id, String &message){
