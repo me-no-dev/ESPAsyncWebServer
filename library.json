@@ -12,8 +12,8 @@
     "type": "git",
     "url": "https://github.com/me-no-dev/ESPAsyncWebServer.git"
   },
-  "frameworks": "espressif",
-  "platforms":"arduino",
+  "frameworks": "arduino",
+  "platforms":"espressif",
   "dependencies":
   {
     "name": "ESPAsyncTCP"
