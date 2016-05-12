@@ -504,6 +504,21 @@ void AsyncWebSocketClient::text(char * message){
 void AsyncWebSocketClient::text(String &message){
   text(message.c_str(), message.length());
 }
+void AsyncWebSocketClient::text(const __FlashStringHelper *data){
+  PGM_P p = reinterpret_cast<PGM_P>(data);
+  size_t n = 0;
+  while (1) {
+    if (pgm_read_byte(p+n) == 0) break;
+      n += 1;
+  }
+  char * message = (char*) malloc(n+1);
+  if(message){
+    for(size_t b=0; b<n; b++)
+      message[b] = pgm_read_byte(p++);
+    message[n] = 0;
+    text(message, n);
+  }
+}
 
 void AsyncWebSocketClient::binary(const char * message, size_t len){
   _queueMessage(new AsyncWebSocketBasicMessage(message, len, WS_BINARY));
@@ -519,6 +534,15 @@ void AsyncWebSocketClient::binary(char * message){
 }
 void AsyncWebSocketClient::binary(String &message){
   binary(message.c_str(), message.length());
+}
+void AsyncWebSocketClient::binary(const __FlashStringHelper *data, size_t len){
+  PGM_P p = reinterpret_cast<PGM_P>(data);
+  char * message = (char*) malloc(len);
+  if(message){
+    for(size_t b=0; b<len; b++)
+      message[b] = pgm_read_byte(p++);
+    binary(message, len);
+  }
 }
 
 IPAddress AsyncWebSocketClient::remoteIP() {
@@ -728,6 +752,11 @@ void AsyncWebSocket::text(uint32_t id, char * message){
 void AsyncWebSocket::text(uint32_t id, String &message){
   text(id, message.c_str(), message.length());
 }
+void AsyncWebSocket::text(uint32_t id, const __FlashStringHelper *message){
+  AsyncWebSocketClient * c = client(id);
+  if(c != NULL)
+    c->text(message);
+}
 void AsyncWebSocket::textAll(const char * message){
   textAll(message, strlen(message));
 }
@@ -739,6 +768,14 @@ void AsyncWebSocket::textAll(char * message){
 }
 void AsyncWebSocket::textAll(String &message){
   textAll(message.c_str(), message.length());
+}
+void AsyncWebSocket::textAll(const __FlashStringHelper *message){
+  AsyncWebSocketClient * c = _clients;
+  while(c != NULL){
+    if(c->status() == WS_CONNECTED)
+      c->text(message);
+    c = c->next;
+  }
 }
 void AsyncWebSocket::binary(uint32_t id, const char * message){
   binary(id, message, strlen(message));
@@ -752,6 +789,11 @@ void AsyncWebSocket::binary(uint32_t id, char * message){
 void AsyncWebSocket::binary(uint32_t id, String &message){
   binary(id, message.c_str(), message.length());
 }
+void AsyncWebSocket::binary(uint32_t id, const __FlashStringHelper *message, size_t len){
+  AsyncWebSocketClient * c = client(id);
+  if(c != NULL)
+    c-> binary(message, len);
+}
 void AsyncWebSocket::binaryAll(const char * message){
   binaryAll(message, strlen(message));
 }
@@ -764,6 +806,14 @@ void AsyncWebSocket::binaryAll(char * message){
 void AsyncWebSocket::binaryAll(String &message){
   binaryAll(message.c_str(), message.length());
 }
+void AsyncWebSocket::binaryAll(const __FlashStringHelper *message, size_t len){
+  AsyncWebSocketClient * c = _clients;
+  while(c != NULL){
+    if(c->status() == WS_CONNECTED)
+      c-> binary(message, len);
+    c = c->next;
+  }
+ }
 
 const char * WS_STR_CONNECTION = "Connection";
 const char * WS_STR_UPGRADE = "Upgrade";
