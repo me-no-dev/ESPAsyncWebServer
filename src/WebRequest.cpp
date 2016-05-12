@@ -317,7 +317,7 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data){
 void AsyncWebServerRequest::_handleUploadByte(uint8_t data, bool last){
   _itemBuffer[_itemBufferIndex++] = data;
 
-  if(last || _itemBufferIndex = 1460){
+  if(last || _itemBufferIndex == 1460){
     if(_handler)
       _handler->handleUpload(this, _itemFilename, _itemSize - _itemBufferIndex, _itemBuffer, _itemBufferIndex, false);
     _itemBufferIndex = 0;
