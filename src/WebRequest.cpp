@@ -224,6 +224,7 @@ bool AsyncWebServerRequest::_parseReqHead(){
 
   _temp = _temp.substring(_temp.indexOf(' ')+1);
   String u = _temp.substring(0, _temp.indexOf(' '));
+  u = urlDecode(u);
   String g = String();
   if(u.indexOf('?') > 0){
     g = u.substring(u.indexOf('?') + 1);
