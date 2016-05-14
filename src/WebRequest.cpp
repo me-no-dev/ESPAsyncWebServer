@@ -224,6 +224,7 @@ bool AsyncWebServerRequest::_parseReqHead(){
 
   _temp = _temp.substring(_temp.indexOf(' ')+1);
   String u = _temp.substring(0, _temp.indexOf(' '));
+  u = urlDecode(u);
   String g = String();
   if(u.indexOf('?') > 0){
     g = u.substring(u.indexOf('?') + 1);
@@ -316,7 +317,8 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data){
 
 void AsyncWebServerRequest::_handleUploadByte(uint8_t data, bool last){
   _itemBuffer[_itemBufferIndex++] = data;
-  if(last){
+
+  if(last || _itemBufferIndex == 1460){
     if(_handler)
       _handler->handleUpload(this, _itemFilename, _itemSize - _itemBufferIndex, _itemBuffer, _itemBufferIndex, false);
     _itemBufferIndex = 0;
@@ -348,7 +350,13 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
     _itemType = String();
   }
 
-  if(_multiParseState == EXPECT_BOUNDARY){
+  if(_multiParseState == WAIT_FOR_RETURN1){
+    if(data != '\r'){
+      itemWriteByte(data);
+    } else {
+      _multiParseState = EXPECT_FEED1;
+    }
+  } else if(_multiParseState == EXPECT_BOUNDARY){
     if(_parsedLength < 2 && data != '-'){
       _multiParseState = PARSE_ERROR;
       return;
@@ -407,15 +415,13 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
           if(_itemBuffer)
             free(_itemBuffer);
           _itemBuffer = (uint8_t*)malloc(1460);
+          if(_itemBuffer == NULL){
+            _multiParseState = PARSE_ERROR;
+            return;
+          }
           _itemBufferIndex = 0;
         }
       }
-    }
-  } else if(_multiParseState == WAIT_FOR_RETURN1){
-    if(data != '\r'){
-      itemWriteByte(data);
-    } else {
-      _multiParseState = EXPECT_FEED1;
     }
   } else if(_multiParseState == EXPECT_FEED1){
     if(data != '\n'){
