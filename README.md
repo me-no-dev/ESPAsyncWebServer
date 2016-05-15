@@ -48,7 +48,7 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - The ```Handlers``` are used for executing specific actions to particular requests
 - One ```Handler``` instance can be attached to any request and lives together with the server
 - The ```canHandle``` method is used for filtering the requests that can be handled
-  and declaring any interesting headers that the ```Request``` should collect 
+  and declaring any interesting headers that the ```Request``` should collect
 - Decision can be based on request method, request url, http version, request host/port/target host and GET parameters
 - Once a ```Handler``` is attached to given ```Request``` (```canHandle``` returned true)
   that ```Handler``` takes care to receive any file/data upload and attach a ```Response```
@@ -72,7 +72,7 @@ To use this library you need to have the latest git versions of either [ESP8266]
 ```cpp
 request->version();       // uint8_t: 0 = HTTP/1.0, 1 = HTTP/1.1
 request->method();        // enum:    HTTP_GET, HTTP_POST, HTTP_DELETE, HTTP_PUT, HTTP_PATCH, HTTP_HEAD, HTTP_OPTIONS
-request->url();           // String:  URL of the request (not including host, port or GET parameters) 
+request->url();           // String:  URL of the request (not including host, port or GET parameters)
 request->host();          // String:  The requested host (can be used for virtual hosting)
 request->contentType();   // String:  ContentType of the request (not avaiable in Handler::canHandle)
 request->contentLength(); // size_t:  ContentLength of the request (not avaiable in Handler::canHandle)
@@ -94,6 +94,18 @@ if(request->hasHeader("MyHeader")){
   AsyncWebHeader* h = request->getHeader("MyHeader");
   Serial.printf("MyHeader: %s\n", h->value().c_str());
 }
+
+//List all collected headers (Compatibility)
+int headers = request->headers();
+int i;
+for(i=0;i<headers;i++){
+  Serial.printf("HEADER[%s]: %s\n", headerName(i).c_str(),header(i).c_str());
+}
+
+//get specific header by name (Compatibility)
+if(request->hasHeader("MyHeader")){
+  Serial.printf("MyHeader: %s\n", header("MyHeader").c_str());
+}
 ```
 
 ### GET, POST and FILE parameters
@@ -112,16 +124,26 @@ for(int i=0;i<params;i++){
 }
 
 //Check if GET parameter exists
-bool exists = request->hasParam("download");
-AsyncWebParameter* p = request->getParam("download");
+if(request->hasParam("download"))
+  AsyncWebParameter* p = request->getParam("download");
 
 //Check if POST (but not File) parameter exists
-bool exists = request->hasParam("download", true);
-AsyncWebParameter* p = request->getParam("download", true);
+if(request->hasParam("download", true))
+  AsyncWebParameter* p = request->getParam("download", true);
 
 //Check if FILE was uploaded
-bool exists = request->hasParam("download", true, true);
-AsyncWebParameter* p = request->getParam("download", true, true);
+if(request->hasParam("download", true, true))
+  AsyncWebParameter* p = request->getParam("download", true, true);
+
+//List all parameters (Compatibility)
+int args = request->args();
+for(int i=0;i<args;i++){
+  Serial.printf("ARG[%s]: %s\n", argName(i).c_str(), arg(i).c_str());
+}
+
+//Check if parameter exists (Compatibility)
+if(equest->hasArg("download"))
+  String arg = request->arg("download");
 ```
 
 ### FILE Upload handling
@@ -336,7 +358,7 @@ request->send(response);
 ```
 
 ### ArduinoJson Basic Response
-This way of sending Json is great for when the result is below 4KB 
+This way of sending Json is great for when the result is below 4KB
 ```cpp
 #include "AsyncJson.h"
 #include "ArduinoJson.h"
@@ -470,48 +492,52 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
 //Server methods
 AsyncWebSocket ws("/ws");
 //printf to a client
-ws.printf([client id], [arguments...]);
+ws.printf((uint32_t)client_id, arguments...);
 //printf to all clients
-ws.printfAll([arguments...]);
+ws.printfAll(arguments...);
 //printf_P to a client
-ws.printf_P([client id], PSTR([format]), [arguments...]);
+ws.printf_P((uint32_t)client_id, PSTR(format), arguments...);
 //printfAll_P to all clients
-ws.printf_P(PSTR([format]), [arguments...]);
+ws.printf_P(PSTR(format), arguments...);
 //send text to a client
-ws.text([client id], [(char*)text]);
-ws.text([client id], [text], [len]);
+ws.text((uint32_t)client_id, (char*)text);
+ws.text((uint32_t)client_id, (uint8_t*)text, (size_t)len);
+//send text from PROGMEM to a client
+ws.text((uint32_t)client_id, PSTR("text"));
 const char flash_text[] PROGMEM = "Text to send"
-ws.text([client id], [PSTR("text")]);
-ws.text([client id], [FPSTR(flash_text)]);
+ws.text((uint32_t)client_id, FPSTR(flash_text));
 //send text to all clients
-ws.textAll([(char*text]);
-ws.textAll([text], [len]);
+ws.textAll((char*)text);
+ws.textAll((uint8_t*)text, (size_t)len);
 //send binary to a client
-ws.binary([client id], [(char*)binary]);
-ws.binary([client id], [binary], [len]);
+ws.binary((uint32_t)client_id, (char*)binary);
+ws.binary((uint32_t)client_id, (uint8_t*)binary, (size_t)len);
+//send binary from PROGMEM to a client
 const uint8_t flash_binary[] PROGMEM = { 0x01, 0x02, 0x03, 0x04 };
-ws.binary([client id], [flash_binary], [len]);
+ws.binary((uint32_t)client_id, flash_binary, 4);
 //send binary to all clients
-ws.binaryAll([(char*binary]);
-ws.binaryAll([binary], [len]);
+ws.binaryAll((char*)binary);
+ws.binaryAll((uint8_t*)binary, (size_t)len);
 
 //client methods
 AsyncWebSocketClient * client;
-//printf to a client
-client->printf([arguments...]);
-//printf_P to a client
-client->printf_P( PSTR([format]), [arguments...]);
-//send text to a client
-client->text([(char*)text]);
-client->text([text], [len]);
+//printf
+client->printf(arguments...);
+//printf_P
+client->printf_P(PSTR(format), arguments...);
+//send text
+client->text((char*)text);
+client->text((uint8_t*)text, (size_t)len);
+//send text from PROGMEM
+client->text(PSTR("text"));
 const char flash_text[] PROGMEM = "Text to send";
-client->text([PSTR("text")]);
-client->text([FPSTR(flash_text)]);
-//send binary to a client
-client->binary([(char*)binary]);
-client->binary([binary], [len]);
+client->text(FPSTR(flash_text));
+//send binary
+client->binary((char*)binary);
+client->binary((uint8_t*)binary, (size_t)len);
+//send binary from PROGMEM
 const uint8_t flash_binary[] PROGMEM = { 0x01, 0x02, 0x03, 0x04 };
-client->binary([flash_binary], [len]);
+client->binary(flash_binary, 4);
 ```
 
 
@@ -553,47 +579,45 @@ void setup(){
     Serial.printf("WiFi Failed!\n");
     return;
   }
-  
+
   // attach AsyncWebSocket
   ws.onEvent(onEvent);
   server.addHandler(&ws);
-  
+
   // respond to GET requests on URL /heap
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
-  
+
   // upload a file to /upload
   server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
     request->send(200);
   }, handleUpload);
-  
+
   // send a file when /index is requested
   server.on("/index", HTTP_ANY, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/index.htm");
   });
-  
+
   // HTTP basic authentication
   server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
     if(!request->authenticate(http_username, http_password))
         return request->requestAuthentication();
     request->send(200, "text/plain", "Login Success!");
   });
-  
-  // attach filesystem root at URL /fs 
+
+  // attach filesystem root at URL /fs
   server.serveStatic("/fs", SPIFFS, "/");
-  
+
   // Catch-All Handlers
   // Any request that can not find a Handler that canHandle it
   // ends in the callbacks below.
   server.onNotFound(onRequest);
   server.onFileUpload(onUpload);
   server.onRequestBody(onBody);
-  
+
   server.begin();
 }
 
 void loop(){}
 ```
-
-
