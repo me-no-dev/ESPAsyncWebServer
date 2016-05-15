@@ -489,6 +489,36 @@ size_t AsyncWebSocketClient::printf(const char *format, ...) {
   return len;
 }
 
+size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
+  char* format;
+  va_list arg;
+  va_start(arg, formatP);
+#ifdef ESP8266
+  //ToDo: figure out a way around this
+  size_t len = 1440;
+#else
+  size_t len = vsnprintf(NULL, 0, format, arg)+1;
+#endif
+  size_t fmtLen = strlen_P(formatP); 
+  format = (char*)calloc(fmtLen+1, sizeof(char));
+  if ( format ) {
+    strcpy_P(format, formatP);
+    char * msg = (char*)malloc(len+1);
+    if(msg == NULL){
+      va_end(arg);
+      return 0;
+    }
+
+    len = vsnprintf(msg, len, format, arg);
+    msg[len] = 0;
+    text(msg);
+    va_end(arg);
+    free(msg);
+    free(format);
+  }
+  return len;
+}
+
 void AsyncWebSocketClient::text(const char * message, size_t len){
   _queueMessage(new AsyncWebSocketBasicMessage(message, len));
 }
@@ -737,6 +767,49 @@ size_t AsyncWebSocket::printfAll(const char *format, ...) {
   textAll(msg);
   va_end(arg);
   free(msg);
+  return len;
+}
+
+size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...){
+  AsyncWebSocketClient * c = client(id);
+  if(c != NULL){
+    va_list arg;
+    va_start(arg, formatP);
+    size_t len = c->printf_P(formatP, arg);
+    va_end(arg);
+    return len;
+  }
+  return 0;
+}
+
+size_t AsyncWebSocket::printfAll_P(PGM_P formatP, ...) {
+  char* format;
+  va_list arg;
+  va_start(arg, formatP);
+#ifdef ESP8266
+  //ToDo: figure out a way around this
+  size_t len = 1440;
+#else
+  size_t len = vsnprintf(NULL, 0, format, arg)+1;
+#endif
+  size_t fmtLen = strlen_P(formatP); 
+  format = (char*)calloc(fmtLen+1, sizeof(char));
+  if ( format ) {
+    strcpy_P(format, formatP);
+    char * msg = (char*)malloc(len+1);
+    if(msg == NULL){
+      va_end(arg);
+      free(format);
+      return 0;
+    }
+
+    len = vsnprintf(msg, len, format, arg);
+    msg[len] = 0;
+    textAll(msg);
+    va_end(arg);
+    free(msg);
+    free(format);
+  }
   return len;
 }
 

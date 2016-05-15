@@ -473,6 +473,10 @@ AsyncWebSocket ws("/ws");
 ws.printf([client id], [arguments...]);
 //printf to all clients
 ws.printfAll([arguments...]);
+//printf_P to a client
+ws.printf_P([client id], PSTR([format]), [arguments...]);
+//printfAll_P to all clients
+ws.printf_P(PSTR([format]), [arguments...]);
 //send text to a client
 ws.text([client id], [(char*)text]);
 ws.text([client id], [text], [len]);
@@ -495,6 +499,8 @@ ws.binaryAll([binary], [len]);
 AsyncWebSocketClient * client;
 //printf to a client
 client->printf([arguments...]);
+//printf_P to a client
+client->printf_P( PSTR([format]), [arguments...]);
 //send text to a client
 client->text([(char*)text]);
 client->text([text], [len]);
