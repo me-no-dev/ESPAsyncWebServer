@@ -99,12 +99,12 @@ if(request->hasHeader("MyHeader")){
 int headers = request->headers();
 int i;
 for(i=0;i<headers;i++){
-  Serial.printf("HEADER[%s]: %s\n", headerName(i).c_str(),header(i).c_str());
+  Serial.printf("HEADER[%s]: %s\n", request->headerName(i).c_str(), request->header(i).c_str());
 }
 
 //get specific header by name (Compatibility)
 if(request->hasHeader("MyHeader")){
-  Serial.printf("MyHeader: %s\n", header("MyHeader").c_str());
+  Serial.printf("MyHeader: %s\n", request->header("MyHeader").c_str());
 }
 ```
 
@@ -138,11 +138,11 @@ if(request->hasParam("download", true, true))
 //List all parameters (Compatibility)
 int args = request->args();
 for(int i=0;i<args;i++){
-  Serial.printf("ARG[%s]: %s\n", argName(i).c_str(), arg(i).c_str());
+  Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
 }
 
 //Check if parameter exists (Compatibility)
-if(equest->hasArg("download"))
+if(request->hasArg("download"))
   String arg = request->arg("download");
 ```
 
