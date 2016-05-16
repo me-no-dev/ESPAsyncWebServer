@@ -65,6 +65,10 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - Responding asynchronously is probably the most difficult thing for most to understand
 - Many different options exist for the user to make responding a background task
 
+## Libraries and projects that use AsyncWebServer
+- [WebSocketToSerial](https://github.com/hallard/WebSocketToSerial)
+- [Sattrack](https://github.com/Hopperpop/Sattrack)
+- [ESP Radio](https://github.com/Edzelf/Esp-radio)
 
 ## Request Variables
 
