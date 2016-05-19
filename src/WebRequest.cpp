@@ -426,21 +426,21 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
   } else if(_multiParseState == EXPECT_FEED1){
     if(data != '\n'){
       _multiParseState = WAIT_FOR_RETURN1;
-      itemWriteByte('\r'); itemWriteByte(data);
+      itemWriteByte('\r'); _parseMultipartPostByte(data, last);
     } else {
       _multiParseState = EXPECT_DASH1;
     }
   } else if(_multiParseState == EXPECT_DASH1){
     if(data != '-'){
       _multiParseState = WAIT_FOR_RETURN1;
-      itemWriteByte('\r'); itemWriteByte('\n');  itemWriteByte(data);
+      itemWriteByte('\r'); itemWriteByte('\n');  _parseMultipartPostByte(data, last);
     } else {
       _multiParseState = EXPECT_DASH2;
     }
   } else if(_multiParseState == EXPECT_DASH2){
     if(data != '-'){
       _multiParseState = WAIT_FOR_RETURN1;
-      itemWriteByte('\r'); itemWriteByte('\n'); itemWriteByte('-');  itemWriteByte(data);
+      itemWriteByte('\r'); itemWriteByte('\n'); itemWriteByte('-');  _parseMultipartPostByte(data, last);
     } else {
       _multiParseState = BOUNDARY_OR_DATA;
       _boundaryPosition = 0;
@@ -452,7 +452,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
       uint8_t i;
       for(i=0; i<_boundaryPosition; i++)
         itemWriteByte(_boundary.c_str()[i]);
-      itemWriteByte(data);
+      _parseMultipartPostByte(data, last);
     } else if(_boundaryPosition == _boundary.length() - 1){
       _multiParseState = DASH3_OR_RETURN2;
       if(!_itemIsFile){
@@ -482,7 +482,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
       _multiParseState = WAIT_FOR_RETURN1;
       itemWriteByte('\r'); itemWriteByte('\n'); itemWriteByte('-');  itemWriteByte('-');
       uint8_t i; for(i=0; i<_boundary.length(); i++) itemWriteByte(_boundary.c_str()[i]);
-      itemWriteByte(data);
+      _parseMultipartPostByte(data, last);
     }
   } else if(_multiParseState == EXPECT_FEED2){
     if(data == '\n'){
@@ -492,7 +492,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
       _multiParseState = WAIT_FOR_RETURN1;
       itemWriteByte('\r'); itemWriteByte('\n'); itemWriteByte('-');  itemWriteByte('-');
       uint8_t i; for(i=0; i<_boundary.length(); i++) itemWriteByte(_boundary.c_str()[i]);
-      itemWriteByte('\r'); itemWriteByte(data);
+      itemWriteByte('\r'); _parseMultipartPostByte(data, last);
     }
   }
 }
