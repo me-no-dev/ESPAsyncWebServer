@@ -625,3 +625,36 @@ void setup(){
 
 void loop(){}
 ```
+
+### Methods for controlling websocket connections
+
+```arduino
+  // Disable client connections if it was activated
+  if ( ws.enabled() )
+    ws.enable(false);
+
+  // enable client connections if it was disabled
+  if ( !ws.enabled() )
+    ws.enable(true);
+```
+
+Example of OTA code 
+
+```arduino
+  // OTA callbacks
+  ArduinoOTA.onStart([]() {
+    // Clean SPIFFS
+    SPIFFS.end();
+
+    // Disable client connections    
+    ws.enable(false);
+
+    // Advertise connected clients what's going on
+    ws.textAll("OTA Update Started");
+
+    // Close them
+    ws.closeAll();
+
+  });
+
+```
