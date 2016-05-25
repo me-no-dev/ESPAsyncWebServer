@@ -499,7 +499,7 @@ size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
 #else
   size_t len = vsnprintf(NULL, 0, format, arg)+1;
 #endif
-  size_t fmtLen = strlen_P(formatP); 
+  size_t fmtLen = strlen_P(formatP);
   format = (char*)calloc(fmtLen+1, sizeof(char));
   if ( format ) {
     strcpy_P(format, formatP);
@@ -599,6 +599,7 @@ AsyncWebSocket::AsyncWebSocket(String url)
   :_url(url)
   ,_clients(NULL)
   ,_cNextId(1)
+  ,_enabled(true)
 {
   _eventHandler = NULL;
 }
@@ -792,7 +793,7 @@ size_t AsyncWebSocket::printfAll_P(PGM_P formatP, ...) {
 #else
   size_t len = vsnprintf(NULL, 0, format, arg)+1;
 #endif
-  size_t fmtLen = strlen_P(formatP); 
+  size_t fmtLen = strlen_P(formatP);
   format = (char*)calloc(fmtLen+1, sizeof(char));
   if ( format ) {
     strcpy_P(format, formatP);
@@ -898,6 +899,9 @@ const char * WS_STR_ACCEPT = "Sec-WebSocket-Accept";
 const char * WS_STR_UUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 bool AsyncWebSocket::canHandle(AsyncWebServerRequest *request){
+  if(!_enabled)
+    return false;
+
   if(request->method() != HTTP_GET || !request->url().equals(_url))
     return false;
 

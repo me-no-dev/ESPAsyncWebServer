@@ -101,7 +101,7 @@ class AsyncWebSocketClient {
 
     size_t printf(const char *format, ...);
     size_t printf_P(PGM_P formatP, ...);
-    
+
     void text(const char * message, size_t len);
     void text(const char * message);
     void text(uint8_t * message, size_t len);
@@ -134,10 +134,13 @@ class AsyncWebSocket: public AsyncWebHandler {
     AsyncWebSocketClient * _clients;
     uint32_t _cNextId;
     AwsEventHandler _eventHandler;
+    bool _enabled;
   public:
     AsyncWebSocket(String url);
     ~AsyncWebSocket();
     const char * url(){ return _url.c_str(); }
+    void enable(bool e){ _enabled = e; }
+    bool enabled() { return _enabled; }
 
     size_t count();
     AsyncWebSocketClient * client(uint32_t id);
