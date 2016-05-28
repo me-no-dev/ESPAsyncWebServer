@@ -236,6 +236,8 @@ class AsyncWebSocketBasicMessage: public AsyncWebSocketMessage {
 /*
  * Async WebSocket Client
  */
+ const char * AWSC_PING_PAYLOAD = "ESPAsyncWebServer-PING";
+ const size_t AWSC_PING_PAYLOAD_LEN = 22;
 
 AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server){
   _client = request->client();
@@ -245,8 +247,9 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
   _controlQueue = NULL;
   _messageQueue = NULL;
   _pstate = 0;
+  _lastMessageTime = millis();
+  _keepAlivePeriod = 0;
   next = NULL;
-  delete request;
   _client->onError([](void *r, AsyncClient* c, int8_t error){ ((AsyncWebSocketClient*)(r))->_onError(error); }, this);
   _client->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ ((AsyncWebSocketClient*)(r))->_onAck(len, time); }, this);
   _client->onDisconnect([](void *r, AsyncClient* c){ ((AsyncWebSocketClient*)(r))->_onDisconnect(); }, this);
@@ -255,6 +258,7 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
   _client->onPoll([](void *r, AsyncClient* c){ ((AsyncWebSocketClient*)(r))->_onPoll(); }, this);
   _server->_addClient(this);
   _server->_handleEvent(this, WS_EVT_CONNECT, NULL, NULL, 0);
+  delete request;
 }
 
 AsyncWebSocketClient::~AsyncWebSocketClient(){
@@ -272,6 +276,7 @@ AsyncWebSocketClient::~AsyncWebSocketClient(){
 }
 
 void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
+  _lastMessageTime = millis();
   if(_controlQueue != NULL){
     AsyncWebSocketControl *controlMessage = _controlQueue;
     if(controlMessage->finished()){
@@ -280,7 +285,7 @@ void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
       if(_status == WS_DISCONNECTING && controlMessage->opcode() == WS_DISCONNECT){
         delete controlMessage;
         _status = WS_DISCONNECTED;
-        _client->close(true);
+        _client->abort();
         return;
       }
       delete controlMessage;
@@ -295,9 +300,9 @@ void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
 void AsyncWebSocketClient::_onPoll(){
   if(_client->canSend() && (_controlQueue != NULL || _messageQueue != NULL)){
     _runQueue();
+  } else if(_keepAlivePeriod > 0 && _controlQueue == NULL && _messageQueue == NULL && (millis() - _lastMessageTime) >= _keepAlivePeriod){
+    ping((uint8_t *)AWSC_PING_PAYLOAD, AWSC_PING_PAYLOAD_LEN);
   }
-  //ToDo: check for last activity here and maybe ping?
-  //ping();
 }
 
 void AsyncWebSocketClient::_runQueue(){
@@ -384,12 +389,15 @@ void AsyncWebSocketClient::_onTimeout(uint32_t time){
 }
 
 void AsyncWebSocketClient::_onDisconnect(){
-  _client->free();
-  delete _client;
+  AsyncClient* cl = _client;
+  _client = NULL;
+  cl->free();
+  delete cl;
   _server->_handleDisconnect(this);
 }
 
 void AsyncWebSocketClient::_onData(void *buf, size_t plen){
+  _lastMessageTime = millis();
   uint8_t *fdata = (uint8_t*)buf;
   uint8_t * data = fdata;
   if(!_pstate){
@@ -457,7 +465,8 @@ void AsyncWebSocketClient::_onData(void *buf, size_t plen){
     } else if(_pinfo.opcode == WS_PING){
       _queueControl(new AsyncWebSocketControl(WS_PONG, data, plen));
     } else if(_pinfo.opcode == WS_PONG){
-      _server->_handleEvent(this, WS_EVT_PONG, NULL, (uint8_t*)data, plen);
+      if(plen != AWSC_PING_PAYLOAD_LEN || memcmp(AWSC_PING_PAYLOAD, data, AWSC_PING_PAYLOAD_LEN) != 0)
+        _server->_handleEvent(this, WS_EVT_PONG, NULL, (uint8_t*)data, plen);
     } else if(_pinfo.opcode < 8){//continuation or text/binary frame
       _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, (uint8_t*)data, plen);
     }
