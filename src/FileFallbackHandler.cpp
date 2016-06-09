@@ -4,6 +4,14 @@
 #include "FileFallbackHandler.h"
 #include <ESPAsyncWebServer.h>
 
+#if defined(ESP31B)
+#include <ESP31BWiFi.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#else
+#error Platform not supported
+#endif
+
 bool FileFallbackHandler::canHandle(AsyncWebServerRequest *request)
 {
 	if (request->method() != HTTP_GET) {
