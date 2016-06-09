@@ -399,6 +399,7 @@ request->send(response);
 
 ### FileFallBackHandler
 Example provided by [@sticilface](https://github.com/sticilface)
+
 This handler is useful for serving content from a CDN when the ESP is connected to a wifi 
 network, but falling back to local copies of the file stored in SPIFFS when the ESP is in 
 AP mode and the client does not have internet access.  It will work when both AP mode and 
