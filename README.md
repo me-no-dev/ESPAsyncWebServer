@@ -397,6 +397,26 @@ response->setLength();
 request->send(response);
 ```
 
+### FileFallBackHandler
+Example provided by [@sticilface](https://github.com/sticilface)
+
+This handler is useful for serving content from a CDN when the ESP is connected to a wifi 
+network, but falling back to local copies of the file stored in SPIFFS when the ESP is in 
+AP mode and the client does not have internet access.  It will work when both AP mode and 
+STA mode are active.  It works by returning 302 HTTP code, with a Location header that 
+you specify.  It is much quicker than requiring the ESP to handle all the files. 
+```cpp
+#include "FileFallbackHandler.h" //  include this in the sketch. 
+
+server.addHandler( new FileFallbackHandler(SPIFFS, "/path_to_SPIFFS_file", "/uri", "url_to_forward",  "optional_cache_control_header"));
+
+//  These three lines will serve all the jquery requirements from SPIFFS (if they are there) in AP mode, but forward the URL to CDN if not. 
+server.addHandler( new FileFallbackHandler(_fs, "/jquery/jqm1.4.5.css", "/jquery/jqm1.4.5.css",   "http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css",  "max-age=86400"));
+server.addHandler( new FileFallbackHandler(_fs, "/jquery/jq1.11.1.js" , "/jquery/jq1.11.1.js" ,   "http://code.jquery.com/jquery-1.11.1.min.js",  "max-age=86400"));
+server.addHandler( new FileFallbackHandler(_fs, "/jquery/jqm1.4.5.js" , "/jquery/jqm1.4.5.js" ,   "http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js",  "max-age=86400"));
+```
+
+
 ## Bad Responses
 Some responses are implemented, but you should not use them, because they do not conform to HTTP.
 The following example will lead to unclean close of the connection and more time wasted
