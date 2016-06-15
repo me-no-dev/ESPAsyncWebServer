@@ -74,6 +74,9 @@ class AsyncWebSocketClient {
     uint8_t _pstate;
     AwsFrameInfo _pinfo;
 
+    uint32_t _lastMessageTime;
+    uint32_t _keepAlivePeriod;
+
     void _queueMessage(AsyncWebSocketMessage *dataMessage);
     void _queueControl(AsyncWebSocketControl *controlMessage);
     void _runQueue();
@@ -95,6 +98,14 @@ class AsyncWebSocketClient {
     //control frames
     void close(uint16_t code=0, const char * message=NULL);
     void ping(uint8_t *data=NULL, size_t len=0);
+
+    //set auto-ping period in seconds. disabled if zero (default)
+    void keepAlivePeriod(uint16_t seconds){
+      _keepAlivePeriod = seconds * 1000;
+    }
+    uint16_t keepAlivePeriod(){
+      return (uint16_t)(_keepAlivePeriod / 1000);
+    }
 
     //data packets
     void message(AsyncWebSocketMessage *message){ _queueMessage(message); }
