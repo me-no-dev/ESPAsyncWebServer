@@ -119,21 +119,40 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version){
     if(_chunked)
       addHeader("Transfer-Encoding","chunked");
   }
-  String out = "HTTP/1." + String(version) + " " + String(_code) + " " + _responseCodeToString(_code) + "\r\n";
-  if(_sendContentLength)
-    out += "Content-Length: " + String(_contentLength) + "\r\n";
+  String out = String();
+  out.reserve(512);
 
-  if(_contentType.length())
-    out += "Content-Type: " + _contentType + "\r\n";
+  out.concat("HTTP/1.");
+  out.concat(version);
+  out.concat(' ');
+  out.concat(_code);
+  out.concat(' ');
+  out.concat(_responseCodeToString(_code));
+  out.concat("\r\n");
+
+  if(_sendContentLength) {
+    out.concat("Content-Length: ");
+    out.concat(_contentLength);
+    out.concat("\r\n");
+  }
+  if(_contentType.length()) {
+    out.concat("Content-Type: ");
+    out.concat(_contentType);
+    out.concat("\r\n");
+  }
 
   AsyncWebHeader *h;
   while(_headers != NULL){
     h = _headers;
     _headers = _headers->next;
-    out += h->toString();
+    //out.concat(h->toString());
+    out.concat(h->name());
+    out.concat(": ");
+    out.concat(h->value());
+    out.concat("\r\n");
     delete h;
   }
-  out += "\r\n";
+  out.concat("\r\n");
   _headLength = out.length();
   return out;
 }
