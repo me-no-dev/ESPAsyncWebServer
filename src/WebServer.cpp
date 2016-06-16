@@ -104,8 +104,12 @@ void AsyncWebServer::on(const char* uri, ArRequestHandlerFunction onRequest){
   addHandler(handler);
 }
 
-void AsyncWebServer::serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_header){
-  addHandler(new AsyncStaticWebHandler(fs, path, uri, cache_header));
+void AsyncWebServer::redirect(const char* url, const char* location, const uint32_t exclude_ip){
+  addHandler(new RedirectWebHandler(url, location, exclude_ip));
+}
+
+void AsyncWebServer::serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_header, const char* modified_header){
+  addHandler(new AsyncStaticWebHandler(fs, path, uri, cache_header, modified_header));
 }
 
 void AsyncWebServer::onNotFound(ArRequestHandlerFunction fn){

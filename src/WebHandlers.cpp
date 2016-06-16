@@ -21,6 +21,25 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
+
+bool RedirectWebHandler::canHandle(AsyncWebServerRequest *request)
+{
+  // We can redirect when the request url match and ip doesn't match
+  if (request->url() == _url && _exclude_ip != request->client()->localIP()) {
+    DEBUGF("[RedirectWebHandler::canHandle] TRUE\n");
+    return true;
+  }
+  return false;
+}
+
+void RedirectWebHandler::handleRequest(AsyncWebServerRequest *request)
+{
+  AsyncWebServerResponse *response = request->beginResponse(302);
+  response->addHeader("Location", _location);
+  request->send(response);
+}
+
+
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
 {
   if (request->method() != HTTP_GET) {
@@ -33,7 +52,10 @@ bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
   if (request->url().startsWith(_uri)) {
     String path = _getPath(request);
     if (_fs.exists(path) || _fs.exists(path + ".gz")) {
-       DEBUGF("[AsyncStaticWebHandler::canHandle] TRUE\n");
+      if (_modified_header.length() != 0) {
+        request->addInterestingHeader("If-Modified-Since");
+      }
+      DEBUGF("[AsyncStaticWebHandler::canHandle] TRUE\n");
       return true;
     }
   }
@@ -82,14 +104,19 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
   String path = _getPath(request);
 
   if (_fs.exists(path) || _fs.exists(path + ".gz")) {
-    AsyncWebServerResponse * response = request->beginResponse(_fs, path);
-    if (_cache_header.length() != 0)
-      response->addHeader("Cache-Control", _cache_header);
-    request->send(response);
+    if (_modified_header.length() != 0 && _modified_header == request->header("If-Modified-Since")) {
+      request->send(304); // Sed not modified
+    } else {
+      AsyncWebServerResponse * response = request->beginResponse(_fs, path);
+      if (_modified_header.length() !=0)
+        response->addHeader("Last-Modified", _modified_header);
+      if (_cache_header.length() != 0)
+        response->addHeader("Cache-Control", _cache_header);
+      request->send(response);
+    }
   } else {
     request->send(404);
   }
   path = String();
-
 
 }
