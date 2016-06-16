@@ -95,7 +95,7 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
   }
 
   if(_tempObject != NULL){
-    delete _tempObject;
+    free(_tempObject);
   }
 
 }

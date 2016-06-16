@@ -77,7 +77,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest *request)
     path += "/";
   path += "index.htm";
 
-  return_fileExists(request, path);
+  return _fileExists(request, path);
 }
 
 bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const String path)
