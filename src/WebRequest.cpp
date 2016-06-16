@@ -63,7 +63,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _itemBuffer(0)
   , _itemBufferIndex(0)
   , _itemIsFile(false)
-  , _tempBuffer(NULL)
+  , _tempObject(NULL)
   , next(NULL)
 {
   c->onError([](void *r, AsyncClient* c, int8_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
