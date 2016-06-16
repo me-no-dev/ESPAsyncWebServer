@@ -63,6 +63,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _itemBuffer(0)
   , _itemBufferIndex(0)
   , _itemIsFile(false)
+  , _tempObject(NULL)
   , next(NULL)
 {
   c->onError([](void *r, AsyncClient* c, int8_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
@@ -91,6 +92,10 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
 
   if(_response != NULL){
     delete _response;
+  }
+
+  if(_tempObject != NULL){
+    delete _tempObject;
   }
 
 }
@@ -648,6 +653,12 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, String pat
   return NULL;
 }
 
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, String contentType, bool download){
+  if(content == true)
+    return new AsyncFileResponse(content, contentType, download);
+  return NULL;
+}
+
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, String contentType, size_t len){
   return new AsyncStreamResponse(stream, contentType, len);
 }
@@ -673,6 +684,12 @@ void AsyncWebServerRequest::send(int code, String contentType, String content){
 void AsyncWebServerRequest::send(FS &fs, String path, String contentType, bool download){
   if(fs.exists(path) || (!download && fs.exists(path+".gz"))){
     send(beginResponse(fs, path, contentType, download));
+  } else send(404);
+}
+
+void AsyncWebServerRequest::send(File content, String contentType, bool download){
+  if(content == true){
+    send(beginResponse(content, contentType, download));
   } else send(404);
 }
 

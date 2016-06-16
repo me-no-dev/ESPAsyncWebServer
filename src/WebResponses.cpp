@@ -366,9 +366,11 @@ void AsyncFileResponse::_setContentType(String path){
 }
 
 AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bool download){
-  char buf[64];
   _code = 200;
   _path = path;
+  int filenameStart = path.lastIndexOf('/') + 1;
+  char buf[26+path.length()-filenameStart];
+  char* filename = (char*)path.c_str() + filenameStart;
 
   if(!download && !fs.exists(_path) && fs.exists(_path+".gz")){
     _path = _path+".gz";
@@ -382,15 +384,40 @@ AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bo
 
   if(download) {
     // set filename and force download
-    snprintf(buf, sizeof (buf), "attachment; filename='%s'", path.c_str());
+    snprintf(buf, sizeof (buf), "attachment; filename='%s'", filename);
   } else {
     // set filename and force rendering
-    snprintf(buf, sizeof (buf), "inline; filename='%s'", path.c_str());
+    snprintf(buf, sizeof (buf), "inline; filename='%s'", filename);
   }
   addHeader("Content-Disposition", buf);
 
   _content = fs.open(_path, "r");
   _contentLength = _content.size();
+}
+
+AsyncFileResponse::AsyncFileResponse(File content, String contentType, bool download){
+  _code = 200;
+  _content = content;
+  _path = String(_content.name());
+  _contentLength = _content.size();
+  int filenameStart = path.lastIndexOf('/') + 1;
+  char buf[26+path.length()-filenameStart];
+  char* filename = (char*)path.c_str() + filenameStart;
+
+  if(!download && _path.endsWith(".gz"))
+    addHeader("Content-Encoding", "gzip");
+
+  if(contentType == "")
+    _setContentType(_path);
+  else
+    _contentType = contentType;
+
+  if(download) {
+    snprintf(buf, sizeof (buf), "attachment; filename='%s'", filename);
+  } else {
+    snprintf(buf, sizeof (buf), "inline; filename='%s'", filename);
+  }
+  addHeader("Content-Disposition", buf);
 }
 
 size_t AsyncFileResponse::_fillBuffer(uint8_t *data, size_t len){
@@ -488,4 +515,3 @@ size_t AsyncResponseStream::write(const uint8_t *data, size_t len){
 size_t AsyncResponseStream::write(uint8_t data){
   return write(&data, 1);
 }
-
