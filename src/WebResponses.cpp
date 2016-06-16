@@ -352,7 +352,6 @@ void AsyncFileResponse::_setContentType(String path){
   if (path.endsWith(".html")) _contentType = "text/html";
   else if (path.endsWith(".htm")) _contentType = "text/html";
   else if (path.endsWith(".css")) _contentType = "text/css";
-  else if (path.endsWith(".txt")) _contentType = "text/plain";
   else if (path.endsWith(".js")) _contentType = "application/javascript";
   else if (path.endsWith(".png")) _contentType = "image/png";
   else if (path.endsWith(".gif")) _contentType = "image/gif";
@@ -363,21 +362,33 @@ void AsyncFileResponse::_setContentType(String path){
   else if (path.endsWith(".pdf")) _contentType = "application/pdf";
   else if (path.endsWith(".zip")) _contentType = "application/zip";
   else if(path.endsWith(".gz")) _contentType = "application/x-gzip";
-  else _contentType = "application/octet-stream";
+  else _contentType = "text/plain";
 }
 
 AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bool download){
+  char buf[64];
   _code = 200;
   _path = path;
+
   if(!download && !fs.exists(_path) && fs.exists(_path+".gz")){
     _path = _path+".gz";
     addHeader("Content-Encoding", "gzip");
   }
 
-  if(download)
-    _contentType = "application/octet-stream";
-  else
+  if(contentType == "")
     _setContentType(path);
+  else
+    _contentType = contentType;
+
+  if(download) {
+    // set filename and force download
+    snprintf(buf, sizeof (buf), "attachment; filename='%s'", path.c_str());
+  } else {
+    // set filename and force rendering
+    snprintf(buf, sizeof (buf), "inline; filename='%s'", path.c_str());
+  }
+  addHeader("Content-Disposition", buf);
+
   _content = fs.open(_path, "r");
   _contentLength = _content.size();
 }

@@ -21,102 +21,88 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
-
-bool RedirectWebHandler::canHandle(AsyncWebServerRequest *request)
-{
-  // We can redirect when the request url match and ip doesn't match
-  if (request->url() == _url && _exclude_ip != request->client()->localIP()) {
-    DEBUGF("[RedirectWebHandler::canHandle] TRUE\n");
-    return true;
-  }
-  return false;
-}
-
-void RedirectWebHandler::handleRequest(AsyncWebServerRequest *request)
-{
-  AsyncWebServerResponse *response = request->beginResponse(302);
-  response->addHeader("Location", _location);
-  request->send(response);
-}
-
-
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
 {
-  if (request->method() != HTTP_GET) {
-    return false;
-  }
-  if ((_isFile && request->url() != _uri) ) {
-    return false;
-  }
-  //  if the root of the request matches the _uri then it checks to see if there is a file it can handle. 
-  if (request->url().startsWith(_uri)) {
-    String path = _getPath(request);
-    if (_fs.exists(path) || _fs.exists(path + ".gz")) {
-      if (_modified_header.length() != 0) {
-        request->addInterestingHeader("If-Modified-Since");
-      }
-      DEBUGF("[AsyncStaticWebHandler::canHandle] TRUE\n");
-      return true;
-    }
+  if (request->method() == HTTP_GET &&
+      request->url().startsWith(_uri) &&
+      _getPath(request, true).length()) {
+
+    DEBUGF("[AsyncStaticWebHandler::canHandle] TRUE\n");
+    return true;
+
   }
 
   return false;
 }
 
-String AsyncStaticWebHandler::_getPath(AsyncWebServerRequest *request)
+String AsyncStaticWebHandler::_getPath(AsyncWebServerRequest *request, const bool withStats)
 {
+  // Remove the found uri
+  String path = request->url().substring(_uri.length());
 
-  String path = request->url();
-  DEBUGF("[AsyncStaticWebHandler::_getPath]\n");
-  DEBUGF("  [stored] _uri = %s, _path = %s\n" , _uri.c_str(), _path.c_str() ) ;
-  DEBUGF("  [request] url = %s\n", request->url().c_str() );
+  // We can skip the file check if we serving a directory and (we have full match or we end with '/')
+  bool canSkipFileCheck = _isDir && (path.length() == 0 || path[path.length()-1] == '/');
 
-  if (!_isFile) {
-    DEBUGF("   _isFile = false\n");
-    String baserequestUrl = request->url().substring(_uri.length());  // this is the request - stored _uri...  /espman/
-    DEBUGF("  baserequestUrl = %s\n", baserequestUrl.c_str());
+  path = _path + path;
 
-    if (!baserequestUrl.length()) {
-      baserequestUrl += "/";
-    }
+  // Do we have a file or .gz file
+  if (!canSkipFileCheck) if (_fileExists(path, withStats)) return path;
 
-    path = _path + baserequestUrl;
-    DEBUGF("  path = path + baserequestUrl, path = %s\n", path.c_str());
+  // Try to add default page, ensure there is a trailing '/' ot the path.
+  if (path.length() == 0 || path[path.length()-1] != '/') path += "/";
+  path += "index.htm";
 
-    if (path.endsWith("/")) {
-      DEBUGF("  3 path ends with / : path = index.htm \n");
-      path += "index.htm";
-    }
-  } else {
-    path = _path;
-  }
+  if (_fileExists(path, withStats)) return path;
 
-  DEBUGF(" final path = %s\n", path.c_str());
-  DEBUGF("[AsyncStaticWebHandler::_getPath] END\n\n");
-
-  return path;
+  // No file - return empty string
+  return String();
 }
 
+bool AsyncStaticWebHandler::_fileExists(const String path, const bool withStats)
+{
+  bool fileFound = false;
+  bool gzipFound = false;
+
+  String gzip = path + ".gz";
+
+  if (_gzipFirst) {
+    gzipFound = _fs.exists(gzip);
+    if (!gzipFound) fileFound = _fs.exists(path);
+  } else {
+    fileFound = _fs.exists(path);
+    if (!fileFound) gzipFound =  _fs.exists(gzip);
+  }
+
+  bool found = fileFound || gzipFound;
+
+  if (withStats && found) {
+    _gzipStats = (_gzipStats << 1) + gzipFound ? 1 : 0;
+    _fileStats = (_fileStats << 1) + fileFound ? 1 : 0;
+    _gzipFirst = _countBits(_gzipStats) > _countBits(_fileStats);
+  }
+
+  return found;
+}
+
+uint8_t AsyncStaticWebHandler::_countBits(const uint8_t value)
+{
+  uint8_t w = value;
+  uint8_t n;
+  for (n=0; w!=0; n++) w&=w-1;
+  return n;
+}
 
 void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
 {
+  String path = _getPath(request, false);
 
-  String path = _getPath(request);
-
-  if (_fs.exists(path) || _fs.exists(path + ".gz")) {
-    if (_modified_header.length() != 0 && _modified_header == request->header("If-Modified-Since")) {
-      request->send(304); // Sed not modified
-    } else {
-      AsyncWebServerResponse * response = request->beginResponse(_fs, path);
-      if (_modified_header.length() !=0)
-        response->addHeader("Last-Modified", _modified_header);
-      if (_cache_header.length() != 0)
-        response->addHeader("Cache-Control", _cache_header);
-      request->send(response);
-    }
+  if (path.length()) {
+    AsyncWebServerResponse * response = new AsyncFileResponse(_fs, path);
+    if (_cache_header.length() != 0)
+      response->addHeader("Cache-Control", _cache_header);
+    request->send(response);
   } else {
     request->send(404);
   }
   path = String();
-
 }

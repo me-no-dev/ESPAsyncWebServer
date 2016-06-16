@@ -24,47 +24,45 @@
 
 #include "stddef.h"
 
-class RedirectWebHandler: public AsyncWebHandler {
-  protected:
-    String _url;
-    String _location;
-    uint32_t _exclude_ip;
-  public:
-    RedirectWebHandler(const char* url, const char* location, uint32_t exclude_ip)
-      : _url(url), _location(location) { _exclude_ip = exclude_ip; }
-    bool canHandle(AsyncWebServerRequest *request);
-    void handleRequest(AsyncWebServerRequest *request);
-};
-
 class AsyncStaticWebHandler: public AsyncWebHandler {
   private:
-    String _getPath(AsyncWebServerRequest *request); 
+    String _getPath(AsyncWebServerRequest *request, const bool withStats);
+    bool _fileExists(const String path, const bool withStats);
+    uint8_t _countBits(const uint8_t value);
   protected:
     FS _fs;
     String _uri;
     String _path;
     String _cache_header;
-    String _modified_header;
-    bool _isFile;
+    bool _isDir;
+    bool _gzipFirst;
+    uint8_t _gzipStats;
+    uint8_t _fileStats;
   public:
-    AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header, const char* modified_header)
-      : _fs(fs), _uri(uri), _path(path), _cache_header(cache_header), _modified_header(modified_header) {
+    AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header)
+      : _fs(fs), _uri(uri), _path(path), _cache_header(cache_header){
+      // Ensure leading '/'
+      if (_uri.length() == 0 || _uri[0] != '/') _uri = "/" + _uri;
+      if (_path.length() == 0 || _path[0] != '/') _path = "/" + _path;
 
-      _isFile = _fs.exists(path) || _fs.exists((String(path)+".gz").c_str());
-      if (_uri != "/" && _uri.endsWith("/")) {
-        _uri = _uri.substring(0, _uri.length() - 1); 
-        DEBUGF("[AsyncStaticWebHandler] _uri / removed\n"); 
-      }
-      if (_path != "/" && _path.endsWith("/")) {
-        _path = _path.substring(0, _path.length() - 1); 
-        DEBUGF("[AsyncStaticWebHandler] _path / removed\n"); 
-      }
+      // If uri or path ends with '/' we assume a hint that this is a directory to improve performance.
+      // However - if they both do not end '/' we, can't assume they are files, they can still be directory.
+      bool isUriDir = _uri[_uri.length()-1] == '/';
+      bool isPathDir = _path[_path.length()-1] == '/';
+      _isDir = isUriDir || isPathDir;
 
+      // If we serving directory - remove the trailing '/' so we can handle default file
+      // Notice that root will be "" not "/"
+      if (_isDir && isUriDir) _uri = _uri.substring(0, _uri.length()-1);
+      if (_isDir && isPathDir) _path = _path.substring(0, _path.length()-1);
 
+      // Reset stats
+      _gzipFirst = false;
+      _gzipStats = 0;
+      _fileStats = 0;
     }
     bool canHandle(AsyncWebServerRequest *request);
     void handleRequest(AsyncWebServerRequest *request);
-    
 };
 
 class AsyncCallbackWebHandler: public AsyncWebHandler {
