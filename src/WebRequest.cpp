@@ -94,8 +94,8 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
     delete _response;
   }
 
-  if(_tempBuffer != NULL){
-    delete _tempBuffer;
+  if(_tempObject != NULL){
+    delete _tempObject;
   }
 
 }
