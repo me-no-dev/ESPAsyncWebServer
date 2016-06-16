@@ -386,16 +386,16 @@ AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bo
   _contentLength = _content.size();
 }
 
-AsyncFileResponse::AsyncFileResponse(File content, String contentType, bool download){
+AsyncFileResponse::AsyncFileResponse(File content, String path, String contentType, bool download){
   _code = 200;
   _content = content;
-  _path = String(_content.name());
+  _path = path;
   _contentLength = _content.size();
   int filenameStart = _path.lastIndexOf('/') + 1;
   char buf[26+_path.length()-filenameStart];
   char* filename = (char*)_path.c_str() + filenameStart;
 
-  if(!download && _path.endsWith(".gz"))
+  if(!download && String(_content.name()).endsWith(".gz"))
     addHeader("Content-Encoding", "gzip");
 
   if(contentType == "")
