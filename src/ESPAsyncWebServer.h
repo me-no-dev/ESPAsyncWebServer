@@ -160,6 +160,7 @@ class AsyncWebServerRequest {
 
   public:
     File _tempFile;
+    uint8_t *_tempBuffer;
     AsyncWebServerRequest *next;
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
