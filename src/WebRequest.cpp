@@ -651,6 +651,12 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, String pat
   return NULL;
 }
 
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, String contentType, bool download){
+  if(content == true)
+    return new AsyncFileResponse(content, contentType, download);
+  return NULL;
+}
+
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, String contentType, size_t len){
   return new AsyncStreamResponse(stream, contentType, len);
 }
@@ -676,6 +682,12 @@ void AsyncWebServerRequest::send(int code, String contentType, String content){
 void AsyncWebServerRequest::send(FS &fs, String path, String contentType, bool download){
   if(fs.exists(path) || (!download && fs.exists(path+".gz"))){
     send(beginResponse(fs, path, contentType, download));
+  } else send(404);
+}
+
+void AsyncWebServerRequest::send(File content, String contentType, bool download){
+  if(content == true){
+    send(beginResponse(content, contentType, download));
   } else send(404);
 }
 

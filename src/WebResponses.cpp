@@ -376,6 +376,31 @@ AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bo
   _contentLength = _content.size();
 }
 
+AsyncFileResponse::AsyncFileResponse(File content, String contentType, bool download){
+  _code = 200;
+  _content = content;
+  _path = String(_content.name());
+  _contentLength = _content.size();
+  int filenameStart = path.lastIndexOf('/') + 1;
+  char buf[26+path.length()-filenameStart];
+  char* filename = (char*)path.c_str() + filenameStart;
+
+  if(!download && _path.endsWith(".gz"))
+    addHeader("Content-Encoding", "gzip");
+
+  if(contentType == "")
+    _setContentType(_path);
+  else
+    _contentType = contentType;
+
+  if(download) {
+    snprintf(buf, sizeof (buf), "attachment; filename='%s'", filename);
+  } else {
+    snprintf(buf, sizeof (buf), "inline; filename='%s'", filename);
+  }
+  addHeader("Content-Disposition", buf);
+}
+
 size_t AsyncFileResponse::_fillBuffer(uint8_t *data, size_t len){
   _content.read(data, len);
   return len;
