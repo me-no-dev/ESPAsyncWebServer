@@ -220,8 +220,11 @@ void AsyncWebServerRequest::_addGetParam(String param){
 
 
 bool AsyncWebServerRequest::_parseReqHead(){
+  // Split the head into method, url and version
   int index = _temp.indexOf(' ');
   String m = _temp.substring(0, index);
+  index = _temp.indexOf(' ', index+1);
+  String u = _temp.substring(m.length()+1, index);
   _temp = _temp.substring(index+1);
 
   if(m == "GET"){
@@ -239,10 +242,6 @@ bool AsyncWebServerRequest::_parseReqHead(){
   } else if(m == "OPTIONS"){
     _method = HTTP_OPTIONS;
   }
-
-  index = _temp.indexOf(' ');
-  String u = _temp.substring(0, index);
-  _temp = _temp.substring(index+1);
 
   u = urlDecode(u);
   String g = String();

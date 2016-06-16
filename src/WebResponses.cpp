@@ -120,36 +120,27 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version){
       addHeader("Transfer-Encoding","chunked");
   }
   String out = String();
-  out.reserve(512);
+  int bufSize = 300;
+  char buf[bufSize];
 
-  out.concat("HTTP/1.");
-  out.concat(version);
-  out.concat(' ');
-  out.concat(_code);
-  out.concat(' ');
-  out.concat(_responseCodeToString(_code));
-  out.concat("\r\n");
+  snprintf(buf, bufSize, "HTTP/1.%d %d %s\r\n", version, _code, _responseCodeToString(_code));
+  out.concat(buf);
 
   if(_sendContentLength) {
-    out.concat("Content-Length: ");
-    out.concat(_contentLength);
-    out.concat("\r\n");
+    snprintf(buf, bufSize, "Content-Length: %d\r\n", _contentLength);
+    out.concat(buf);
   }
   if(_contentType.length()) {
-    out.concat("Content-Type: ");
-    out.concat(_contentType);
-    out.concat("\r\n");
+    snprintf(buf, bufSize, "Content-Type: %s\r\n", _contentType.c_str());
+    out.concat(buf);
   }
 
   AsyncWebHeader *h;
   while(_headers != NULL){
     h = _headers;
     _headers = _headers->next;
-    //out.concat(h->toString());
-    out.concat(h->name());
-    out.concat(": ");
-    out.concat(h->value());
-    out.concat("\r\n");
+    snprintf(buf, bufSize, "%s: %s\r\n", h->name().c_str(), h->value().c_str());
+    out.concat(buf);
     delete h;
   }
   out.concat("\r\n");
@@ -400,9 +391,9 @@ AsyncFileResponse::AsyncFileResponse(File content, String contentType, bool down
   _content = content;
   _path = String(_content.name());
   _contentLength = _content.size();
-  int filenameStart = path.lastIndexOf('/') + 1;
-  char buf[26+path.length()-filenameStart];
-  char* filename = (char*)path.c_str() + filenameStart;
+  int filenameStart = _path.lastIndexOf('/') + 1;
+  char buf[26+_path.length()-filenameStart];
+  char* filename = (char*)_path.c_str() + filenameStart;
 
   if(!download && _path.endsWith(".gz"))
     addHeader("Content-Encoding", "gzip");
