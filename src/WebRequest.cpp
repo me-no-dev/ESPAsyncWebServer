@@ -651,9 +651,9 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, String pat
   return NULL;
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, String contentType, bool download){
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, String path, String contentType, bool download){
   if(content == true)
-    return new AsyncFileResponse(content, contentType, download);
+    return new AsyncFileResponse(content, path, contentType, download);
   return NULL;
 }
 
@@ -685,9 +685,9 @@ void AsyncWebServerRequest::send(FS &fs, String path, String contentType, bool d
   } else send(404);
 }
 
-void AsyncWebServerRequest::send(File content, String contentType, bool download){
+void AsyncWebServerRequest::send(File content, String path, String contentType, bool download){
   if(content == true){
-    send(beginResponse(content, contentType, download));
+    send(beginResponse(content, path, contentType, download));
   } else send(404);
 }
 

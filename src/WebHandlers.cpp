@@ -106,6 +106,10 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
   bool found = fileFound || gzipFound;
 
   if (found) {
+    size_t plen = path.length();
+    char * _tempPath = (char*)malloc(plen+1);
+    snprintf(_tempPath, plen+1, "%s", path.c_str());
+    request->_tempObject = (void*)_tempPath;
     _gzipStats = (_gzipStats << 1) + gzipFound ? 1 : 0;
     _fileStats = (_fileStats << 1) + fileFound ? 1 : 0;
     _gzipFirst = _countBits(_gzipStats) > _countBits(_fileStats);
@@ -125,7 +129,9 @@ uint8_t AsyncStaticWebHandler::_countBits(const uint8_t value)
 void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
 {
   if (request->_tempFile == true) {
-    AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile);
+    AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, String((char*)request->_tempObject));
+    free(request->_tempObject);
+    request->_tempObject = NULL;
     if (_cache_header.length() != 0)
       response->addHeader("Cache-Control", _cache_header);
     request->send(response);

@@ -186,14 +186,14 @@ class AsyncWebServerRequest {
     void send(AsyncWebServerResponse *response);
     void send(int code, String contentType=String(), String content=String());
     void send(FS &fs, String path, String contentType=String(), bool download=false);
-    void send(File content, String contentType=String(), bool download=false);
+    void send(File content, String path, String contentType=String(), bool download=false);
     void send(Stream &stream, String contentType, size_t len);
     void send(String contentType, size_t len, AwsResponseFiller callback);
     void sendChunked(String contentType, AwsResponseFiller callback);
 
     AsyncWebServerResponse *beginResponse(int code, String contentType=String(), String content=String());
     AsyncWebServerResponse *beginResponse(FS &fs, String path, String contentType=String(), bool download=false);
-    AsyncWebServerResponse *beginResponse(File content, String contentType=String(), bool download=false);
+    AsyncWebServerResponse *beginResponse(File content, String path, String contentType=String(), bool download=false);
     AsyncWebServerResponse *beginResponse(Stream &stream, String contentType, size_t len);
     AsyncWebServerResponse *beginResponse(String contentType, size_t len, AwsResponseFiller callback);
     AsyncWebServerResponse *beginChunkedResponse(String contentType, AwsResponseFiller callback);
