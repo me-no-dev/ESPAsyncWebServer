@@ -168,7 +168,6 @@ AsyncBasicResponse::AsyncBasicResponse(int code, String contentType, String cont
       _contentType = "text/plain";
   }
   addHeader("Connection","close");
-  addHeader("Access-Control-Allow-Origin","*");
 }
 
 void AsyncBasicResponse::_respond(AsyncWebServerRequest *request){
@@ -238,7 +237,6 @@ size_t AsyncBasicResponse::_ack(AsyncWebServerRequest *request, size_t len, uint
 
 void AsyncAbstractResponse::_respond(AsyncWebServerRequest *request){
   addHeader("Connection","close");
-  addHeader("Access-Control-Allow-Origin","*");
   _head = _assembleHead(request->version());
   _state = RESPONSE_HEADERS;
   _ack(request, 0, 0);
@@ -359,54 +357,56 @@ void AsyncFileResponse::_setContentType(String path){
 AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bool download){
   _code = 200;
   _path = path;
-  int filenameStart = path.lastIndexOf('/') + 1;
-  char buf[26+path.length()-filenameStart];
-  char* filename = (char*)path.c_str() + filenameStart;
-
+  _content = fs.open(_path, "r");
+  _contentLength = _content.size();
+  
   if(!download && !fs.exists(_path) && fs.exists(_path+".gz")){
     _path = _path+".gz";
     addHeader("Content-Encoding", "gzip");
   }
-
+  
   if(contentType == "")
     _setContentType(path);
   else
     _contentType = contentType;
+  
+  int filenameStart = path.lastIndexOf('/') + 1;
+  char buf[26+path.length()-filenameStart];
+  char* filename = (char*)path.c_str() + filenameStart;
 
   if(download) {
     // set filename and force download
-    snprintf(buf, sizeof (buf), "attachment; filename='%s'", filename);
+    snprintf(buf, sizeof (buf), "attachment; filename=\"%s\"", filename);
   } else {
     // set filename and force rendering
-    snprintf(buf, sizeof (buf), "inline; filename='%s'", filename);
+    snprintf(buf, sizeof (buf), "inline; filename=\"%s\"", filename);
   }
   addHeader("Content-Disposition", buf);
 
-  _content = fs.open(_path, "r");
-  _contentLength = _content.size();
 }
 
 AsyncFileResponse::AsyncFileResponse(File content, String path, String contentType, bool download){
   _code = 200;
-  _content = content;
   _path = path;
+  _content = content;
   _contentLength = _content.size();
-  int filenameStart = _path.lastIndexOf('/') + 1;
-  char buf[26+_path.length()-filenameStart];
-  char* filename = (char*)_path.c_str() + filenameStart;
-
+  
   if(!download && String(_content.name()).endsWith(".gz"))
     addHeader("Content-Encoding", "gzip");
-
+  
   if(contentType == "")
-    _setContentType(_path);
+    _setContentType(path);
   else
     _contentType = contentType;
+  
+  int filenameStart = path.lastIndexOf('/') + 1;
+  char buf[26+path.length()-filenameStart];
+  char* filename = (char*)path.c_str() + filenameStart;
 
   if(download) {
-    snprintf(buf, sizeof (buf), "attachment; filename='%s'", filename);
+    snprintf(buf, sizeof (buf), "attachment; filename=\"%s\"", filename);
   } else {
-    snprintf(buf, sizeof (buf), "inline; filename='%s'", filename);
+    snprintf(buf, sizeof (buf), "inline; filename=\"%s\"", filename);
   }
   addHeader("Content-Disposition", buf);
 }
