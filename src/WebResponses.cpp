@@ -357,19 +357,20 @@ void AsyncFileResponse::_setContentType(String path){
 AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bool download){
   _code = 200;
   _path = path;
-  _content = fs.open(_path, "r");
-  _contentLength = _content.size();
   
   if(!download && !fs.exists(_path) && fs.exists(_path+".gz")){
     _path = _path+".gz";
     addHeader("Content-Encoding", "gzip");
   }
-  
+
+  _content = fs.open(_path, "r");
+  _contentLength = _content.size();
+
   if(contentType == "")
     _setContentType(path);
   else
     _contentType = contentType;
-  
+
   int filenameStart = path.lastIndexOf('/') + 1;
   char buf[26+path.length()-filenameStart];
   char* filename = (char*)path.c_str() + filenameStart;
@@ -390,15 +391,15 @@ AsyncFileResponse::AsyncFileResponse(File content, String path, String contentTy
   _path = path;
   _content = content;
   _contentLength = _content.size();
-  
+
   if(!download && String(_content.name()).endsWith(".gz"))
     addHeader("Content-Encoding", "gzip");
-  
+
   if(contentType == "")
     _setContentType(path);
   else
     _contentType = contentType;
-  
+
   int filenameStart = path.lastIndexOf('/') + 1;
   char buf[26+path.length()-filenameStart];
   char* filename = (char*)path.c_str() + filenameStart;
