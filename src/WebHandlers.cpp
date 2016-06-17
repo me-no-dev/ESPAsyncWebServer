@@ -28,16 +28,16 @@ AsyncStaticWebHandler::AsyncStaticWebHandler(FS& fs, const char* path, const cha
   if (_uri.length() == 0 || _uri[0] != '/') _uri = "/" + _uri;
   if (_path.length() == 0 || _path[0] != '/') _path = "/" + _path;
 
-  // If uri or path ends with '/' we assume a hint that this is a directory to improve performance.
-  // However - if they both do not end '/' we, can't assume they are files, they can still be directory.
-  bool isUriDir = _uri[_uri.length()-1] == '/';
-  bool isPathDir = _path[_path.length()-1] == '/';
-  _isDir = isUriDir || isPathDir;
+  // If uri and path ends with '/' we assume a hint that this is a directory to improve performance.
+  // However - if one do not end '/' we, can't assume they are files, they can still be directory.
+  _isDir = _uri[_uri.length()-1] == '/' && _path[_path.length()-1] == '/';
 
   // If we serving directory - remove the trailing '/' so we can handle default file
   // Notice that root will be "" not "/"
-  if (_isDir && isUriDir) _uri = _uri.substring(0, _uri.length()-1);
-  if (_isDir && isPathDir) _path = _path.substring(0, _path.length()-1);
+  if (_isDir) {
+    _uri = _uri.substring(0, _uri.length()-1);
+    _path = _path.substring(0, _path.length()-1);
+  }
 
   // Reset stats
   _gzipFirst = false;

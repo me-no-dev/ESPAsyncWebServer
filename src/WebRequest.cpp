@@ -117,7 +117,7 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
       _temp.concat(str);
       _temp.trim();
       _parseLine();
-      if (++i < len) _onData(buf+i, len-i); // Still have more buffer to process
+      if (++i < len) _onData(str+i, len-i); // Still have more buffer to process
     }
   } else if(_parseState == PARSE_REQ_BODY){
     if(_isMultipart){
