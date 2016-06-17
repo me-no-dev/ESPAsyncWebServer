@@ -365,10 +365,10 @@ AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bo
 
   if(download) {
     // set filename and force download
-    snprintf(buf, sizeof (buf), "attachment; filename='%s'", filename);
+    snprintf(buf, sizeof (buf), "attachment; filename=\"%s\"", filename);
   } else {
     // set filename and force rendering
-    snprintf(buf, sizeof (buf), "inline; filename='%s'", filename);
+    snprintf(buf, sizeof (buf), "inline; filename=\"%s\"", filename);
   }
   addHeader("Content-Disposition", buf);
 
@@ -394,9 +394,9 @@ AsyncFileResponse::AsyncFileResponse(File content, String path, String contentTy
     _contentType = contentType;
 
   if(download) {
-    snprintf(buf, sizeof (buf), "attachment; filename='%s'", filename);
+    snprintf(buf, sizeof (buf), "attachment; filename=\"%s\"", filename);
   } else {
-    snprintf(buf, sizeof (buf), "inline; filename='%s'", filename);
+    snprintf(buf, sizeof (buf), "inline; filename=\"%s\"", filename);
   }
   addHeader("Content-Disposition", buf);
 }
