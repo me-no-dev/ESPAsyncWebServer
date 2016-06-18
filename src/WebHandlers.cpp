@@ -21,21 +21,44 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
+AsyncStaticWebHandler::AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header)
+  : _fs(fs), _uri(uri), _path(path), _cache_header(cache_header)
+{
+  // Ensure leading '/'
+  if (_uri.length() == 0 || _uri[0] != '/') _uri = "/" + _uri;
+  if (_path.length() == 0 || _path[0] != '/') _path = "/" + _path;
+
+  // If uri and path ends with '/' we assume a hint that this is a directory to improve performance.
+  // However - if one do not end '/' we, can't assume they are files, they can still be directory.
+  _isDir = _uri[_uri.length()-1] == '/' && _path[_path.length()-1] == '/';
+
+  // If we serving directory - remove the trailing '/' so we can handle default file
+  // Notice that root will be "" not "/"
+  if (_isDir) {
+    _uri = _uri.substring(0, _uri.length()-1);
+    _path = _path.substring(0, _path.length()-1);
+  }
+
+  // Reset stats
+  _gzipFirst = false;
+  _gzipStats = 0;
+  _fileStats = 0;
+}
+
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
 {
   if (request->method() == HTTP_GET &&
       request->url().startsWith(_uri) &&
-      _getPath(request, true).length()) {
+      _getFile(request)) {
 
     DEBUGF("[AsyncStaticWebHandler::canHandle] TRUE\n");
     return true;
-
   }
 
   return false;
 }
 
-String AsyncStaticWebHandler::_getPath(AsyncWebServerRequest *request, const bool withStats)
+bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest *request)
 {
   // Remove the found uri
   String path = request->url().substring(_uri.length());
@@ -46,19 +69,18 @@ String AsyncStaticWebHandler::_getPath(AsyncWebServerRequest *request, const boo
   path = _path + path;
 
   // Do we have a file or .gz file
-  if (!canSkipFileCheck) if (_fileExists(path, withStats)) return path;
+  if (!canSkipFileCheck && _fileExists(request, path))
+    return true;
 
   // Try to add default page, ensure there is a trailing '/' ot the path.
-  if (path.length() == 0 || path[path.length()-1] != '/') path += "/";
+  if (path.length() == 0 || path[path.length()-1] != '/')
+    path += "/";
   path += "index.htm";
 
-  if (_fileExists(path, withStats)) return path;
-
-  // No file - return empty string
-  return String();
+  return _fileExists(request, path);
 }
 
-bool AsyncStaticWebHandler::_fileExists(const String path, const bool withStats)
+bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const String path)
 {
   bool fileFound = false;
   bool gzipFound = false;
@@ -66,16 +88,28 @@ bool AsyncStaticWebHandler::_fileExists(const String path, const bool withStats)
   String gzip = path + ".gz";
 
   if (_gzipFirst) {
-    gzipFound = _fs.exists(gzip);
-    if (!gzipFound) fileFound = _fs.exists(path);
+    request->_tempFile = _fs.open(gzip, "r");
+    gzipFound = request->_tempFile == true;
+    if (!gzipFound){
+      request->_tempFile = _fs.open(path, "r");
+      fileFound = request->_tempFile == true;
+    }
   } else {
-    fileFound = _fs.exists(path);
-    if (!fileFound) gzipFound =  _fs.exists(gzip);
+    request->_tempFile = _fs.open(path, "r");
+    fileFound = request->_tempFile == true;
+    if (!fileFound){
+      request->_tempFile = _fs.open(gzip, "r");
+      gzipFound = request->_tempFile == true;
+    }
   }
 
   bool found = fileFound || gzipFound;
 
-  if (withStats && found) {
+  if (found) {
+    size_t plen = path.length();
+    char * _tempPath = (char*)malloc(plen+1);
+    snprintf(_tempPath, plen+1, "%s", path.c_str());
+    request->_tempObject = (void*)_tempPath;
     _gzipStats = (_gzipStats << 1) + gzipFound ? 1 : 0;
     _fileStats = (_fileStats << 1) + fileFound ? 1 : 0;
     _gzipFirst = _countBits(_gzipStats) > _countBits(_fileStats);
@@ -94,15 +128,14 @@ uint8_t AsyncStaticWebHandler::_countBits(const uint8_t value)
 
 void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
 {
-  String path = _getPath(request, false);
-
-  if (path.length()) {
-    AsyncWebServerResponse * response = new AsyncFileResponse(_fs, path);
+  if (request->_tempFile == true) {
+    AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, String((char*)request->_tempObject));
+    free(request->_tempObject);
+    request->_tempObject = NULL;
     if (_cache_header.length() != 0)
       response->addHeader("Cache-Control", _cache_header);
     request->send(response);
   } else {
     request->send(404);
   }
-  path = String();
 }

@@ -63,6 +63,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _itemBuffer(0)
   , _itemBufferIndex(0)
   , _itemIsFile(false)
+  , _tempObject(NULL)
   , next(NULL)
 {
   c->onError([](void *r, AsyncClient* c, int8_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
@@ -93,16 +94,30 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
     delete _response;
   }
 
+  if(_tempObject != NULL){
+    free(_tempObject);
+  }
+
 }
 
 void AsyncWebServerRequest::_onData(void *buf, size_t len){
   if(_parseState < PARSE_REQ_BODY){
-    size_t i;
-    for(i=0; i<len; i++){
-      if(_parseState < PARSE_REQ_BODY)
-        _parseByte(((uint8_t*)buf)[i]);
-      else
-        return _onData((void *)((uint8_t*)buf+i), len-i);
+    // Find new line in buf
+    char *str = (char*)buf;
+    size_t i = 0;
+    for (; i < len; i++) if (str[i] == '\n') break;
+    if (i == len) { // No new line, just add the buffer in _temp
+      char ch = str[len-1];
+      str[len-1] = 0;
+      _temp.reserve(_temp.length()+len);
+      _temp.concat(str);
+      _temp.concat(ch);
+    } else { // Found new line - extract it and parse
+      str[i] = 0; // Terminate the string at the end of the line.
+      _temp.concat(str);
+      _temp.trim();
+      _parseLine();
+      if (++i < len) _onData(str+i, len-i); // Still have more buffer to process
     }
   } else if(_parseState == PARSE_REQ_BODY){
     if(_isMultipart){
@@ -139,7 +154,6 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
       _parseState = PARSE_REQ_END;
       if(_handler) _handler->handleRequest(this);
       else send(501);
-      return;
     }
   }
 }
@@ -196,16 +210,23 @@ void AsyncWebServerRequest::_addGetParam(String param){
   param = urlDecode(param);
   String name = param;
   String value = "";
-  if(param.indexOf('=') > 0){
-    name = param.substring(0, param.indexOf('='));
-    value = param.substring(param.indexOf('=') + 1);
+  int index = param.indexOf('=');
+  if(index > 0){
+    name = param.substring(0, index);
+    value = param.substring(index + 1);
   }
   _addParam(new AsyncWebParameter(name, value));
 }
 
 
 bool AsyncWebServerRequest::_parseReqHead(){
-  String m = _temp.substring(0, _temp.indexOf(' '));
+  // Split the head into method, url and version
+  int index = _temp.indexOf(' ');
+  String m = _temp.substring(0, index);
+  index = _temp.indexOf(' ', index+1);
+  String u = _temp.substring(m.length()+1, index);
+  _temp = _temp.substring(index+1);
+
   if(m == "GET"){
     _method = HTTP_GET;
   } else if(m == "POST"){
@@ -222,22 +243,22 @@ bool AsyncWebServerRequest::_parseReqHead(){
     _method = HTTP_OPTIONS;
   }
 
-  _temp = _temp.substring(_temp.indexOf(' ')+1);
-  String u = _temp.substring(0, _temp.indexOf(' '));
   u = urlDecode(u);
   String g = String();
-  if(u.indexOf('?') > 0){
-    g = u.substring(u.indexOf('?') + 1);
-    u = u.substring(0, u.indexOf('?'));
+  index = u.indexOf('?');
+  if(index > 0){
+    g = u.substring(index+1);
+    u = u.substring(0, index);
   }
   _url = u;
   if(g.length()){
     while(true){
       if(g.length() == 0)
         break;
-      if(g.indexOf('&') > 0){
-        _addGetParam(g.substring(0, g.indexOf('&')));
-        g = g.substring(g.indexOf('&') + 1);
+      index = g.indexOf('&');
+      if(index > 0){
+        _addGetParam(g.substring(0, index));
+        g = g.substring(index+1);
       } else {
         _addGetParam(g);
         break;
@@ -245,7 +266,6 @@ bool AsyncWebServerRequest::_parseReqHead(){
     }
   }
 
-  _temp = _temp.substring(_temp.indexOf(' ')+1);
   if(_temp.startsWith("HTTP/1.1"))
     _version = 1;
   _temp = String();
@@ -253,36 +273,32 @@ bool AsyncWebServerRequest::_parseReqHead(){
 }
 
 bool AsyncWebServerRequest::_parseReqHeader(){
-  if(_temp.indexOf(':')){
-    AsyncWebHeader *h = new AsyncWebHeader(_temp);
-    if(h == NULL)
-      return false;
-    if(h->name() == "Host"){
-      _host = h->value();
-      delete h;
+  int index = _temp.indexOf(':');
+  if(index){
+    String name = _temp.substring(0, index);
+    String value = _temp.substring(index + 2);
+    if(name == "Host"){
+      _host = value;
       _server->_handleRequest(this);
-    } else if(h->name() == "Content-Type"){
-      if (h->value().startsWith("multipart/")){
-        _boundary = h->value().substring(h->value().indexOf('=')+1);
-        _contentType = h->value().substring(0, h->value().indexOf(';'));
+    } else if(name == "Content-Type"){
+      if (value.startsWith("multipart/")){
+        _boundary = value.substring(value.indexOf('=')+1);
+        _contentType = value.substring(0, value.indexOf(';'));
         _isMultipart = true;
       } else {
-        _contentType = h->value();
+        _contentType = value;
       }
-      delete h;
-    } else if(h->name() == "Content-Length"){
-      _contentLength = atoi(h->value().c_str());
-      delete h;
-    } else if(h->name() == "Expect" && h->value() == "100-continue"){
+    } else if(name == "Content-Length"){
+      _contentLength = atoi(value.c_str());
+    } else if(name == "Expect" && value == "100-continue"){
       _expectingContinue = true;
-      delete h;
-    } else if(h->name() == "Authorization"){
-      if(h->value().startsWith("Basic")){
-        _authorization = h->value().substring(6);
+    } else if(name == "Authorization"){
+      if(value.startsWith("Basic")){
+        _authorization = value.substring(6);
       }
-      delete h;
     } else {
-      if(_interestingHeaders->contains(h->name()) || _interestingHeaders->contains("ANY")){
+      if(_interestingHeaders->contains(name) || _interestingHeaders->contains("ANY")){
+        AsyncWebHeader *h = new AsyncWebHeader(name, value);
         if(_headers == NULL)
           _headers = h;
         else {
@@ -290,10 +306,8 @@ bool AsyncWebServerRequest::_parseReqHeader(){
           while(hs->next != NULL) hs = hs->next;
           hs->next = h;
         }
-      } else
-        delete h;
+      }
     }
-
   }
   _temp = String();
   return true;
@@ -527,14 +541,6 @@ void AsyncWebServerRequest::_parseLine(){
   }
 }
 
-void AsyncWebServerRequest::_parseByte(uint8_t data){
-  if((char)data != '\r' && (char)data != '\n')
-    _temp += (char)data;
-  if((char)data == '\n')
-    _parseLine();
-}
-
-
 
 int AsyncWebServerRequest::headers(){
   int i = 0;
@@ -646,6 +652,12 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, String pat
   return NULL;
 }
 
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, String path, String contentType, bool download){
+  if(content == true)
+    return new AsyncFileResponse(content, path, contentType, download);
+  return NULL;
+}
+
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, String contentType, size_t len){
   return new AsyncStreamResponse(stream, contentType, len);
 }
@@ -671,6 +683,12 @@ void AsyncWebServerRequest::send(int code, String contentType, String content){
 void AsyncWebServerRequest::send(FS &fs, String path, String contentType, bool download){
   if(fs.exists(path) || (!download && fs.exists(path+".gz"))){
     send(beginResponse(fs, path, contentType, download));
+  } else send(404);
+}
+
+void AsyncWebServerRequest::send(File content, String path, String contentType, bool download){
+  if(content == true){
+    send(beginResponse(content, path, contentType, download));
   } else send(404);
 }
 
@@ -776,26 +794,24 @@ bool AsyncWebServerRequest::hasHeader(const char* name){
 
 
 String AsyncWebServerRequest::urlDecode(const String& text){
-  String decoded = "";
   char temp[] = "0x00";
   unsigned int len = text.length();
   unsigned int i = 0;
+  String decoded = String();
+  decoded.reserve(len); // Allocate the string internal buffer - never longer from source text
   while (i < len){
     char decodedChar;
     char encodedChar = text.charAt(i++);
     if ((encodedChar == '%') && (i + 1 < len)){
       temp[2] = text.charAt(i++);
       temp[3] = text.charAt(i++);
-
       decodedChar = strtol(temp, NULL, 16);
+    } else if (encodedChar == '+') {
+      decodedChar = ' ';
     } else {
-      if (encodedChar == '+'){
-        decodedChar = ' ';
-      } else {
-        decodedChar = encodedChar;  // normal ascii char
-      }
+      decodedChar = encodedChar;  // normal ascii char
     }
-    decoded += decodedChar;
+    decoded.concat(decodedChar);
   }
   return decoded;
 }
