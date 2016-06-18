@@ -357,7 +357,7 @@ void AsyncFileResponse::_setContentType(String path){
 AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bool download){
   _code = 200;
   _path = path;
-  
+
   if(!download && !fs.exists(_path) && fs.exists(_path+".gz")){
     _path = _path+".gz";
     addHeader("Content-Encoding", "gzip");
