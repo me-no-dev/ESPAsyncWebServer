@@ -416,38 +416,6 @@ server.addHandler( new FileFallbackHandler(_fs, "/jquery/jq1.11.1.js" , "/jquery
 server.addHandler( new FileFallbackHandler(_fs, "/jquery/jqm1.4.5.js" , "/jquery/jqm1.4.5.js" ,   "http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js",  "max-age=86400"));
 ```
 
-### Serving static files from SPIFFS
-Serve a specific file or attach a folder in SPIFFS to a root url.
-An optional Cache-Control header can be added to responses.
-An optional Last-Modified header can be added, if the request contains If-Modified-Since header with the same value the server will respond with 304 code instead of serving the file.
-```cpp
-
-// Serve static file example
-server.serveStatic("/url/file.htm", SPIFFS, "/dir/file.htm");
-// Serve static folder example
-server.serveStatic("/root-url", SPIFFS, "/root-dir");
-// Specify cache control
-server.serveStatic("/root-url", SPIFFS, "/root-dir", "max-age=86400");
-// Specify last modified (should be updated each time files are updated)
-server.serveStatic("/root-url", SPIFFS, "/root-dir", NULL, "Wed, 08 Jun 2016 22:00:00 GMT");
-
-```
-
-### HTTP Redirect (302)
-Return HTTP 302 response to redirect the client to a different location.
-An optional IPAddress can specify redirection exclusions, for example, exclude redirection to requests to the AP address.
-```cpp
-// Redirect all requests
-server.redirect("/root/file.ext", "/other-location/other-file.ext");
-// Redirect requests not for the AP address
-server.redirect("/root/file.ext", "/other-location/other-file.ext", WiFi.softAPIP());
-
-// Redirect to jquery CDN except when call is done to AP address
-server.redirect("/jquery/jq1.12.3.js", "http://code.jquery.com/jquery-1.12.3.min.js", WiFi.softAPIP());
-// Serve the jquery from SPIFFS
-server.serveStatic("/jquery", SPIFFS, "/jquery");
-
-```
 
 ## Bad Responses
 Some responses are implemented, but you should not use them, because they do not conform to HTTP.

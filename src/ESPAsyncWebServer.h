@@ -297,9 +297,7 @@ class AsyncWebServer {
     void on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
     void on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
 
-    void redirect(const char* url, const char* location, const uint32_t exclude_ip = 0);
-
-    void serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_header = NULL, const char* modified_header = NULL);
+    void serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_header = NULL);
 
     void onNotFound(ArRequestHandlerFunction fn);  //called when handler is not assigned
     void onFileUpload(ArUploadHandlerFunction fn); //handle file uploads
