@@ -24,24 +24,47 @@
 
 #include "stddef.h"
 
+class RedirectWebHandler: public AsyncWebHandler {
+  protected:
+    String _url;
+    String _location;
+    uint32_t _exclude_ip;
+  public:
+    RedirectWebHandler(const char* url, const char* location, uint32_t exclude_ip)
+      : _url(url), _location(location) { _exclude_ip = exclude_ip; }
+    bool canHandle(AsyncWebServerRequest *request);
+    void handleRequest(AsyncWebServerRequest *request);
+};
+
 class AsyncStaticWebHandler: public AsyncWebHandler {
   private:
-    bool _getFile(AsyncWebServerRequest *request);
-    bool _fileExists(AsyncWebServerRequest *request, const String path);
-    uint8_t _countBits(const uint8_t value);
+    String _getPath(AsyncWebServerRequest *request); 
   protected:
     FS _fs;
     String _uri;
     String _path;
     String _cache_header;
-    bool _isDir;
-    bool _gzipFirst;
-    uint8_t _gzipStats;
-    uint8_t _fileStats;
+    String _modified_header;
+    bool _isFile;
   public:
-    AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header);
+    AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header, const char* modified_header)
+      : _fs(fs), _uri(uri), _path(path), _cache_header(cache_header), _modified_header(modified_header) {
+
+      _isFile = _fs.exists(path) || _fs.exists((String(path)+".gz").c_str());
+      if (_uri != "/" && _uri.endsWith("/")) {
+        _uri = _uri.substring(0, _uri.length() - 1); 
+        DEBUGF("[AsyncStaticWebHandler] _uri / removed\n"); 
+      }
+      if (_path != "/" && _path.endsWith("/")) {
+        _path = _path.substring(0, _path.length() - 1); 
+        DEBUGF("[AsyncStaticWebHandler] _path / removed\n"); 
+      }
+
+
+    }
     bool canHandle(AsyncWebServerRequest *request);
     void handleRequest(AsyncWebServerRequest *request);
+    
 };
 
 class AsyncCallbackWebHandler: public AsyncWebHandler {

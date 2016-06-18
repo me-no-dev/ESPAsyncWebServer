@@ -48,7 +48,6 @@ class AsyncFileResponse: public AsyncAbstractResponse {
     void _setContentType(String path);
   public:
     AsyncFileResponse(FS &fs, String path, String contentType=String(), bool download=false);
-    AsyncFileResponse(File content, String path, String contentType=String(), bool download=false);
     ~AsyncFileResponse();
     bool _sourceValid(){ return !!(_content); }
     size_t _fillBuffer(uint8_t *buf, size_t maxLen);

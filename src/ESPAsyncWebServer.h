@@ -81,11 +81,10 @@ class AsyncWebHeader {
 
     AsyncWebHeader(String name, String value): _name(name), _value(value), next(NULL){}
     AsyncWebHeader(String data): _name(), _value(), next(NULL){
-      if(!data) return;
-      int index = data.indexOf(':');
-      if (index < 0) return;
-      _name = data.substring(0, index);
-      _value = data.substring(index + 2);
+      if(!data || !data.length() || data.indexOf(':') < 0)
+        return;
+      _name = data.substring(0, data.indexOf(':'));
+      _value = data.substring(data.indexOf(':') + 2);
     }
     ~AsyncWebHeader(){}
     String name(){ return _name; }
@@ -150,6 +149,7 @@ class AsyncWebServerRequest {
     bool _parseReqHead();
     bool _parseReqHeader();
     void _parseLine();
+    void _parseByte(uint8_t data);
     void _parsePlainPostChar(uint8_t data);
     void _parseMultipartPostByte(uint8_t data, bool last);
     void _addGetParam(String param);
@@ -160,7 +160,6 @@ class AsyncWebServerRequest {
 
   public:
     File _tempFile;
-    void *_tempObject;
     AsyncWebServerRequest *next;
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
@@ -186,14 +185,12 @@ class AsyncWebServerRequest {
     void send(AsyncWebServerResponse *response);
     void send(int code, String contentType=String(), String content=String());
     void send(FS &fs, String path, String contentType=String(), bool download=false);
-    void send(File content, String path, String contentType=String(), bool download=false);
     void send(Stream &stream, String contentType, size_t len);
     void send(String contentType, size_t len, AwsResponseFiller callback);
     void sendChunked(String contentType, AwsResponseFiller callback);
 
     AsyncWebServerResponse *beginResponse(int code, String contentType=String(), String content=String());
     AsyncWebServerResponse *beginResponse(FS &fs, String path, String contentType=String(), bool download=false);
-    AsyncWebServerResponse *beginResponse(File content, String path, String contentType=String(), bool download=false);
     AsyncWebServerResponse *beginResponse(Stream &stream, String contentType, size_t len);
     AsyncWebServerResponse *beginResponse(String contentType, size_t len, AwsResponseFiller callback);
     AsyncWebServerResponse *beginChunkedResponse(String contentType, AwsResponseFiller callback);
