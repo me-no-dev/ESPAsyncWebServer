@@ -21,8 +21,8 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
-AsyncStaticWebHandler::AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header)
-  : _fs(fs), _uri(uri), _path(path), _cache_header(cache_header)
+AsyncStaticWebHandler::AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control)
+  : _fs(fs), _uri(uri), _path(path), _default_file("index.htm"), _cache_control(cache_control), _last_modified(NULL)
 {
   // Ensure leading '/'
   if (_uri.length() == 0 || _uri[0] != '/') _uri = "/" + _uri;
@@ -43,11 +43,35 @@ AsyncStaticWebHandler::AsyncStaticWebHandler(FS& fs, const char* path, const cha
   _fileStats = 0;
 }
 
+AsyncStaticWebHandler& AsyncStaticWebHandler::setIsDir(bool isDir){
+  _isDir = isDir;
+  return *this;
+}
+
+AsyncStaticWebHandler& AsyncStaticWebHandler::setDefaultFile(const char* filename){
+  _default_file = String(filename);
+  return *this;
+}
+
+AsyncStaticWebHandler& AsyncStaticWebHandler::setCacheControl(const char* cache_control){
+  _cache_control = String(cache_control);
+  return *this;
+}
+
+AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(const char* last_modified){
+  _last_modified = String(last_modified);
+  return *this;
+}
+
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
 {
   if (request->method() == HTTP_GET &&
       request->url().startsWith(_uri) &&
       _getFile(request)) {
+
+    // We interested in "If-Modified-Since" header to check if file was modified
+    if (_last_modified.length())
+      request->addInterestingHeader("If-Modified-Since");
 
     DEBUGF("[AsyncStaticWebHandler::canHandle] TRUE\n");
     return true;
@@ -70,10 +94,14 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest *request)
   if (!canSkipFileCheck && _fileExists(request, path))
     return true;
 
-  // Try to add default page, ensure there is a trailing '/' ot the path.
+  // Can't handle if not default file
+  if (_default_file.length() == 0)
+    return false;
+
+  // Try to add default file, ensure there is a trailing '/' ot the path.
   if (path.length() == 0 || path[path.length()-1] != '/')
     path += "/";
-  path += "index.htm";
+  path += _default_file;
 
   return _fileExists(request, path);
 }
@@ -104,13 +132,18 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
   bool found = fileFound || gzipFound;
 
   if (found) {
-    size_t plen = path.length();
-    char * _tempPath = (char*)malloc(plen+1);
-    snprintf(_tempPath, plen+1, "%s", path.c_str());
+    // Extract the file name from the path and keep it in _tempObject
+    size_t pathLen = path.length();
+    char * _tempPath = (char*)malloc(pathLen+1);
+    snprintf(_tempPath, pathLen+1, "%s", path.c_str());
     request->_tempObject = (void*)_tempPath;
+
+    // Calculate gzip statistic
     _gzipStats = (_gzipStats << 1) + gzipFound ? 1 : 0;
     _fileStats = (_fileStats << 1) + fileFound ? 1 : 0;
-    _gzipFirst = _countBits(_gzipStats) > _countBits(_fileStats);
+    if (_fileStats == 0xFF) _gzipFirst = false; // All files are not gzip
+    else if (_gzipStats == 0xFF) _gzipFirst = true; // All files are gzip
+    else _gzipFirst = _countBits(_gzipStats) > _countBits(_fileStats); // IF we have more gzip files - try gzip first
   }
 
   return found;
@@ -126,13 +159,22 @@ uint8_t AsyncStaticWebHandler::_countBits(const uint8_t value)
 
 void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
 {
+  // Get the filename from request->_tempObject and free it
+  String filename = String((char*)request->_tempObject);
+  free(request->_tempObject);
+  request->_tempObject = NULL;
+
   if (request->_tempFile == true) {
-    AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, String((char*)request->_tempObject));
-    free(request->_tempObject);
-    request->_tempObject = NULL;
-    if (_cache_header.length() != 0)
-      response->addHeader("Cache-Control", _cache_header);
-    request->send(response);
+    if (_last_modified.length() && _last_modified == request->header("If-Modified-Since")) {
+      request->send(304); // Not modified
+    } else {
+      AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, filename);
+      if (_last_modified.length())
+        response->addHeader("Last-Modified", _last_modified);
+      if (_cache_control.length())
+        response->addHeader("Cache-Control", _cache_control);
+      request->send(response);
+    }
   } else {
     request->send(404);
   }
