@@ -482,12 +482,12 @@ Filters can be set to `Rewrite` or `Handler` in order to control when to apply t
 A filter is a callback function that evaluates the request and return a boolean `true` to include the item
 or `false` to exclude it.
 Two filter callback are provided for convince:
-* `ON_SAT_FILTER` - return true when requests are made to the STA (station mode) interface.
+* `ON_STA_FILTER` - return true when requests are made to the STA (station mode) interface.
 * `ON_AP_FILTER` - return true when requests are made to the AP (access point) interface.
 
 ### Serve different site files in AP mode
 ```cpp
-server.serveStatic("/", SPIFFS, "/www/").setFilter(ON_SAT_FILTER);
+server.serveStatic("/", SPIFFS, "/www/").setFilter(ON_STA_FILTER);
 server.serveStatic("/", SPIFFS, "/ap/").setFilter(ON_AP_FILTER);
 ```
 
