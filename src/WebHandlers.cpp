@@ -39,8 +39,7 @@ AsyncStaticWebHandler::AsyncStaticWebHandler(const char* uri, FS& fs, const char
 
   // Reset stats
   _gzipFirst = false;
-  _gzipStats = 0;
-  _fileStats = 0;
+  _gzipStats = 0xF8;
 }
 
 AsyncStaticWebHandler& AsyncStaticWebHandler::setIsDir(bool isDir){
@@ -139,11 +138,10 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
     request->_tempObject = (void*)_tempPath;
 
     // Calculate gzip statistic
-    _gzipStats = (_gzipStats << 1) + gzipFound ? 1 : 0;
-    _fileStats = (_fileStats << 1) + fileFound ? 1 : 0;
-    if (_fileStats == 0xFF) _gzipFirst = false; // All files are not gzip
+    _gzipStats = (_gzipStats << 1) + (gzipFound ? 1 : 0);
+    if (_gzipStats == 0x00) _gzipFirst = false; // All files are not gzip
     else if (_gzipStats == 0xFF) _gzipFirst = true; // All files are gzip
-    else _gzipFirst = _countBits(_gzipStats) > _countBits(_fileStats); // IF we have more gzip files - try gzip first
+    else _gzipFirst = _countBits(_gzipStats) > 4; // IF we have more gzip files - try gzip first
   }
 
   return found;

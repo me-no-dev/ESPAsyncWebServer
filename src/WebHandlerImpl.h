@@ -39,7 +39,6 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     bool _isDir;
     bool _gzipFirst;
     uint8_t _gzipStats;
-    uint8_t _fileStats;
   public:
     AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
     bool canHandle(AsyncWebServerRequest *request);

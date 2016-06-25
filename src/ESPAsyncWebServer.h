@@ -347,17 +347,15 @@ class AsyncWebServer {
     AsyncWebHandler* _catchAllHandler;
   public:
     AsyncWebServer(uint16_t port);
-    ~AsyncWebServer(){}
+    ~AsyncWebServer();
 
     void begin();
 
     AsyncWebRewrite& addRewrite(AsyncWebRewrite* rewrite);
-    void clearRewrites(void);
 
     AsyncWebRewrite& rewrite(const char* from, const char* to);
 
     AsyncWebHandler& addHandler(AsyncWebHandler* handler);
-    void clearHandlers(void);
 
     AsyncCallbackWebHandler& on(const char* uri, ArRequestHandlerFunction onRequest);
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest);

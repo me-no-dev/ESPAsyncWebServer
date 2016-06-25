@@ -38,6 +38,22 @@ AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _rewrites(0), _hand
   }, this);
 }
 
+AsyncWebServer::~AsyncWebServer(){
+  while(_rewrites != NULL){
+    AsyncWebRewrite *r = _rewrites;
+    _rewrites = r->next;
+    delete r;
+  }
+  while(_handlers != NULL){
+    AsyncWebHandler *h = _handlers;
+    _handlers = h->next;
+    delete h;
+  }
+  if (_catchAllHandler != NULL){
+    delete _catchAllHandler;
+  }
+}
+
 AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
   if (_rewrites == NULL){
     _rewrites = rewrite;
@@ -47,14 +63,6 @@ AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
     r->next = rewrite;
   }
   return *rewrite;
-}
-
-void AsyncWebServer::clearRewrites(void){
-  while(_rewrites != NULL){
-    AsyncWebRewrite *r = _rewrites;
-    _rewrites = r->next;
-    delete r;
-  }
 }
 
 AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
@@ -70,14 +78,6 @@ AsyncWebHandler& AsyncWebServer::addHandler(AsyncWebHandler* handler){
     h->next = handler;
   }
   return *handler;
-}
-
-void AsyncWebServer::clearHandlers(void){
-  while(_handlers != NULL){
-    AsyncWebHandler *h = _handlers;
-    _handlers = h->next;
-    delete h;
-  }
 }
 
 void AsyncWebServer::begin(){
