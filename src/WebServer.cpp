@@ -22,7 +22,7 @@
 #include "WebHandlerImpl.h"
 
 
-AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _handlers(0){
+AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _rewrites(0), _handlers(0){
   _catchAllHandler = new AsyncCallbackWebHandler();
   if(_catchAllHandler == NULL)
     return;
@@ -38,7 +38,38 @@ AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _handlers(0){
   }, this);
 }
 
-void AsyncWebServer::addHandler(AsyncWebHandler* handler){
+AsyncWebServer::~AsyncWebServer(){
+  while(_rewrites != NULL){
+    AsyncWebRewrite *r = _rewrites;
+    _rewrites = r->next;
+    delete r;
+  }
+  while(_handlers != NULL){
+    AsyncWebHandler *h = _handlers;
+    _handlers = h->next;
+    delete h;
+  }
+  if (_catchAllHandler != NULL){
+    delete _catchAllHandler;
+  }
+}
+
+AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
+  if (_rewrites == NULL){
+    _rewrites = rewrite;
+  } else {
+    AsyncWebRewrite *r = _rewrites;
+    while(r->next != NULL) r = r->next;
+    r->next = rewrite;
+  }
+  return *rewrite;
+}
+
+AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
+  return addRewrite(new AsyncWebRewrite(from, to));
+}
+
+AsyncWebHandler& AsyncWebServer::addHandler(AsyncWebHandler* handler){
   if(_handlers == NULL){
     _handlers = handler;
   } else {
@@ -46,6 +77,7 @@ void AsyncWebServer::addHandler(AsyncWebHandler* handler){
     while(h->next != NULL) h = h->next;
     h->next = handler;
   }
+  return *handler;
 }
 
 void AsyncWebServer::begin(){
@@ -56,13 +88,26 @@ void AsyncWebServer::_handleDisconnect(AsyncWebServerRequest *request){
   delete request;
 }
 
-void AsyncWebServer::_handleRequest(AsyncWebServerRequest *request){
+void AsyncWebServer::_rewriteRequest(AsyncWebServerRequest *request){
+  AsyncWebRewrite *r = _rewrites;
+  while(r){
+    if (r->from() == request->_url && r->filter(request)){
+      request->_url = r->toUrl();
+      request->_addGetParams(r->params());
+    }
+    r = r->next;
+  }
+}
+
+void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
   if(_handlers){
     AsyncWebHandler* h = _handlers;
-    while(h && !h->canHandle(request)) h = h->next;
-    if(h){
-      request->setHandler(h);
-      return;
+    while(h){
+      if (h->filter(request) && h->canHandle(request)){
+        request->setHandler(h);
+        return;
+      }
+      h = h->next;
     }
   }
   request->addInterestingHeader("ANY");
@@ -70,7 +115,7 @@ void AsyncWebServer::_handleRequest(AsyncWebServerRequest *request){
 }
 
 
-void AsyncWebServer::on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody){
+AsyncCallbackWebHandler& AsyncWebServer::on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody){
   AsyncCallbackWebHandler* handler = new AsyncCallbackWebHandler();
   handler->setUri(uri);
   handler->setMethod(method);
@@ -78,34 +123,40 @@ void AsyncWebServer::on(const char* uri, WebRequestMethod method, ArRequestHandl
   handler->onUpload(onUpload);
   handler->onBody(onBody);
   addHandler(handler);
+  return *handler;
 }
 
-void AsyncWebServer::on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload){
+AsyncCallbackWebHandler& AsyncWebServer::on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload){
   AsyncCallbackWebHandler* handler = new AsyncCallbackWebHandler();
   handler->setUri(uri);
   handler->setMethod(method);
   handler->onRequest(onRequest);
   handler->onUpload(onUpload);
   addHandler(handler);
+  return *handler;
 }
 
-void AsyncWebServer::on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest){
+AsyncCallbackWebHandler& AsyncWebServer::on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest){
   AsyncCallbackWebHandler* handler = new AsyncCallbackWebHandler();
   handler->setUri(uri);
   handler->setMethod(method);
   handler->onRequest(onRequest);
   addHandler(handler);
+  return *handler;
 }
 
-void AsyncWebServer::on(const char* uri, ArRequestHandlerFunction onRequest){
+AsyncCallbackWebHandler& AsyncWebServer::on(const char* uri, ArRequestHandlerFunction onRequest){
   AsyncCallbackWebHandler* handler = new AsyncCallbackWebHandler();
   handler->setUri(uri);
   handler->onRequest(onRequest);
   addHandler(handler);
+  return *handler;
 }
 
-void AsyncWebServer::serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_header){
-  addHandler(new AsyncStaticWebHandler(fs, path, uri, cache_header));
+AsyncStaticWebHandler& AsyncWebServer::serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control){
+  AsyncStaticWebHandler* handler = new AsyncStaticWebHandler(uri, fs, path, cache_control);
+  addHandler(handler);
+  return *handler;
 }
 
 void AsyncWebServer::onNotFound(ArRequestHandlerFunction fn){

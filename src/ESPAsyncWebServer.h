@@ -29,6 +29,14 @@
 
 #include "StringArray.h"
 
+#if defined(ESP31B)
+#include <ESP31BWiFi.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#else
+#error Platform not supported
+#endif
+
 #define DEBUGF(...) //Serial.printf(__VA_ARGS__)
 
 
@@ -37,7 +45,10 @@ class AsyncWebServerRequest;
 class AsyncWebServerResponse;
 class AsyncWebHeader;
 class AsyncWebParameter;
+class AsyncWebRewrite;
 class AsyncWebHandler;
+class AsyncStaticWebHandler;
+class AsyncCallbackWebHandler;
 class AsyncResponseStream;
 
 typedef enum {
@@ -100,6 +111,7 @@ class AsyncWebHeader {
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
 
 class AsyncWebServerRequest {
+  friend class AsyncWebServer;
   private:
     AsyncClient* _client;
     AsyncWebServer* _server;
@@ -152,7 +164,7 @@ class AsyncWebServerRequest {
     void _parseLine();
     void _parsePlainPostChar(uint8_t data);
     void _parseMultipartPostByte(uint8_t data, bool last);
-    void _addGetParam(String param);
+    void _addGetParams(String params);
 
     void _handleUploadStart();
     void _handleUploadByte(uint8_t data, bool last);
@@ -224,13 +236,57 @@ class AsyncWebServerRequest {
 };
 
 /*
+ * FILTER :: Callback to filter AsyncWebRewrite and AsyncWebHandler (done by the Server)
+ * */
+
+typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestFilterFunction;
+
+static bool ON_STA_FILTER(AsyncWebServerRequest *request) {
+  return WiFi.localIP() == request->client()->localIP();
+}
+
+static bool ON_AP_FILTER(AsyncWebServerRequest *request) {
+  return WiFi.localIP() != request->client()->localIP();
+}
+
+/*
+ * REWRITE :: One instance can be handle any Request (done by the Server)
+ * */
+
+class AsyncWebRewrite {
+  protected:
+    String _from;
+    String _toUrl;
+    String _params;
+    ArRequestFilterFunction _filter;
+  public:
+    AsyncWebRewrite* next;
+    AsyncWebRewrite(const char* from, const char* to): _from(from), _toUrl(to), _params(String()), _filter(NULL), next(NULL){
+      int index = _toUrl.indexOf('?');
+      if (index > 0) {
+        _params = _toUrl.substring(index +1);
+        _toUrl = _toUrl.substring(0, index);
+      }
+    }
+    AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; }
+    bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
+    String from(void) { return _from; }
+    String toUrl(void) { return _toUrl; }
+    String params(void) { return _params; }
+};
+
+/*
  * HANDLER :: One instance can be attached to any Request (done by the Server)
  * */
 
 class AsyncWebHandler {
+  protected:
+    ArRequestFilterFunction _filter;
   public:
     AsyncWebHandler* next;
     AsyncWebHandler(): next(NULL){}
+    AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; }
+    bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
     virtual bool canHandle(AsyncWebServerRequest *request){ return false; }
     virtual void handleRequest(AsyncWebServerRequest *request){}
@@ -286,31 +342,39 @@ typedef std::function<void(AsyncWebServerRequest *request, uint8_t *data, size_t
 class AsyncWebServer {
   private:
     AsyncServer _server;
+    AsyncWebRewrite* _rewrites;
     AsyncWebHandler* _handlers;
     AsyncWebHandler* _catchAllHandler;
   public:
     AsyncWebServer(uint16_t port);
-    ~AsyncWebServer(){}
+    ~AsyncWebServer();
 
     void begin();
-    void addHandler(AsyncWebHandler* handler);
 
-    void on(const char* uri, ArRequestHandlerFunction onRequest);
-    void on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest);
-    void on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
-    void on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
+    AsyncWebRewrite& addRewrite(AsyncWebRewrite* rewrite);
 
-    void serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_header = NULL);
+    AsyncWebRewrite& rewrite(const char* from, const char* to);
+
+    AsyncWebHandler& addHandler(AsyncWebHandler* handler);
+
+    AsyncCallbackWebHandler& on(const char* uri, ArRequestHandlerFunction onRequest);
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest);
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
+
+    AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
 
     void onNotFound(ArRequestHandlerFunction fn);  //called when handler is not assigned
     void onFileUpload(ArUploadHandlerFunction fn); //handle file uploads
     void onRequestBody(ArBodyHandlerFunction fn); //handle posts with plain body content (JSON often transmitted this way as a request)
 
     void _handleDisconnect(AsyncWebServerRequest *request);
-    void _handleRequest(AsyncWebServerRequest *request);
+    void _attachHandler(AsyncWebServerRequest *request);
+    void _rewriteRequest(AsyncWebServerRequest *request);
 };
 
 #include "WebResponseImpl.h"
+#include "WebHandlerImpl.h"
 #include "AsyncWebSocket.h"
 
 #endif /* _AsyncWebServer_H_ */

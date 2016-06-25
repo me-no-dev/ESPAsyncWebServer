@@ -31,30 +31,48 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - Listens for connections
 - Wraps the new clients into ```Request```
 - Keeps track of clients and cleans memory
+- Manages ```Rewrites``` and apply them on the request url
 - Manages ```Handlers``` and attaches them to Requests
 
 ### Request Life Cycle
 - TCP connection is received by the server
 - The connection is wrapped inside ```Request``` object
 - When the request head is received (type, url, get params, http version and host),
-  the server goes through all attached ```Handlers```(in the order they are attached) trying to find one
+  the server goes through all ```Rewrites``` (in the order they were added) to rewrite the url and inject query parameters,
+  next, it goes through all attached ```Handlers```(in the order they were added) trying to find one
   that ```canHandle``` the given request. If none are found, the default(catch-all) handler is attached.
 - The rest of the request is received, calling the ```handleUpload``` or ```handleBody``` methods of the ```Handler``` if they are needed (POST+File/Body)
 - When the whole request is parsed, the result is given to the ```handleRequest``` method of the ```Handler``` and is ready to be responded to
 - In the ```handleRequest``` method, to the ```Request``` is attached a ```Response``` object (see below) that will serve the response data back to the client
 - When the ```Response``` is sent, the client is closed and freed from the memory
 
+### Rewrites and how do they work
+- The ```Rewrites``` are used to rewrite the request url and/or inject get parameters for a specific request url path.
+- All ```Rewrites``` are evaluated on the request in the order they have been added to the server.
+- The ```Rewrite``` will change the request url only if the request url (excluding get parameters) is fully match
+  the rewrite url, and when the optional ```Filter``` callback return true.
+- Setting a ```Filter``` to the ```Rewrite``` enables to control when to apply the rewrite, decision can be based on
+  request url, http version, request host/port/target host, get parameters or the request client's localIP or remoteIP.
+- Two filter callbacks are provided: ```ON_AP_FILTER``` to execute the rewrite when request is made to the AP interface,
+  ```ON_SAT_FILTER``` to execute the rewrite when request is made to the STA interface.
+- The ```Rewrite``` can specify a target url with optional get parameters, e.g. ```/to-url?with=params```
+
 ### Handlers and how do they work
 - The ```Handlers``` are used for executing specific actions to particular requests
 - One ```Handler``` instance can be attached to any request and lives together with the server
-- The ```canHandle``` method is used for filtering the requests that can be handled
-  and declaring any interesting headers that the ```Request``` should collect
-- Decision can be based on request method, request url, http version, request host/port/target host and GET parameters
+- Setting a ```Filter``` to the ```Handler``` enables to control when to apply the handler, decision can be based on
+  request url, http version, request host/port/target host, get parameters or the request client's localIP or remoteIP.
+- Two filter callbacks are provided: ```ON_AP_FILTER``` to execute the rewrite when request is made to the AP interface,
+  ```ON_SAT_FILTER``` to execute the rewrite when request is made to the STA interface.
+- The ```canHandle``` method is used for handler specific control on whether the requests can be handled
+  and for declaring any interesting headers that the ```Request``` should parse. Decision can be based on request 
+  method, request url, http version, request host/port/target host and get parameters
 - Once a ```Handler``` is attached to given ```Request``` (```canHandle``` returned true)
   that ```Handler``` takes care to receive any file/data upload and attach a ```Response```
   once the ```Request``` has been fully parsed
-- ```Handler's``` ```canHandle``` is called in the order they are attached to the server.
-  If a ```Handler``` attached earlier returns ```true``` on ```canHandle```, then this ```Hander's``` ```canHandle``` will never be called
+- ```Handlers``` are evaluated in the order they are attached to the server. The ```canHandle``` is called only 
+  if the ```Filter``` that was set to the ```Handler``` return true. 
+- The first ```Handler``` that can handle the request is selected, not further ```Filter``` and ```canHandle``` are called.
 
 ### Responses and how do they work
 - The ```Response``` objects are used to send the response data back to the client
@@ -397,25 +415,99 @@ response->setLength();
 request->send(response);
 ```
 
-### FileFallBackHandler
-Example provided by [@sticilface](https://github.com/sticilface)
+## Serving static files
+In addition to serving files from SPIFFS as described above, the server provide a dedicated handler that optimize the
+performance of serving files from SPIFFS - ```AsyncStaticWebHandler```. Use ```server.serveStatic()``` function to 
+initialize and add a new instance of ```AsyncStaticWebHandler``` to the server.
+The Handler will not handle the request if the file does not exists, e.g. the server will continue to look for another
+handler that can handle the request.
+Notice that you can chain setter functions to setup the handler, or keep a pointer to change it at a later time.
 
-This handler is useful for serving content from a CDN when the ESP is connected to a wifi 
-network, but falling back to local copies of the file stored in SPIFFS when the ESP is in 
-AP mode and the client does not have internet access.  It will work when both AP mode and 
-STA mode are active.  It works by returning 302 HTTP code, with a Location header that 
-you specify.  It is much quicker than requiring the ESP to handle all the files. 
+### Serving specific file by name
 ```cpp
-#include "FileFallbackHandler.h" //  include this in the sketch. 
-
-server.addHandler( new FileFallbackHandler(SPIFFS, "/path_to_SPIFFS_file", "/uri", "url_to_forward",  "optional_cache_control_header"));
-
-//  These three lines will serve all the jquery requirements from SPIFFS (if they are there) in AP mode, but forward the URL to CDN if not. 
-server.addHandler( new FileFallbackHandler(_fs, "/jquery/jqm1.4.5.css", "/jquery/jqm1.4.5.css",   "http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css",  "max-age=86400"));
-server.addHandler( new FileFallbackHandler(_fs, "/jquery/jq1.11.1.js" , "/jquery/jq1.11.1.js" ,   "http://code.jquery.com/jquery-1.11.1.min.js",  "max-age=86400"));
-server.addHandler( new FileFallbackHandler(_fs, "/jquery/jqm1.4.5.js" , "/jquery/jqm1.4.5.js" ,   "http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js",  "max-age=86400"));
+// Serve the file "/www/page.htm" when request url is "/page.htm"
+server.serveStatic("/page.htm", SPIFFS, "/www/page.htm");
 ```
 
+### Serving files in directory
+To serve files in a directory, the path to the files should specify a directory in SPIFFS and ends with "/".
+```cpp
+// Serve files in directory "/www/" when request url starts with "/"
+// Request to the root or none existing files will try to server the defualt
+// file name "index.htm" if exists
+server.serveStatic("/", SPIFFS, "/www/");
+
+// Server with different default file
+server.serveStatic("/", SPIFFS, "/www/").setDefaultFile("default.html");
+```
+
+### Specifying Cache-Control header
+It is possible to specify Cache-Control header value to reduce the number of calls to the server once the client loaded
+the files. For more information on Cache-Control values see [Cache-Control](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9)
+```cpp
+// Cache responses for 10 minutes (600 seconds)
+server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age:600");
+
+//*** Change Cache-Control after server setup ***
+
+// During setup - keep a pointer to the handler
+AsyncStaticWebHandler* handler = &server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age:600");
+
+// At a later event - change Cache-Control
+handler->setCacheControl("max-age:30");
+```
+
+### Specifying Date-Modified header
+It is possible to specify Date-Modified header to enable the server to return Not-Modified (304) response for requests
+with "If-Modified-Since" header with the same value, instead of responding with the actual file content.
+```cpp
+// Update the date modified string every time files are updated
+server.serveStatic("/", SPIFFS, "/www/").setLastModified("Mon, 20 Jun 2016 14:00:00 GMT");
+
+//*** Chage last modified value at a later stage ***
+
+// During setup - read last modified value from config or EEPROM
+String date_modified = loadDateModified();
+AsyncStaticWebHandler* handler = &server.serveStatic("/", SPIFFS, "/www/");
+handler->setLastModified(date_modified);
+
+// At a later event when files are updated
+String date_modified = getNewDateModfied();
+saveDateModified(date_modified); // Save for next reset
+handler->setLastModified(date_modified);
+```
+
+## Using filters
+Filters can be set to `Rewrite` or `Handler` in order to control when to apply the rewrite and consider the handler.
+A filter is a callback function that evaluates the request and return a boolean `true` to include the item
+or `false` to exclude it.
+Two filter callback are provided for convince:
+* `ON_SAT_FILTER` - return true when requests are made to the STA (station mode) interface.
+* `ON_AP_FILTER` - return true when requests are made to the AP (access point) interface.
+
+### Serve different site files in AP mode
+```cpp
+server.serveStatic("/", SPIFFS, "/www/").setFilter(ON_SAT_FILTER);
+server.serveStatic("/", SPIFFS, "/ap/").setFilter(ON_AP_FILTER);
+```
+
+### Rewrite to different index on AP
+```cpp
+// Serve the file "/www/index-ap.htm" in AP, and the file "/www/index.htm" on STA
+server.rewrite("/", "index.htm");
+server.rewrite("/index.htm", "index-ap.htm").setFilter(ON_AP_FILTER);
+server.serveStatic("/", SPIFFS, "/www/");
+```
+
+### Serving different hosts
+```cpp
+// Filter callback using request host
+bool filterOnHost1(AsyncWebServerRequest *request) { return request->host() == "host1"; }
+
+// Server setup: server files in "/host1/" to requests for "host1", and files in "/www/" otherwise.
+server.serveStatic("/", SPIFFS, "/host1/").setFilter(filterOnHost1);
+server.serveStatic("/", SPIFFS, "/www/");
+```
 
 ## Bad Responses
 Some responses are implemented, but you should not use them, because they do not conform to HTTP.

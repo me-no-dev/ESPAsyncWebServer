@@ -33,15 +33,20 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     FS _fs;
     String _uri;
     String _path;
-    String _cache_header;
+    String _default_file;
+    String _cache_control;
+    String _last_modified;
     bool _isDir;
     bool _gzipFirst;
     uint8_t _gzipStats;
-    uint8_t _fileStats;
   public:
-    AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header);
+    AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
     bool canHandle(AsyncWebServerRequest *request);
     void handleRequest(AsyncWebServerRequest *request);
+    AsyncStaticWebHandler& setIsDir(bool isDir);
+    AsyncStaticWebHandler& setDefaultFile(const char* filename);
+    AsyncStaticWebHandler& setCacheControl(const char* cache_control);
+    AsyncStaticWebHandler& setLastModified(const char* last_modified);
 };
 
 class AsyncCallbackWebHandler: public AsyncWebHandler {

@@ -206,18 +206,19 @@ void AsyncWebServerRequest::_addParam(AsyncWebParameter *p){
   }
 }
 
-void AsyncWebServerRequest::_addGetParam(String param){
-  param = urlDecode(param);
-  String name = param;
-  String value = "";
-  int index = param.indexOf('=');
-  if(index > 0){
-    name = param.substring(0, index);
-    value = param.substring(index + 1);
+void AsyncWebServerRequest::_addGetParams(String params){
+  int start = 0;
+  while (start < params.length()){
+    int end = params.indexOf('&', start);
+    if (end < 0) end = params.length();
+    int equal = params.indexOf('=', start);
+    if (equal < 0 || equal > end) equal = end;
+    String name = params.substring(start, equal);
+    String value = equal + 1 < end ? params.substring(equal + 1, end) : String();
+    _addParam(new AsyncWebParameter(name, value));
+    start = end + 1;
   }
-  _addParam(new AsyncWebParameter(name, value));
 }
-
 
 bool AsyncWebServerRequest::_parseReqHead(){
   // Split the head into method, url and version
@@ -247,27 +248,15 @@ bool AsyncWebServerRequest::_parseReqHead(){
   String g = String();
   index = u.indexOf('?');
   if(index > 0){
-    g = u.substring(index+1);
+    g = u.substring(index +1);
     u = u.substring(0, index);
   }
   _url = u;
-  if(g.length()){
-    while(true){
-      if(g.length() == 0)
-        break;
-      index = g.indexOf('&');
-      if(index > 0){
-        _addGetParam(g.substring(0, index));
-        g = g.substring(index+1);
-      } else {
-        _addGetParam(g);
-        break;
-      }
-    }
-  }
+  _addGetParams(g);
 
   if(_temp.startsWith("HTTP/1.1"))
     _version = 1;
+
   _temp = String();
   return true;
 }
@@ -279,7 +268,8 @@ bool AsyncWebServerRequest::_parseReqHeader(){
     String value = _temp.substring(index + 2);
     if(name == "Host"){
       _host = value;
-      _server->_handleRequest(this);
+      _server->_rewriteRequest(this);
+      _server->_attachHandler(this);
     } else if(name == "Content-Type"){
       if (value.startsWith("multipart/")){
         _boundary = value.substring(value.indexOf('=')+1);
