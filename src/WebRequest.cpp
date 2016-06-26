@@ -694,6 +694,12 @@ void AsyncWebServerRequest::sendChunked(String contentType, AwsResponseFiller ca
   send(beginChunkedResponse(contentType, callback));
 }
 
+void AsyncWebServerRequest::redirect(String url){
+  AsyncWebServerResponse * response = beginResponse(302);
+  response->addHeader("Location",url);
+  send(response);
+}
+
 
 bool AsyncWebServerRequest::authenticate(const char * username, const char * password){
   if(_authorization.length()){

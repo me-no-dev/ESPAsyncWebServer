@@ -195,6 +195,8 @@ class AsyncWebServerRequest {
     void setHandler(AsyncWebHandler *handler){ _handler = handler; }
     void addInterestingHeader(String name);
 
+    void redirect(String url);
+
     void send(AsyncWebServerResponse *response);
     void send(int code, String contentType=String(), String content=String());
     void send(FS &fs, String path, String contentType=String(), bool download=false);
