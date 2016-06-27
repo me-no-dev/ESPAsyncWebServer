@@ -23,6 +23,7 @@
 
 
 #include "stddef.h"
+#include <time.h>
 
 class AsyncStaticWebHandler: public AsyncWebHandler {
   private:
@@ -47,6 +48,7 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     AsyncStaticWebHandler& setDefaultFile(const char* filename);
     AsyncStaticWebHandler& setCacheControl(const char* cache_control);
     AsyncStaticWebHandler& setLastModified(const char* last_modified);
+    AsyncStaticWebHandler& setLastModified(struct tm* last_modified);
 };
 
 class AsyncCallbackWebHandler: public AsyncWebHandler {

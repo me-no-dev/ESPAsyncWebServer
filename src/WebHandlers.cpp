@@ -62,6 +62,12 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(const char* last_m
   return *this;
 }
 
+AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(struct tm* last_modified){
+  char result[30];
+  strftime (result,30,"%a, %d %b %Y %H:%M:%S %Z", last_modified);
+  return setLastModified((const char *)result);
+}
+
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
 {
   if (request->method() == HTTP_GET &&
