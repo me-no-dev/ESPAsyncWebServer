@@ -18,6 +18,9 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - Easily extendible to handle any type of content
 - Supports Continue 100
 - Async WebSocket plugin offering different locations without extra servers or ports
+- Async EventSource (ServerSideEvents) plugin to send events to the browser
+- URL Rewrite plugin for conditional and permanent url rewrites
+- ServeStatic plugin that supports cache, Last-Modified, default index and more
 
 ## Important things to remember
 - This is fully asynchronous server and as such does not run on the loop thread.
@@ -65,13 +68,13 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - Two filter callbacks are provided: ```ON_AP_FILTER``` to execute the rewrite when request is made to the AP interface,
   ```ON_SAT_FILTER``` to execute the rewrite when request is made to the STA interface.
 - The ```canHandle``` method is used for handler specific control on whether the requests can be handled
-  and for declaring any interesting headers that the ```Request``` should parse. Decision can be based on request 
+  and for declaring any interesting headers that the ```Request``` should parse. Decision can be based on request
   method, request url, http version, request host/port/target host and get parameters
 - Once a ```Handler``` is attached to given ```Request``` (```canHandle``` returned true)
   that ```Handler``` takes care to receive any file/data upload and attach a ```Response```
   once the ```Request``` has been fully parsed
-- ```Handlers``` are evaluated in the order they are attached to the server. The ```canHandle``` is called only 
-  if the ```Filter``` that was set to the ```Handler``` return true. 
+- ```Handlers``` are evaluated in the order they are attached to the server. The ```canHandle``` is called only
+  if the ```Filter``` that was set to the ```Handler``` return true.
 - The first ```Handler``` that can handle the request is selected, not further ```Filter``` and ```canHandle``` are called.
 
 ### Responses and how do they work
@@ -199,6 +202,14 @@ void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_
 ```
 
 ## Responses
+### Redirect to another URL
+```cpp
+//to local url
+request->redirect("/login");
+
+//to external url
+request->redirect("http://esp8266.com");
+```
 
 ### Basic response with HTTP Code
 ```cpp
@@ -417,7 +428,7 @@ request->send(response);
 
 ## Serving static files
 In addition to serving files from SPIFFS as described above, the server provide a dedicated handler that optimize the
-performance of serving files from SPIFFS - ```AsyncStaticWebHandler```. Use ```server.serveStatic()``` function to 
+performance of serving files from SPIFFS - ```AsyncStaticWebHandler```. Use ```server.serveStatic()``` function to
 initialize and add a new instance of ```AsyncStaticWebHandler``` to the server.
 The Handler will not handle the request if the file does not exists, e.g. the server will continue to look for another
 handler that can handle the request.
@@ -656,6 +667,10 @@ const uint8_t flash_binary[] PROGMEM = { 0x01, 0x02, 0x03, 0x04 };
 client->binary(flash_binary, 4);
 ```
 
+## Async Event Source Plugin
+The server includes EventSource (ServerSideEvents) plugin which can be used to send short text events to the browser.
+Difference between EventSource and WebSockets is that EventSource is single direction, text-only protocol.
+
 
 ## Setting up the server
 ```cpp
@@ -664,6 +679,7 @@ client->binary(flash_binary, 4);
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws"); // access at ws://[esp ip]/ws
+AsyncEventSource events("/events"); // event source (server side events)
 
 const char* ssid = "your-ssid";
 const char* password = "your-pass";
@@ -700,6 +716,9 @@ void setup(){
   ws.onEvent(onEvent);
   server.addHandler(&ws);
 
+  // attach AsyncEventSource
+  server.addHandler(&events);
+
   // respond to GET requests on URL /heap
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
@@ -735,7 +754,11 @@ void setup(){
   server.begin();
 }
 
-void loop(){}
+void loop(){
+  static char temp[128];
+  sprintf(temp, "Seconds since boot: %u", millis()/1000);
+  events.send(temp, "time"); //send event "time"
+}
 ```
 
 ### Methods for controlling websocket connections
@@ -750,7 +773,7 @@ void loop(){}
     ws.enable(true);
 ```
 
-Example of OTA code 
+Example of OTA code
 
 ```arduino
   // OTA callbacks
