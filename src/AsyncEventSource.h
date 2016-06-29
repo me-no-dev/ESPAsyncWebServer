@@ -27,6 +27,7 @@
 class AsyncEventSource;
 class AsyncEventSourceResponse;
 class AsyncEventSourceClient;
+typedef std::function<void(AsyncEventSourceClient *client)> ArEventHandlerFunction;
 
 class AsyncEventSourceClient {
   private:
@@ -41,7 +42,8 @@ class AsyncEventSourceClient {
 
     AsyncClient* client(){ return _client; }
     void close();
-    void send(const char * message, size_t len);
+    void write(const char * message, size_t len);
+    void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
     bool connected(){ return (_client != NULL) && _client->connected(); }
 
     //system callbacks (do not call)
@@ -56,6 +58,7 @@ class AsyncEventSource: public AsyncWebHandler {
   private:
     String _url;
     AsyncEventSourceClient * _clients;
+    ArEventHandlerFunction _connectcb;
     uint32_t _cNextId;
   public:
     AsyncEventSource(String url);
@@ -63,6 +66,7 @@ class AsyncEventSource: public AsyncWebHandler {
 
     const char * url(){ return _url.c_str(); }
     void close();
+    void onConnect(ArEventHandlerFunction cb);
     void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
 
     //system callbacks (do not call)
