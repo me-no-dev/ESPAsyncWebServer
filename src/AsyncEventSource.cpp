@@ -142,7 +142,7 @@ void AsyncEventSourceClient::_onDisconnect(){
 
 void AsyncEventSourceClient::close(){
   if(_client != NULL)
-    _client->close(true);
+    _client->close();
 }
 
 void AsyncEventSourceClient::write(const char * message, size_t len){
