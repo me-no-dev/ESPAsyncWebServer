@@ -182,6 +182,8 @@ void AsyncEventSource::onConnect(ArEventHandlerFunction cb){
 void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
   if(_clients == NULL){
     _clients = client;
+    if(_connectcb)
+      _connectcb(client);
     return;
   }
   AsyncEventSourceClient * c = _clients;
