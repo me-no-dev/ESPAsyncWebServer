@@ -31,7 +31,7 @@ static String generateEventMessage(const char *message, const char *event, uint3
 
   if(id){
     ev += "id: ";
-    ev += String(reconnect);
+    ev += String(id);
     ev += "\r\n";
   }
 
