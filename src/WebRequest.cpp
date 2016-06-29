@@ -19,8 +19,8 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "ESPAsyncWebServer.h"
-#include <libb64/cencode.h>
 #include "WebResponseImpl.h"
+#include "WebAuthentication.h"
 
 #ifndef ESP8266
 #define os_strlen strlen
@@ -45,6 +45,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _contentType()
   , _boundary()
   , _authorization()
+  , _isDigest(false)
   , _isMultipart(false)
   , _isPlainPost(false)
   , _expectingContinue(false)
@@ -139,6 +140,7 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
         }
       }
       if(!_isPlainPost) {
+        //check if authenticated before calling the body
         if(_handler) _handler->handleBody(this, (uint8_t*)buf, len, _parsedLength, _contentLength);
         _parsedLength += len;
       } else {
@@ -152,6 +154,7 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
 
     if(_parsedLength == _contentLength){
       _parseState = PARSE_REQ_END;
+      //check if authenticated before calling handleRequest and request auth instead
       if(_handler) _handler->handleRequest(this);
       else send(501);
     }
@@ -254,7 +257,7 @@ bool AsyncWebServerRequest::_parseReqHead(){
   _url = u;
   _addGetParams(g);
 
-  if(_temp.startsWith("HTTP/1.1"))
+  if(!_temp.startsWith("HTTP/1.0"))
     _version = 1;
 
   _temp = String();
@@ -285,6 +288,9 @@ bool AsyncWebServerRequest::_parseReqHeader(){
     } else if(name == "Authorization"){
       if(value.startsWith("Basic")){
         _authorization = value.substring(6);
+      } else if(value.startsWith("Digest")){
+        _isDigest = true;
+        _authorization = value.substring(7);
       }
     } else {
       if(_interestingHeaders->contains(name) || _interestingHeaders->contains("ANY")){
@@ -323,6 +329,7 @@ void AsyncWebServerRequest::_handleUploadByte(uint8_t data, bool last){
   _itemBuffer[_itemBufferIndex++] = data;
 
   if(last || _itemBufferIndex == 1460){
+    //check if authenticated before calling the upload
     if(_handler)
       _handler->handleUpload(this, _itemFilename, _itemSize - _itemBufferIndex, _itemBuffer, _itemBufferIndex, false);
     _itemBufferIndex = 0;
@@ -463,6 +470,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
         _addParam(new AsyncWebParameter(_itemName, _itemValue, true));
       } else {
         if(_itemSize){
+          //check if authenticated before calling the upload
           if(_handler) _handler->handleUpload(this, _itemFilename, _itemSize - _itemBufferIndex, _itemBuffer, _itemBufferIndex, true);
           _itemBufferIndex = 0;
           _addParam(new AsyncWebParameter(_itemName, _itemFilename, true, true, _itemSize));
@@ -520,6 +528,7 @@ void AsyncWebServerRequest::_parseLine(){
         const char * response = "HTTP/1.1 100 Continue\r\n\r\n";
         _client->write(response, os_strlen(response));
       }
+      //check handler for authentication
       if(_contentLength){
         _parseState = PARSE_REQ_BODY;
       } else {
@@ -700,38 +709,54 @@ void AsyncWebServerRequest::redirect(String url){
   send(response);
 }
 
-
-bool AsyncWebServerRequest::authenticate(const char * username, const char * password){
+bool AsyncWebServerRequest::authenticate(const char * username, const char * password, const char * realm, bool passwordIsHash){
   if(_authorization.length()){
-      char toencodeLen = os_strlen(username)+os_strlen(password)+1;
-      char *toencode = new char[toencodeLen+1];
-      if(toencode == NULL){
-        return false;
-      }
-      char *encoded = new char[base64_encode_expected_len(toencodeLen)+1];
-      if(encoded == NULL){
-        delete[] toencode;
-        return false;
-      }
-      sprintf(toencode, "%s:%s", username, password);
-      if(base64_encode_chars(toencode, toencodeLen, encoded) > 0 && _authorization.equals(encoded)){
-        delete[] toencode;
-        delete[] encoded;
-        return true;
-      }
-      delete[] toencode;
-      delete[] encoded;
+    if(_isDigest)
+      return checkDigestAuthentication(_authorization.c_str(), methodToString(), username, password, realm, passwordIsHash, NULL, NULL, NULL);
+    else if(!passwordIsHash)
+      return checkBasicAuthentication(_authorization.c_str(), username, password);
+    else
+      return _authorization.equals(password);
   }
   return false;
 }
 
 bool AsyncWebServerRequest::authenticate(const char * hash){
-  return (_authorization.length() && (_authorization == String(hash)));
+  if(!_authorization.length() || hash == NULL)
+    return false;
+
+  if(_isDigest){
+    String hStr = String(hash);
+    int separator = hStr.indexOf(":");
+    if(separator <= 0)
+      return false;
+    String username = hStr.substring(0, separator);
+    hStr = hStr.substring(separator + 1);
+    separator = hStr.indexOf(":");
+    if(separator <= 0)
+      return false;
+    String realm = hStr.substring(0, separator);
+    hStr = hStr.substring(separator + 1);
+    return checkDigestAuthentication(_authorization.c_str(), methodToString(), username.c_str(), hStr.c_str(), realm.c_str(), true, NULL, NULL, NULL);
+  }
+
+  return (_authorization.equals(hash));
 }
 
-void AsyncWebServerRequest::requestAuthentication(){
+void AsyncWebServerRequest::requestAuthentication(const char * realm, bool isDigest){
   AsyncWebServerResponse * r = beginResponse(401);
-  r->addHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
+  if(!isDigest && realm == NULL){
+    r->addHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
+  } else if(!isDigest){
+    String header = "Basic realm=\"";
+    header.concat(realm);
+    header.concat("\"");
+    r->addHeader("WWW-Authenticate", header);
+  } else {
+    String header = "Digest ";
+    header.concat(requestDigestAuthentication(realm));
+    r->addHeader("WWW-Authenticate", header);
+  }
   send(r);
 }
 

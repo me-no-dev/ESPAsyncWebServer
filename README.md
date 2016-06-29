@@ -14,11 +14,11 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - When you send the response, you are immediately ready to handle other connections
   while the server is taking care of sending the response in the background
 - Speed is OMG
-- Easy to use API, HTTP Basic Authentication, ChunkedResponse
+- Easy to use API, HTTP Basic and Digest MD5 Authentication (default), ChunkedResponse
 - Easily extendible to handle any type of content
 - Supports Continue 100
 - Async WebSocket plugin offering different locations without extra servers or ports
-- Async EventSource (ServerSideEvents) plugin to send events to the browser
+- Async EventSource (Server-Sent Events) plugin to send events to the browser
 - URL Rewrite plugin for conditional and permanent url rewrites
 - ServeStatic plugin that supports cache, Last-Modified, default index and more
 
@@ -668,7 +668,7 @@ client->binary(flash_binary, 4);
 ```
 
 ## Async Event Source Plugin
-The server includes EventSource (ServerSideEvents) plugin which can be used to send short text events to the browser.
+The server includes EventSource (Server-Sent Events) plugin which can be used to send short text events to the browser.
 Difference between EventSource and WebSockets is that EventSource is single direction, text-only protocol.
 
 
@@ -679,7 +679,7 @@ Difference between EventSource and WebSockets is that EventSource is single dire
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws"); // access at ws://[esp ip]/ws
-AsyncEventSource events("/events"); // event source (server side events)
+AsyncEventSource events("/events"); // event source (Server-Sent events)
 
 const char* ssid = "your-ssid";
 const char* password = "your-pass";

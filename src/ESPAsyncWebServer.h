@@ -129,6 +129,7 @@ class AsyncWebServerRequest {
     String _contentType;
     String _boundary;
     String _authorization;
+    bool _isDigest;
     bool _isMultipart;
     bool _isPlainPost;
     bool _expectingContinue;
@@ -188,9 +189,13 @@ class AsyncWebServerRequest {
     bool multipart(){ return _isMultipart; }
     const char * methodToString();
 
-    bool authenticate(const char * username, const char * password);
+
+    //hash is the string representation of:
+    // base64(user:pass) for basic or
+    // user:realm:md5(user:realm:pass) for digest
     bool authenticate(const char * hash);
-    void requestAuthentication();
+    bool authenticate(const char * username, const char * password, const char * realm = NULL, bool passwordIsHash = false);
+    void requestAuthentication(const char * realm = NULL, bool isDigest = true);
 
     void setHandler(AsyncWebHandler *handler){ _handler = handler; }
     void addInterestingHeader(String name);
