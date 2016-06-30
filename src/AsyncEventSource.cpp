@@ -243,6 +243,17 @@ void AsyncEventSource::send(const char *message, const char *event, uint32_t id,
   }
 }
 
+size_t AsyncEventSource::count(){
+  size_t i = 0;
+  AsyncEventSourceClient * c = _clients;
+  while(c != NULL){
+    if(c->connected())
+      i++;
+    c = c->next;
+  }
+  return i;
+}
+
 bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
   if(request->method() != HTTP_GET || !request->url().equals(_url))
     return false;
