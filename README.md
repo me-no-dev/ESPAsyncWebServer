@@ -57,7 +57,7 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - Setting a ```Filter``` to the ```Rewrite``` enables to control when to apply the rewrite, decision can be based on
   request url, http version, request host/port/target host, get parameters or the request client's localIP or remoteIP.
 - Two filter callbacks are provided: ```ON_AP_FILTER``` to execute the rewrite when request is made to the AP interface,
-  ```ON_SAT_FILTER``` to execute the rewrite when request is made to the STA interface.
+  ```ON_STA_FILTER``` to execute the rewrite when request is made to the STA interface.
 - The ```Rewrite``` can specify a target url with optional get parameters, e.g. ```/to-url?with=params```
 
 ### Handlers and how do they work
@@ -66,7 +66,7 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - Setting a ```Filter``` to the ```Handler``` enables to control when to apply the handler, decision can be based on
   request url, http version, request host/port/target host, get parameters or the request client's localIP or remoteIP.
 - Two filter callbacks are provided: ```ON_AP_FILTER``` to execute the rewrite when request is made to the AP interface,
-  ```ON_SAT_FILTER``` to execute the rewrite when request is made to the STA interface.
+  ```ON_STA_FILTER``` to execute the rewrite when request is made to the STA interface.
 - The ```canHandle``` method is used for handler specific control on whether the requests can be handled
   and for declaring any interesting headers that the ```Request``` should parse. Decision can be based on request
   method, request url, http version, request host/port/target host and get parameters
@@ -693,7 +693,7 @@ void setup(){
 void loop(){
   if(eventTriggered){ // your logic here
     //send event "myevent"
-    client->send("my event content","myevent",millis());
+    events.send("my event content","myevent",millis());
   }
 }
 ```
