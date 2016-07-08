@@ -35,9 +35,9 @@ script:
   - arduino --board esp8266com:esp8266:generic --save-prefs
   - arduino --get-pref sketchbook.path
   - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp8266
-  - arduino --board espressif:ESP31B:esp31b --save-prefs
-  - arduino --get-pref sketchbook.path
-  - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp31b
+#  - arduino --board espressif:ESP31B:esp31b --save-prefs
+#  - arduino --get-pref sketchbook.path
+#  - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp31b
 
 notifications:
   email:

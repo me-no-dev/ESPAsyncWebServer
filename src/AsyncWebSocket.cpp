@@ -285,7 +285,7 @@ void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
       if(_status == WS_DISCONNECTING && controlMessage->opcode() == WS_DISCONNECT){
         delete controlMessage;
         _status = WS_DISCONNECTED;
-        _client->abort();
+        _client->close(true);
         return;
       }
       delete controlMessage;

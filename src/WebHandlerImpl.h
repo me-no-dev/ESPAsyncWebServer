@@ -23,35 +23,36 @@
 
 
 #include "stddef.h"
+#include <time.h>
 
 class AsyncStaticWebHandler: public AsyncWebHandler {
   private:
-    String _getPath(AsyncWebServerRequest *request); 
+    bool _getFile(AsyncWebServerRequest *request);
+    bool _fileExists(AsyncWebServerRequest *request, const String path);
+    uint8_t _countBits(const uint8_t value);
   protected:
     FS _fs;
     String _uri;
     String _path;
-    String _cache_header;
-    bool _isFile;
+    String _default_file;
+    String _cache_control;
+    String _last_modified;
+    bool _isDir;
+    bool _gzipFirst;
+    uint8_t _gzipStats;
   public:
-    AsyncStaticWebHandler(FS& fs, const char* path, const char* uri, const char* cache_header)
-      : _fs(fs), _uri(uri), _path(path), _cache_header(cache_header){
-
-      _isFile = _fs.exists(path) || _fs.exists((String(path)+".gz").c_str());
-      if (_uri != "/" && _uri.endsWith("/")) {
-        _uri = _uri.substring(0, _uri.length() - 1); 
-        DEBUGF("[AsyncStaticWebHandler] _uri / removed\n"); 
-      }
-      if (_path != "/" && _path.endsWith("/")) {
-        _path = _path.substring(0, _path.length() - 1); 
-        DEBUGF("[AsyncStaticWebHandler] _path / removed\n"); 
-      }
-
-
-    }
+    AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
     bool canHandle(AsyncWebServerRequest *request);
     void handleRequest(AsyncWebServerRequest *request);
-    
+    AsyncStaticWebHandler& setIsDir(bool isDir);
+    AsyncStaticWebHandler& setDefaultFile(const char* filename);
+    AsyncStaticWebHandler& setCacheControl(const char* cache_control);
+    AsyncStaticWebHandler& setLastModified(const char* last_modified);
+    AsyncStaticWebHandler& setLastModified(struct tm* last_modified);
+  #ifdef ESP8266
+    AsyncStaticWebHandler& setLastModified(time_t last_modified);
+    AsyncStaticWebHandler& setLastModified(); //sets to current time. Make sure sntp is runing and time is updated
+  #endif
 };
 
 class AsyncCallbackWebHandler: public AsyncWebHandler {

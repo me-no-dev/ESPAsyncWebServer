@@ -29,6 +29,14 @@
 
 #include "StringArray.h"
 
+#if defined(ESP31B)
+#include <ESP31BWiFi.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#else
+#error Platform not supported
+#endif
+
 #define DEBUGF(...) //Serial.printf(__VA_ARGS__)
 
 
@@ -37,7 +45,10 @@ class AsyncWebServerRequest;
 class AsyncWebServerResponse;
 class AsyncWebHeader;
 class AsyncWebParameter;
+class AsyncWebRewrite;
 class AsyncWebHandler;
+class AsyncStaticWebHandler;
+class AsyncCallbackWebHandler;
 class AsyncResponseStream;
 
 typedef enum {
@@ -81,10 +92,11 @@ class AsyncWebHeader {
 
     AsyncWebHeader(String name, String value): _name(name), _value(value), next(NULL){}
     AsyncWebHeader(String data): _name(), _value(), next(NULL){
-      if(!data || !data.length() || data.indexOf(':') < 0)
-        return;
-      _name = data.substring(0, data.indexOf(':'));
-      _value = data.substring(data.indexOf(':') + 2);
+      if(!data) return;
+      int index = data.indexOf(':');
+      if (index < 0) return;
+      _name = data.substring(0, index);
+      _value = data.substring(index + 2);
     }
     ~AsyncWebHeader(){}
     String name(){ return _name; }
@@ -99,6 +111,7 @@ class AsyncWebHeader {
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
 
 class AsyncWebServerRequest {
+  friend class AsyncWebServer;
   private:
     AsyncClient* _client;
     AsyncWebServer* _server;
@@ -116,6 +129,7 @@ class AsyncWebServerRequest {
     String _contentType;
     String _boundary;
     String _authorization;
+    bool _isDigest;
     bool _isMultipart;
     bool _isPlainPost;
     bool _expectingContinue;
@@ -149,10 +163,9 @@ class AsyncWebServerRequest {
     bool _parseReqHead();
     bool _parseReqHeader();
     void _parseLine();
-    void _parseByte(uint8_t data);
     void _parsePlainPostChar(uint8_t data);
     void _parseMultipartPostByte(uint8_t data, bool last);
-    void _addGetParam(String param);
+    void _addGetParams(String params);
 
     void _handleUploadStart();
     void _handleUploadByte(uint8_t data, bool last);
@@ -160,6 +173,7 @@ class AsyncWebServerRequest {
 
   public:
     File _tempFile;
+    void *_tempObject;
     AsyncWebServerRequest *next;
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
@@ -175,22 +189,30 @@ class AsyncWebServerRequest {
     bool multipart(){ return _isMultipart; }
     const char * methodToString();
 
-    bool authenticate(const char * username, const char * password);
+
+    //hash is the string representation of:
+    // base64(user:pass) for basic or
+    // user:realm:md5(user:realm:pass) for digest
     bool authenticate(const char * hash);
-    void requestAuthentication();
+    bool authenticate(const char * username, const char * password, const char * realm = NULL, bool passwordIsHash = false);
+    void requestAuthentication(const char * realm = NULL, bool isDigest = true);
 
     void setHandler(AsyncWebHandler *handler){ _handler = handler; }
     void addInterestingHeader(String name);
 
+    void redirect(String url);
+
     void send(AsyncWebServerResponse *response);
     void send(int code, String contentType=String(), String content=String());
     void send(FS &fs, String path, String contentType=String(), bool download=false);
+    void send(File content, String path, String contentType=String(), bool download=false);
     void send(Stream &stream, String contentType, size_t len);
     void send(String contentType, size_t len, AwsResponseFiller callback);
     void sendChunked(String contentType, AwsResponseFiller callback);
 
     AsyncWebServerResponse *beginResponse(int code, String contentType=String(), String content=String());
     AsyncWebServerResponse *beginResponse(FS &fs, String path, String contentType=String(), bool download=false);
+    AsyncWebServerResponse *beginResponse(File content, String path, String contentType=String(), bool download=false);
     AsyncWebServerResponse *beginResponse(Stream &stream, String contentType, size_t len);
     AsyncWebServerResponse *beginResponse(String contentType, size_t len, AwsResponseFiller callback);
     AsyncWebServerResponse *beginChunkedResponse(String contentType, AwsResponseFiller callback);
@@ -221,13 +243,57 @@ class AsyncWebServerRequest {
 };
 
 /*
+ * FILTER :: Callback to filter AsyncWebRewrite and AsyncWebHandler (done by the Server)
+ * */
+
+typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestFilterFunction;
+
+static bool ON_STA_FILTER(AsyncWebServerRequest *request) {
+  return WiFi.localIP() == request->client()->localIP();
+}
+
+static bool ON_AP_FILTER(AsyncWebServerRequest *request) {
+  return WiFi.localIP() != request->client()->localIP();
+}
+
+/*
+ * REWRITE :: One instance can be handle any Request (done by the Server)
+ * */
+
+class AsyncWebRewrite {
+  protected:
+    String _from;
+    String _toUrl;
+    String _params;
+    ArRequestFilterFunction _filter;
+  public:
+    AsyncWebRewrite* next;
+    AsyncWebRewrite(const char* from, const char* to): _from(from), _toUrl(to), _params(String()), _filter(NULL), next(NULL){
+      int index = _toUrl.indexOf('?');
+      if (index > 0) {
+        _params = _toUrl.substring(index +1);
+        _toUrl = _toUrl.substring(0, index);
+      }
+    }
+    AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; }
+    bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
+    String from(void) { return _from; }
+    String toUrl(void) { return _toUrl; }
+    String params(void) { return _params; }
+};
+
+/*
  * HANDLER :: One instance can be attached to any Request (done by the Server)
  * */
 
 class AsyncWebHandler {
+  protected:
+    ArRequestFilterFunction _filter;
   public:
     AsyncWebHandler* next;
     AsyncWebHandler(): next(NULL){}
+    AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; }
+    bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
     virtual bool canHandle(AsyncWebServerRequest *request){ return false; }
     virtual void handleRequest(AsyncWebServerRequest *request){}
@@ -283,31 +349,40 @@ typedef std::function<void(AsyncWebServerRequest *request, uint8_t *data, size_t
 class AsyncWebServer {
   private:
     AsyncServer _server;
+    AsyncWebRewrite* _rewrites;
     AsyncWebHandler* _handlers;
     AsyncWebHandler* _catchAllHandler;
   public:
     AsyncWebServer(uint16_t port);
-    ~AsyncWebServer(){}
+    ~AsyncWebServer();
 
     void begin();
-    void addHandler(AsyncWebHandler* handler);
 
-    void on(const char* uri, ArRequestHandlerFunction onRequest);
-    void on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest);
-    void on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
-    void on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
+    AsyncWebRewrite& addRewrite(AsyncWebRewrite* rewrite);
 
-    void serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_header = NULL);
+    AsyncWebRewrite& rewrite(const char* from, const char* to);
+
+    AsyncWebHandler& addHandler(AsyncWebHandler* handler);
+
+    AsyncCallbackWebHandler& on(const char* uri, ArRequestHandlerFunction onRequest);
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest);
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
+
+    AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
 
     void onNotFound(ArRequestHandlerFunction fn);  //called when handler is not assigned
     void onFileUpload(ArUploadHandlerFunction fn); //handle file uploads
     void onRequestBody(ArBodyHandlerFunction fn); //handle posts with plain body content (JSON often transmitted this way as a request)
 
     void _handleDisconnect(AsyncWebServerRequest *request);
-    void _handleRequest(AsyncWebServerRequest *request);
+    void _attachHandler(AsyncWebServerRequest *request);
+    void _rewriteRequest(AsyncWebServerRequest *request);
 };
 
 #include "WebResponseImpl.h"
+#include "WebHandlerImpl.h"
 #include "AsyncWebSocket.h"
+#include "AsyncEventSource.h"
 
 #endif /* _AsyncWebServer_H_ */
