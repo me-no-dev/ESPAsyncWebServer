@@ -69,7 +69,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
 {
   c->onError([](void *r, AsyncClient* c, int8_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
   c->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onAck(len, time); }, this);
-  c->onDisconnect([](void *r, AsyncClient* c){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onDisconnect(); }, this);
+  c->onDisconnect([](void *r, AsyncClient* c){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onDisconnect(); delete c; }, this);
   c->onTimeout([](void *r, AsyncClient* c, uint32_t time){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onTimeout(time); }, this);
   c->onData([](void *r, AsyncClient* c, void *buf, size_t len){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onData(buf, len); }, this);
   c->onPoll([](void *r, AsyncClient* c){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onPoll(); }, this);
@@ -192,8 +192,6 @@ void AsyncWebServerRequest::_onTimeout(uint32_t time){
 
 void AsyncWebServerRequest::_onDisconnect(){
   //os_printf("d\n");
-  _client->free();
-  delete _client;
   _server->_handleDisconnect(this);
 }
 

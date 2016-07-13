@@ -252,7 +252,7 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
   next = NULL;
   _client->onError([](void *r, AsyncClient* c, int8_t error){ ((AsyncWebSocketClient*)(r))->_onError(error); }, this);
   _client->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ ((AsyncWebSocketClient*)(r))->_onAck(len, time); }, this);
-  _client->onDisconnect([](void *r, AsyncClient* c){ ((AsyncWebSocketClient*)(r))->_onDisconnect(); }, this);
+  _client->onDisconnect([](void *r, AsyncClient* c){ ((AsyncWebSocketClient*)(r))->_onDisconnect(); delete c; }, this);
   _client->onTimeout([](void *r, AsyncClient* c, uint32_t time){ ((AsyncWebSocketClient*)(r))->_onTimeout(time); }, this);
   _client->onData([](void *r, AsyncClient* c, void *buf, size_t len){ ((AsyncWebSocketClient*)(r))->_onData(buf, len); }, this);
   _client->onPoll([](void *r, AsyncClient* c){ ((AsyncWebSocketClient*)(r))->_onPoll(); }, this);
@@ -389,10 +389,7 @@ void AsyncWebSocketClient::_onTimeout(uint32_t time){
 }
 
 void AsyncWebSocketClient::_onDisconnect(){
-  AsyncClient* cl = _client;
   _client = NULL;
-  cl->free();
-  delete cl;
   _server->_handleDisconnect(this);
 }
 
@@ -479,52 +476,54 @@ void AsyncWebSocketClient::_onData(void *buf, size_t plen){
 size_t AsyncWebSocketClient::printf(const char *format, ...) {
   va_list arg;
   va_start(arg, format);
-#ifdef ESP8266
-  //ToDo: figure out a way around this
-  size_t len = 1440;
-#else
-  size_t len = vsnprintf(NULL, 0, format, arg)+1;
-#endif
-  char * msg = (char*)malloc(len+1);
-  if(msg == NULL){
-    va_end(arg);
+  char* temp = new char[64];
+  if(!temp){
     return 0;
   }
-  len = vsnprintf(msg, len, format, arg);
-  msg[len] = 0;
-  text(msg);
+  char* buffer = temp;
+  size_t len = vsnprintf(temp, 64, format, arg);
   va_end(arg);
-  free(msg);
+  if (len > 63) {
+    buffer = new char[len + 1];
+    if (!buffer) {
+      return 0;
+    }
+    va_start(arg, format);
+    vsnprintf(buffer, len + 1, format, arg);
+    va_end(arg);
+  }
+  text(buffer, len);
+  if (buffer != temp) {
+    delete[] buffer;
+  }
+  delete[] temp;
   return len;
 }
 
 size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
-  char* format;
   va_list arg;
   va_start(arg, formatP);
-#ifdef ESP8266
-  //ToDo: figure out a way around this
-  size_t len = 1440;
-#else
-  size_t len = vsnprintf(NULL, 0, format, arg)+1;
-#endif
-  size_t fmtLen = strlen_P(formatP);
-  format = (char*)calloc(fmtLen+1, sizeof(char));
-  if ( format ) {
-    strcpy_P(format, formatP);
-    char * msg = (char*)malloc(len+1);
-    if(msg == NULL){
-      va_end(arg);
+  char* temp = new char[64];
+  if(!temp){
+    return 0;
+  }
+  char* buffer = temp;
+  size_t len = vsnprintf_P(temp, 64, formatP, arg);
+  va_end(arg);
+  if (len > 63) {
+    buffer = new char[len + 1];
+    if (!buffer) {
       return 0;
     }
-
-    len = vsnprintf(msg, len, format, arg);
-    msg[len] = 0;
-    text(msg);
+    va_start(arg, formatP);
+    vsnprintf_P(buffer, len + 1, formatP, arg);
     va_end(arg);
-    free(msg);
-    free(format);
   }
+  text(buffer, len);
+  if (buffer != temp) {
+    delete[] buffer;
+  }
+  delete[] temp;
   return len;
 }
 
@@ -761,22 +760,27 @@ size_t AsyncWebSocket::printf(uint32_t id, const char *format, ...){
 size_t AsyncWebSocket::printfAll(const char *format, ...) {
   va_list arg;
   va_start(arg, format);
-#ifdef ESP8266
-  //ToDo: figure out a way around this
-  size_t len = 1440;
-#else
-  size_t len = vsnprintf(NULL, 0, format, arg)+1;
-#endif
-  char * msg = (char*)malloc(len+1);
-  if(msg == NULL){
-    va_end(arg);
+  char* temp = new char[64];
+  if(!temp){
     return 0;
   }
-  len = vsnprintf(msg, len, format, arg);
-  msg[len] = 0;
-  textAll(msg);
+  char* buffer = temp;
+  size_t len = vsnprintf(temp, 64, format, arg);
   va_end(arg);
-  free(msg);
+  if (len > 63) {
+    buffer = new char[len + 1];
+    if (!buffer) {
+      return 0;
+    }
+    va_start(arg, format);
+    vsnprintf(buffer, len + 1, format, arg);
+    va_end(arg);
+  }
+  textAll(buffer, len);
+  if (buffer != temp) {
+    delete[] buffer;
+  }
+  delete[] temp;
   return len;
 }
 
@@ -793,33 +797,29 @@ size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...){
 }
 
 size_t AsyncWebSocket::printfAll_P(PGM_P formatP, ...) {
-  char* format;
   va_list arg;
   va_start(arg, formatP);
-#ifdef ESP8266
-  //ToDo: figure out a way around this
-  size_t len = 1440;
-#else
-  size_t len = vsnprintf(NULL, 0, format, arg)+1;
-#endif
-  size_t fmtLen = strlen_P(formatP);
-  format = (char*)calloc(fmtLen+1, sizeof(char));
-  if ( format ) {
-    strcpy_P(format, formatP);
-    char * msg = (char*)malloc(len+1);
-    if(msg == NULL){
-      va_end(arg);
-      free(format);
+  char* temp = new char[64];
+  if(!temp){
+    return 0;
+  }
+  char* buffer = temp;
+  size_t len = vsnprintf_P(temp, 64, formatP, arg);
+  va_end(arg);
+  if (len > 63) {
+    buffer = new char[len + 1];
+    if (!buffer) {
       return 0;
     }
-
-    len = vsnprintf(msg, len, format, arg);
-    msg[len] = 0;
-    textAll(msg);
+    va_start(arg, formatP);
+    vsnprintf_P(buffer, len + 1, formatP, arg);
     va_end(arg);
-    free(msg);
-    free(format);
   }
+  textAll(buffer, len);
+  if (buffer != temp) {
+    delete[] buffer;
+  }
+  delete[] temp;
   return len;
 }
 
