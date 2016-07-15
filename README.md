@@ -87,9 +87,10 @@ To use this library you need to have the latest git versions of either [ESP8266]
 - Many different options exist for the user to make responding a background task
 
 ## Libraries and projects that use AsyncWebServer
-- [WebSocketToSerial](https://github.com/hallard/WebSocketToSerial)
-- [Sattrack](https://github.com/Hopperpop/Sattrack)
-- [ESP Radio](https://github.com/Edzelf/Esp-radio)
+- [WebSocketToSerial](https://github.com/hallard/WebSocketToSerial) - Debug serial devices through the web browser
+- [Sattrack](https://github.com/Hopperpop/Sattrack) - Track the ISS with ESP8266
+- [ESP Radio](https://github.com/Edzelf/Esp-radio) - Icecast radio based on ESP8266 and VS1053
+- [VZero](https://github.com/andig/vzero) - the Wireless zero-config controller for volkszaehler.org
 
 ## Request Variables
 
