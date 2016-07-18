@@ -110,8 +110,8 @@ class AsyncWebSocketClient {
     //data packets
     void message(AsyncWebSocketMessage *message){ _queueMessage(message); }
 
-    size_t printf(const char *format, ...);
-    size_t printf_P(PGM_P formatP, ...);
+    size_t printf(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
+    size_t printf_P(PGM_P formatP, ...)  __attribute__ ((format (printf, 2, 3)));
 
     void text(const char * message, size_t len);
     void text(const char * message);
@@ -194,10 +194,10 @@ class AsyncWebSocket: public AsyncWebHandler {
     void message(uint32_t id, AsyncWebSocketMessage *message);
     void messageAll(AsyncWebSocketMessage *message);
 
-    size_t printf(uint32_t id, const char *format, ...);
-    size_t printfAll(const char *format, ...);
-    size_t printf_P(uint32_t id, PGM_P formatP, ...);
-    size_t printfAll_P(PGM_P formatP, ...);
+    size_t printf(uint32_t id, const char *format, ...)  __attribute__ ((format (printf, 3, 4)));
+    size_t printfAll(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
+    size_t printf_P(uint32_t id, PGM_P formatP, ...)  __attribute__ ((format (printf, 3, 4)));
+    size_t printfAll_P(PGM_P formatP, ...)  __attribute__ ((format (printf, 2, 3)));
 
     //event listener
     void onEvent(AwsEventHandler handler){

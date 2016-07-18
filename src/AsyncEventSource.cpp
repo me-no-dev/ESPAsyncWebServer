@@ -119,7 +119,7 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, A
   _client->onPoll(NULL, NULL);
   _client->onData(NULL, NULL);
   _client->onTimeout([](void *r, AsyncClient* c, uint32_t time){ ((AsyncEventSourceClient*)(r))->_onTimeout(time); }, this);
-  _client->onDisconnect([](void *r, AsyncClient* c){ ((AsyncEventSourceClient*)(r))->_onDisconnect(); }, this);
+  _client->onDisconnect([](void *r, AsyncClient* c){ ((AsyncEventSourceClient*)(r))->_onDisconnect(); delete c; }, this);
   _server->_addClient(this);
   delete request;
 }
@@ -133,10 +133,7 @@ void AsyncEventSourceClient::_onTimeout(uint32_t time){
 }
 
 void AsyncEventSourceClient::_onDisconnect(){
-  AsyncClient* cl = _client;
   _client = NULL;
-  cl->free();
-  delete cl;
   _server->_handleDisconnect(this);
 }
 
