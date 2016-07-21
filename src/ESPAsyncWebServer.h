@@ -279,7 +279,7 @@ class AsyncWebRewrite {
         _toUrl = _toUrl.substring(0, index);
       }
     }
-    AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; }
+    AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     String from(void) { return _from; }
     String toUrl(void) { return _toUrl; }
@@ -296,7 +296,7 @@ class AsyncWebHandler {
   public:
     AsyncWebHandler* next;
     AsyncWebHandler(): next(NULL){}
-    AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; }
+    AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
     virtual bool canHandle(AsyncWebServerRequest *request){ return false; }
@@ -330,6 +330,7 @@ class AsyncWebServerResponse {
   public:
     AsyncWebServerResponse();
     virtual ~AsyncWebServerResponse();
+    virtual void setCode(int code);
     virtual void setContentLength(size_t len);
     virtual void setContentType(String type);
     virtual void addHeader(String name, String value);

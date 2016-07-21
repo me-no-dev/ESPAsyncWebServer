@@ -92,6 +92,11 @@ AsyncWebServerResponse::~AsyncWebServerResponse(){
   }
 }
 
+void AsyncWebServerResponse::setCode(int code){
+  if(_state == RESPONSE_SETUP)
+    _code = code;
+}
+
 void AsyncWebServerResponse::setContentLength(size_t len){
   if(_state == RESPONSE_SETUP)
     _contentLength = len;
