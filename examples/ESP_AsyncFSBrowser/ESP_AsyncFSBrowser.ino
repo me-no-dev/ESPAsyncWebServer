@@ -505,7 +505,7 @@ void setup(){
   server.addHandler(&events);
 
   server.addHandler(new SPIFFSEditor(http_username,http_password));
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html");
+  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
 
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
