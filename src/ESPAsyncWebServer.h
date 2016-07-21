@@ -209,6 +209,8 @@ class AsyncWebServerRequest {
     void send(Stream &stream, String contentType, size_t len);
     void send(String contentType, size_t len, AwsResponseFiller callback);
     void sendChunked(String contentType, AwsResponseFiller callback);
+    void send_P(int code, String contentType, const uint8_t * content, size_t len);
+    void send_P(int code, String contentType, PGM_P content);
 
     AsyncWebServerResponse *beginResponse(int code, String contentType=String(), String content=String());
     AsyncWebServerResponse *beginResponse(FS &fs, String path, String contentType=String(), bool download=false);
@@ -217,6 +219,8 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse *beginResponse(String contentType, size_t len, AwsResponseFiller callback);
     AsyncWebServerResponse *beginChunkedResponse(String contentType, AwsResponseFiller callback);
     AsyncResponseStream *beginResponseStream(String contentType, size_t bufferSize=1460);
+    AsyncWebServerResponse *beginResponse_P(int code, String contentType, const uint8_t * content, size_t len);
+    AsyncWebServerResponse *beginResponse_P(int code, String contentType, PGM_P content);
 
     int headers();                     // get header count
     bool hasHeader(String name);
