@@ -673,6 +673,14 @@ AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(String contentT
   return new AsyncResponseStream(contentType, bufferSize);
 }
 
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, String contentType, const uint8_t * content, size_t len){
+  return new AsyncProgmemResponse(code, contentType, content, len);
+}
+
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, String contentType, PGM_P content){
+  return beginResponse_P(code, contentType, (const uint8_t *)content, strlen_P(content));
+}
+
 void AsyncWebServerRequest::send(int code, String contentType, String content){
   send(beginResponse(code, contentType, content));
 }
@@ -699,6 +707,14 @@ void AsyncWebServerRequest::send(String contentType, size_t len, AwsResponseFill
 
 void AsyncWebServerRequest::sendChunked(String contentType, AwsResponseFiller callback){
   send(beginChunkedResponse(contentType, callback));
+}
+
+void AsyncWebServerRequest::send_P(int code, String contentType, const uint8_t * content, size_t len){
+  send(beginResponse_P(code, contentType, content, len));
+}
+
+void AsyncWebServerRequest::send_P(int code, String contentType, PGM_P content){
+  send(beginResponse_P(code, contentType, content));
 }
 
 void AsyncWebServerRequest::redirect(String url){

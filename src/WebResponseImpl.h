@@ -81,6 +81,15 @@ class AsyncChunkedResponse: public AsyncAbstractResponse {
     size_t _fillBuffer(uint8_t *buf, size_t maxLen);
 };
 
+class AsyncProgmemResponse: public AsyncAbstractResponse {
+  private:
+    const uint8_t * _content;
+  public:
+    AsyncProgmemResponse(int code, String contentType, const uint8_t * content, size_t len);
+    bool _sourceValid(){ return true; }
+    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
+};
+
 class cbuf;
 
 class AsyncResponseStream: public AsyncAbstractResponse, public Print {

@@ -92,6 +92,11 @@ AsyncWebServerResponse::~AsyncWebServerResponse(){
   }
 }
 
+void AsyncWebServerResponse::setCode(int code){
+  if(_state == RESPONSE_SETUP)
+    _code = code;
+}
+
 void AsyncWebServerResponse::setContentLength(size_t len){
   if(_state == RESPONSE_SETUP)
     _contentLength = len;
@@ -469,6 +474,27 @@ AsyncChunkedResponse::AsyncChunkedResponse(String contentType, AwsResponseFiller
 
 size_t AsyncChunkedResponse::_fillBuffer(uint8_t *data, size_t len){
   return _content(data, len, _sentLength);
+}
+
+/*
+ * Progmem Response
+ * */
+
+AsyncProgmemResponse::AsyncProgmemResponse(int code, String contentType, const uint8_t * content, size_t len){
+  _code = code;
+  _content = content;
+  _contentType = contentType;
+  _contentLength = len;
+}
+
+size_t AsyncProgmemResponse::_fillBuffer(uint8_t *data, size_t len){
+  size_t left = _contentLength - _sentLength;
+    if (left > len) {
+      memcpy_P(data, _content + _sentLength, len);
+      return len;
+    }
+    memcpy_P(data, _content + _sentLength, left);
+    return left;
 }
 
 

@@ -1,8 +1,8 @@
-<!-- 
+<!--
   FSWebServer - Example Index Page
   Copyright (c) 2015 Hristo Gochkov. All rights reserved.
   This file is part of the ESP8266WebServer library for Arduino environment.
- 
+
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
@@ -26,20 +26,20 @@
       padding:0;
       background-color: black;
     }
-    
+
     #dbg, #input_div, #input_el {
       font-family: monaco;
       font-size: 12px;
       line-height: 13px;
       color: #AAA;
     }
-    
+
     #dbg, #input_div {
       margin:0;
       padding:0;
       padding-left:4px;
     }
-    
+
     #input_el {
       width:98%;
       background-color: rgba(0,0,0,0);
@@ -99,9 +99,30 @@
         }
       }
     }
+    function startEvents(){
+      var es = new EventSource('/events');
+      es.onopen = function(e) {
+        addMessage("Events Opened");
+      };
+      es.onerror = function(e) {
+        if (e.target.readyState != EventSource.OPEN) {
+          addMessage("Events Closed");
+        }
+      };
+      es.onmessage = function(e) {
+        addMessage("Event: " + e.data);
+      };
+      es.addEventListener('ota', function(e) {
+        addMessage("Event[ota]: " + e.data);
+      }, false);
+    }
+    function onBodyLoad(){
+      startSocket();
+      startEvents();
+    }
     </script>
   </head>
-  <body id="body" onload="startSocket()">
+  <body id="body" onload="onBodyLoad()">
     <pre id="dbg"></pre>
     <div id="input_div">
       $<input type="text" value="" id="input_el">

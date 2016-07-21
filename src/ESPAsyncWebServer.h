@@ -209,6 +209,8 @@ class AsyncWebServerRequest {
     void send(Stream &stream, String contentType, size_t len);
     void send(String contentType, size_t len, AwsResponseFiller callback);
     void sendChunked(String contentType, AwsResponseFiller callback);
+    void send_P(int code, String contentType, const uint8_t * content, size_t len);
+    void send_P(int code, String contentType, PGM_P content);
 
     AsyncWebServerResponse *beginResponse(int code, String contentType=String(), String content=String());
     AsyncWebServerResponse *beginResponse(FS &fs, String path, String contentType=String(), bool download=false);
@@ -217,6 +219,8 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse *beginResponse(String contentType, size_t len, AwsResponseFiller callback);
     AsyncWebServerResponse *beginChunkedResponse(String contentType, AwsResponseFiller callback);
     AsyncResponseStream *beginResponseStream(String contentType, size_t bufferSize=1460);
+    AsyncWebServerResponse *beginResponse_P(int code, String contentType, const uint8_t * content, size_t len);
+    AsyncWebServerResponse *beginResponse_P(int code, String contentType, PGM_P content);
 
     int headers();                     // get header count
     bool hasHeader(String name);
@@ -275,7 +279,7 @@ class AsyncWebRewrite {
         _toUrl = _toUrl.substring(0, index);
       }
     }
-    AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; }
+    AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     String from(void) { return _from; }
     String toUrl(void) { return _toUrl; }
@@ -292,7 +296,7 @@ class AsyncWebHandler {
   public:
     AsyncWebHandler* next;
     AsyncWebHandler(): next(NULL){}
-    AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; }
+    AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
     virtual bool canHandle(AsyncWebServerRequest *request){ return false; }
@@ -326,6 +330,7 @@ class AsyncWebServerResponse {
   public:
     AsyncWebServerResponse();
     virtual ~AsyncWebServerResponse();
+    virtual void setCode(int code);
     virtual void setContentLength(size_t len);
     virtual void setContentType(String type);
     virtual void addHeader(String name, String value);
