@@ -539,7 +539,7 @@ void AsyncWebSocketClient::text(uint8_t * message, size_t len){
 void AsyncWebSocketClient::text(char * message){
   text(message, strlen(message));
 }
-void AsyncWebSocketClient::text(String &message){
+void AsyncWebSocketClient::text(const String &message){
   text(message.c_str(), message.length());
 }
 void AsyncWebSocketClient::text(const __FlashStringHelper *data){
@@ -570,7 +570,7 @@ void AsyncWebSocketClient::binary(uint8_t * message, size_t len){
 void AsyncWebSocketClient::binary(char * message){
   binary(message, strlen(message));
 }
-void AsyncWebSocketClient::binary(String &message){
+void AsyncWebSocketClient::binary(const String &message){
   binary(message.c_str(), message.length());
 }
 void AsyncWebSocketClient::binary(const __FlashStringHelper *data, size_t len){
@@ -832,7 +832,7 @@ void AsyncWebSocket::text(uint32_t id, uint8_t * message, size_t len){
 void AsyncWebSocket::text(uint32_t id, char * message){
   text(id, message, strlen(message));
 }
-void AsyncWebSocket::text(uint32_t id, String &message){
+void AsyncWebSocket::text(uint32_t id, const String &message){
   text(id, message.c_str(), message.length());
 }
 void AsyncWebSocket::text(uint32_t id, const __FlashStringHelper *message){
@@ -849,7 +849,7 @@ void AsyncWebSocket::textAll(uint8_t * message, size_t len){
 void AsyncWebSocket::textAll(char * message){
   textAll(message, strlen(message));
 }
-void AsyncWebSocket::textAll(String &message){
+void AsyncWebSocket::textAll(const String &message){
   textAll(message.c_str(), message.length());
 }
 void AsyncWebSocket::textAll(const __FlashStringHelper *message){
@@ -869,7 +869,7 @@ void AsyncWebSocket::binary(uint32_t id, uint8_t * message, size_t len){
 void AsyncWebSocket::binary(uint32_t id, char * message){
   binary(id, message, strlen(message));
 }
-void AsyncWebSocket::binary(uint32_t id, String &message){
+void AsyncWebSocket::binary(uint32_t id, const String &message){
   binary(id, message.c_str(), message.length());
 }
 void AsyncWebSocket::binary(uint32_t id, const __FlashStringHelper *message, size_t len){
@@ -886,7 +886,7 @@ void AsyncWebSocket::binaryAll(uint8_t * message, size_t len){
 void AsyncWebSocket::binaryAll(char * message){
   binaryAll(message, strlen(message));
 }
-void AsyncWebSocket::binaryAll(String &message){
+void AsyncWebSocket::binaryAll(const String &message){
   binaryAll(message.c_str(), message.length());
 }
 void AsyncWebSocket::binaryAll(const __FlashStringHelper *message, size_t len){
