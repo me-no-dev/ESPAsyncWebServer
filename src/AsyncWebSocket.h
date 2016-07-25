@@ -117,14 +117,14 @@ class AsyncWebSocketClient {
     void text(const char * message);
     void text(uint8_t * message, size_t len);
     void text(char * message);
-    void text(String &message);
+    void text(const String &message);
     void text(const __FlashStringHelper *data);
 
     void binary(const char * message, size_t len);
     void binary(const char * message);
     void binary(uint8_t * message, size_t len);
     void binary(char * message);
-    void binary(String &message);
+    void binary(const String &message);
     void binary(const __FlashStringHelper *data, size_t len);
 
     //system callbacks (do not call)
@@ -167,28 +167,28 @@ class AsyncWebSocket: public AsyncWebHandler {
     void text(uint32_t id, const char * message);
     void text(uint32_t id, uint8_t * message, size_t len);
     void text(uint32_t id, char * message);
-    void text(uint32_t id, String &message);
+    void text(uint32_t id, const String &message);
     void text(uint32_t id, const __FlashStringHelper *message);
 
     void textAll(const char * message, size_t len);
     void textAll(const char * message);
     void textAll(uint8_t * message, size_t len);
     void textAll(char * message);
-    void textAll(String &message);
+    void textAll(const String &message);
     void textAll(const __FlashStringHelper *message);
 
     void binary(uint32_t id, const char * message, size_t len);
     void binary(uint32_t id, const char * message);
     void binary(uint32_t id, uint8_t * message, size_t len);
     void binary(uint32_t id, char * message);
-    void binary(uint32_t id, String &message);
+    void binary(uint32_t id, const String &message);
     void binary(uint32_t id, const __FlashStringHelper *message, size_t len);
 
     void binaryAll(const char * message, size_t len);
     void binaryAll(const char * message);
     void binaryAll(uint8_t * message, size_t len);
     void binaryAll(char * message);
-    void binaryAll(String &message);
+    void binaryAll(const String &message);
     void binaryAll(const __FlashStringHelper *message, size_t len);
 
     void message(uint32_t id, AsyncWebSocketMessage *message);
