@@ -894,6 +894,7 @@ void setup(){
 void loop(){
   if(shouldReboot){
     Serial.println("Rebooting...");
+    delay(100);
     ESP.restart();
   }
   static char temp[128];
