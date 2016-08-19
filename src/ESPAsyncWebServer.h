@@ -52,8 +52,16 @@ class AsyncCallbackWebHandler;
 class AsyncResponseStream;
 
 typedef enum {
-  HTTP_ANY, HTTP_GET, HTTP_POST, HTTP_DELETE, HTTP_PUT, HTTP_PATCH, HTTP_HEAD, HTTP_OPTIONS
+  HTTP_GET     = 0b00000001,
+  HTTP_POST    = 0b00000010,
+  HTTP_DELETE  = 0b00000100,
+  HTTP_PUT     = 0b00001000,
+  HTTP_PATCH   = 0b00010000,
+  HTTP_HEAD    = 0b00100000,
+  HTTP_OPTIONS = 0b01000000,
+  HTTP_ANY     = 0b01111111,
 } WebRequestMethod;
+typedef uint8_t WebRequestMethodComposite;
 
 /*
  * PARAMETER :: Chainable object to hold GET/POST and FILE parameters
@@ -123,7 +131,7 @@ class AsyncWebServerRequest {
     uint8_t _parseState;
 
     uint8_t _version;
-    WebRequestMethod _method;
+    WebRequestMethodComposite _method;
     String _url;
     String _host;
     String _contentType;
@@ -181,7 +189,7 @@ class AsyncWebServerRequest {
 
     AsyncClient* client(){ return _client; }
     uint8_t version(){ return _version; }
-    WebRequestMethod method(){ return _method; }
+    WebRequestMethodComposite method(){ return _method; }
     String url(){ return _url; }
     String host(){ return _host; }
     String contentType(){ return _contentType; }
@@ -370,9 +378,9 @@ class AsyncWebServer {
     AsyncWebHandler& addHandler(AsyncWebHandler* handler);
 
     AsyncCallbackWebHandler& on(const char* uri, ArRequestHandlerFunction onRequest);
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest);
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethod method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest);
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
 
     AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
 
