@@ -22,22 +22,10 @@ script:
   - git clone https://github.com/esp8266/Arduino.git esp8266
   - cd esp8266/tools
   - python get.py
-  - cd $HOME/arduino_ide/hardware
-  - mkdir espressif
-  - cd espressif
-  - git clone https://github.com/me-no-dev/ESP31B.git ESP31B
-  - cd ESP31B/tools
-  - wget https://github.com/me-no-dev/ESP31B/releases/download/0.0.1/xtensa-esp108-elf-linux64.tar.gz
-  - tar zxvf xtensa-esp108-elf-linux64.tar.gz
-  - chmod +x xtensa-esp108-elf/bin/*
-  - chmod +x xtensa-esp108-elf/xtensa-esp108-elf/bin/*
   - source $TRAVIS_BUILD_DIR/travis/common.sh
   - arduino --board esp8266com:esp8266:generic --save-prefs
   - arduino --get-pref sketchbook.path
   - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp8266
-#  - arduino --board espressif:ESP31B:esp31b --save-prefs
-#  - arduino --get-pref sketchbook.path
-#  - build_sketches arduino $HOME/Arduino/libraries/ESPAsyncWebServer esp31b
 
 notifications:
   email:
