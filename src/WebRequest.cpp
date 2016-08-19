@@ -267,7 +267,7 @@ bool AsyncWebServerRequest::_parseReqHeader(){
   if(index){
     String name = _temp.substring(0, index);
     String value = _temp.substring(index + 2);
-    if(name == "Host"){
+    if(name == "Host" || name == "host"){
       _host = value;
       _server->_rewriteRequest(this);
       _server->_attachHandler(this);
