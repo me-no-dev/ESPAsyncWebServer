@@ -397,7 +397,7 @@ AsyncFileResponse::AsyncFileResponse(File content, String path, String contentTy
   _content = content;
   _contentLength = _content.size();
 
-  if(!download && String(_content.name()).endsWith(".gz"))
+  if(!download && String(_content.name()).endsWith(".gz") && !path.endsWith(".gz"))
     addHeader("Content-Encoding", "gzip");
 
   if(contentType == "")
