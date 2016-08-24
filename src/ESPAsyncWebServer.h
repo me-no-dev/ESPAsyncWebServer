@@ -332,6 +332,7 @@ class AsyncWebServerResponse {
     size_t _headLength;
     size_t _sentLength;
     size_t _ackedLength;
+    size_t _writtenLength;
     WebResponseState _state;
     const char* _responseCodeToString(int code);
 
@@ -360,16 +361,20 @@ typedef std::function<void(AsyncWebServerRequest *request, String filename, size
 typedef std::function<void(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)> ArBodyHandlerFunction;
 
 class AsyncWebServer {
-  private:
+  protected:
     AsyncServer _server;
     AsyncWebRewrite* _rewrites;
     AsyncWebHandler* _handlers;
     AsyncWebHandler* _catchAllHandler;
+
   public:
     AsyncWebServer(uint16_t port);
     ~AsyncWebServer();
 
     void begin();
+
+    void onSslFileRequest(AcSSlFileHandler cb, void* arg);
+    void beginSecure(const char *cert, const char *private_key_file, const char *password);
 
     AsyncWebRewrite& addRewrite(AsyncWebRewrite* rewrite);
 
