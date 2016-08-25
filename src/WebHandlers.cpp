@@ -89,8 +89,8 @@ bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
     if (_last_modified.length())
       request->addInterestingHeader("If-Modified-Since");
 
-    //if(_cache_control.length())
-    //  request->addInterestingHeader("If-None-Match");
+    if(_cache_control.length())
+      request->addInterestingHeader("If-None-Match");
 
     DEBUGF("[AsyncStaticWebHandler::canHandle] TRUE\n");
     return true;
@@ -183,23 +183,23 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
   request->_tempObject = NULL;
 
   if (request->_tempFile == true) {
-    //String etag = String(request->_tempFile.size());
+    String etag = String(request->_tempFile.size());
     if (_last_modified.length() && _last_modified == request->header("If-Modified-Since")) {
       request->_tempFile.close();
       request->send(304); // Not modified
-    /*} else if (_cache_control.length() && request->hasHeader("If-None-Match") && request->header("If-None-Match").equals(etag)) {
+    } else if (_cache_control.length() && request->hasHeader("If-None-Match") && request->header("If-None-Match").equals(etag)) {
       request->_tempFile.close();
       AsyncWebServerResponse * response = new AsyncBasicResponse(304); // Not modified
       response->addHeader("Cache-Control", _cache_control);
       response->addHeader("ETag", etag);
-      request->send(response);*/
+      request->send(response);
     } else {
       AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, filename);
       if (_last_modified.length())
         response->addHeader("Last-Modified", _last_modified);
       if (_cache_control.length()){
         response->addHeader("Cache-Control", _cache_control);
-        //response->addHeader("ETag", etag);
+        response->addHeader("ETag", etag);
       }
       request->send(response);
     }
