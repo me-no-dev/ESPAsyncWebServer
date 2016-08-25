@@ -373,8 +373,10 @@ class AsyncWebServer {
 
     void begin();
 
+#if ASYNC_TCP_SSL_ENABLED
     void onSslFileRequest(AcSSlFileHandler cb, void* arg);
     void beginSecure(const char *cert, const char *private_key_file, const char *password);
+#endif
 
     AsyncWebRewrite& addRewrite(AsyncWebRewrite* rewrite);
 
