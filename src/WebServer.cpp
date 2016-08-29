@@ -84,6 +84,16 @@ void AsyncWebServer::begin(){
   _server.begin();
 }
 
+#if ASYNC_TCP_SSL_ENABLED
+void AsyncWebServer::onSslFileRequest(AcSSlFileHandler cb, void* arg){
+  _server.onSslFileRequest(cb, arg);
+}
+
+void AsyncWebServer::beginSecure(const char *cert, const char *key, const char *password){
+  _server.beginSecure(cert, key, password);
+}
+#endif
+
 void AsyncWebServer::_handleDisconnect(AsyncWebServerRequest *request){
   delete request;
 }

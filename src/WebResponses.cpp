@@ -81,6 +81,7 @@ AsyncWebServerResponse::AsyncWebServerResponse()
   , _headLength(0)
   , _sentLength(0)
   , _ackedLength(0)
+  , _writtenLength(0)
   , _state(RESPONSE_SETUP)
 {}
 
@@ -181,18 +182,18 @@ void AsyncBasicResponse::_respond(AsyncWebServerRequest *request){
   size_t outLen = out.length();
   size_t space = request->client()->space();
   if(!_contentLength && space >= outLen){
-    request->client()->write(out.c_str(), outLen);
+    _writtenLength += request->client()->write(out.c_str(), outLen);
     _state = RESPONSE_WAIT_ACK;
   } else if(_contentLength && space >= outLen + _contentLength){
     out += _content;
     outLen += _contentLength;
-    request->client()->write(out.c_str(), outLen);
+    _writtenLength += request->client()->write(out.c_str(), outLen);
     _state = RESPONSE_WAIT_ACK;
   } else if(space && space < out.length()){
     String partial = out.substring(0, space);
     _content = out.substring(space) + _content;
     _contentLength += outLen - space;
-    request->client()->write(partial.c_str(), partial.length());
+    _writtenLength += request->client()->write(partial.c_str(), partial.length());
     _state = RESPONSE_CONTENT;
   } else if(space > outLen && space < (outLen + _contentLength)){
     size_t shift = space - outLen;
@@ -200,7 +201,7 @@ void AsyncBasicResponse::_respond(AsyncWebServerRequest *request){
     _sentLength += shift;
     out += _content.substring(0, shift);
     _content = _content.substring(shift);
-    request->client()->write(out.c_str(), outLen);
+    _writtenLength += request->client()->write(out.c_str(), outLen);
     _state = RESPONSE_CONTENT;
   } else {
     _content = out + _content;
@@ -216,7 +217,7 @@ size_t AsyncBasicResponse::_ack(AsyncWebServerRequest *request, size_t len, uint
     size_t space = request->client()->space();
     //we can fit in this packet
     if(space > available){
-      request->client()->write(_content.c_str(), available);
+      _writtenLength += request->client()->write(_content.c_str(), available);
       _content = String();
       _state = RESPONSE_WAIT_ACK;
       return available;
@@ -225,10 +226,10 @@ size_t AsyncBasicResponse::_ack(AsyncWebServerRequest *request, size_t len, uint
     String out = _content.substring(0, space);
     _content = _content.substring(space);
     _sentLength += space;
-    request->client()->write(out.c_str(), space);
+    _writtenLength += request->client()->write(out.c_str(), space);
     return space;
   } else if(_state == RESPONSE_WAIT_ACK){
-    if(_ackedLength >= (_headLength+_contentLength)){
+    if(_ackedLength >= _writtenLength){
       _state = RESPONSE_END;
     }
   }
@@ -264,7 +265,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     } else {
       String out = _head.substring(0, space);
       _head = _head.substring(space);
-      request->client()->write(out.c_str(), out.length());
+      _writtenLength += request->client()->write(out.c_str(), out.length());
       return out.length();
     }
   }
@@ -306,7 +307,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     }
 
     if(outLen)
-      outLen = request->client()->write((const char*)buf, outLen);
+      _writtenLength += request->client()->write((const char*)buf, outLen);
 
     if(_chunked)
       _sentLength += readLen;
@@ -321,7 +322,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     return outLen;
 
   } else if(_state == RESPONSE_WAIT_ACK){
-    if(!_sendContentLength || _ackedLength >= (_headLength+_contentLength)){
+    if(!_sendContentLength || _ackedLength >= _writtenLength){
       _state = RESPONSE_END;
       if(!_chunked && !_sendContentLength)
         request->client()->close(true);
@@ -346,12 +347,17 @@ void AsyncFileResponse::_setContentType(String path){
   if (path.endsWith(".html")) _contentType = "text/html";
   else if (path.endsWith(".htm")) _contentType = "text/html";
   else if (path.endsWith(".css")) _contentType = "text/css";
+  else if (path.endsWith(".json")) _contentType = "text/json";
   else if (path.endsWith(".js")) _contentType = "application/javascript";
   else if (path.endsWith(".png")) _contentType = "image/png";
   else if (path.endsWith(".gif")) _contentType = "image/gif";
   else if (path.endsWith(".jpg")) _contentType = "image/jpeg";
   else if (path.endsWith(".ico")) _contentType = "image/x-icon";
   else if (path.endsWith(".svg")) _contentType = "image/svg+xml";
+  else if (path.endsWith(".eot")) _contentType = "font/eot";
+  else if (path.endsWith(".woff")) _contentType = "font/woff";
+  else if (path.endsWith(".woff2")) _contentType = "font/woff2";
+  else if (path.endsWith(".ttf")) _contentType = "font/ttf";
   else if (path.endsWith(".xml")) _contentType = "text/xml";
   else if (path.endsWith(".pdf")) _contentType = "application/pdf";
   else if (path.endsWith(".zip")) _contentType = "application/zip";
