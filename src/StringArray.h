@@ -73,6 +73,15 @@ class StringArray {
       }
       return false;
     }
+    bool containsIgnoreCase(String str){
+      StringArrayItem *it = _items;
+      while(it != NULL){
+        if(it->string().equalsIgnoreCase(str))
+          return true;
+        it = it->next;
+      }
+      return false;
+    }
     String get(size_t index){
       size_t i = 0;
       StringArrayItem *it = _items;

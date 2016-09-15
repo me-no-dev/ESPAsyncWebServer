@@ -267,11 +267,11 @@ bool AsyncWebServerRequest::_parseReqHeader(){
   if(index){
     String name = _temp.substring(0, index);
     String value = _temp.substring(index + 2);
-    if(name == "Host"){
+    if(name.equalsIgnoreCase("Host")){
       _host = value;
       _server->_rewriteRequest(this);
       _server->_attachHandler(this);
-    } else if(name == "Content-Type"){
+    } else if(name.equalsIgnoreCase("Content-Type")){
       if (value.startsWith("multipart/")){
         _boundary = value.substring(value.indexOf('=')+1);
         _contentType = value.substring(0, value.indexOf(';'));
@@ -279,19 +279,19 @@ bool AsyncWebServerRequest::_parseReqHeader(){
       } else {
         _contentType = value;
       }
-    } else if(name == "Content-Length"){
+    } else if(name.equalsIgnoreCase("Content-Length")){
       _contentLength = atoi(value.c_str());
-    } else if(name == "Expect" && value == "100-continue"){
+    } else if(name.equalsIgnoreCase("Expect") && value == "100-continue"){
       _expectingContinue = true;
-    } else if(name == "Authorization"){
-      if(value.startsWith("Basic")){
+    } else if(name.equalsIgnoreCase("Authorization")){
+      if(value.length() > 5 && value.substring(0,5).equalsIgnoreCase("Basic")){
         _authorization = value.substring(6);
-      } else if(value.startsWith("Digest")){
+      } else if(value.length() > 6 && value.substring(0,6).equalsIgnoreCase("Digest")){
         _isDigest = true;
         _authorization = value.substring(7);
       }
     } else {
-      if(_interestingHeaders->contains(name) || _interestingHeaders->contains("ANY")){
+      if(_interestingHeaders->containsIgnoreCase(name) || _interestingHeaders->containsIgnoreCase("ANY")){
         AsyncWebHeader *h = new AsyncWebHeader(name, value);
         if(_headers == NULL)
           _headers = h;
@@ -388,10 +388,10 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
        _temp += (char)data;
     if((char)data == '\n'){
       if(_temp.length()){
-        if(_temp.startsWith("Content-Type:")){
+        if(_temp.length() > 12 && _temp.substring(0, 12).equalsIgnoreCase("Content-Type")){
           _itemType = _temp.substring(14);
           _itemIsFile = true;
-        } else if(_temp.startsWith("Content-Disposition:")){
+        } else if(_temp.length() > 19 && _temp.substring(0, 19).equalsIgnoreCase("Content-Disposition")){
           _temp = _temp.substring(_temp.indexOf(';') + 2);
           while(_temp.indexOf(';') > 0){
             String name = _temp.substring(0, _temp.indexOf('='));
@@ -551,7 +551,7 @@ int AsyncWebServerRequest::headers(){
 bool AsyncWebServerRequest::hasHeader(String name){
   AsyncWebHeader* h = _headers;
   while(h != NULL){
-    if(h->name() == name)
+    if(h->name().equalsIgnoreCase(name))
       return true;
     h = h->next;
   }
@@ -561,7 +561,7 @@ bool AsyncWebServerRequest::hasHeader(String name){
 AsyncWebHeader* AsyncWebServerRequest::getHeader(String name){
   AsyncWebHeader* h = _headers;
   while(h != NULL){
-    if(h->name() == name)
+    if(h->name().equalsIgnoreCase(name))
       return h;
     h = h->next;
   }
@@ -620,7 +620,7 @@ AsyncWebParameter* AsyncWebServerRequest::getParam(int num){
 }
 
 void AsyncWebServerRequest::addInterestingHeader(String name){
-  if(!_interestingHeaders->contains(name)) _interestingHeaders->add(name);
+  if(!_interestingHeaders->containsIgnoreCase(name)) _interestingHeaders->add(name);
 }
 
 void AsyncWebServerRequest::send(AsyncWebServerResponse *response){
