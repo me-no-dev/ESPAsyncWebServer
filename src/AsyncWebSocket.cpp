@@ -621,6 +621,7 @@ void AsyncWebSocket::_handleEvent(AsyncWebSocketClient * client, AwsEventType ty
 }
 
 void AsyncWebSocket::_addClient(AsyncWebSocketClient * client){
+  client->setRxTimeout(0);
   if(_clients == NULL){
     _clients = client;
     return;

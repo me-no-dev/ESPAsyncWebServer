@@ -175,6 +175,7 @@ void AsyncEventSource::onConnect(ArEventHandlerFunction cb){
 }
 
 void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
+  client->setRxTimeout(0);
   /*char * temp = (char *)malloc(2054);
   if(temp != NULL){
     memset(temp+1,' ',2048);
