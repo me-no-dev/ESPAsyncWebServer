@@ -29,6 +29,7 @@ AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _rewrites(0), _hand
   _server.onClient([](void *s, AsyncClient* c){
     if(c == NULL)
       return;
+    c->setRxTimeout(3);
     AsyncWebServerRequest *r = new AsyncWebServerRequest((AsyncWebServer*)s, c);
     if(r == NULL){
       c->close(true);

@@ -99,6 +99,9 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
     free(_tempObject);
   }
 
+  if(_tempFile){
+    _tempFile.close();
+  }
 }
 
 void AsyncWebServerRequest::_onData(void *buf, size_t len){
@@ -208,7 +211,7 @@ void AsyncWebServerRequest::_addParam(AsyncWebParameter *p){
 }
 
 void AsyncWebServerRequest::_addGetParams(String params){
-  int start = 0;
+  size_t start = 0;
   while (start < params.length()){
     int end = params.indexOf('&', start);
     if (end < 0) end = params.length();
