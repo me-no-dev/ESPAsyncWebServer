@@ -113,7 +113,8 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, A
   next = NULL;
   if(request->hasHeader("Last-Event-ID"))
     _lastId = atoi(request->getHeader("Last-Event-ID")->value().c_str());
-
+    
+  _client->setRxTimeout(0);
   _client->onError(NULL, NULL);
   _client->onAck(NULL, NULL);
   _client->onPoll(NULL, NULL);
