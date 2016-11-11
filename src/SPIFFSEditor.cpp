@@ -326,7 +326,7 @@ SPIFFSEditor::SPIFFSEditor(String username, String password)
 
 bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
   if(request->url().equalsIgnoreCase("/edit")){
-    if(request->method() == HTTP_GET){
+    if(request->method() == WebRequest::Method::HTTP_GET){
       if(request->hasParam("list"))
         return true;
       if(request->hasParam("edit")){
@@ -341,11 +341,11 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
       }
       return true;
     }
-    else if(request->method() == HTTP_POST)
+    else if(request->method() == WebRequest::Method::HTTP_POST)
       return true;
-    else if(request->method() == HTTP_DELETE)
+    else if(request->method() == WebRequest::Method::HTTP_DELETE)
       return true;
-    else if(request->method() == HTTP_PUT)
+    else if(request->method() == WebRequest::Method::HTTP_PUT)
       return true;
 
   }
@@ -356,7 +356,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
   if(_username.length() && _password.length() && !request->authenticate(_username.c_str(), _password.c_str()))
     return request->requestAuthentication();
 
-  if(request->method() == HTTP_GET){
+  if(request->method() == WebRequest::Method::HTTP_GET){
     if(request->hasParam("list")){
       String path = request->getParam("list")->value();
       Dir dir = SPIFFS.openDir(path);
@@ -385,18 +385,18 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       response->addHeader("Content-Encoding", "gzip");
       request->send(response);
     }
-  } else if(request->method() == HTTP_DELETE){
+  } else if(request->method() == WebRequest::Method::HTTP_DELETE){
     if(request->hasParam("path", true)){
       SPIFFS.remove(request->getParam("path", true)->value());
       request->send(200, "", "DELETE: "+request->getParam("path", true)->value());
     } else
       request->send(404);
-  } else if(request->method() == HTTP_POST){
+  } else if(request->method() == WebRequest::Method::HTTP_POST){
     if(request->hasParam("data", true, true) && SPIFFS.exists(request->getParam("data", true, true)->value()))
       request->send(200, "", "UPLOADED: "+request->getParam("data", true, true)->value());
     else
       request->send(500);
-  } else if(request->method() == HTTP_PUT){
+  } else if(request->method() == WebRequest::Method::HTTP_PUT){
     if(request->hasParam("path", true)){
       String filename = request->getParam("path", true)->value();
       if(SPIFFS.exists(filename)){

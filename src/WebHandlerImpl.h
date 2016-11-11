@@ -64,7 +64,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArUploadHandlerFunction _onUpload;
     ArBodyHandlerFunction _onBody;
   public:
-    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL){}
+    AsyncCallbackWebHandler() : _uri(), _method(WebRequest::Method::HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL){}
     void setUri(String uri){ _uri = uri; }
     void setMethod(WebRequestMethodComposite method){ _method = method; }
     void onRequest(ArRequestHandlerFunction fn){ _onRequest = fn; }
@@ -75,7 +75,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       if(!_onRequest)
         return false;
 
-      if(!(_method & request->method()))
+      if(!(static_cast<uint8_t>(_method) & static_cast<uint8_t>(request->method())))
         return false;
 
       if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))

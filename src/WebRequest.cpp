@@ -39,7 +39,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _temp()
   , _parseState(0)
   , _version(0)
-  , _method(HTTP_ANY)
+  , _method(WebRequest::Method::HTTP_ANY)
   , _url()
   , _host()
   , _contentType()
@@ -233,19 +233,19 @@ bool AsyncWebServerRequest::_parseReqHead(){
   _temp = _temp.substring(index+1);
 
   if(m == "GET"){
-    _method = HTTP_GET;
+    _method = WebRequest::Method::HTTP_GET;
   } else if(m == "POST"){
-    _method = HTTP_POST;
+    _method = WebRequest::Method::HTTP_POST;
   } else if(m == "DELETE"){
-    _method = HTTP_DELETE;
+    _method = WebRequest::Method::HTTP_DELETE;
   } else if(m == "PUT"){
-    _method = HTTP_PUT;
+    _method = WebRequest::Method::HTTP_PUT;
   } else if(m == "PATCH"){
-    _method = HTTP_PATCH;
+    _method = WebRequest::Method::HTTP_PATCH;
   } else if(m == "HEAD"){
-    _method = HTTP_HEAD;
+    _method = WebRequest::Method::HTTP_HEAD;
   } else if(m == "OPTIONS"){
-    _method = HTTP_OPTIONS;
+    _method = WebRequest::Method::HTTP_OPTIONS;
   }
 
   u = urlDecode(u);
@@ -856,13 +856,13 @@ String AsyncWebServerRequest::urlDecode(const String& text){
 
 
 const char * AsyncWebServerRequest::methodToString(){
-  if(_method == HTTP_ANY) return "ANY";
-  else if(_method & HTTP_GET) return "GET";
-  else if(_method & HTTP_POST) return "POST";
-  else if(_method & HTTP_DELETE) return "DELETE";
-  else if(_method & HTTP_PUT) return "PUT";
-  else if(_method & HTTP_PATCH) return "PATCH";
-  else if(_method & HTTP_HEAD) return "HEAD";
-  else if(_method & HTTP_OPTIONS) return "OPTIONS";
+  if(_method == WebRequest::Method::HTTP_ANY) return "ANY";
+  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequest::Method::HTTP_GET)) return "GET";
+  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequest::Method::HTTP_POST)) return "POST";
+  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequest::Method::HTTP_DELETE)) return "DELETE";
+  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequest::Method::HTTP_PUT)) return "PUT";
+  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequest::Method::HTTP_PATCH)) return "PATCH";
+  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequest::Method::HTTP_HEAD)) return "HEAD";
+  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequest::Method::HTTP_OPTIONS)) return "OPTIONS";
   return "UNKNOWN";
 }
