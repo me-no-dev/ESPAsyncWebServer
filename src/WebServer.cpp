@@ -68,6 +68,7 @@ bool AsyncWebServer::removeRewrite(AsyncWebRewrite *rewrite){
       delete d;
       return true;
     }
+    r = r->next;
   }
   return false;
 }
@@ -100,6 +101,7 @@ bool AsyncWebServer::removeHandler(AsyncWebHandler *handler){
       delete d;
       return true;
     }
+    h = h->next;
   }
   return false;
 }
