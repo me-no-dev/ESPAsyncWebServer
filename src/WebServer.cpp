@@ -40,19 +40,8 @@ AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _rewrites(0), _hand
 }
 
 AsyncWebServer::~AsyncWebServer(){
-  while(_rewrites != NULL){
-    AsyncWebRewrite *r = _rewrites;
-    _rewrites = r->next;
-    delete r;
-  }
-  while(_handlers != NULL){
-    AsyncWebHandler *h = _handlers;
-    _handlers = h->next;
-    delete h;
-  }
-  if (_catchAllHandler != NULL){
-    delete _catchAllHandler;
-  }
+  reset();
+  delete _catchAllHandler;
 }
 
 AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
@@ -64,6 +53,24 @@ AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
     r->next = rewrite;
   }
   return *rewrite;
+}
+
+bool AsyncWebServer::removeRewrite(AsyncWebRewrite *rewrite){
+  if(rewrite == _rewrites){
+    _rewrites = _rewrites->next;
+    return true;
+  }
+  AsyncWebRewrite *r = _rewrites;
+  while(r != NULL){
+    if(rewrite == r->next){
+      AsyncWebRewrite *d = r->next;
+      r->next = d->next;
+      delete d;
+      return true;
+    }
+    r = r->next;
+  }
+  return false;
 }
 
 AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
@@ -79,6 +86,24 @@ AsyncWebHandler& AsyncWebServer::addHandler(AsyncWebHandler* handler){
     h->next = handler;
   }
   return *handler;
+}
+
+bool AsyncWebServer::removeHandler(AsyncWebHandler *handler){
+  if(handler == _handlers){
+    _handlers = _handlers->next;
+    return true;
+  }
+  AsyncWebHandler *h = _handlers;
+  while(h != NULL){
+    if(handler == h->next){
+      AsyncWebHandler *d = h->next;
+      h->next = d->next;
+      delete d;
+      return true;
+    }
+    h = h->next;
+  }
+  return false;
 }
 
 void AsyncWebServer::begin(){
@@ -181,3 +206,26 @@ void AsyncWebServer::onFileUpload(ArUploadHandlerFunction fn){
 void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
   ((AsyncCallbackWebHandler*)_catchAllHandler)->onBody(fn);
 }
+
+void AsyncWebServer::reset(){
+  while(_rewrites != NULL){
+    AsyncWebRewrite *r = _rewrites;
+    _rewrites = r->next;
+    delete r;
+  }
+  _rewrites = NULL;
+  
+  while(_handlers != NULL){
+    AsyncWebHandler *h = _handlers;
+    _handlers = h->next;
+    delete h;
+  }
+  _handlers = NULL;
+  
+  if (_catchAllHandler != NULL){
+    ((AsyncCallbackWebHandler*)_catchAllHandler)->onRequest(NULL);
+    ((AsyncCallbackWebHandler*)_catchAllHandler)->onUpload(NULL);
+    ((AsyncCallbackWebHandler*)_catchAllHandler)->onBody(NULL);
+  }
+}
+

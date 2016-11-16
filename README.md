@@ -807,6 +807,32 @@ server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request){
 });
 ```
 
+### Remove handlers and rewriters
+
+Server goes through handlers in same order as they were added. You can't simple add handler with same path to override them.
+To remove handler:
+```arduino
+// save callback for particular URL path
+auto handler = server.on("/some/path", [](AsyncWebServerRequest *request){
+  //do something useful
+});
+// when you don't need handler anymore remove it
+server.removeHandler(&handler);
+
+// same with rewriters
+server.removeRewrite(&someRewriter);
+
+server.onNotFound([](AsyncWebServerRequest *request){
+request->send(404);
+});
+
+// remove server.onNotFound handler
+server.onNotFound(NULL);
+
+// remove all writers and handlers, with onNotFound/onFileUpload/onRequestBody 
+server.reset();
+```
+
 ## Setting up the server
 ```cpp
 #include "ESPAsyncTCP.h"
