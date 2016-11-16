@@ -807,7 +807,7 @@ server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request){
 });
 ```
 
-### Remove handlers and writers
+### Remove handlers and rewriters
 
 Server goes through handlers in same order as they were added. You can't simple add handler with same path to override them.
 To remove handler:
@@ -819,9 +819,8 @@ auto handler = server.on("/some/path", [](AsyncWebServerRequest *request){
 // when you don't need handler anymore remove it
 server.removeHandler(&handler);
 
-// same with writers
-server.removeWriter(&someWriter);
-
+// same with rewriters
+server.removeRewrite(&someRewriter);
 
 server.onNotFound([](AsyncWebServerRequest *request){
 request->send(404);
