@@ -23,7 +23,8 @@
 
 
 AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _rewrites(0), _handlers(0){
-  if(!resetAllHandlers())
+  _catchAllHandler = new AsyncCallbackWebHandler();
+  if(_catchAllHandler == NULL)
     return;
   _server.onClient([](void *s, AsyncClient* c){
     if(c == NULL)
@@ -38,31 +39,20 @@ AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _rewrites(0), _hand
   }, this);
 }
 
-bool AsyncWebServer::resetAllHandlers(){
+AsyncWebServer::~AsyncWebServer(){
   while(_rewrites != NULL){
     AsyncWebRewrite *r = _rewrites;
     _rewrites = r->next;
     delete r;
   }
-  _rewrites = NULL;
-  
   while(_handlers != NULL){
     AsyncWebHandler *h = _handlers;
     _handlers = h->next;
     delete h;
   }
-  _handlers = NULL;
-  
   if (_catchAllHandler != NULL){
     delete _catchAllHandler;
   }
-  _catchAllHandler = new AsyncCallbackWebHandler();
-  return _catchAllHandler != NULL;
-}
-
-AsyncWebServer::~AsyncWebServer(){
-  resetAllHandlers();
-  delete _catchAllHandler;
 }
 
 AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
@@ -190,4 +180,18 @@ void AsyncWebServer::onFileUpload(ArUploadHandlerFunction fn){
 
 void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
   ((AsyncCallbackWebHandler*)_catchAllHandler)->onBody(fn);
+}
+
+void AsyncWebServer::reset(AsyncCallbackWebHandler* handler){
+  
+  if (!handler) {
+    handler = _catchAllHandler;
+  }
+  if (!handler) {
+    return;
+  }
+  
+  handler->onRequest(NULL);
+  handler->onUpload(NULL);
+  handler->onBody(NULL);
 }
