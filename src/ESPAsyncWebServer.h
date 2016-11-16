@@ -395,6 +395,8 @@ class AsyncWebServer {
     void onFileUpload(ArUploadHandlerFunction fn); //handle file uploads
     void onRequestBody(ArBodyHandlerFunction fn); //handle posts with plain body content (JSON often transmitted this way as a request)
 
+    bool resetAllHandlers(); // remove all handlers.
+  
     void _handleDisconnect(AsyncWebServerRequest *request);
     void _attachHandler(AsyncWebServerRequest *request);
     void _rewriteRequest(AsyncWebServerRequest *request);
