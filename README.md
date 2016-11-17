@@ -2,11 +2,67 @@
 
 For help and support [![Join the chat at https://gitter.im/me-no-dev/ESPAsyncWebServer](https://badges.gitter.im/me-no-dev/ESPAsyncWebServer.svg)](https://gitter.im/me-no-dev/ESPAsyncWebServer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Async HTTP and WebSocket Server for ESP8266 and ESP31B Arduino
+Async HTTP and WebSocket Server for ESP8266 Arduino
 
 Requires [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP) to work
+To use this library you might need to have the latest git versions of [ESP8266](https://github.com/esp8266/Arduino) Arduino Core
 
-To use this library you need to have the latest git versions of either [ESP8266](https://github.com/esp8266/Arduino) or [ESP31B](https://github.com/me-no-dev/ESP31B) Arduino Core
+- Table of Contents
+	- [Why should you care](#)
+	- [Important things to remember](#)
+	- [Principles of operation](#)
+		- [The Async Web server](#)
+		- [Request Life Cycle](#)
+		- [Rewrites and how do they work](#)
+		- [Handlers and how do they work](#)
+		- [Responses and how do they work](#)
+	- [Libraries and projects that use AsyncWebServer](#)
+	- [Request Variables](#)
+		- [Common Variables](#)
+		- [Headers](#)
+		- [GET, POST and FILE parameters](#)
+		- [FILE Upload handling](#)
+		- [Body data handling](#)
+	- [Responses](#)
+		- [Redirect to another URL](#)
+		- [Basic response with HTTP Code](#)
+		- [Basic response with HTTP Code and extra headers](#)
+		- [Basic response with string content](#)
+		- [Basic response with string content and extra headers](#)
+		- [Send large webpage from PROGMEM](#)
+		- [Send large webpage from PROGMEM and extra headers](#)
+		- [Send binary content from PROGMEM](#)
+		- [Respond with content coming from a Stream](#)
+		- [Respond with content coming from a Stream and extra headers](#)
+		- [Respond with content coming from a File](#)
+		- [Respond with content coming from a File and extra headers](#)
+		- [Respond with content using a callback](#)
+		- [Respond with content using a callback and extra headers](#)
+		- [Chunked Response](#)
+		- [Print to response](#)
+		- [ArduinoJson Basic Response](#)
+		- [ArduinoJson Advanced Response](#)
+	- [Serving static files](#)
+		- [Serving specific file by name](#)
+		- [Serving files in directory](#)
+		- [Specifying Cache-Control header](#)
+		- [Specifying Date-Modified header](#)
+	- [Using filters](#)
+		- [Serve different site files in AP mode](#)
+		- [Rewrite to different index on AP](#)
+		- [Serving different hosts](#)
+	- [Bad Responses](#)
+		- [Respond with content using a callback without content length to HTTP/1.0 clients](#)
+	- [Async WebSocket Plugin](#)
+		- [Async WebSocket Event](#)
+		- [Methods for sending data to a socket client](#)
+	- [Async Event Source Plugin](#)
+		- [Setup Event Source on the server](#)
+		- [Setup Event Source in the browser](#)
+	- [Scanning for available WiFi Networks](#)
+		- [Remove handlers and rewriters](#)
+	- [Setting up the server](#)
+		- [Methods for controlling websocket connections](#)
 
 ## Why should you care
 - Using asynchronous network means that you can handle more than one connection at the same time
@@ -807,7 +863,7 @@ server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request){
 });
 ```
 
-### Remove handlers and rewriters
+### Remove handlers and rewrites
 
 Server goes through handlers in same order as they were added. You can't simple add handler with same path to override them.
 To remove handler:
@@ -819,17 +875,17 @@ auto handler = server.on("/some/path", [](AsyncWebServerRequest *request){
 // when you don't need handler anymore remove it
 server.removeHandler(&handler);
 
-// same with rewriters
-server.removeRewrite(&someRewriter);
+// same with rewrites
+server.removeRewrite(&someRewrite);
 
 server.onNotFound([](AsyncWebServerRequest *request){
-request->send(404);
+  request->send(404);
 });
 
 // remove server.onNotFound handler
 server.onNotFound(NULL);
 
-// remove all writers and handlers, with onNotFound/onFileUpload/onRequestBody 
+// remove all rewrites, handlers and onNotFound/onFileUpload/onRequestBody callbacks
 server.reset();
 ```
 
