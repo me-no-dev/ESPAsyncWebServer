@@ -99,12 +99,12 @@ void AsyncWebServerResponse::setContentLength(size_t len){
     _contentLength = len;
 }
 
-void AsyncWebServerResponse::setContentType(String type){
+void AsyncWebServerResponse::setContentType(const String& type){
   if(_state == RESPONSE_SETUP)
     _contentType = type;
 }
 
-void AsyncWebServerResponse::addHeader(String name, String value){
+void AsyncWebServerResponse::addHeader(const String& name, const String& value){
   _headers.add(new AsyncWebHeader(name, value));
 }
 
@@ -330,7 +330,7 @@ AsyncFileResponse::~AsyncFileResponse(){
     _content.close();
 }
 
-void AsyncFileResponse::_setContentType(String path){
+void AsyncFileResponse::_setContentType(const String& path){
   if (path.endsWith(".html")) _contentType = "text/html";
   else if (path.endsWith(".htm")) _contentType = "text/html";
   else if (path.endsWith(".css")) _contentType = "text/css";

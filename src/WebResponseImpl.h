@@ -45,7 +45,7 @@ class AsyncFileResponse: public AsyncAbstractResponse {
   private:
     File _content;
     String _path;
-    void _setContentType(String path);
+    void _setContentType(const String& path);
   public:
     AsyncFileResponse(FS &fs, String path, String contentType=String(), bool download=false);
     AsyncFileResponse(File content, String path, String contentType=String(), bool download=false);
