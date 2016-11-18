@@ -301,7 +301,7 @@ void AsyncWebSocketClient::_runQueue(){
     _messageQueue.remove(_messageQueue.front());
   }
 
-  if(!_controlQueue.isEmpty() && (!_messageQueue.isEmpty() || _messageQueue.front()->betweenFrames()) && webSocketSendFrameWindow(_client) > (size_t)(_controlQueue.front()->len() - 1)){
+  if(!_controlQueue.isEmpty() && (_messageQueue.isEmpty() || _messageQueue.front()->betweenFrames()) && webSocketSendFrameWindow(_client) > (size_t)(_controlQueue.front()->len() - 1)){
     _controlQueue.front()->send(_client);
   } else if(!_messageQueue.isEmpty() && _messageQueue.front()->betweenFrames() && webSocketSendFrameWindow(_client)){
     _messageQueue.front()->send(_client);
