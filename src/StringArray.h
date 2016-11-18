@@ -22,8 +22,10 @@
 #define STRINGARRAY_H_
 
 #include "stddef.h"
-#include "WString.h"
 #include <iterator>
+
+#include "WString.h"
+
 
 template <typename T>
 class ListArrayNode {
