@@ -55,7 +55,7 @@ class AsyncEventSourceClient {
 class AsyncEventSource: public AsyncWebHandler {
   private:
     String _url;
-    ListArray<AsyncEventSourceClient *> _clients;
+    LinkedList<AsyncEventSourceClient *> _clients;
     ArEventHandlerFunction _connectcb;
   public:
     AsyncEventSource(String url);

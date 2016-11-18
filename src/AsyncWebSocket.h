@@ -67,8 +67,8 @@ class AsyncWebSocketClient {
     uint32_t _clientId;
     AwsClientStatus _status;
 
-    ListArray<AsyncWebSocketControl *> _controlQueue;
-    ListArray<AsyncWebSocketMessage *> _messageQueue;
+    LinkedList<AsyncWebSocketControl *> _controlQueue;
+    LinkedList<AsyncWebSocketMessage *> _messageQueue;
 
     uint8_t _pstate;
     AwsFrameInfo _pinfo;
@@ -139,7 +139,7 @@ typedef std::function<void(AsyncWebSocket * server, AsyncWebSocketClient * clien
 class AsyncWebSocket: public AsyncWebHandler {
   private:
     String _url;
-    ListArray<AsyncWebSocketClient *> _clients;
+    LinkedList<AsyncWebSocketClient *> _clients;
     uint32_t _cNextId;
     AwsEventHandler _eventHandler;
     bool _enabled;

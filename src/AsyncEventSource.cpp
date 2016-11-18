@@ -162,7 +162,7 @@ void AsyncEventSourceClient::send(const char *message, const char *event, uint32
 
 AsyncEventSource::AsyncEventSource(String url)
   : _url(url)
-  , _clients(ListArray<AsyncEventSourceClient *>([](AsyncEventSourceClient *c){ delete c; }))
+  , _clients(LinkedList<AsyncEventSourceClient *>([](AsyncEventSourceClient *c){ delete c; }))
   , _connectcb(NULL)
 {}
 
@@ -198,18 +198,18 @@ void AsyncEventSource::_handleDisconnect(AsyncEventSourceClient * client){
 }
 
 void AsyncEventSource::close(){
-  for(auto &c: _clients){
+  for(const auto &c: _clients){
     if(c->connected())
       c->close();
   }
 }
 
 void AsyncEventSource::send(const char *message, const char *event, uint32_t id, uint32_t reconnect){
-  if (_clients.isEmpty())
+  if(_clients.isEmpty())
     return;
 
   String ev = generateEventMessage(message, event, id, reconnect);
-  for(auto &c: _clients){
+  for(const auto &c: _clients){
     if(c->connected())
       c->write(ev.c_str(), ev.length());
   }

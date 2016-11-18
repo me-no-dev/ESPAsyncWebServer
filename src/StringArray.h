@@ -39,7 +39,7 @@ public:
 };
 
 template <typename T, template<typename> class Item = ListArrayNode>
-class ListArray {
+class LinkedList {
 public:
   typedef Item<T> ItemType;
   typedef std::function<void(const T&)> OnRemove;
@@ -65,8 +65,8 @@ public:
   ConstIterator begin() const { return ConstIterator(_root); }
   ConstIterator end() const { return ConstIterator(nullptr); }
   
-  ListArray(OnRemove onRemove) : _root(nullptr), _onRemove(onRemove) {}
-  ~ListArray(){}
+  LinkedList(OnRemove onRemove) : _root(nullptr), _onRemove(onRemove) {}
+  ~LinkedList(){}
   
   inline
   T& front() const { return _root->item(); }
@@ -184,10 +184,10 @@ public:
 };
 
 
-class StringArray : public ListArray<String> {
+class StringArray : public LinkedList<String> {
 public:
   
-  StringArray() : ListArray(nullptr) {}
+  StringArray() : LinkedList(nullptr) {}
   
   bool containsIgnoreCase(const String& str){
     for (const auto& s : *this) {

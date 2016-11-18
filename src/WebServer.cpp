@@ -24,8 +24,8 @@
 
 AsyncWebServer::AsyncWebServer(uint16_t port)
   : _server(port)
-  , _rewrites(ListArray<AsyncWebRewrite*>([](AsyncWebRewrite* r){ delete r; }))
-  , _handlers(ListArray<AsyncWebHandler*>([](AsyncWebHandler* h){ delete h; }))
+  , _rewrites(LinkedList<AsyncWebRewrite*>([](AsyncWebRewrite* r){ delete r; }))
+  , _handlers(LinkedList<AsyncWebHandler*>([](AsyncWebHandler* h){ delete h; }))
 {
   _catchAllHandler = new AsyncCallbackWebHandler();
   if(_catchAllHandler == NULL)

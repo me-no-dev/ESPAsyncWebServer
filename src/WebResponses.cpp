@@ -73,7 +73,7 @@ const char* AsyncWebServerResponse::_responseCodeToString(int code) {
 
 AsyncWebServerResponse::AsyncWebServerResponse()
   : _code(0)
-  , _headers(ListArray<AsyncWebHeader *>([](AsyncWebHeader *h){ delete h; }))
+  , _headers(LinkedList<AsyncWebHeader *>([](AsyncWebHeader *h){ delete h; }))
   , _contentType()
   , _contentLength(0)
   , _sendContentLength(true)

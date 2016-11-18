@@ -138,7 +138,7 @@ class AsyncWebSocketControl {
       ,_len(len)
       ,_mask(len && mask)
       ,_finished(false)
-      {
+  {
       if(data == NULL)
         _len = 0;
       if(_len){
@@ -154,7 +154,7 @@ class AsyncWebSocketControl {
       if(_data != NULL)
         free(_data);
     }
-    virtual bool finished() { return _finished; }
+    virtual bool finished(){ return _finished; }
     uint8_t opcode(){ return _opcode; }
     uint8_t len(){ return _len + 2; }
     size_t send(AsyncClient *client){
@@ -239,8 +239,8 @@ class AsyncWebSocketBasicMessage: public AsyncWebSocketMessage {
  const size_t AWSC_PING_PAYLOAD_LEN = 22;
 
 AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server)
-  : _controlQueue(ListArray<AsyncWebSocketControl *>([](AsyncWebSocketControl *c){ delete  c; }))
-  , _messageQueue(ListArray<AsyncWebSocketMessage *>([](AsyncWebSocketMessage *m){ delete  m; }))
+  : _controlQueue(LinkedList<AsyncWebSocketControl *>([](AsyncWebSocketControl *c){ delete  c; }))
+  , _messageQueue(LinkedList<AsyncWebSocketMessage *>([](AsyncWebSocketMessage *m){ delete  m; }))
 {
   _client = request->client();
   _server = server;
@@ -581,7 +581,7 @@ uint16_t AsyncWebSocketClient::remotePort() {
 
 AsyncWebSocket::AsyncWebSocket(String url)
   :_url(url)
-  ,_clients(ListArray<AsyncWebSocketClient *>([](AsyncWebSocketClient *c){ delete c; }))
+  ,_clients(LinkedList<AsyncWebSocketClient *>([](AsyncWebSocketClient *c){ delete c; }))
   ,_cNextId(1)
   ,_enabled(true)
 {

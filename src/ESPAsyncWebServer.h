@@ -141,8 +141,8 @@ class AsyncWebServerRequest {
     size_t _contentLength;
     size_t _parsedLength;
 
-    ListArray<AsyncWebHeader *> _headers;
-    ListArray<AsyncWebParameter *> _params;
+    LinkedList<AsyncWebHeader *> _headers;
+    LinkedList<AsyncWebParameter *> _params;
 
     uint8_t _multiParseState;
     uint8_t _boundaryPosition;
@@ -318,7 +318,7 @@ typedef enum {
 class AsyncWebServerResponse {
   protected:
     int _code;
-    ListArray<AsyncWebHeader *> _headers;
+    LinkedList<AsyncWebHeader *> _headers;
     String _contentType;
     size_t _contentLength;
     bool _sendContentLength;
@@ -357,8 +357,8 @@ typedef std::function<void(AsyncWebServerRequest *request, uint8_t *data, size_t
 class AsyncWebServer {
   protected:
     AsyncServer _server;
-    ListArray<AsyncWebRewrite*> _rewrites;
-    ListArray<AsyncWebHandler*> _handlers;
+    LinkedList<AsyncWebRewrite*> _rewrites;
+    LinkedList<AsyncWebHandler*> _handlers;
     AsyncWebHandler* _catchAllHandler;
 
   public:
