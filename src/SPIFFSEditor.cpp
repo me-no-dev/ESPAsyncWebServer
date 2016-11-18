@@ -325,6 +325,7 @@ SPIFFSEditor::SPIFFSEditor(String username, String password)
 {}
 
 bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
+  Serial.println(__PRETTY_FUNCTION__);
   if(request->url().equalsIgnoreCase("/edit")){
     if(request->method() == HTTP_GET){
       if(request->hasParam("list"))

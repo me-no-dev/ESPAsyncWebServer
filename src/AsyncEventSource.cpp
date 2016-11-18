@@ -163,7 +163,7 @@ void AsyncEventSourceClient::send(const char *message, const char *event, uint32
 
 AsyncEventSource::AsyncEventSource(String url)
   : _url(url)
-  , _clients(NULL)
+  , _clients(ListArray<AsyncEventSourceClient *>([](AsyncEventSourceClient *c){ delete c; }))
   , _connectcb(NULL)
 {}
 
@@ -188,68 +188,36 @@ void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
     client->write((const char *)temp, 2053);
     free(temp);
   }*/
-  if(_clients == NULL){
-    _clients = client;
-    if(_connectcb)
-      _connectcb(client);
-    return;
-  }
-  AsyncEventSourceClient * c = _clients;
-  while(c->next != NULL) c = c->next;
-  c->next = client;
+  
+  _clients.add(client);
   if(_connectcb)
     _connectcb(client);
 }
 
 void AsyncEventSource::_handleDisconnect(AsyncEventSourceClient * client){
-  if(_clients == NULL){
-    return;
-  }
-  if(_clients == client){
-    _clients = client->next;
-    delete client;
-    return;
-  }
-  AsyncEventSourceClient * c = _clients;
-  while(c->next != NULL && c->next != client) c = c->next;
-  if(c->next == NULL){
-    return;
-  }
-  c->next = client->next;
-  delete client;
+  _clients.remove(client);
 }
 
 void AsyncEventSource::close(){
-  AsyncEventSourceClient * c = _clients;
-  while(c != NULL){
+  for(auto &c: _clients){
     if(c->connected())
       c->close();
-    c = c->next;
   }
 }
 
 void AsyncEventSource::send(const char *message, const char *event, uint32_t id, uint32_t reconnect){
-  if(_clients == NULL)
+  if (_clients.isEmpty())
     return;
 
   String ev = generateEventMessage(message, event, id, reconnect);
-  AsyncEventSourceClient * c = _clients;
-  while(c != NULL){
+  for(auto &c: _clients){
     if(c->connected())
       c->write(ev.c_str(), ev.length());
-    c = c->next;
   }
 }
 
-size_t AsyncEventSource::count(){
-  size_t i = 0;
-  AsyncEventSourceClient * c = _clients;
-  while(c != NULL){
-    if(c->connected())
-      i++;
-    c = c->next;
-  }
-  return i;
+size_t AsyncEventSource::count() const {
+  return _clients.length();
 }
 
 bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){

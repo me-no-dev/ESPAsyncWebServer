@@ -72,6 +72,9 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     void onBody(ArBodyHandlerFunction fn){ _onBody = fn; }
 
     bool canHandle(AsyncWebServerRequest *request){
+      
+      Serial.println(__PRETTY_FUNCTION__);
+      
       if(!_onRequest)
         return false;
 

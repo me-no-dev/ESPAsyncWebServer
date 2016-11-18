@@ -45,8 +45,8 @@ class AsyncEventSourceClient {
     void close();
     void write(const char * message, size_t len);
     void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
-    bool connected(){ return (_client != NULL) && _client->connected(); }
-    uint32_t lastId(){ return _lastId; }
+    bool connected() const { return (_client != NULL) && _client->connected(); }
+    uint32_t lastId() const { return _lastId; }
 
     //system callbacks (do not call)
     void _onTimeout(uint32_t time);
@@ -56,17 +56,17 @@ class AsyncEventSourceClient {
 class AsyncEventSource: public AsyncWebHandler {
   private:
     String _url;
-    AsyncEventSourceClient * _clients;
+    ListArray<AsyncEventSourceClient *> _clients;
     ArEventHandlerFunction _connectcb;
   public:
     AsyncEventSource(String url);
     ~AsyncEventSource();
 
-    const char * url(){ return _url.c_str(); }
+    const char * url() const { return _url.c_str(); }
     void close();
     void onConnect(ArEventHandlerFunction cb);
     void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
-    size_t count(); //number clinets connected
+    size_t count() const; //number clinets connected
 
     //system callbacks (do not call)
     void _addClient(AsyncEventSourceClient * client);

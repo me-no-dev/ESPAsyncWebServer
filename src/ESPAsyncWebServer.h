@@ -76,14 +76,13 @@ class AsyncWebParameter {
     bool _isFile;
 
   public:
-    AsyncWebParameter *next;
 
-    AsyncWebParameter(String name, String value, bool form=false, bool file=false, size_t size=0): _name(name), _value(value), _size(size), _isForm(form), _isFile(file), next(NULL){}
-    String name(){ return _name; }
-    String value(){ return _value; }
-    size_t size(){ return _size; }
-    bool isPost(){ return _isForm; }
-    bool isFile(){ return _isFile; }
+    AsyncWebParameter(String name, String value, bool form=false, bool file=false, size_t size=0): _name(name), _value(value), _size(size), _isForm(form), _isFile(file){}
+    String name() const { return _name; }
+    String value() const { return _value; }
+    size_t size() const { return _size; }
+    bool isPost() const { return _isForm; }
+    bool isFile() const { return _isFile; }
 };
 
 /*
@@ -98,8 +97,8 @@ class AsyncWebHeader {
   public:
     AsyncWebHeader *next;
 
-    AsyncWebHeader(String name, String value): _name(name), _value(value), next(NULL){}
-    AsyncWebHeader(String data): _name(), _value(), next(NULL){
+    AsyncWebHeader(String name, String value): _name(name), _value(value){}
+    AsyncWebHeader(String data): _name(), _value(){
       if(!data) return;
       int index = data.indexOf(':');
       if (index < 0) return;
@@ -107,9 +106,9 @@ class AsyncWebHeader {
       _value = data.substring(index + 2);
     }
     ~AsyncWebHeader(){}
-    String name(){ return _name; }
-    String value(){ return _value; }
-    String toString(){ return String(_name+": "+_value+"\r\n"); }
+    String name() const { return _name; }
+    String value() const { return _value; }
+    String toString() const { return String(_name+": "+_value+"\r\n"); }
 };
 
 /*
@@ -125,7 +124,7 @@ class AsyncWebServerRequest {
     AsyncWebServer* _server;
     AsyncWebHandler* _handler;
     AsyncWebServerResponse* _response;
-    StringArray* _interestingHeaders;
+    StringArray _interestingHeaders;
 
     String _temp;
     uint8_t _parseState;
@@ -144,8 +143,8 @@ class AsyncWebServerRequest {
     size_t _contentLength;
     size_t _parsedLength;
 
-    AsyncWebHeader *_headers;
-    AsyncWebParameter *_params;
+    ListArray<AsyncWebHeader *> _headers;
+    ListArray<AsyncWebParameter *> _params;
 
     uint8_t _multiParseState;
     uint8_t _boundaryPosition;
@@ -188,14 +187,14 @@ class AsyncWebServerRequest {
     ~AsyncWebServerRequest();
 
     AsyncClient* client(){ return _client; }
-    uint8_t version(){ return _version; }
-    WebRequestMethodComposite method(){ return _method; }
-    String url(){ return _url; }
-    String host(){ return _host; }
-    String contentType(){ return _contentType; }
-    size_t contentLength(){ return _contentLength; }
-    bool multipart(){ return _isMultipart; }
-    const char * methodToString();
+    uint8_t version() const { return _version; }
+    WebRequestMethodComposite method() const { return _method; }
+    String url() const { return _url; }
+    String host() const { return _host; }
+    String contentType() const { return _contentType; }
+    size_t contentLength() const { return _contentLength; }
+    bool multipart() const { return _isMultipart; }
+    const char * methodToString() const;
 
 
     //hash is the string representation of:
@@ -230,28 +229,26 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse *beginResponse_P(int code, String contentType, const uint8_t * content, size_t len);
     AsyncWebServerResponse *beginResponse_P(int code, String contentType, PGM_P content);
 
-    int headers();                     // get header count
-    bool hasHeader(String name);
-    AsyncWebHeader* getHeader(String name);
-    AsyncWebHeader* getHeader(int num);
+    size_t headers() const;                     // get header count
+    bool hasHeader(String name) const;   // check if header exists
+    AsyncWebHeader* getHeader(String name) const;
+    AsyncWebHeader* getHeader(size_t num) const;
 
-    int params();                      // get arguments count
-    bool hasParam(String name, bool post=false, bool file=false);
-    AsyncWebParameter* getParam(String name, bool post=false, bool file=false);
-    AsyncWebParameter* getParam(int num);
+    size_t params() const;                      // get arguments count
+    bool hasParam(String name, bool post=false, bool file=false) const;
+    AsyncWebParameter* getParam(String name, bool post=false, bool file=false) const;
+    AsyncWebParameter* getParam(size_t num) const;
 
-    int args(){ return params(); }  // get arguments count
-    String arg(const char* name);   // get request argument value by name
-    String arg(int i);              // get request argument value by number
-    String argName(int i);          // get request argument name by number
-    bool hasArg(const char* name);  // check if argument exists
+    size_t args() const { return params(); }     // get arguments count
+    String arg(String name) const;// get request argument value by name
+    String arg(size_t i) const;           // get request argument value by number
+    String argName(size_t i) const;       // get request argument name by number
+    bool hasArg(const char* name) const;      // check if argument exists
 
-    String header(const char* name);   // get request header value by name
-    String header(int i);              // get request header value by number
-    String headerName(int i);          // get request header name by number
-    bool hasHeader(const char* name);  // check if header exists
-
-    String urlDecode(const String& text);
+    String header(const char* name) const; // get request header value by name
+    String header(size_t i) const;            // get request header value by number
+    String headerName(size_t i) const;        // get request header name by number
+    String urlDecode(String text) const;
 };
 
 /*
@@ -279,8 +276,7 @@ class AsyncWebRewrite {
     String _params;
     ArRequestFilterFunction _filter;
   public:
-    AsyncWebRewrite* next;
-    AsyncWebRewrite(const char* from, const char* to): _from(from), _toUrl(to), _params(String()), _filter(NULL), next(NULL){
+    AsyncWebRewrite(const char* from, const char* to): _from(from), _toUrl(to), _params(String()), _filter(NULL){
       int index = _toUrl.indexOf('?');
       if (index > 0) {
         _params = _toUrl.substring(index +1);
@@ -288,10 +284,10 @@ class AsyncWebRewrite {
       }
     }
     AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
-    bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
-    String from(void) { return _from; }
-    String toUrl(void) { return _toUrl; }
-    String params(void) { return _params; }
+    bool filter(AsyncWebServerRequest *request) const { return _filter == NULL || _filter(request); }
+    String from(void) const { return _from; }
+    String toUrl(void) const { return _toUrl; }
+    String params(void) const { return _params; }
 };
 
 /*
@@ -302,12 +298,14 @@ class AsyncWebHandler {
   protected:
     ArRequestFilterFunction _filter;
   public:
-    AsyncWebHandler* next;
-    AsyncWebHandler(): next(NULL){}
+    AsyncWebHandler(){}
     AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
-    virtual bool canHandle(AsyncWebServerRequest *request){ return false; }
+    virtual bool canHandle(AsyncWebServerRequest *request) const {
+      Serial.println(__PRETTY_FUNCTION__);
+      return false;
+    }
     virtual void handleRequest(AsyncWebServerRequest *request){}
     virtual void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
     virtual void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){}
@@ -324,7 +322,7 @@ typedef enum {
 class AsyncWebServerResponse {
   protected:
     int _code;
-    AsyncWebHeader *_headers;
+    ListArray<AsyncWebHeader *> _headers;
     String _contentType;
     size_t _contentLength;
     bool _sendContentLength;
@@ -344,10 +342,10 @@ class AsyncWebServerResponse {
     virtual void setContentType(String type);
     virtual void addHeader(String name, String value);
     virtual String _assembleHead(uint8_t version);
-    virtual bool _started();
-    virtual bool _finished();
-    virtual bool _failed();
-    virtual bool _sourceValid();
+    virtual bool _started() const;
+    virtual bool _finished() const;
+    virtual bool _failed() const;
+    virtual bool _sourceValid() const;
     virtual void _respond(AsyncWebServerRequest *request);
     virtual size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
 };
@@ -363,8 +361,8 @@ typedef std::function<void(AsyncWebServerRequest *request, uint8_t *data, size_t
 class AsyncWebServer {
   protected:
     AsyncServer _server;
-    AsyncWebRewrite* _rewrites;
-    AsyncWebHandler* _handlers;
+    ListArray<AsyncWebRewrite*> _rewrites;
+    ListArray<AsyncWebHandler*> _handlers;
     AsyncWebHandler* _catchAllHandler;
 
   public:

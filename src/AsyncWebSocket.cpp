@@ -133,13 +133,12 @@ class AsyncWebSocketControl {
     bool _mask;
     bool _finished;
   public:
-    AsyncWebSocketControl * next;
     AsyncWebSocketControl(uint8_t opcode, uint8_t *data=NULL, size_t len=0, bool mask=false)
       :_opcode(opcode)
       ,_len(len)
       ,_mask(len && mask)
       ,_finished(false)
-      ,next(NULL){
+      {
       if(data == NULL)
         _len = 0;
       if(_len){
@@ -239,13 +238,14 @@ class AsyncWebSocketBasicMessage: public AsyncWebSocketMessage {
  const char * AWSC_PING_PAYLOAD = "ESPAsyncWebServer-PING";
  const size_t AWSC_PING_PAYLOAD_LEN = 22;
 
-AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server){
+AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server)
+  : _controlQueue(ListArray<AsyncWebSocketControl *>([](AsyncWebSocketControl *c){ delete  c; }))
+  , _messageQueue(ListArray<AsyncWebSocketMessage *>([](AsyncWebSocketMessage *m){ delete  m; }))
+{
   _client = request->client();
   _server = server;
   _clientId = _server->_getNextId();
   _status = WS_CONNECTED;
-  _controlQueue = NULL;
-  _messageQueue = NULL;
   _pstate = 0;
   _lastMessageTime = millis();
   _keepAlivePeriod = 0;
@@ -263,61 +263,50 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
 }
 
 AsyncWebSocketClient::~AsyncWebSocketClient(){
-  while(_messageQueue != NULL){
-    AsyncWebSocketMessage * m = _messageQueue;
-    _messageQueue = _messageQueue->next;
-    delete(m);
-  }
-  while(_controlQueue != NULL){
-    AsyncWebSocketControl * c = _controlQueue;
-    _controlQueue = _controlQueue->next;
-    delete(c);
-  }
+  _messageQueue.free();
+  _controlQueue.free();
   _server->_handleEvent(this, WS_EVT_DISCONNECT, NULL, NULL, 0);
 }
 
 void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
   _lastMessageTime = millis();
-  if(_controlQueue != NULL){
-    AsyncWebSocketControl *controlMessage = _controlQueue;
-    if(controlMessage->finished()){
-      _controlQueue = _controlQueue->next;
-      len -= controlMessage->len();
-      if(_status == WS_DISCONNECTING && controlMessage->opcode() == WS_DISCONNECT){
-        delete controlMessage;
+  if (!_controlQueue.isEmpty()) {
+    auto head = _controlQueue.front();
+    if(head->finished()){
+      len -= head->len();
+      
+      if (_status == WS_DISCONNECTING && head->opcode() == WS_DISCONNECT) {
+        _controlQueue.remove(head);
         _status = WS_DISCONNECTED;
         _client->close(true);
         return;
       }
-      delete controlMessage;
+      _controlQueue.remove(head);
     }
   }
-  if(len && _messageQueue != NULL){
-    _messageQueue->ack(len, time);
+  if(len && !_messageQueue.isEmpty()){
+    _messageQueue.front()->ack(len, time);
   }
   _runQueue();
 }
 
 void AsyncWebSocketClient::_onPoll(){
-  if(_client->canSend() && (_controlQueue != NULL || _messageQueue != NULL)){
+  if(_client->canSend() && (!_controlQueue.isEmpty() || !_messageQueue.isEmpty())){
     _runQueue();
-  } else if(_keepAlivePeriod > 0 && _controlQueue == NULL && _messageQueue == NULL && (millis() - _lastMessageTime) >= _keepAlivePeriod){
+  } else if(_keepAlivePeriod > 0 && _controlQueue.isEmpty() && _messageQueue.isEmpty() && (millis() - _lastMessageTime) >= _keepAlivePeriod){
     ping((uint8_t *)AWSC_PING_PAYLOAD, AWSC_PING_PAYLOAD_LEN);
   }
 }
 
 void AsyncWebSocketClient::_runQueue(){
-  while(_messageQueue != NULL && _messageQueue->finished()){
-    AsyncWebSocketMessage * m = _messageQueue;
-    _messageQueue = _messageQueue->next;
-    delete(m);
+  while(!_messageQueue.isEmpty() && _messageQueue.front()->finished()){
+    _messageQueue.remove(_messageQueue.front());
   }
 
-  if(_controlQueue != NULL && (_messageQueue == NULL || _messageQueue->betweenFrames()) && webSocketSendFrameWindow(_client) > (size_t)(_controlQueue->len() - 1)){
-    AsyncWebSocketControl *control = _controlQueue;
-    control->send(_client);
-  } else if(_messageQueue != NULL && _messageQueue->betweenFrames() && webSocketSendFrameWindow(_client)){
-    _messageQueue->send(_client);
+  if(!_controlQueue.isEmpty() && (!_messageQueue.isEmpty() || _messageQueue.front()->betweenFrames()) && webSocketSendFrameWindow(_client) > (size_t)(_controlQueue.front()->len() - 1)){
+    _controlQueue.front()->send(_client);
+  } else if(!_messageQueue.isEmpty() && _messageQueue.front()->betweenFrames() && webSocketSendFrameWindow(_client)){
+    _messageQueue.front()->send(_client);
   }
 }
 
@@ -328,13 +317,7 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketMessage *dataMessage){
     delete dataMessage;
     return;
   }
-  if(_messageQueue == NULL){
-    _messageQueue = dataMessage;
-  } else {
-    AsyncWebSocketMessage * m = _messageQueue;
-    while(m->next != NULL) m = m->next;
-    m->next = dataMessage;
-  }
+  _messageQueue.add(dataMessage);
   if(_client->canSend())
     _runQueue();
 }
@@ -342,13 +325,8 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketMessage *dataMessage){
 void AsyncWebSocketClient::_queueControl(AsyncWebSocketControl *controlMessage){
   if(controlMessage == NULL)
     return;
-  if(_controlQueue == NULL){
-    _controlQueue = controlMessage;
-  } else {
-    AsyncWebSocketControl * m = _controlQueue;
-    while(m->next != NULL) m = m->next;
-    m->next = controlMessage;
-  }
+
+  _controlQueue.add(controlMessage);
   if(_client->canSend())
     _runQueue();
 }
@@ -606,7 +584,7 @@ uint16_t AsyncWebSocketClient::remotePort() {
 
 AsyncWebSocket::AsyncWebSocket(String url)
   :_url(url)
-  ,_clients(NULL)
+  ,_clients(ListArray<AsyncWebSocketClient *>([](AsyncWebSocketClient *c){ delete c; }))
   ,_cNextId(1)
   ,_enabled(true)
 {
@@ -622,133 +600,98 @@ void AsyncWebSocket::_handleEvent(AsyncWebSocketClient * client, AwsEventType ty
 }
 
 void AsyncWebSocket::_addClient(AsyncWebSocketClient * client){
-  if(_clients == NULL){
-    _clients = client;
-    return;
-  }
-  AsyncWebSocketClient * c = _clients;
-  while(c->next != NULL) c = c->next;
-  c->next = client;
+  _clients.add(client);
 }
 
 void AsyncWebSocket::_handleDisconnect(AsyncWebSocketClient * client){
-  if(_clients == NULL){
-    return;
-  }
-  if(_clients->id() == client->id()){
-    _clients = client->next;
-    delete client;
-    return;
-  }
-  AsyncWebSocketClient * c = _clients;
-  while(c->next != NULL && c->next->id() != client->id()) c = c->next;
-  if(c->next == NULL){
-    return;
-  }
-  c->next = client->next;
-  delete client;
+  
+  _clients.remove_first([=](AsyncWebSocketClient * c){
+    return c->id() == client->id();
+  });
 }
 
-size_t AsyncWebSocket::count(){
-  size_t i = 0;
-  AsyncWebSocketClient * c = _clients;
-  while(c != NULL){
-    if(c->status() == WS_CONNECTED)
-      i++;
-    c = c->next;
-  }
-  return i;
+size_t AsyncWebSocket::count() const {
+  return _clients.length();
 }
 
 AsyncWebSocketClient * AsyncWebSocket::client(uint32_t id){
-  AsyncWebSocketClient * c = _clients;
-  while(c != NULL && c->id() != id)
-    c = c->next;
-  if(c != NULL && c->status() == WS_CONNECTED)
-    return c;
-  return NULL;
+  for (auto &c: _clients) {
+    if (c->id() == id && c->status() == WS_CONNECTED) {
+      return c;
+    }
+  }
+  return nullptr;
 }
 
 
 void AsyncWebSocket::close(uint32_t id, uint16_t code, const char * message){
   AsyncWebSocketClient * c = client(id);
-  if(c != NULL)
+  if(c != nullptr)
     c->close(code, message);
 }
 
 void AsyncWebSocket::closeAll(uint16_t code, const char * message){
-  AsyncWebSocketClient * c = _clients;
-  while(c != NULL){
+  for (auto c: _clients) {
     if(c->status() == WS_CONNECTED)
       c->close(code, message);
-    c = c->next;
   }
 }
 
 void AsyncWebSocket::ping(uint32_t id, uint8_t *data, size_t len){
   AsyncWebSocketClient * c = client(id);
-  if(c != NULL)
+  if(c != nullptr)
     c->ping(data, len);
 }
 
 void AsyncWebSocket::pingAll(uint8_t *data, size_t len){
-  AsyncWebSocketClient * c = _clients;
-  while(c != NULL){
+  for (auto c: _clients) {
     if(c->status() == WS_CONNECTED)
       c->ping(data, len);
-    c = c->next;
   }
-
 }
 
 void AsyncWebSocket::text(uint32_t id, const char * message, size_t len){
   AsyncWebSocketClient * c = client(id);
-  if(c != NULL)
+  if(c != nullptr)
     c->text(message, len);
 }
 
 void AsyncWebSocket::textAll(const char * message, size_t len){
-  AsyncWebSocketClient * c = _clients;
-  while(c != NULL){
+  for (auto c: _clients) {
     if(c->status() == WS_CONNECTED)
       c->text(message, len);
-    c = c->next;
   }
 }
 
 void AsyncWebSocket::binary(uint32_t id, const char * message, size_t len){
   AsyncWebSocketClient * c = client(id);
-  if(c != NULL)
+  if(c != nullptr)
     c->binary(message, len);
 }
 
 void AsyncWebSocket::binaryAll(const char * message, size_t len){
-  AsyncWebSocketClient * c = _clients;
-  while(c != NULL){
+  for (auto c: _clients) {
     if(c->status() == WS_CONNECTED)
       c->binary(message, len);
-    c = c->next;
   }
 }
 
 void AsyncWebSocket::message(uint32_t id, AsyncWebSocketMessage *message){
   AsyncWebSocketClient * c = client(id);
-  if(c != NULL)
+  if(c != nullptr)
     c->message(message);
 }
 
 void AsyncWebSocket::messageAll(AsyncWebSocketMessage *message){
-  AsyncWebSocketClient * c = _clients;
-  while(c != NULL){
+  for (auto c: _clients) {
     if(c->status() == WS_CONNECTED)
       c->message(message);
-    c = c->next;
   }
 }
 
 size_t AsyncWebSocket::printf(uint32_t id, const char *format, ...){
   AsyncWebSocketClient * c = client(id);
-  if(c != NULL){
+  if(c != nullptr){
     va_list arg;
     va_start(arg, format);
     size_t len = c->printf(format, arg);
@@ -854,11 +797,9 @@ void AsyncWebSocket::textAll(const String &message){
   textAll(message.c_str(), message.length());
 }
 void AsyncWebSocket::textAll(const __FlashStringHelper *message){
-  AsyncWebSocketClient * c = _clients;
-  while(c != NULL){
+  for (auto c: _clients) {
     if(c->status() == WS_CONNECTED)
       c->text(message);
-    c = c->next;
   }
 }
 void AsyncWebSocket::binary(uint32_t id, const char * message){
@@ -891,11 +832,9 @@ void AsyncWebSocket::binaryAll(const String &message){
   binaryAll(message.c_str(), message.length());
 }
 void AsyncWebSocket::binaryAll(const __FlashStringHelper *message, size_t len){
-  AsyncWebSocketClient * c = _clients;
-  while(c != NULL){
+  for (auto c: _clients) {
     if(c->status() == WS_CONNECTED)
       c-> binary(message, len);
-    c = c->next;
   }
  }
 
@@ -909,6 +848,7 @@ const char * WS_STR_ACCEPT = "Sec-WebSocket-Accept";
 const char * WS_STR_UUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 bool AsyncWebSocket::canHandle(AsyncWebServerRequest *request){
+  Serial.printf("%s %s %s",__PRETTY_FUNCTION__, request->methodToString(), request->url().c_str());
   if(!_enabled)
     return false;
 
@@ -945,7 +885,6 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request){
   }
   request->send(response);
 }
-
 
 /*
  * Response to Web Socket request - sends the authorization and detaches the TCP Client from the web server

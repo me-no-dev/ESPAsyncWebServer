@@ -22,7 +22,15 @@
 #include "WebHandlerImpl.h"
 
 
-AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _rewrites(0), _handlers(0){
+AsyncWebServer::AsyncWebServer(uint16_t port)
+  : _server(port)
+  , _rewrites(ListArray<AsyncWebRewrite*>([](AsyncWebRewrite* r){
+    Serial.println(__PRETTY_FUNCTION__);
+    delete r; }))
+  , _handlers(ListArray<AsyncWebHandler*>([](AsyncWebHandler* h){
+    Serial.println(__PRETTY_FUNCTION__);
+    delete h; }))
+{
   _catchAllHandler = new AsyncCallbackWebHandler();
   if(_catchAllHandler == NULL)
     return;
@@ -45,32 +53,11 @@ AsyncWebServer::~AsyncWebServer(){
 }
 
 AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
-  if (_rewrites == NULL){
-    _rewrites = rewrite;
-  } else {
-    AsyncWebRewrite *r = _rewrites;
-    while(r->next != NULL) r = r->next;
-    r->next = rewrite;
-  }
-  return *rewrite;
+  return *_rewrites.add(rewrite);
 }
 
 bool AsyncWebServer::removeRewrite(AsyncWebRewrite *rewrite){
-  if(rewrite == _rewrites){
-    _rewrites = _rewrites->next;
-    return true;
-  }
-  AsyncWebRewrite *r = _rewrites;
-  while(r != NULL){
-    if(rewrite == r->next){
-      AsyncWebRewrite *d = r->next;
-      r->next = d->next;
-      delete d;
-      return true;
-    }
-    r = r->next;
-  }
-  return false;
+  return _rewrites.remove(rewrite);
 }
 
 AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
@@ -78,32 +65,11 @@ AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
 }
 
 AsyncWebHandler& AsyncWebServer::addHandler(AsyncWebHandler* handler){
-  if(_handlers == NULL){
-    _handlers = handler;
-  } else {
-    AsyncWebHandler* h = _handlers;
-    while(h->next != NULL) h = h->next;
-    h->next = handler;
-  }
-  return *handler;
+  return *_handlers.add(handler);
 }
 
 bool AsyncWebServer::removeHandler(AsyncWebHandler *handler){
-  if(handler == _handlers){
-    _handlers = _handlers->next;
-    return true;
-  }
-  AsyncWebHandler *h = _handlers;
-  while(h != NULL){
-    if(handler == h->next){
-      AsyncWebHandler *d = h->next;
-      h->next = d->next;
-      delete d;
-      return true;
-    }
-    h = h->next;
-  }
-  return false;
+  return _handlers.remove(handler);
 }
 
 void AsyncWebServer::begin(){
@@ -125,27 +91,38 @@ void AsyncWebServer::_handleDisconnect(AsyncWebServerRequest *request){
 }
 
 void AsyncWebServer::_rewriteRequest(AsyncWebServerRequest *request){
-  AsyncWebRewrite *r = _rewrites;
-  while(r){
-    if (r->from() == request->_url && r->filter(request)){
+  Serial.printf(" %s  rewrites(%d) \n",__PRETTY_FUNCTION__, _rewrites.length());
+  for (const auto& r: _rewrites) {
+    if (r->from() == request->_url && r->filter(request)) {
+      Serial.println("found rewrite");
       request->_url = r->toUrl();
       request->_addGetParams(r->params());
     }
-    r = r->next;
   }
 }
 
 void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
-  if(_handlers){
-    AsyncWebHandler* h = _handlers;
-    while(h){
-      if (h->filter(request) && h->canHandle(request)){
-        request->setHandler(h);
-        return;
-      }
-      h = h->next;
+  
+  Serial.printf("\ntry to handle request %s handlers\n", request->url().c_str());
+  Serial.println(" -Headers:");
+  for (size_t i = 0; i < request->params(); ++i) {
+    Serial.printf("   %s %s\n", request->getParam(i)->name().c_str(), request->getParam(i)->value().c_str());
+  }
+  
+  Serial.println(" -Params:");
+  for (size_t i = 0; i < request->headers(); ++i) {
+    Serial.printf("   %s", request->getHeader(i)->toString().c_str());
+  }
+  
+  for(const auto& h : _handlers){
+    
+    if (h->filter(request) && h->canHandle(request)) {
+      request->setHandler(h);
+      return;
     }
   }
+  
+  Serial.println("Not found any handlers. General will be used\n");
   request->addInterestingHeader("ANY");
   request->setHandler(_catchAllHandler);
 }
@@ -208,19 +185,9 @@ void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
 }
 
 void AsyncWebServer::reset(){
-  while(_rewrites != NULL){
-    AsyncWebRewrite *r = _rewrites;
-    _rewrites = r->next;
-    delete r;
-  }
-  _rewrites = NULL;
-  
-  while(_handlers != NULL){
-    AsyncWebHandler *h = _handlers;
-    _handlers = h->next;
-    delete h;
-  }
-  _handlers = NULL;
+  Serial.println(__PRETTY_FUNCTION__);
+  _rewrites.free();
+  _handlers.free();
   
   if (_catchAllHandler != NULL){
     ((AsyncCallbackWebHandler*)_catchAllHandler)->onRequest(NULL);

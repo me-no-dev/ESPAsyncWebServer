@@ -35,7 +35,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _server(s)
   , _handler(NULL)
   , _response(NULL)
-  , _interestingHeaders(new StringArray())
+  , _interestingHeaders()
   , _temp()
   , _parseState(0)
   , _version(0)
@@ -51,8 +51,8 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _expectingContinue(false)
   , _contentLength(0)
   , _parsedLength(0)
-  , _headers(NULL)
-  , _params(NULL)
+  , _headers(ListArray<AsyncWebHeader *>([](AsyncWebHeader *h){ delete h; }))
+  , _params(ListArray<AsyncWebParameter *>([](AsyncWebParameter *p){ delete p; }))
   , _multiParseState(0)
   , _boundaryPosition(0)
   , _itemStartIndex(0)
@@ -76,20 +76,11 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
 }
 
 AsyncWebServerRequest::~AsyncWebServerRequest(){
-  while(_headers != NULL){
-    AsyncWebHeader *h = _headers;
-    _headers = h->next;
-    delete h;
-  }
+  _headers.free();
 
-  while(_params != NULL){
-    AsyncWebParameter *p = _params;
-    _params = p->next;
-    delete p;
-  }
+  _params.free();
 
-  _interestingHeaders->free();
-  delete _interestingHeaders;
+  _interestingHeaders.free();
 
   if(_response != NULL){
     delete _response;
@@ -199,15 +190,7 @@ void AsyncWebServerRequest::_onDisconnect(){
 }
 
 void AsyncWebServerRequest::_addParam(AsyncWebParameter *p){
-  if(p == NULL)
-    return;
-  if(_params == NULL)
-    _params = p;
-  else {
-    AsyncWebParameter *ps = _params;
-    while(ps->next != NULL) ps = ps->next;
-    ps->next = p;
-  }
+  _params.add(p);
 }
 
 void AsyncWebServerRequest::_addGetParams(String params){
@@ -294,15 +277,8 @@ bool AsyncWebServerRequest::_parseReqHeader(){
         _authorization = value.substring(7);
       }
     } else {
-      if(_interestingHeaders->containsIgnoreCase(name) || _interestingHeaders->containsIgnoreCase("ANY")){
-        AsyncWebHeader *h = new AsyncWebHeader(name, value);
-        if(_headers == NULL)
-          _headers = h;
-        else {
-          AsyncWebHeader *hs = _headers;
-          while(hs->next != NULL) hs = hs->next;
-          hs->next = h;
-        }
+      if(_interestingHeaders.containsIgnoreCase(name) || _interestingHeaders.containsIgnoreCase("ANY")){
+        _headers.add(new AsyncWebHeader(name, value));
       }
     }
   }
@@ -512,6 +488,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
 
 void AsyncWebServerRequest::_parseLine(){
   if(_parseState == PARSE_REQ_START){
+    Serial.printf("%s %s", __PRETTY_FUNCTION__, _temp.c_str());
     if(!_temp.length()){
       _parseState = PARSE_REQ_FAIL;
       _client->close();
@@ -541,89 +518,61 @@ void AsyncWebServerRequest::_parseLine(){
   }
 }
 
-
-int AsyncWebServerRequest::headers(){
-  int i = 0;
-  AsyncWebHeader* h = _headers;
-  while(h != NULL){
-    i++; h = h->next;
-  }
-  return i;
+size_t AsyncWebServerRequest::headers() const{
+  _headers.length();
 }
 
-bool AsyncWebServerRequest::hasHeader(String name){
-  AsyncWebHeader* h = _headers;
-  while(h != NULL){
-    if(h->name().equalsIgnoreCase(name))
+bool AsyncWebServerRequest::hasHeader(String name) const {
+  for (const auto& h: _headers) {
+    if (h->name().equalsIgnoreCase(name)) {
       return true;
-    h = h->next;
+    }
   }
   return false;
 }
 
-AsyncWebHeader* AsyncWebServerRequest::getHeader(String name){
-  AsyncWebHeader* h = _headers;
-  while(h != NULL){
-    if(h->name().equalsIgnoreCase(name))
+AsyncWebHeader* AsyncWebServerRequest::getHeader(String name) const {
+  for (const auto& h: _headers) {
+    if (h->name().equalsIgnoreCase(name)) {
       return h;
-    h = h->next;
+    }
   }
-  return NULL;
+  return nullptr;
 }
 
-AsyncWebHeader* AsyncWebServerRequest::getHeader(int num){
-  int i = 0;
-  AsyncWebHeader* h = _headers;
-  while(h != NULL){
-    if(num == i++)
-      return h;
-    h = h->next;
-  }
-  return NULL;
+AsyncWebHeader* AsyncWebServerRequest::getHeader(size_t num) const {
+  return _headers.get_nth(num);
 }
 
-int AsyncWebServerRequest::params(){
-  int i = 0;
-  AsyncWebParameter* h = _params;
-  while(h != NULL){
-    i++; h = h->next;
-  }
-  return i;
+size_t AsyncWebServerRequest::params() const {
+  return _params.length();
 }
 
-bool AsyncWebServerRequest::hasParam(String name, bool post, bool file){
-  AsyncWebParameter* h = _params;
-  while(h != NULL){
-    if(h->name() == name && h->isPost() == post && h->isFile() == file)
+bool AsyncWebServerRequest::hasParam(String name, bool post, bool file) const {
+  for (const auto& p: _params) {
+    if (p->name() == name && p->isPost() == post && p->isFile() == file) {
       return true;
-    h = h->next;
+    }
   }
   return false;
 }
 
-AsyncWebParameter* AsyncWebServerRequest::getParam(String name, bool post, bool file){
-  AsyncWebParameter* h = _params;
-  while(h != NULL){
-    if(h->name() == name && h->isPost() == post && h->isFile() == file)
-      return h;
-    h = h->next;
+AsyncWebParameter* AsyncWebServerRequest::getParam(String name, bool post, bool file) const {
+  for (const auto& p: _params) {
+    if (p->name() == name && p->isPost() == post && p->isFile() == file) {
+      return p;
+    }
   }
-  return NULL;
+  return nullptr;
 }
 
-AsyncWebParameter* AsyncWebServerRequest::getParam(int num){
-  int i = 0;
-  AsyncWebParameter* h = _params;
-  while(h != NULL){
-    if(num == i++)
-      return h;
-    h = h->next;
-  }
-  return NULL;
+AsyncWebParameter* AsyncWebServerRequest::getParam(size_t num) const {
+  return _params.get_nth(num);
 }
 
 void AsyncWebServerRequest::addInterestingHeader(String name){
-  if(!_interestingHeaders->containsIgnoreCase(name)) _interestingHeaders->add(name);
+  if(!_interestingHeaders.containsIgnoreCase(name))
+    _interestingHeaders.add(name);
 }
 
 void AsyncWebServerRequest::send(AsyncWebServerResponse *response){
@@ -777,61 +726,49 @@ void AsyncWebServerRequest::requestAuthentication(const char * realm, bool isDig
   send(r);
 }
 
-bool AsyncWebServerRequest::hasArg(const char* name){
-  AsyncWebParameter* h = _params;
-  while(h != NULL){
-    if(h->name() == String(name))
+bool AsyncWebServerRequest::hasArg(const char* name) const {
+  for (const auto& arg: _params) {
+    if (arg->name() == name) {
       return true;
-    h = h->next;
+    }
   }
   return false;
 }
 
-String AsyncWebServerRequest::arg(const char* name){
-  AsyncWebParameter* h = _params;
-  while(h != NULL){
-    if(h->name() == String(name))
-      return h->value();
-    h = h->next;
+String AsyncWebServerRequest::arg(String name) const {
+  for (const auto& arg: _params) {
+    if (arg->name() == name) {
+      return arg->value();
+    }
   }
   return String();
 }
 
-String AsyncWebServerRequest::arg(int i){
+String AsyncWebServerRequest::arg(size_t i) const {
   return getParam(i)->value();
 }
 
-String AsyncWebServerRequest::argName(int i){
+String AsyncWebServerRequest::argName(size_t i) const {
   return getParam(i)->name();
 }
 
-String AsyncWebServerRequest::header(const char* name){
+String AsyncWebServerRequest::header(const char* name) const {
   AsyncWebHeader* h = getHeader(String(name));
-  if(h)
-    return h->value();
-  return String();
+  return h ? h->value() : String();
 }
 
-String AsyncWebServerRequest::header(int i){
+String AsyncWebServerRequest::header(size_t i) const {
   AsyncWebHeader* h = getHeader(i);
-  if(h)
-    return h->value();
-  return String();
+  return h ?  h->value() : String();
 }
 
-String AsyncWebServerRequest::headerName(int i){
+String AsyncWebServerRequest::headerName(size_t i) const {
   AsyncWebHeader* h = getHeader(i);
-  if(h)
-    return h->name();
-  return String();
-}
-
-bool AsyncWebServerRequest::hasHeader(const char* name){
-  return hasHeader(String(name));
+  return h ? h->name() : String();
 }
 
 
-String AsyncWebServerRequest::urlDecode(const String& text){
+String AsyncWebServerRequest::urlDecode(String text) const {
   char temp[] = "0x00";
   unsigned int len = text.length();
   unsigned int i = 0;
@@ -855,7 +792,7 @@ String AsyncWebServerRequest::urlDecode(const String& text){
 }
 
 
-const char * AsyncWebServerRequest::methodToString(){
+const char * AsyncWebServerRequest::methodToString() const {
   if(_method == HTTP_ANY) return "ANY";
   else if(_method & HTTP_GET) return "GET";
   else if(_method & HTTP_POST) return "POST";

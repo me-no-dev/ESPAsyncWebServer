@@ -52,8 +52,7 @@ class AsyncWebSocketMessage {
     bool _mask;
     AwsMessageStatus _status;
   public:
-    AsyncWebSocketMessage * next;
-    AsyncWebSocketMessage():_opcode(WS_TEXT),_mask(false),_status(WS_MSG_ERROR),next(NULL){}
+    AsyncWebSocketMessage():_opcode(WS_TEXT),_mask(false),_status(WS_MSG_ERROR){}
     virtual ~AsyncWebSocketMessage(){}
     virtual void ack(size_t len, uint32_t time){}
     virtual size_t send(AsyncClient *client){ return 0; }
@@ -68,8 +67,8 @@ class AsyncWebSocketClient {
     uint32_t _clientId;
     AwsClientStatus _status;
 
-    AsyncWebSocketControl * _controlQueue;
-    AsyncWebSocketMessage * _messageQueue;
+    ListArray<AsyncWebSocketControl *> _controlQueue;
+    ListArray<AsyncWebSocketMessage *> _messageQueue;
 
     uint8_t _pstate;
     AwsFrameInfo _pinfo;
@@ -142,18 +141,18 @@ typedef std::function<void(AsyncWebSocket * server, AsyncWebSocketClient * clien
 class AsyncWebSocket: public AsyncWebHandler {
   private:
     String _url;
-    AsyncWebSocketClient * _clients;
+    ListArray<AsyncWebSocketClient *> _clients;
     uint32_t _cNextId;
     AwsEventHandler _eventHandler;
     bool _enabled;
   public:
     AsyncWebSocket(String url);
     ~AsyncWebSocket();
-    const char * url(){ return _url.c_str(); }
+    const char * url() const { return _url.c_str(); }
     void enable(bool e){ _enabled = e; }
-    bool enabled() { return _enabled; }
+    bool enabled() const { return _enabled; }
 
-    size_t count();
+    size_t count() const;
     AsyncWebSocketClient * client(uint32_t id);
     bool hasClient(uint32_t id){ return client(id) != NULL; }
 

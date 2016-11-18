@@ -81,6 +81,7 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(){
 #endif
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
 {
+  Serial.println(__PRETTY_FUNCTION__);
   if (request->method() == HTTP_GET &&
       request->url().startsWith(_uri) &&
       _getFile(request)) {

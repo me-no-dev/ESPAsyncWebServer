@@ -73,7 +73,7 @@ const char* AsyncWebServerResponse::_responseCodeToString(int code) {
 
 AsyncWebServerResponse::AsyncWebServerResponse()
   : _code(0)
-  , _headers(NULL)
+  , _headers(ListArray<AsyncWebHeader *>([](AsyncWebHeader *h){ delete h; }))
   , _contentType()
   , _contentLength(0)
   , _sendContentLength(true)
@@ -86,11 +86,7 @@ AsyncWebServerResponse::AsyncWebServerResponse()
 {}
 
 AsyncWebServerResponse::~AsyncWebServerResponse(){
-  while(_headers != NULL){
-    AsyncWebHeader *h = _headers;
-    _headers = h->next;
-    delete h;
-  }
+  _headers.free();
 }
 
 void AsyncWebServerResponse::setCode(int code){
@@ -109,14 +105,7 @@ void AsyncWebServerResponse::setContentType(String type){
 }
 
 void AsyncWebServerResponse::addHeader(String name, String value){
-  AsyncWebHeader *header = new AsyncWebHeader(name, value);
-  if(_headers == NULL){
-    _headers = header;
-  } else {
-    AsyncWebHeader *h = _headers;
-    while(h->next != NULL) h = h->next;
-    h->next = header;
-  }
+  _headers.add(new AsyncWebHeader(name, value));
 }
 
 String AsyncWebServerResponse::_assembleHead(uint8_t version){
@@ -141,23 +130,21 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version){
     out.concat(buf);
   }
 
-  AsyncWebHeader *h;
-  while(_headers != NULL){
-    h = _headers;
-    _headers = _headers->next;
-    snprintf(buf, bufSize, "%s: %s\r\n", h->name().c_str(), h->value().c_str());
+  for (const auto& header: _headers) {
+    snprintf(buf, bufSize, "%s: %s\r\n", header->name().c_str(), header->value().c_str());
     out.concat(buf);
-    delete h;
   }
+  _headers.free();
+
   out.concat("\r\n");
   _headLength = out.length();
   return out;
 }
 
-bool AsyncWebServerResponse::_started(){ return _state > RESPONSE_SETUP; }
-bool AsyncWebServerResponse::_finished(){ return _state > RESPONSE_WAIT_ACK; }
-bool AsyncWebServerResponse::_failed(){ return _state == RESPONSE_FAILED; }
-bool AsyncWebServerResponse::_sourceValid(){ return false; }
+bool AsyncWebServerResponse::_started() const { return _state > RESPONSE_SETUP; }
+bool AsyncWebServerResponse::_finished() const { return _state > RESPONSE_WAIT_ACK; }
+bool AsyncWebServerResponse::_failed() const { return _state == RESPONSE_FAILED; }
+bool AsyncWebServerResponse::_sourceValid() const { return false; }
 void AsyncWebServerResponse::_respond(AsyncWebServerRequest *request){ _state = RESPONSE_END; request->client()->close(); }
 size_t AsyncWebServerResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time){ return 0; }
 
