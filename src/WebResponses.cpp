@@ -130,7 +130,7 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version){
     out.concat(buf);
   }
 
-  for (const auto& header: _headers) {
+  for(const auto& header: _headers){
     snprintf(buf, bufSize, "%s: %s\r\n", header->name().c_str(), header->value().c_str());
     out.concat(buf);
   }

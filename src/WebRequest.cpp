@@ -35,7 +35,6 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _server(s)
   , _handler(NULL)
   , _response(NULL)
-  , _interestingHeaders()
   , _temp()
   , _parseState(0)
   , _version(0)
@@ -65,7 +64,6 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _itemBufferIndex(0)
   , _itemIsFile(false)
   , _tempObject(NULL)
-  , next(NULL)
 {
   c->onError([](void *r, AsyncClient* c, int8_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
   c->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onAck(len, time); }, this);
@@ -488,7 +486,6 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
 
 void AsyncWebServerRequest::_parseLine(){
   if(_parseState == PARSE_REQ_START){
-    Serial.printf("%s %s", __PRETTY_FUNCTION__, _temp.c_str());
     if(!_temp.length()){
       _parseState = PARSE_REQ_FAIL;
       _client->close();
@@ -519,12 +516,12 @@ void AsyncWebServerRequest::_parseLine(){
 }
 
 size_t AsyncWebServerRequest::headers() const{
-  _headers.length();
+  _headers.count();
 }
 
 bool AsyncWebServerRequest::hasHeader(String name) const {
-  for (const auto& h: _headers) {
-    if (h->name().equalsIgnoreCase(name)) {
+  for(const auto& h: _headers){
+    if(h->name().equalsIgnoreCase(name)){
       return true;
     }
   }
@@ -532,8 +529,8 @@ bool AsyncWebServerRequest::hasHeader(String name) const {
 }
 
 AsyncWebHeader* AsyncWebServerRequest::getHeader(String name) const {
-  for (const auto& h: _headers) {
-    if (h->name().equalsIgnoreCase(name)) {
+  for(const auto& h: _headers){
+    if(h->name().equalsIgnoreCase(name)){
       return h;
     }
   }
@@ -541,16 +538,16 @@ AsyncWebHeader* AsyncWebServerRequest::getHeader(String name) const {
 }
 
 AsyncWebHeader* AsyncWebServerRequest::getHeader(size_t num) const {
-  return _headers.get_nth(num);
+  return _headers.nth(num);
 }
 
 size_t AsyncWebServerRequest::params() const {
-  return _params.length();
+  return _params.count();
 }
 
 bool AsyncWebServerRequest::hasParam(String name, bool post, bool file) const {
-  for (const auto& p: _params) {
-    if (p->name() == name && p->isPost() == post && p->isFile() == file) {
+  for(const auto& p: _params){
+    if(p->name() == name && p->isPost() == post && p->isFile() == file){
       return true;
     }
   }
@@ -558,8 +555,8 @@ bool AsyncWebServerRequest::hasParam(String name, bool post, bool file) const {
 }
 
 AsyncWebParameter* AsyncWebServerRequest::getParam(String name, bool post, bool file) const {
-  for (const auto& p: _params) {
-    if (p->name() == name && p->isPost() == post && p->isFile() == file) {
+  for(const auto& p: _params){
+    if(p->name() == name && p->isPost() == post && p->isFile() == file){
       return p;
     }
   }
@@ -567,7 +564,7 @@ AsyncWebParameter* AsyncWebServerRequest::getParam(String name, bool post, bool 
 }
 
 AsyncWebParameter* AsyncWebServerRequest::getParam(size_t num) const {
-  return _params.get_nth(num);
+  return _params.nth(num);
 }
 
 void AsyncWebServerRequest::addInterestingHeader(String name){
@@ -727,8 +724,8 @@ void AsyncWebServerRequest::requestAuthentication(const char * realm, bool isDig
 }
 
 bool AsyncWebServerRequest::hasArg(const char* name) const {
-  for (const auto& arg: _params) {
-    if (arg->name() == name) {
+  for(const auto& arg: _params){
+    if(arg->name() == name){
       return true;
     }
   }
@@ -736,8 +733,8 @@ bool AsyncWebServerRequest::hasArg(const char* name) const {
 }
 
 String AsyncWebServerRequest::arg(String name) const {
-  for (const auto& arg: _params) {
-    if (arg->name() == name) {
+  for(const auto& arg: _params){
+    if(arg->name() == name){
       return arg->value();
     }
   }

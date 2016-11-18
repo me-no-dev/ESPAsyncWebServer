@@ -95,8 +95,6 @@ class AsyncWebHeader {
     String _value;
 
   public:
-    AsyncWebHeader *next;
-
     AsyncWebHeader(String name, String value): _name(name), _value(value){}
     AsyncWebHeader(String data): _name(), _value(){
       if(!data) return;
@@ -181,7 +179,6 @@ class AsyncWebServerRequest {
   public:
     File _tempFile;
     void *_tempObject;
-    AsyncWebServerRequest *next;
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
     ~AsyncWebServerRequest();
@@ -302,8 +299,7 @@ class AsyncWebHandler {
     AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
-    virtual bool canHandle(AsyncWebServerRequest *request) const {
-      Serial.println(__PRETTY_FUNCTION__);
+    virtual bool canHandle(AsyncWebServerRequest *request){
       return false;
     }
     virtual void handleRequest(AsyncWebServerRequest *request){}
@@ -378,7 +374,6 @@ class AsyncWebServer {
 
     AsyncWebRewrite& addRewrite(AsyncWebRewrite* rewrite);
     bool removeRewrite(AsyncWebRewrite* rewrite);
-  
     AsyncWebRewrite& rewrite(const char* from, const char* to);
 
     AsyncWebHandler& addHandler(AsyncWebHandler* handler);

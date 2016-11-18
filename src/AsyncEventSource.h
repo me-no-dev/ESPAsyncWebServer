@@ -36,7 +36,6 @@ class AsyncEventSourceClient {
     uint32_t _lastId;
 
   public:
-    AsyncEventSourceClient * next;
 
     AsyncEventSourceClient(AsyncWebServerRequest *request, AsyncEventSource *server);
     ~AsyncEventSourceClient();
@@ -71,8 +70,8 @@ class AsyncEventSource: public AsyncWebHandler {
     //system callbacks (do not call)
     void _addClient(AsyncEventSourceClient * client);
     void _handleDisconnect(AsyncEventSourceClient * client);
-    bool canHandle(AsyncWebServerRequest *request);
-    void handleRequest(AsyncWebServerRequest *request);
+    virtual bool canHandle(AsyncWebServerRequest *request) override final;
+    virtual void handleRequest(AsyncWebServerRequest *request) override final;
 };
 
 class AsyncEventSourceResponse: public AsyncWebServerResponse {

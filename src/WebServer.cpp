@@ -24,12 +24,8 @@
 
 AsyncWebServer::AsyncWebServer(uint16_t port)
   : _server(port)
-  , _rewrites(ListArray<AsyncWebRewrite*>([](AsyncWebRewrite* r){
-    Serial.println(__PRETTY_FUNCTION__);
-    delete r; }))
-  , _handlers(ListArray<AsyncWebHandler*>([](AsyncWebHandler* h){
-    Serial.println(__PRETTY_FUNCTION__);
-    delete h; }))
+  , _rewrites(ListArray<AsyncWebRewrite*>([](AsyncWebRewrite* r){ delete r; }))
+  , _handlers(ListArray<AsyncWebHandler*>([](AsyncWebHandler* h){ delete h; }))
 {
   _catchAllHandler = new AsyncCallbackWebHandler();
   if(_catchAllHandler == NULL)
@@ -91,10 +87,8 @@ void AsyncWebServer::_handleDisconnect(AsyncWebServerRequest *request){
 }
 
 void AsyncWebServer::_rewriteRequest(AsyncWebServerRequest *request){
-  Serial.printf(" %s  rewrites(%d) \n",__PRETTY_FUNCTION__, _rewrites.length());
-  for (const auto& r: _rewrites) {
-    if (r->from() == request->_url && r->filter(request)) {
-      Serial.println("found rewrite");
+  for(const auto& r: _rewrites){
+    if (r->from() == request->_url && r->filter(request)){
       request->_url = r->toUrl();
       request->_addGetParams(r->params());
     }
@@ -102,27 +96,13 @@ void AsyncWebServer::_rewriteRequest(AsyncWebServerRequest *request){
 }
 
 void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
-  
-  Serial.printf("\ntry to handle request %s handlers\n", request->url().c_str());
-  Serial.println(" -Headers:");
-  for (size_t i = 0; i < request->params(); ++i) {
-    Serial.printf("   %s %s\n", request->getParam(i)->name().c_str(), request->getParam(i)->value().c_str());
-  }
-  
-  Serial.println(" -Params:");
-  for (size_t i = 0; i < request->headers(); ++i) {
-    Serial.printf("   %s", request->getHeader(i)->toString().c_str());
-  }
-  
-  for(const auto& h : _handlers){
-    
-    if (h->filter(request) && h->canHandle(request)) {
+  for(const auto& h: _handlers){
+    if (h->filter(request) && h->canHandle(request)){
       request->setHandler(h);
       return;
     }
   }
   
-  Serial.println("Not found any handlers. General will be used\n");
   request->addInterestingHeader("ANY");
   request->setHandler(_catchAllHandler);
 }
@@ -185,7 +165,6 @@ void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
 }
 
 void AsyncWebServer::reset(){
-  Serial.println(__PRETTY_FUNCTION__);
   _rewrites.free();
   _handlers.free();
   

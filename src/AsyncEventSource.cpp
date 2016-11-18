@@ -110,7 +110,6 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, A
   _client = request->client();
   _server = server;
   _lastId = 0;
-  next = NULL;
   if(request->hasHeader("Last-Event-ID"))
     _lastId = atoi(request->getHeader("Last-Event-ID")->value().c_str());
     
@@ -217,7 +216,9 @@ void AsyncEventSource::send(const char *message, const char *event, uint32_t id,
 }
 
 size_t AsyncEventSource::count() const {
-  return _clients.length();
+  return _clients.count_if([](AsyncEventSourceClient *c){
+    return c->connected();
+  });
 }
 
 bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){

@@ -66,10 +66,9 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
     ~AsyncJsonResponse() {}
     JsonVariant & getRoot() { return _root; }
     bool _sourceValid() { return _isValid; }
-    size_t setLength() {
+    void setLength() {
       _contentLength = _root.measureLength();
       if (_contentLength) { _isValid = true; }
-      return _contentLength; 
     }
 
     size_t _fillBuffer(uint8_t *data, size_t len){

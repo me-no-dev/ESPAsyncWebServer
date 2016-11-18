@@ -23,7 +23,7 @@
 
 #include "stddef.h"
 #include "WString.h"
-#include <algorithm>
+#include <iterator>
 
 template <typename T>
 class ListArrayNode {
@@ -42,48 +42,31 @@ template <typename T, template<typename> class Item = ListArrayNode>
 class ListArray {
 public:
   typedef Item<T> ItemType;
-  typedef std::function<void(T)> OnItem;
-  typedef std::function<bool(T)> Predicate;
+  typedef std::function<void(const T&)> OnRemove;
+  typedef std::function<bool(const T&)> Predicate;
   
 private:
-  OnItem _onDelete;
   ItemType* _root;
-public:
+  OnRemove _onRemove;
 
-  class Iterator{
-    ItemType* _current;
+  class Iterator : std::iterator<std::input_iterator_tag, const T> {
+    ItemType* _node;
   public:
-    Iterator(ItemType* current = nullptr) : _current(current) {}
-    Iterator(const Iterator& i) : _current(i._current) {}
-    Iterator& operator ++(){ _current = _current->next; return *this;  }
-    bool operator == (const Iterator& i) const { return _current == i._current; }
-    bool operator != (const Iterator& i) const { return _current != i._current; }
-    T& operator * (){ return _current->item(); }
-    T* operator -> (){ return &_current->item(); }
+    Iterator(ItemType* current = nullptr) : _node(current) {}
+    Iterator(const Iterator& i) : _node(i._node) {}
+    Iterator& operator ++() { _node = _node->next; return *this; }
+    bool operator != (const Iterator& i) const { return _node != i._node; }
+    const T& operator * () const { return _node->item(); }
+    const T* operator -> () const { return &_node->item(); }
   };
-  Iterator begin() { return Iterator(_root); }
-  Iterator end() { return Iterator(nullptr); }
   
-  class ConstIterator{
-    ItemType* _current;
-  public:
-    ConstIterator(ItemType* current = nullptr) : _current(current) {}
-    ConstIterator(const ConstIterator& i) : _current(i._current) {}
-    ConstIterator(const Iterator& i) : _current(i._current) {}
-    ConstIterator& operator ++(){ _current = _current->next; return *this;  }
-    bool operator == (const ConstIterator& i) const { return _current == i._current; }
-    bool operator != (const ConstIterator& i) const { return _current != i._current; }
-    const T& operator * () const { return _current->item(); }
-    const T* operator -> () const { return &_current->item(); }
-  };
+public:
+  typedef const Iterator ConstIterator;
   ConstIterator begin() const { return ConstIterator(_root); }
   ConstIterator end() const { return ConstIterator(nullptr); }
   
-  
-  ListArray(OnItem onDelete) : _root(nullptr), _onDelete(onDelete) {}
-  ~ListArray(){
-    free();
-  }
+  ListArray(OnRemove onRemove) : _root(nullptr), _onRemove(onRemove) {}
+  ~ListArray(){}
   
   inline
   T& front() const { return _root->item(); }
@@ -93,50 +76,57 @@ public:
     return _root == nullptr;
   }
   
-  size_t length() const {
+  size_t count() const {
     size_t i = 0;
-    ItemType *it = _root;
-    while(it != nullptr){
+    auto it = _root;
+    while(it){
       i++;
       it = it->next;
     }
     return i;
   }
   
-  bool contains(T t){
-    ItemType *it = _root;
-    while(it != nullptr){
-      if(it->item() == t)
-        return true;
+  size_t count_if(Predicate predicate) const {
+    size_t i = 0;
+    auto it = _root;
+    while(it){
+      if (!predicate){
+        i++;
+      }
+      else if (predicate(it->item())) {
+        i++;
+      }
       it = it->next;
     }
-    return false;
+    return i;
   }
   
-  T get_nth(size_t index) const {
+  const T& nth(size_t N) const {
     size_t i = 0;
-    ItemType *it = _root;
-    while(it != nullptr){
-      if(i++ == index)
+    auto it = _root;
+    while(it){
+      if(i++ == N)
         return it->item();
       it = it->next;
     }
     return T();
   }
   
-  bool remove(T t){
-    ItemType *it = _root;
-    ItemType *pit = _root;
-    while(it != nullptr){
+  bool remove(const T& t){
+    auto it = _root;
+    auto pit = _root;
+    while(it){
       if(it->item() == t){
         if(it == _root){
           _root = _root->next;
         } else {
           pit->next = it->next;
         }
-        if (_onDelete) {
-          _onDelete(it->item());
+        
+        if (_onRemove) {
+          _onRemove(it->item());
         }
+        
         delete it;
         return true;
       }
@@ -147,17 +137,17 @@ public:
   }
   
   bool remove_first(Predicate predicate){
-    ItemType *it = _root;
-    ItemType *pit = _root;
-    while(it != nullptr){
+    auto it = _root;
+    auto pit = _root;
+    while(it){
       if(predicate(it->item())){
         if(it == _root){
           _root = _root->next;
         } else {
           pit->next = it->next;
         }
-        if (_onDelete) {
-          _onDelete(it->item());
+        if (_onRemove) {
+          _onRemove(it->item());
         }
         delete it;
         return true;
@@ -168,7 +158,7 @@ public:
     return false;
   }
   
-  T add(T t){
+  const T& add(const T& t){
     auto it = new ItemType(t);
     if(_root == nullptr){
       _root = it;
@@ -179,13 +169,13 @@ public:
     }
     return t;
   }
-
+  
   void free(){
     while(_root != nullptr){
       auto it = _root;
       _root = _root->next;
-      if (_onDelete) {
-        _onDelete(it->item());
+      if (_onRemove) {
+        _onRemove(it->item());
       }
       delete it;
     }
@@ -194,13 +184,12 @@ public:
 };
 
 
-
 class StringArray : public ListArray<String> {
 public:
   
   StringArray() : ListArray(nullptr) {}
   
-  bool containsIgnoreCase(String str){
+  bool containsIgnoreCase(const String& str){
     for (const auto& s : *this) {
       if (str.equalsIgnoreCase(s)) {
         return true;
