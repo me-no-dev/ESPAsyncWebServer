@@ -516,7 +516,7 @@ void AsyncWebServerRequest::_parseLine(){
 }
 
 size_t AsyncWebServerRequest::headers() const{
-  _headers.count();
+  return _headers.length();
 }
 
 bool AsyncWebServerRequest::hasHeader(const String& name) const {
@@ -542,7 +542,7 @@ AsyncWebHeader* AsyncWebServerRequest::getHeader(size_t num) const {
 }
 
 size_t AsyncWebServerRequest::params() const {
-  return _params.count();
+  return _params.length();
 }
 
 bool AsyncWebServerRequest::hasParam(const String& name, bool post, bool file) const {

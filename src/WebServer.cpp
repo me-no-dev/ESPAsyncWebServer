@@ -49,7 +49,8 @@ AsyncWebServer::~AsyncWebServer(){
 }
 
 AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
-  return *_rewrites.add(rewrite);
+  _rewrites.add(rewrite);
+  return *rewrite;
 }
 
 bool AsyncWebServer::removeRewrite(AsyncWebRewrite *rewrite){
@@ -61,7 +62,8 @@ AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
 }
 
 AsyncWebHandler& AsyncWebServer::addHandler(AsyncWebHandler* handler){
-  return *_handlers.add(handler);
+  _handlers.add(handler);
+  return *handler;
 }
 
 bool AsyncWebServer::removeHandler(AsyncWebHandler *handler){
