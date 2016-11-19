@@ -84,7 +84,7 @@ static String genRandomMD5(){
   return res;
 }
 
-static String stringMD5(String in){
+static String stringMD5(const String& in){
   char * out = (char*)malloc(33);
   if(out == NULL || !getMD5((uint8_t*)(in.c_str()), in.length(), out))
     return "";

@@ -77,9 +77,9 @@ class AsyncWebParameter {
 
   public:
 
-    AsyncWebParameter(String name, String value, bool form=false, bool file=false, size_t size=0): _name(name), _value(value), _size(size), _isForm(form), _isFile(file){}
-    String name() const { return _name; }
-    String value() const { return _value; }
+    AsyncWebParameter(const String& name, const String& value, bool form=false, bool file=false, size_t size=0): _name(name), _value(value), _size(size), _isForm(form), _isFile(file){}
+    const String& name() const { return _name; }
+    const String& value() const { return _value; }
     size_t size() const { return _size; }
     bool isPost() const { return _isForm; }
     bool isFile() const { return _isFile; }
@@ -95,8 +95,8 @@ class AsyncWebHeader {
     String _value;
 
   public:
-    AsyncWebHeader(String name, String value): _name(name), _value(value){}
-    AsyncWebHeader(String data): _name(), _value(){
+    AsyncWebHeader(const String& name, const String& value): _name(name), _value(value){}
+    AsyncWebHeader(const String& data): _name(), _value(){
       if(!data) return;
       int index = data.indexOf(':');
       if (index < 0) return;
@@ -104,9 +104,9 @@ class AsyncWebHeader {
       _value = data.substring(index + 2);
     }
     ~AsyncWebHeader(){}
-    String name() const { return _name; }
-    String value() const { return _value; }
-    String toString() const { return String(_name+": "+_value+"\r\n"); }
+    const String& name() const { return _name; }
+    const String& value() const { return _value; }
+    const String& toString() const { return String(_name+": "+_value+"\r\n"); }
 };
 
 /*
@@ -186,9 +186,9 @@ class AsyncWebServerRequest {
     AsyncClient* client(){ return _client; }
     uint8_t version() const { return _version; }
     WebRequestMethodComposite method() const { return _method; }
-    String url() const { return _url; }
-    String host() const { return _host; }
-    String contentType() const { return _contentType; }
+    const String& url() const { return _url; }
+    const String& host() const { return _host; }
+    const String& contentType() const { return _contentType; }
     size_t contentLength() const { return _contentLength; }
     bool multipart() const { return _isMultipart; }
     const char * methodToString() const;
@@ -237,14 +237,14 @@ class AsyncWebServerRequest {
     AsyncWebParameter* getParam(size_t num) const;
 
     size_t args() const { return params(); }     // get arguments count
-    String arg(const String& name) const;// get request argument value by name
-    String arg(size_t i) const;           // get request argument value by number
-    String argName(size_t i) const;       // get request argument name by number
-    bool hasArg(const char* name) const;      // check if argument exists
+    const String& arg(const String& name) const; // get request argument value by name
+    const String& arg(size_t i) const;           // get request argument value by number
+    const String& argName(size_t i) const;       // get request argument name by number
+    bool hasArg(const char* name) const;         // check if argument exists
 
-    String header(const char* name) const; // get request header value by name
-    String header(size_t i) const;            // get request header value by number
-    String headerName(size_t i) const;        // get request header name by number
+    const String& header(const char* name) const;// get request header value by name
+    const String& header(size_t i) const;        // get request header value by number
+    const String& headerName(size_t i) const;    // get request header name by number
     String urlDecode(const String& text) const;
 };
 
@@ -282,9 +282,9 @@ class AsyncWebRewrite {
     }
     AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request) const { return _filter == NULL || _filter(request); }
-    String from(void) const { return _from; }
-    String toUrl(void) const { return _toUrl; }
-    String params(void) const { return _params; }
+    const String& from(void) const { return _from; }
+    const String& toUrl(void) const { return _toUrl; }
+    const String& params(void) const { return _params; }
 };
 
 /*
@@ -303,7 +303,7 @@ class AsyncWebHandler {
       return false;
     }
     virtual void handleRequest(AsyncWebServerRequest *request){}
-    virtual void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){}
+    virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){}
     virtual void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){}
 };
 

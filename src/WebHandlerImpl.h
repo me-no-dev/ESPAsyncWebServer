@@ -28,7 +28,7 @@
 class AsyncStaticWebHandler: public AsyncWebHandler {
   private:
     bool _getFile(AsyncWebServerRequest *request);
-    bool _fileExists(AsyncWebServerRequest *request, const String path);
+    bool _fileExists(AsyncWebServerRequest *request, const String& path);
     uint8_t _countBits(const uint8_t value) const;
   protected:
     FS _fs;
@@ -92,7 +92,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       else
         request->send(500);
     }
-    virtual void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) override final {
+    virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final {
       if(_onUpload)
         _onUpload(request, filename, index, data, len, final);
     }

@@ -58,7 +58,7 @@ class AsyncEventSource: public AsyncWebHandler {
     LinkedList<AsyncEventSourceClient *> _clients;
     ArEventHandlerFunction _connectcb;
   public:
-    AsyncEventSource(String url);
+    AsyncEventSource(const String& url);
     ~AsyncEventSource();
 
     const char * url() const { return _url.c_str(); }

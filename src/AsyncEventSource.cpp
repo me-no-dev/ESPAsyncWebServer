@@ -160,7 +160,7 @@ void AsyncEventSourceClient::send(const char *message, const char *event, uint32
 
 // Handler
 
-AsyncEventSource::AsyncEventSource(String url)
+AsyncEventSource::AsyncEventSource(const String& url)
   : _url(url)
   , _clients(LinkedList<AsyncEventSourceClient *>([](AsyncEventSourceClient *c){ delete c; }))
   , _connectcb(NULL)

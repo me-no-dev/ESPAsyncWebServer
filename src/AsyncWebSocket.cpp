@@ -579,7 +579,7 @@ uint16_t AsyncWebSocketClient::remotePort() {
  * Async Web Socket - Each separate socket location
  */
 
-AsyncWebSocket::AsyncWebSocket(String url)
+AsyncWebSocket::AsyncWebSocket(const String& url)
   :_url(url)
   ,_clients(LinkedList<AsyncWebSocketClient *>([](AsyncWebSocketClient *c){ delete c; }))
   ,_cNextId(1)
@@ -890,7 +890,7 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request){
  * Authentication code from https://github.com/Links2004/arduinoWebSockets/blob/master/src/WebSockets.cpp#L480
  */
 
-AsyncWebSocketResponse::AsyncWebSocketResponse(String key, AsyncWebSocket *server){
+AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket *server){
   _server = server;
   _code = 101;
   uint8_t * hash = (uint8_t*)malloc(20);

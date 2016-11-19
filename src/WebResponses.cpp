@@ -151,7 +151,7 @@ size_t AsyncWebServerResponse::_ack(AsyncWebServerRequest *request, size_t len, 
 /*
  * String/Code Response
  * */
-AsyncBasicResponse::AsyncBasicResponse(int code, String contentType, String content){
+AsyncBasicResponse::AsyncBasicResponse(int code, const String& contentType, const String& content){
   _code = code;
   _content = content;
   _contentType = contentType;
@@ -352,7 +352,7 @@ void AsyncFileResponse::_setContentType(const String& path){
   else _contentType = "text/plain";
 }
 
-AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bool download){
+AsyncFileResponse::AsyncFileResponse(FS &fs, const String& path, const String& contentType, bool download){
   _code = 200;
   _path = path;
 
@@ -384,7 +384,7 @@ AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bo
 
 }
 
-AsyncFileResponse::AsyncFileResponse(File content, String path, String contentType, bool download){
+AsyncFileResponse::AsyncFileResponse(File content, const String& path, const String& contentType, bool download){
   _code = 200;
   _path = path;
   _content = content;
@@ -419,7 +419,7 @@ size_t AsyncFileResponse::_fillBuffer(uint8_t *data, size_t len){
  * Stream Response
  * */
 
-AsyncStreamResponse::AsyncStreamResponse(Stream &stream, String contentType, size_t len){
+AsyncStreamResponse::AsyncStreamResponse(Stream &stream, const String& contentType, size_t len){
   _code = 200;
   _content = &stream;
   _contentLength = len;
@@ -439,7 +439,7 @@ size_t AsyncStreamResponse::_fillBuffer(uint8_t *data, size_t len){
  * Callback Response
  * */
 
-AsyncCallbackResponse::AsyncCallbackResponse(String contentType, size_t len, AwsResponseFiller callback){
+AsyncCallbackResponse::AsyncCallbackResponse(const String& contentType, size_t len, AwsResponseFiller callback){
   _code = 200;
   _content = callback;
   _contentLength = len;
@@ -456,7 +456,7 @@ size_t AsyncCallbackResponse::_fillBuffer(uint8_t *data, size_t len){
  * Chunked Response
  * */
 
-AsyncChunkedResponse::AsyncChunkedResponse(String contentType, AwsResponseFiller callback){
+AsyncChunkedResponse::AsyncChunkedResponse(const String& contentType, AwsResponseFiller callback){
   _code = 200;
   _content = callback;
   _contentLength = 0;
@@ -473,7 +473,7 @@ size_t AsyncChunkedResponse::_fillBuffer(uint8_t *data, size_t len){
  * Progmem Response
  * */
 
-AsyncProgmemResponse::AsyncProgmemResponse(int code, String contentType, const uint8_t * content, size_t len){
+AsyncProgmemResponse::AsyncProgmemResponse(int code, const String& contentType, const uint8_t * content, size_t len){
   _code = code;
   _content = content;
   _contentType = contentType;
@@ -495,7 +495,7 @@ size_t AsyncProgmemResponse::_fillBuffer(uint8_t *data, size_t len){
  * Response Stream (You can print/write/printf to it, up to the contentLen bytes)
  * */
 
-AsyncResponseStream::AsyncResponseStream(String contentType, size_t bufferSize){
+AsyncResponseStream::AsyncResponseStream(const String& contentType, size_t bufferSize){
   _code = 200;
   _contentLength = 0;
   _contentType = contentType;

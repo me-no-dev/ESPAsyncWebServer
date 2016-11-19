@@ -732,7 +732,7 @@ bool AsyncWebServerRequest::hasArg(const char* name) const {
   return false;
 }
 
-String AsyncWebServerRequest::arg(const String& name) const {
+const String& AsyncWebServerRequest::arg(const String& name) const {
   for(const auto& arg: _params){
     if(arg->name() == name){
       return arg->value();
@@ -741,25 +741,25 @@ String AsyncWebServerRequest::arg(const String& name) const {
   return String();
 }
 
-String AsyncWebServerRequest::arg(size_t i) const {
+const String& AsyncWebServerRequest::arg(size_t i) const {
   return getParam(i)->value();
 }
 
-String AsyncWebServerRequest::argName(size_t i) const {
+const String& AsyncWebServerRequest::argName(size_t i) const {
   return getParam(i)->name();
 }
 
-String AsyncWebServerRequest::header(const char* name) const {
+const String& AsyncWebServerRequest::header(const char* name) const {
   AsyncWebHeader* h = getHeader(String(name));
   return h ? h->value() : String();
 }
 
-String AsyncWebServerRequest::header(size_t i) const {
+const String& AsyncWebServerRequest::header(size_t i) const {
   AsyncWebHeader* h = getHeader(i);
   return h ?  h->value() : String();
 }
 
-String AsyncWebServerRequest::headerName(size_t i) const {
+const String& AsyncWebServerRequest::headerName(size_t i) const {
   AsyncWebHeader* h = getHeader(i);
   return h ? h->name() : String();
 }

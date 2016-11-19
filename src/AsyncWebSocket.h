@@ -144,7 +144,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     AwsEventHandler _eventHandler;
     bool _enabled;
   public:
-    AsyncWebSocket(String url);
+    AsyncWebSocket(const String& url);
     ~AsyncWebSocket();
     const char * url() const { return _url.c_str(); }
     void enable(bool e){ _enabled = e; }
@@ -216,7 +216,7 @@ class AsyncWebSocketResponse: public AsyncWebServerResponse {
     String _content;
     AsyncWebSocket *_server;
   public:
-    AsyncWebSocketResponse(String key, AsyncWebSocket *server);
+    AsyncWebSocketResponse(const String& key, AsyncWebSocket *server);
     void _respond(AsyncWebServerRequest *request);
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
     bool _sourceValid(){ return true; }

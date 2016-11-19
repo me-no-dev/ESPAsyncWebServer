@@ -124,7 +124,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest *request)
   return _fileExists(request, path);
 }
 
-bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const String path)
+bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const String& path)
 {
   bool fileFound = false;
   bool gzipFound = false;
