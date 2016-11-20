@@ -118,7 +118,7 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, A
   _client->onAck(NULL, NULL);
   _client->onPoll(NULL, NULL);
   _client->onData(NULL, NULL);
-  _client->onTimeout([](void *r, AsyncClient* c, uint32_t time){ ((AsyncEventSourceClient*)(r))->_onTimeout(time); }, this);
+  _client->onTimeout([](void *r, AsyncClient* c __attribute__((unused)), uint32_t time){ ((AsyncEventSourceClient*)(r))->_onTimeout(time); }, this);
   _client->onDisconnect([](void *r, AsyncClient* c){ ((AsyncEventSourceClient*)(r))->_onDisconnect(); delete c; }, this);
   _server->_addClient(this);
   delete request;
@@ -128,7 +128,7 @@ AsyncEventSourceClient::~AsyncEventSourceClient(){
   close();
 }
 
-void AsyncEventSourceClient::_onTimeout(uint32_t time){
+void AsyncEventSourceClient::_onTimeout(uint32_t time __attribute__((unused))){
   _client->close(true);
 }
 
@@ -249,7 +249,7 @@ void AsyncEventSourceResponse::_respond(AsyncWebServerRequest *request){
   _state = RESPONSE_WAIT_ACK;
 }
 
-size_t AsyncEventSourceResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time){
+size_t AsyncEventSourceResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time __attribute__((unused))){
   if(len){
     new AsyncEventSourceClient(request, _server);
   }

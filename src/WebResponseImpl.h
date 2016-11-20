@@ -38,7 +38,7 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
     void _respond(AsyncWebServerRequest *request);
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
     bool _sourceValid() const { return false; }
-    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) { return 0; }
+    virtual size_t _fillBuffer(uint8_t *buf __attribute__((unused)), size_t maxLen __attribute__((unused))) { return 0; }
 };
 
 class AsyncFileResponse: public AsyncAbstractResponse {

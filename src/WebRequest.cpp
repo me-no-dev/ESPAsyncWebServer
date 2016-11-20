@@ -26,6 +26,8 @@
 #define os_strlen strlen
 #endif
 
+static const String SharedEmptyString = String();
+
 #define __is_param_char(c) ((c) && ((c) != '{') && ((c) != '[') && ((c) != '&') && ((c) != '='))
 
 enum { PARSE_REQ_START, PARSE_REQ_HEADERS, PARSE_REQ_BODY, PARSE_REQ_END, PARSE_REQ_FAIL };
@@ -538,7 +540,8 @@ AsyncWebHeader* AsyncWebServerRequest::getHeader(const String& name) const {
 }
 
 AsyncWebHeader* AsyncWebServerRequest::getHeader(size_t num) const {
-  return _headers.nth(num);
+  auto header = _headers.nth(num);
+  return header ? *header : nullptr;
 }
 
 size_t AsyncWebServerRequest::params() const {
@@ -564,7 +567,8 @@ AsyncWebParameter* AsyncWebServerRequest::getParam(const String& name, bool post
 }
 
 AsyncWebParameter* AsyncWebServerRequest::getParam(size_t num) const {
-  return _params.nth(num);
+  auto param = _params.nth(num);
+  return param ? *param : nullptr;
 }
 
 void AsyncWebServerRequest::addInterestingHeader(const String& name){
@@ -738,7 +742,7 @@ const String& AsyncWebServerRequest::arg(const String& name) const {
       return arg->value();
     }
   }
-  return String();
+  return SharedEmptyString;
 }
 
 const String& AsyncWebServerRequest::arg(size_t i) const {
@@ -751,17 +755,17 @@ const String& AsyncWebServerRequest::argName(size_t i) const {
 
 const String& AsyncWebServerRequest::header(const char* name) const {
   AsyncWebHeader* h = getHeader(String(name));
-  return h ? h->value() : String();
+  return h ? h->value() : SharedEmptyString;
 }
 
 const String& AsyncWebServerRequest::header(size_t i) const {
   AsyncWebHeader* h = getHeader(i);
-  return h ?  h->value() : String();
+  return h ?  h->value() : SharedEmptyString;
 }
 
 const String& AsyncWebServerRequest::headerName(size_t i) const {
   AsyncWebHeader* h = getHeader(i);
-  return h ? h->name() : String();
+  return h ? h->name() : SharedEmptyString;
 }
 
 String AsyncWebServerRequest::urlDecode(const String& text) const {

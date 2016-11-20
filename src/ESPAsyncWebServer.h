@@ -106,7 +106,7 @@ class AsyncWebHeader {
     ~AsyncWebHeader(){}
     const String& name() const { return _name; }
     const String& value() const { return _value; }
-    const String& toString() const { return String(_name+": "+_value+"\r\n"); }
+    String toString() const { return String(_name+": "+_value+"\r\n"); }
 };
 
 /*
@@ -254,13 +254,9 @@ class AsyncWebServerRequest {
 
 typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestFilterFunction;
 
-static bool ON_STA_FILTER(AsyncWebServerRequest *request) {
-  return WiFi.localIP() == request->client()->localIP();
-}
+bool ON_STA_FILTER(AsyncWebServerRequest *request);
 
-static bool ON_AP_FILTER(AsyncWebServerRequest *request) {
-  return WiFi.localIP() != request->client()->localIP();
-}
+bool ON_AP_FILTER(AsyncWebServerRequest *request);
 
 /*
  * REWRITE :: One instance can be handle any Request (done by the Server)
@@ -299,12 +295,12 @@ class AsyncWebHandler {
     AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
-    virtual bool canHandle(AsyncWebServerRequest *request){
+    virtual bool canHandle(AsyncWebServerRequest *request __attribute__((unused))){
       return false;
     }
-    virtual void handleRequest(AsyncWebServerRequest *request){}
-    virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){}
-    virtual void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){}
+    virtual void handleRequest(AsyncWebServerRequest *request __attribute__((unused))){}
+    virtual void handleUpload(AsyncWebServerRequest *request  __attribute__((unused)), const String& filename __attribute__((unused)), size_t index __attribute__((unused)), uint8_t *data __attribute__((unused)), size_t len __attribute__((unused)), bool final  __attribute__((unused))){}
+    virtual void handleBody(AsyncWebServerRequest *request __attribute__((unused)), uint8_t *data __attribute__((unused)), size_t len __attribute__((unused)), size_t index __attribute__((unused)), size_t total __attribute__((unused))){}
 };
 
 /*

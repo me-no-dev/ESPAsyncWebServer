@@ -21,6 +21,14 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
+bool ON_STA_FILTER(AsyncWebServerRequest *request) {
+  return WiFi.localIP() == request->client()->localIP();
+}
+
+bool ON_AP_FILTER(AsyncWebServerRequest *request) {
+  return WiFi.localIP() != request->client()->localIP();
+}
+
 
 AsyncWebServer::AsyncWebServer(uint16_t port)
   : _server(port)

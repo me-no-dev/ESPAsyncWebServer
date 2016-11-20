@@ -54,8 +54,8 @@ class AsyncWebSocketMessage {
   public:
     AsyncWebSocketMessage():_opcode(WS_TEXT),_mask(false),_status(WS_MSG_ERROR){}
     virtual ~AsyncWebSocketMessage(){}
-    virtual void ack(size_t len, uint32_t time){}
-    virtual size_t send(AsyncClient *client){ return 0; }
+    virtual void ack(size_t len __attribute__((unused)), uint32_t time __attribute__((unused))){}
+    virtual size_t send(AsyncClient *client __attribute__((unused))){ return 0; }
     virtual bool finished(){ return _status != WS_MSG_SENDING; }
     virtual bool betweenFrames() const { return false; }
 };

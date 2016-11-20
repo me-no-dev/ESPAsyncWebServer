@@ -103,15 +103,15 @@ class LinkedList {
       }
       return i;
     }
-    const T& nth(size_t N) const {
+    const T* nth(size_t N) const {
       size_t i = 0;
       auto it = _root;
       while(it){
         if(i++ == N)
-          return it->value();
+          return &(it->value());
         it = it->next;
       }
-      return T();
+      return nullptr;
     }
     bool remove(const T& t){
       auto it = _root;

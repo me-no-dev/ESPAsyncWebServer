@@ -150,7 +150,7 @@ class AsyncWebSocketControl {
         else memcpy(_data, data, len);
       } else _data = NULL;
     }
-    ~AsyncWebSocketControl(){
+    virtual ~AsyncWebSocketControl(){
       if(_data != NULL)
         free(_data);
     }
