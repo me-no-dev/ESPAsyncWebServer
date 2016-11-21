@@ -81,7 +81,7 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(){
 #endif
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
 {
-  if (request->method() == HTTP_GET &&
+  if (request->method() == WebRequest::Method::HTTP_GET &&
       request->url().startsWith(_uri) &&
       _getFile(request)) {
 
