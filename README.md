@@ -61,7 +61,7 @@ To use this library you might need to have the latest git versions of [ESP8266](
 		- [Setup Event Source on the server](#setup-event-source-on-the-server)
 		- [Setup Event Source in the browser](#setup-event-source-in-the-browser)
 	- [Scanning for available WiFi Networks](#scanning-for-available-wifi-networks)
-		- [Remove handlers and rewrites](#remove-handlers-and-rewrites)
+	- [Remove handlers and rewrites](#remove-handlers-and-rewrites)
 	- [Setting up the server](#setting-up-the-server)
 		- [Methods for controlling websocket connections](#methods-for-controlling-websocket-connections)
 
@@ -864,7 +864,7 @@ server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request){
 });
 ```
 
-### Remove handlers and rewrites
+## Remove handlers and rewrites
 
 Server goes through handlers in same order as they were added. You can't simple add handler with same path to override them.
 To remove handler:
