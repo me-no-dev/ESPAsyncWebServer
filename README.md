@@ -2,11 +2,68 @@
 
 For help and support [![Join the chat at https://gitter.im/me-no-dev/ESPAsyncWebServer](https://badges.gitter.im/me-no-dev/ESPAsyncWebServer.svg)](https://gitter.im/me-no-dev/ESPAsyncWebServer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Async HTTP and WebSocket Server for ESP8266 and ESP31B Arduino
+Async HTTP and WebSocket Server for ESP8266 Arduino
 
 Requires [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP) to work
+To use this library you might need to have the latest git versions of [ESP8266](https://github.com/esp8266/Arduino) Arduino Core
 
-To use this library you need to have the latest git versions of either [ESP8266](https://github.com/esp8266/Arduino) or [ESP31B](https://github.com/me-no-dev/ESP31B) Arduino Core
+## Table of contents
+- [ESPAsyncWebServer ](#espasyncwebserver-)
+	- [Why should you care](#why-should-you-care)
+	- [Important things to remember](#important-things-to-remember)
+	- [Principles of operation](#principles-of-operation)
+		- [The Async Web server](#the-async-web-server)
+		- [Request Life Cycle](#request-life-cycle)
+		- [Rewrites and how do they work](#rewrites-and-how-do-they-work)
+		- [Handlers and how do they work](#handlers-and-how-do-they-work)
+		- [Responses and how do they work](#responses-and-how-do-they-work)
+	- [Libraries and projects that use AsyncWebServer](#libraries-and-projects-that-use-asyncwebserver)
+	- [Request Variables](#request-variables)
+		- [Common Variables](#common-variables)
+		- [Headers](#headers)
+		- [GET, POST and FILE parameters](#get-post-and-file-parameters)
+		- [FILE Upload handling](#file-upload-handling)
+		- [Body data handling](#body-data-handling)
+	- [Responses](#responses)
+		- [Redirect to another URL](#redirect-to-another-url)
+		- [Basic response with HTTP Code](#basic-response-with-http-code)
+		- [Basic response with HTTP Code and extra headers](#basic-response-with-http-code-and-extra-headers)
+		- [Basic response with string content](#basic-response-with-string-content)
+		- [Basic response with string content and extra headers](#basic-response-with-string-content-and-extra-headers)
+		- [Send large webpage from PROGMEM](#send-large-webpage-from-progmem)
+		- [Send large webpage from PROGMEM and extra headers](#send-large-webpage-from-progmem-and-extra-headers)
+		- [Send binary content from PROGMEM](#send-binary-content-from-progmem)
+		- [Respond with content coming from a Stream](#respond-with-content-coming-from-a-stream)
+		- [Respond with content coming from a Stream and extra headers](#respond-with-content-coming-from-a-stream-and-extra-headers)
+		- [Respond with content coming from a File](#respond-with-content-coming-from-a-file)
+		- [Respond with content coming from a File and extra headers](#respond-with-content-coming-from-a-file-and-extra-headers)
+		- [Respond with content using a callback](#respond-with-content-using-a-callback)
+		- [Respond with content using a callback and extra headers](#respond-with-content-using-a-callback-and-extra-headers)
+		- [Chunked Response](#chunked-response)
+		- [Print to response](#print-to-response)
+		- [ArduinoJson Basic Response](#arduinojson-basic-response)
+		- [ArduinoJson Advanced Response](#arduinojson-advanced-response)
+	- [Serving static files](#serving-static-files)
+		- [Serving specific file by name](#serving-specific-file-by-name)
+		- [Serving files in directory](#serving-files-in-directory)
+		- [Specifying Cache-Control header](#specifying-cache-control-header)
+		- [Specifying Date-Modified header](#specifying-date-modified-header)
+	- [Using filters](#using-filters)
+		- [Serve different site files in AP mode](#serve-different-site-files-in-ap-mode)
+		- [Rewrite to different index on AP](#rewrite-to-different-index-on-ap)
+		- [Serving different hosts](#serving-different-hosts)
+	- [Bad Responses](#bad-responses)
+		- [Respond with content using a callback without content length to HTTP/1.0 clients](#respond-with-content-using-a-callback-without-content-length-to-http10-clients)
+	- [Async WebSocket Plugin](#async-websocket-plugin)
+		- [Async WebSocket Event](#async-websocket-event)
+		- [Methods for sending data to a socket client](#methods-for-sending-data-to-a-socket-client)
+	- [Async Event Source Plugin](#async-event-source-plugin)
+		- [Setup Event Source on the server](#setup-event-source-on-the-server)
+		- [Setup Event Source in the browser](#setup-event-source-in-the-browser)
+	- [Scanning for available WiFi Networks](#scanning-for-available-wifi-networks)
+	- [Remove handlers and rewrites](#remove-handlers-and-rewrites)
+	- [Setting up the server](#setting-up-the-server)
+		- [Methods for controlling websocket connections](#methods-for-controlling-websocket-connections)
 
 ## Why should you care
 - Using asynchronous network means that you can handle more than one connection at the same time
@@ -773,6 +830,64 @@ if (!!window.EventSource) {
     console.log("myevent", e.data);
   }, false);
 }
+```
+
+## Scanning for available WiFi Networks
+```cpp
+//First request will return 0 results unless you start scan from somewhere else (loop/setup)
+//Do not request more often than 3-5 seconds
+server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request){
+  String json = "[";
+  int n = WiFi.scanComplete();
+  if(n == -2){
+    WiFi.scanNetworks(true);
+  } else if(n){
+    for (int i = 0; i < n; ++i){
+      if(i) json += ",";
+      json += "{";
+      json += "\"rssi\":"+String(WiFi.RSSI(i));
+      json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
+      json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
+      json += ",\"channel\":"+String(WiFi.channel(i));
+      json += ",\"secure\":"+String(WiFi.encryptionType(i));
+      json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
+      json += "}";
+    }
+    WiFi.scanDelete();
+    if(WiFi.scanComplete() == -2){
+      WiFi.scanNetworks(true);
+    }
+  }
+  json += "]";
+  request->send(200, "text/json", json);
+  json = String();
+});
+```
+
+## Remove handlers and rewrites
+
+Server goes through handlers in same order as they were added. You can't simple add handler with same path to override them.
+To remove handler:
+```arduino
+// save callback for particular URL path
+auto handler = server.on("/some/path", [](AsyncWebServerRequest *request){
+  //do something useful
+});
+// when you don't need handler anymore remove it
+server.removeHandler(&handler);
+
+// same with rewrites
+server.removeRewrite(&someRewrite);
+
+server.onNotFound([](AsyncWebServerRequest *request){
+  request->send(404);
+});
+
+// remove server.onNotFound handler
+server.onNotFound(NULL);
+
+// remove all rewrites, handlers and onNotFound/onFileUpload/onRequestBody callbacks
+server.reset();
 ```
 
 ## Setting up the server
