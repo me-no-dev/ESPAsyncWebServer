@@ -73,7 +73,7 @@ const char* AsyncWebServerResponse::_responseCodeToString(int code) {
 
 AsyncWebServerResponse::AsyncWebServerResponse()
   : _code(0)
-  , _headers(NULL)
+  , _headers(LinkedList<AsyncWebHeader *>([](AsyncWebHeader *h){ delete h; }))
   , _contentType()
   , _contentLength(0)
   , _sendContentLength(true)
@@ -86,11 +86,7 @@ AsyncWebServerResponse::AsyncWebServerResponse()
 {}
 
 AsyncWebServerResponse::~AsyncWebServerResponse(){
-  while(_headers != NULL){
-    AsyncWebHeader *h = _headers;
-    _headers = h->next;
-    delete h;
-  }
+  _headers.free();
 }
 
 void AsyncWebServerResponse::setCode(int code){
@@ -103,20 +99,13 @@ void AsyncWebServerResponse::setContentLength(size_t len){
     _contentLength = len;
 }
 
-void AsyncWebServerResponse::setContentType(String type){
+void AsyncWebServerResponse::setContentType(const String& type){
   if(_state == RESPONSE_SETUP)
     _contentType = type;
 }
 
-void AsyncWebServerResponse::addHeader(String name, String value){
-  AsyncWebHeader *header = new AsyncWebHeader(name, value);
-  if(_headers == NULL){
-    _headers = header;
-  } else {
-    AsyncWebHeader *h = _headers;
-    while(h->next != NULL) h = h->next;
-    h->next = header;
-  }
+void AsyncWebServerResponse::addHeader(const String& name, const String& value){
+  _headers.add(new AsyncWebHeader(name, value));
 }
 
 String AsyncWebServerResponse::_assembleHead(uint8_t version){
@@ -141,30 +130,28 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version){
     out.concat(buf);
   }
 
-  AsyncWebHeader *h;
-  while(_headers != NULL){
-    h = _headers;
-    _headers = _headers->next;
-    snprintf(buf, bufSize, "%s: %s\r\n", h->name().c_str(), h->value().c_str());
+  for(const auto& header: _headers){
+    snprintf(buf, bufSize, "%s: %s\r\n", header->name().c_str(), header->value().c_str());
     out.concat(buf);
-    delete h;
   }
+  _headers.free();
+
   out.concat("\r\n");
   _headLength = out.length();
   return out;
 }
 
-bool AsyncWebServerResponse::_started(){ return _state > RESPONSE_SETUP; }
-bool AsyncWebServerResponse::_finished(){ return _state > RESPONSE_WAIT_ACK; }
-bool AsyncWebServerResponse::_failed(){ return _state == RESPONSE_FAILED; }
-bool AsyncWebServerResponse::_sourceValid(){ return false; }
+bool AsyncWebServerResponse::_started() const { return _state > RESPONSE_SETUP; }
+bool AsyncWebServerResponse::_finished() const { return _state > RESPONSE_WAIT_ACK; }
+bool AsyncWebServerResponse::_failed() const { return _state == RESPONSE_FAILED; }
+bool AsyncWebServerResponse::_sourceValid() const { return false; }
 void AsyncWebServerResponse::_respond(AsyncWebServerRequest *request){ _state = RESPONSE_END; request->client()->close(); }
 size_t AsyncWebServerResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time){ return 0; }
 
 /*
  * String/Code Response
  * */
-AsyncBasicResponse::AsyncBasicResponse(int code, String contentType, String content){
+AsyncBasicResponse::AsyncBasicResponse(int code, const String& contentType, const String& content){
   _code = code;
   _content = content;
   _contentType = contentType;
@@ -343,7 +330,7 @@ AsyncFileResponse::~AsyncFileResponse(){
     _content.close();
 }
 
-void AsyncFileResponse::_setContentType(String path){
+void AsyncFileResponse::_setContentType(const String& path){
   if (path.endsWith(".html")) _contentType = "text/html";
   else if (path.endsWith(".htm")) _contentType = "text/html";
   else if (path.endsWith(".css")) _contentType = "text/css";
@@ -365,7 +352,7 @@ void AsyncFileResponse::_setContentType(String path){
   else _contentType = "text/plain";
 }
 
-AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bool download){
+AsyncFileResponse::AsyncFileResponse(FS &fs, const String& path, const String& contentType, bool download){
   _code = 200;
   _path = path;
 
@@ -397,7 +384,7 @@ AsyncFileResponse::AsyncFileResponse(FS &fs, String path, String contentType, bo
 
 }
 
-AsyncFileResponse::AsyncFileResponse(File content, String path, String contentType, bool download){
+AsyncFileResponse::AsyncFileResponse(File content, const String& path, const String& contentType, bool download){
   _code = 200;
   _path = path;
   _content = content;
@@ -432,7 +419,7 @@ size_t AsyncFileResponse::_fillBuffer(uint8_t *data, size_t len){
  * Stream Response
  * */
 
-AsyncStreamResponse::AsyncStreamResponse(Stream &stream, String contentType, size_t len){
+AsyncStreamResponse::AsyncStreamResponse(Stream &stream, const String& contentType, size_t len){
   _code = 200;
   _content = &stream;
   _contentLength = len;
@@ -452,7 +439,7 @@ size_t AsyncStreamResponse::_fillBuffer(uint8_t *data, size_t len){
  * Callback Response
  * */
 
-AsyncCallbackResponse::AsyncCallbackResponse(String contentType, size_t len, AwsResponseFiller callback){
+AsyncCallbackResponse::AsyncCallbackResponse(const String& contentType, size_t len, AwsResponseFiller callback){
   _code = 200;
   _content = callback;
   _contentLength = len;
@@ -469,7 +456,7 @@ size_t AsyncCallbackResponse::_fillBuffer(uint8_t *data, size_t len){
  * Chunked Response
  * */
 
-AsyncChunkedResponse::AsyncChunkedResponse(String contentType, AwsResponseFiller callback){
+AsyncChunkedResponse::AsyncChunkedResponse(const String& contentType, AwsResponseFiller callback){
   _code = 200;
   _content = callback;
   _contentLength = 0;
@@ -486,7 +473,7 @@ size_t AsyncChunkedResponse::_fillBuffer(uint8_t *data, size_t len){
  * Progmem Response
  * */
 
-AsyncProgmemResponse::AsyncProgmemResponse(int code, String contentType, const uint8_t * content, size_t len){
+AsyncProgmemResponse::AsyncProgmemResponse(int code, const String& contentType, const uint8_t * content, size_t len){
   _code = code;
   _content = content;
   _contentType = contentType;
@@ -508,7 +495,7 @@ size_t AsyncProgmemResponse::_fillBuffer(uint8_t *data, size_t len){
  * Response Stream (You can print/write/printf to it, up to the contentLen bytes)
  * */
 
-AsyncResponseStream::AsyncResponseStream(String contentType, size_t bufferSize){
+AsyncResponseStream::AsyncResponseStream(const String& contentType, size_t bufferSize){
   _code = 200;
   _contentLength = 0;
   _contentType = contentType;

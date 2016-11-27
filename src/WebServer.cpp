@@ -21,8 +21,20 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
+bool ON_STA_FILTER(AsyncWebServerRequest *request) {
+  return WiFi.localIP() == request->client()->localIP();
+}
 
-AsyncWebServer::AsyncWebServer(uint16_t port):_server(port), _rewrites(0), _handlers(0){
+bool ON_AP_FILTER(AsyncWebServerRequest *request) {
+  return WiFi.localIP() != request->client()->localIP();
+}
+
+
+AsyncWebServer::AsyncWebServer(uint16_t port)
+  : _server(port)
+  , _rewrites(LinkedList<AsyncWebRewrite*>([](AsyncWebRewrite* r){ delete r; }))
+  , _handlers(LinkedList<AsyncWebHandler*>([](AsyncWebHandler* h){ delete h; }))
+{
   _catchAllHandler = new AsyncCallbackWebHandler();
   if(_catchAllHandler == NULL)
     return;
@@ -45,32 +57,12 @@ AsyncWebServer::~AsyncWebServer(){
 }
 
 AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
-  if (_rewrites == NULL){
-    _rewrites = rewrite;
-  } else {
-    AsyncWebRewrite *r = _rewrites;
-    while(r->next != NULL) r = r->next;
-    r->next = rewrite;
-  }
+  _rewrites.add(rewrite);
   return *rewrite;
 }
 
 bool AsyncWebServer::removeRewrite(AsyncWebRewrite *rewrite){
-  if(rewrite == _rewrites){
-    _rewrites = _rewrites->next;
-    return true;
-  }
-  AsyncWebRewrite *r = _rewrites;
-  while(r != NULL){
-    if(rewrite == r->next){
-      AsyncWebRewrite *d = r->next;
-      r->next = d->next;
-      delete d;
-      return true;
-    }
-    r = r->next;
-  }
-  return false;
+  return _rewrites.remove(rewrite);
 }
 
 AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
@@ -78,32 +70,12 @@ AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
 }
 
 AsyncWebHandler& AsyncWebServer::addHandler(AsyncWebHandler* handler){
-  if(_handlers == NULL){
-    _handlers = handler;
-  } else {
-    AsyncWebHandler* h = _handlers;
-    while(h->next != NULL) h = h->next;
-    h->next = handler;
-  }
+  _handlers.add(handler);
   return *handler;
 }
 
 bool AsyncWebServer::removeHandler(AsyncWebHandler *handler){
-  if(handler == _handlers){
-    _handlers = _handlers->next;
-    return true;
-  }
-  AsyncWebHandler *h = _handlers;
-  while(h != NULL){
-    if(handler == h->next){
-      AsyncWebHandler *d = h->next;
-      h->next = d->next;
-      delete d;
-      return true;
-    }
-    h = h->next;
-  }
-  return false;
+  return _handlers.remove(handler);
 }
 
 void AsyncWebServer::begin(){
@@ -125,27 +97,22 @@ void AsyncWebServer::_handleDisconnect(AsyncWebServerRequest *request){
 }
 
 void AsyncWebServer::_rewriteRequest(AsyncWebServerRequest *request){
-  AsyncWebRewrite *r = _rewrites;
-  while(r){
+  for(const auto& r: _rewrites){
     if (r->from() == request->_url && r->filter(request)){
       request->_url = r->toUrl();
       request->_addGetParams(r->params());
     }
-    r = r->next;
   }
 }
 
 void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
-  if(_handlers){
-    AsyncWebHandler* h = _handlers;
-    while(h){
-      if (h->filter(request) && h->canHandle(request)){
-        request->setHandler(h);
-        return;
-      }
-      h = h->next;
+  for(const auto& h: _handlers){
+    if (h->filter(request) && h->canHandle(request)){
+      request->setHandler(h);
+      return;
     }
   }
+  
   request->addInterestingHeader("ANY");
   request->setHandler(_catchAllHandler);
 }
@@ -208,19 +175,8 @@ void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
 }
 
 void AsyncWebServer::reset(){
-  while(_rewrites != NULL){
-    AsyncWebRewrite *r = _rewrites;
-    _rewrites = r->next;
-    delete r;
-  }
-  _rewrites = NULL;
-  
-  while(_handlers != NULL){
-    AsyncWebHandler *h = _handlers;
-    _handlers = h->next;
-    delete h;
-  }
-  _handlers = NULL;
+  _rewrites.free();
+  _handlers.free();
   
   if (_catchAllHandler != NULL){
     ((AsyncCallbackWebHandler*)_catchAllHandler)->onRequest(NULL);

@@ -317,7 +317,7 @@ const uint8_t edit_htm_gz[] PROGMEM = {
 
 // WEB HANDLER IMPLEMENTATION
 
-SPIFFSEditor::SPIFFSEditor(String username, String password)
+SPIFFSEditor::SPIFFSEditor(const String& username, const String& password)
 :_username(username)
 ,_password(password)
 ,_authenticated(false)
@@ -418,7 +418,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
   }
 }
 
-void SPIFFSEditor::handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+void SPIFFSEditor::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
   if(!index){
     if(!_username.length() || request->authenticate(_username.c_str(),_password.c_str())){
       _authenticated = true;

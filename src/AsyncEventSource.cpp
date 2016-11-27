@@ -110,7 +110,6 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, A
   _client = request->client();
   _server = server;
   _lastId = 0;
-  next = NULL;
   if(request->hasHeader("Last-Event-ID"))
     _lastId = atoi(request->getHeader("Last-Event-ID")->value().c_str());
     
@@ -119,7 +118,7 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, A
   _client->onAck(NULL, NULL);
   _client->onPoll(NULL, NULL);
   _client->onData(NULL, NULL);
-  _client->onTimeout([](void *r, AsyncClient* c, uint32_t time){ ((AsyncEventSourceClient*)(r))->_onTimeout(time); }, this);
+  _client->onTimeout([](void *r, AsyncClient* c __attribute__((unused)), uint32_t time){ ((AsyncEventSourceClient*)(r))->_onTimeout(time); }, this);
   _client->onDisconnect([](void *r, AsyncClient* c){ ((AsyncEventSourceClient*)(r))->_onDisconnect(); delete c; }, this);
   _server->_addClient(this);
   delete request;
@@ -129,7 +128,7 @@ AsyncEventSourceClient::~AsyncEventSourceClient(){
   close();
 }
 
-void AsyncEventSourceClient::_onTimeout(uint32_t time){
+void AsyncEventSourceClient::_onTimeout(uint32_t time __attribute__((unused))){
   _client->close(true);
 }
 
@@ -161,9 +160,9 @@ void AsyncEventSourceClient::send(const char *message, const char *event, uint32
 
 // Handler
 
-AsyncEventSource::AsyncEventSource(String url)
+AsyncEventSource::AsyncEventSource(const String& url)
   : _url(url)
-  , _clients(NULL)
+  , _clients(LinkedList<AsyncEventSourceClient *>([](AsyncEventSourceClient *c){ delete c; }))
   , _connectcb(NULL)
 {}
 
@@ -188,68 +187,38 @@ void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
     client->write((const char *)temp, 2053);
     free(temp);
   }*/
-  if(_clients == NULL){
-    _clients = client;
-    if(_connectcb)
-      _connectcb(client);
-    return;
-  }
-  AsyncEventSourceClient * c = _clients;
-  while(c->next != NULL) c = c->next;
-  c->next = client;
+  
+  _clients.add(client);
   if(_connectcb)
     _connectcb(client);
 }
 
 void AsyncEventSource::_handleDisconnect(AsyncEventSourceClient * client){
-  if(_clients == NULL){
-    return;
-  }
-  if(_clients == client){
-    _clients = client->next;
-    delete client;
-    return;
-  }
-  AsyncEventSourceClient * c = _clients;
-  while(c->next != NULL && c->next != client) c = c->next;
-  if(c->next == NULL){
-    return;
-  }
-  c->next = client->next;
-  delete client;
+  _clients.remove(client);
 }
 
 void AsyncEventSource::close(){
-  AsyncEventSourceClient * c = _clients;
-  while(c != NULL){
+  for(const auto &c: _clients){
     if(c->connected())
       c->close();
-    c = c->next;
   }
 }
 
 void AsyncEventSource::send(const char *message, const char *event, uint32_t id, uint32_t reconnect){
-  if(_clients == NULL)
+  if(_clients.isEmpty())
     return;
 
   String ev = generateEventMessage(message, event, id, reconnect);
-  AsyncEventSourceClient * c = _clients;
-  while(c != NULL){
+  for(const auto &c: _clients){
     if(c->connected())
       c->write(ev.c_str(), ev.length());
-    c = c->next;
   }
 }
 
-size_t AsyncEventSource::count(){
-  size_t i = 0;
-  AsyncEventSourceClient * c = _clients;
-  while(c != NULL){
-    if(c->connected())
-      i++;
-    c = c->next;
-  }
-  return i;
+size_t AsyncEventSource::count() const {
+  return _clients.count_if([](AsyncEventSourceClient *c){
+    return c->connected();
+  });
 }
 
 bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
@@ -280,7 +249,7 @@ void AsyncEventSourceResponse::_respond(AsyncWebServerRequest *request){
   _state = RESPONSE_WAIT_ACK;
 }
 
-size_t AsyncEventSourceResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time){
+size_t AsyncEventSourceResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time __attribute__((unused))){
   if(len){
     new AsyncEventSourceClient(request, _server);
   }

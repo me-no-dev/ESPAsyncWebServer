@@ -79,8 +79,7 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(){
   return setLastModified(last_modified);
 }
 #endif
-bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request)
-{
+bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request){
   if (request->method() == HTTP_GET &&
       request->url().startsWith(_uri) &&
       _getFile(request)) {
@@ -125,7 +124,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest *request)
   return _fileExists(request, path);
 }
 
-bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const String path)
+bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const String& path)
 {
   bool fileFound = false;
   bool gzipFound = false;
@@ -167,7 +166,7 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
   return found;
 }
 
-uint8_t AsyncStaticWebHandler::_countBits(const uint8_t value)
+uint8_t AsyncStaticWebHandler::_countBits(const uint8_t value) const
 {
   uint8_t w = value;
   uint8_t n;
