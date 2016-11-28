@@ -82,7 +82,7 @@ class AsyncEventSourceResponse: public AsyncWebServerResponse {
     AsyncEventSourceResponse(AsyncEventSource *server);
     void _respond(AsyncWebServerRequest *request);
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
-    bool _sourceValid(){ return true; }
+    bool _sourceValid() const { return true; }
 };
 
 
