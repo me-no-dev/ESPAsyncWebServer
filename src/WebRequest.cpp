@@ -453,6 +453,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
           _addParam(new AsyncWebParameter(_itemName, _itemFilename, true, true, _itemSize));
         }
         free(_itemBuffer);
+        _itemBuffer = NULL;
       }
 
     } else {
