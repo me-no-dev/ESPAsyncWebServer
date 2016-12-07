@@ -63,7 +63,7 @@ To use this library you might need to have the latest git versions of [ESP8266](
 	- [Scanning for available WiFi Networks](#scanning-for-available-wifi-networks)
 	- [Remove handlers and rewrites](#remove-handlers-and-rewrites)
 	- [Setting up the server](#setting-up-the-server)
-		- [Setup global and class functions as request handlers](#setup-request-handlers)
+		- [Setup global and class functions as request handlers](#setup-global-and-class-functions-as-request-handlers)
 		- [Methods for controlling websocket connections](#methods-for-controlling-websocket-connections)
 
 ## Why should you care
@@ -1021,7 +1021,7 @@ void loop(){
 }
 ```
 
-### Setup request handlers
+### Setup global and class functions as request handlers
 
 ```arduino
 #include <Arduino.h>
