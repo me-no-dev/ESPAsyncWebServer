@@ -37,6 +37,14 @@
 #error Platform not supported
 #endif
 
+#if defined(FS_NO_GLOBALS)
+#define SPFS fs::FS
+#define SPFILE fs::File
+#else
+#define SPFS FS
+#define SPFILE File
+#endif
+
 #define DEBUGF(...) //Serial.printf(__VA_ARGS__)
 
 
@@ -177,7 +185,7 @@ class AsyncWebServerRequest {
     void _handleUploadEnd();
 
   public:
-    File _tempFile;
+    SPFILE _tempFile;
     void *_tempObject;
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
@@ -208,8 +216,8 @@ class AsyncWebServerRequest {
 
     void send(AsyncWebServerResponse *response);
     void send(int code, const String& contentType=String(), const String& content=String());
-    void send(FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    void send(File content, const String& path, const String& contentType=String(), bool download=false);
+    void send(SPFS &fs, const String& path, const String& contentType=String(), bool download=false);
+    void send(SPFILE content, const String& path, const String& contentType=String(), bool download=false);
     void send(Stream &stream, const String& contentType, size_t len);
     void send(const String& contentType, size_t len, AwsResponseFiller callback);
     void sendChunked(const String& contentType, AwsResponseFiller callback);
@@ -217,8 +225,8 @@ class AsyncWebServerRequest {
     void send_P(int code, const String& contentType, PGM_P content);
 
     AsyncWebServerResponse *beginResponse(int code, const String& contentType=String(), const String& content=String());
-    AsyncWebServerResponse *beginResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    AsyncWebServerResponse *beginResponse(File content, const String& path, const String& contentType=String(), bool download=false);
+    AsyncWebServerResponse *beginResponse(SPFS &fs, const String& path, const String& contentType=String(), bool download=false);
+    AsyncWebServerResponse *beginResponse(SPFILE content, const String& path, const String& contentType=String(), bool download=false);
     AsyncWebServerResponse *beginResponse(Stream &stream, const String& contentType, size_t len);
     AsyncWebServerResponse *beginResponse(const String& contentType, size_t len, AwsResponseFiller callback);
     AsyncWebServerResponse *beginChunkedResponse(const String& contentType, AwsResponseFiller callback);
@@ -380,7 +388,7 @@ class AsyncWebServer {
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
 
-    AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
+    AsyncStaticWebHandler& serveStatic(const char* uri, SPFS& fs, const char* path, const char* cache_control = NULL);
 
     void onNotFound(ArRequestHandlerFunction fn);  //called when handler is not assigned
     void onFileUpload(ArUploadHandlerFunction fn); //handle file uploads

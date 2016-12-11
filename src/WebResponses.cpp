@@ -352,7 +352,7 @@ void AsyncFileResponse::_setContentType(const String& path){
   else _contentType = "text/plain";
 }
 
-AsyncFileResponse::AsyncFileResponse(FS &fs, const String& path, const String& contentType, bool download){
+AsyncFileResponse::AsyncFileResponse(SPFS &fs, const String& path, const String& contentType, bool download){
   _code = 200;
   _path = path;
 

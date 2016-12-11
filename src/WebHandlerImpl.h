@@ -31,7 +31,7 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     bool _fileExists(AsyncWebServerRequest *request, const String& path);
     uint8_t _countBits(const uint8_t value) const;
   protected:
-    FS _fs;
+    SPFS _fs;
     String _uri;
     String _path;
     String _default_file;
@@ -41,7 +41,7 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     bool _gzipFirst;
     uint8_t _gzipStats;
   public:
-    AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
+    AsyncStaticWebHandler(const char* uri, SPFS& fs, const char* path, const char* cache_control);
     virtual bool canHandle(AsyncWebServerRequest *request) override final;
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
     AsyncStaticWebHandler& setIsDir(bool isDir);

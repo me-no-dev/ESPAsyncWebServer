@@ -597,13 +597,13 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(int code, const St
   return new AsyncBasicResponse(code, contentType, content);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, const String& path, const String& contentType, bool download){
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(SPFS &fs, const String& path, const String& contentType, bool download){
   if(fs.exists(path) || (!download && fs.exists(path+".gz")))
     return new AsyncFileResponse(fs, path, contentType, download);
   return NULL;
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, const String& path, const String& contentType, bool download){
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(SPFILE content, const String& path, const String& contentType, bool download){
   if(content == true)
     return new AsyncFileResponse(content, path, contentType, download);
   return NULL;
@@ -639,13 +639,13 @@ void AsyncWebServerRequest::send(int code, const String& contentType, const Stri
   send(beginResponse(code, contentType, content));
 }
 
-void AsyncWebServerRequest::send(FS &fs, const String& path, const String& contentType, bool download){
+void AsyncWebServerRequest::send(SPFS &fs, const String& path, const String& contentType, bool download){
   if(fs.exists(path) || (!download && fs.exists(path+".gz"))){
     send(beginResponse(fs, path, contentType, download));
   } else send(404);
 }
 
-void AsyncWebServerRequest::send(File content, const String& path, const String& contentType, bool download){
+void AsyncWebServerRequest::send(SPFILE content, const String& path, const String& contentType, bool download){
   if(content == true){
     send(beginResponse(content, path, contentType, download));
   } else send(404);

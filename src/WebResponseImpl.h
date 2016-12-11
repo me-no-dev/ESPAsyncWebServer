@@ -43,12 +43,12 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
 
 class AsyncFileResponse: public AsyncAbstractResponse {
   private:
-    File _content;
+    SPFILE _content;
     String _path;
     void _setContentType(const String& path);
   public:
-    AsyncFileResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    AsyncFileResponse(File content, const String& path, const String& contentType=String(), bool download=false);
+    AsyncFileResponse(SPFS &fs, const String& path, const String& contentType=String(), bool download=false);
+    AsyncFileResponse(SPFILE content, const String& path, const String& contentType=String(), bool download=false);
     ~AsyncFileResponse();
     bool _sourceValid() const { return !!(_content); }
     virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
