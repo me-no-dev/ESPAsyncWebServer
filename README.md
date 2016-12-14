@@ -63,6 +63,7 @@ To use this library you might need to have the latest git versions of [ESP8266](
 	- [Scanning for available WiFi Networks](#scanning-for-available-wifi-networks)
 	- [Remove handlers and rewrites](#remove-handlers-and-rewrites)
 	- [Setting up the server](#setting-up-the-server)
+		- [Setup global and class functions as request handlers](#setup-global-and-class-functions-as-request-handlers)
 		- [Methods for controlling websocket connections](#methods-for-controlling-websocket-connections)
 
 ## Why should you care
@@ -1017,6 +1018,57 @@ void loop(){
   static char temp[128];
   sprintf(temp, "Seconds since boot: %u", millis()/1000);
   events.send(temp, "time"); //send event "time"
+}
+```
+
+### Setup global and class functions as request handlers
+
+```arduino
+#include <Arduino.h>
+#include <ESPAsyncWebserver.h>
+#include <Hash.h>
+#include <functional>
+
+void handleRequest(AsyncWebServerRequest *request)
+{
+}
+
+class WebClass
+{
+public :
+	WebClass(){
+	};
+
+	AsyncWebServer classWebServer = AsyncWebServer(80);
+
+	void classRequest (AsyncWebServerRequest *request)
+	{
+	}
+
+	void begin(){
+
+		// attach global request handler
+		classWebServer.on("/example", HTTP_ANY, handleRequest);
+
+		// attach class request handler
+		classWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, this, std::placeholders::_1));
+	}
+};
+
+AsyncWebServer globalWebServer(80);
+WebClass webClassInstance;
+
+void setup() {
+
+	// attach global request handler
+	globalWebServer.on("/example", HTTP_ANY, handleRequest);
+
+	// attach class request handler
+	globalWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, webClassInstance, std::placeholders::_1));
+}
+
+void loop() {
+
 }
 ```
 
