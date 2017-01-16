@@ -52,13 +52,12 @@ class AsyncWebSocketMessage {
     bool _mask;
     AwsMessageStatus _status;
   public:
-    AsyncWebSocketMessage * next;
-    AsyncWebSocketMessage():_opcode(WS_TEXT),_mask(false),_status(WS_MSG_ERROR),next(NULL){}
+    AsyncWebSocketMessage():_opcode(WS_TEXT),_mask(false),_status(WS_MSG_ERROR){}
     virtual ~AsyncWebSocketMessage(){}
-    virtual void ack(size_t len, uint32_t time){}
-    virtual size_t send(AsyncClient *client){ return 0; }
+    virtual void ack(size_t len __attribute__((unused)), uint32_t time __attribute__((unused))){}
+    virtual size_t send(AsyncClient *client __attribute__((unused))){ return 0; }
     virtual bool finished(){ return _status != WS_MSG_SENDING; }
-    virtual bool betweenFrames(){ return false; }
+    virtual bool betweenFrames() const { return false; }
 };
 
 class AsyncWebSocketClient {
@@ -68,8 +67,8 @@ class AsyncWebSocketClient {
     uint32_t _clientId;
     AwsClientStatus _status;
 
-    AsyncWebSocketControl * _controlQueue;
-    AsyncWebSocketMessage * _messageQueue;
+    LinkedList<AsyncWebSocketControl *> _controlQueue;
+    LinkedList<AsyncWebSocketMessage *> _messageQueue;
 
     uint8_t _pstate;
     AwsFrameInfo _pinfo;
@@ -82,8 +81,6 @@ class AsyncWebSocketClient {
     void _runQueue();
 
   public:
-    AsyncWebSocketClient * next;
-
     AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server);
     ~AsyncWebSocketClient();
 
@@ -142,18 +139,18 @@ typedef std::function<void(AsyncWebSocket * server, AsyncWebSocketClient * clien
 class AsyncWebSocket: public AsyncWebHandler {
   private:
     String _url;
-    AsyncWebSocketClient * _clients;
+    LinkedList<AsyncWebSocketClient *> _clients;
     uint32_t _cNextId;
     AwsEventHandler _eventHandler;
     bool _enabled;
   public:
-    AsyncWebSocket(String url);
+    AsyncWebSocket(const String& url);
     ~AsyncWebSocket();
-    const char * url(){ return _url.c_str(); }
+    const char * url() const { return _url.c_str(); }
     void enable(bool e){ _enabled = e; }
-    bool enabled() { return _enabled; }
+    bool enabled() const { return _enabled; }
 
-    size_t count();
+    size_t count() const;
     AsyncWebSocketClient * client(uint32_t id);
     bool hasClient(uint32_t id){ return client(id) != NULL; }
 
@@ -209,8 +206,8 @@ class AsyncWebSocket: public AsyncWebHandler {
     void _addClient(AsyncWebSocketClient * client);
     void _handleDisconnect(AsyncWebSocketClient * client);
     void _handleEvent(AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
-    bool canHandle(AsyncWebServerRequest *request);
-    void handleRequest(AsyncWebServerRequest *request);
+    virtual bool canHandle(AsyncWebServerRequest *request) override final;
+    virtual void handleRequest(AsyncWebServerRequest *request) override final;
 };
 
 //WebServer response to authenticate the socket and detach the tcp client from the web server request
@@ -219,10 +216,10 @@ class AsyncWebSocketResponse: public AsyncWebServerResponse {
     String _content;
     AsyncWebSocket *_server;
   public:
-    AsyncWebSocketResponse(String key, AsyncWebSocket *server);
+    AsyncWebSocketResponse(const String& key, AsyncWebSocket *server);
     void _respond(AsyncWebServerRequest *request);
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
-    bool _sourceValid(){ return true; }
+    bool _sourceValid() const { return true; }
 };
 
 

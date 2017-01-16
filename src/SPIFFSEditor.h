@@ -9,10 +9,10 @@ class SPIFFSEditor: public AsyncWebHandler {
     bool _authenticated;
     uint32_t _startTime;
   public:
-    SPIFFSEditor(String username=String(), String password=String());
-    bool canHandle(AsyncWebServerRequest *request);
-    void handleRequest(AsyncWebServerRequest *request);
-    void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
+    SPIFFSEditor(const String& username=String(), const String& password=String());
+    virtual bool canHandle(AsyncWebServerRequest *request) override final;
+    virtual void handleRequest(AsyncWebServerRequest *request) override final;
+    virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final;
 };
 
 #endif

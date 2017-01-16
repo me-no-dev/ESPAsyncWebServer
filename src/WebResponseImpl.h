@@ -25,10 +25,10 @@ class AsyncBasicResponse: public AsyncWebServerResponse {
   private:
     String _content;
   public:
-    AsyncBasicResponse(int code, String contentType=String(), String content=String());
+    AsyncBasicResponse(int code, const String& contentType=String(), const String& content=String());
     void _respond(AsyncWebServerRequest *request);
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
-    bool _sourceValid(){ return true; }
+    bool _sourceValid() const { return true; }
 };
 
 class AsyncAbstractResponse: public AsyncWebServerResponse {
@@ -37,57 +37,57 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
   public:
     void _respond(AsyncWebServerRequest *request);
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
-    bool _sourceValid(){ return false; }
-    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen){ return 0; }
+    bool _sourceValid() const { return false; }
+    virtual size_t _fillBuffer(uint8_t *buf __attribute__((unused)), size_t maxLen __attribute__((unused))) { return 0; }
 };
 
 class AsyncFileResponse: public AsyncAbstractResponse {
   private:
     File _content;
     String _path;
-    void _setContentType(String path);
+    void _setContentType(const String& path);
   public:
-    AsyncFileResponse(FS &fs, String path, String contentType=String(), bool download=false);
-    AsyncFileResponse(File content, String path, String contentType=String(), bool download=false);
+    AsyncFileResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false);
+    AsyncFileResponse(File content, const String& path, const String& contentType=String(), bool download=false);
     ~AsyncFileResponse();
-    bool _sourceValid(){ return !!(_content); }
-    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
+    bool _sourceValid() const { return !!(_content); }
+    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
 };
 
 class AsyncStreamResponse: public AsyncAbstractResponse {
   private:
     Stream *_content;
   public:
-    AsyncStreamResponse(Stream &stream, String contentType, size_t len);
-    bool _sourceValid(){ return !!(_content); }
-    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
+    AsyncStreamResponse(Stream &stream, const String& contentType, size_t len);
+    bool _sourceValid() const { return !!(_content); }
+    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
 };
 
 class AsyncCallbackResponse: public AsyncAbstractResponse {
   private:
     AwsResponseFiller _content;
   public:
-    AsyncCallbackResponse(String contentType, size_t len, AwsResponseFiller callback);
-    bool _sourceValid(){ return !!(_content); }
-    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
+    AsyncCallbackResponse(const String& contentType, size_t len, AwsResponseFiller callback);
+    bool _sourceValid() const { return !!(_content); }
+    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
 };
 
 class AsyncChunkedResponse: public AsyncAbstractResponse {
   private:
     AwsResponseFiller _content;
   public:
-    AsyncChunkedResponse(String contentType, AwsResponseFiller callback);
-    bool _sourceValid(){ return !!(_content); }
-    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
+    AsyncChunkedResponse(const String& contentType, AwsResponseFiller callback);
+    bool _sourceValid() const { return !!(_content); }
+    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
 };
 
 class AsyncProgmemResponse: public AsyncAbstractResponse {
   private:
     const uint8_t * _content;
   public:
-    AsyncProgmemResponse(int code, String contentType, const uint8_t * content, size_t len);
-    bool _sourceValid(){ return true; }
-    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
+    AsyncProgmemResponse(int code, const String& contentType, const uint8_t * content, size_t len);
+    bool _sourceValid() const { return true; }
+    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
 };
 
 class cbuf;
@@ -96,10 +96,10 @@ class AsyncResponseStream: public AsyncAbstractResponse, public Print {
   private:
     cbuf *_content;
   public:
-    AsyncResponseStream(String contentType, size_t bufferSize);
+    AsyncResponseStream(const String& contentType, size_t bufferSize);
     ~AsyncResponseStream();
-    bool _sourceValid(){ return (_state < RESPONSE_END); }
-    size_t _fillBuffer(uint8_t *buf, size_t maxLen);
+    bool _sourceValid() const { return (_state < RESPONSE_END); }
+    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
     size_t write(const uint8_t *data, size_t len);
     size_t write(uint8_t data);
     using Print::write;

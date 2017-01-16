@@ -28,8 +28,8 @@
 class AsyncStaticWebHandler: public AsyncWebHandler {
   private:
     bool _getFile(AsyncWebServerRequest *request);
-    bool _fileExists(AsyncWebServerRequest *request, const String path);
-    uint8_t _countBits(const uint8_t value);
+    bool _fileExists(AsyncWebServerRequest *request, const String& path);
+    uint8_t _countBits(const uint8_t value) const;
   protected:
     FS _fs;
     String _uri;
@@ -42,8 +42,8 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     uint8_t _gzipStats;
   public:
     AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
-    bool canHandle(AsyncWebServerRequest *request);
-    void handleRequest(AsyncWebServerRequest *request);
+    virtual bool canHandle(AsyncWebServerRequest *request) override final;
+    virtual void handleRequest(AsyncWebServerRequest *request) override final;
     AsyncStaticWebHandler& setIsDir(bool isDir);
     AsyncStaticWebHandler& setDefaultFile(const char* filename);
     AsyncStaticWebHandler& setCacheControl(const char* cache_control);
@@ -65,13 +65,14 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArBodyHandlerFunction _onBody;
   public:
     AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL){}
-    void setUri(String uri){ _uri = uri; }
+    void setUri(const String& uri){ _uri = uri; }
     void setMethod(WebRequestMethodComposite method){ _method = method; }
     void onRequest(ArRequestHandlerFunction fn){ _onRequest = fn; }
     void onUpload(ArUploadHandlerFunction fn){ _onUpload = fn; }
     void onBody(ArBodyHandlerFunction fn){ _onBody = fn; }
 
-    bool canHandle(AsyncWebServerRequest *request){
+    virtual bool canHandle(AsyncWebServerRequest *request) override final{
+
       if(!_onRequest)
         return false;
 
@@ -84,17 +85,18 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       request->addInterestingHeader("ANY");
       return true;
     }
-    void handleRequest(AsyncWebServerRequest *request){
+  
+    virtual void handleRequest(AsyncWebServerRequest *request) override final {
       if(_onRequest)
         _onRequest(request);
       else
         request->send(500);
     }
-    void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+    virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final {
       if(_onUpload)
         _onUpload(request, filename, index, data, len, final);
     }
-    void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+    virtual void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) override final {
       if(_onBody)
         _onBody(request, data, len, index, total);
     }
