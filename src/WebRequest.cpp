@@ -96,6 +96,8 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
 }
 
 void AsyncWebServerRequest::_onData(void *buf, size_t len){
+  while (true) {
+
   if(_parseState < PARSE_REQ_BODY){
     // Find new line in buf
     char *str = (char*)buf;
@@ -112,7 +114,12 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
       _temp.concat(str);
       _temp.trim();
       _parseLine();
-      if (++i < len) _onData(str+i, len-i); // Still have more buffer to process
+      if (++i < len) {
+        // Still have more buffer to process
+        buf = str+i;
+        len-= i;
+        continue;
+      }
     }
   } else if(_parseState == PARSE_REQ_BODY){
     if(_isMultipart){
@@ -152,6 +159,9 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
       if(_handler) _handler->handleRequest(this);
       else send(501);
     }
+  }
+
+  break;
   }
 }
 
