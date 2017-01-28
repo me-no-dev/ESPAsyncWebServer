@@ -599,8 +599,10 @@ void AsyncWebServerRequest::send(AsyncWebServerResponse *response){
     _response = NULL;
     send(500);
   }
-  else
+  else {
+    _client->setRxTimeout(0);
     _response->_respond(this);
+  }
 }
 
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(int code, const String& contentType, const String& content){
