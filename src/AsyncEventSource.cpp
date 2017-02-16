@@ -129,7 +129,7 @@ AsyncEventSourceMessage::~AsyncEventSourceMessage() {
 }
 
 void AsyncEventSourceMessage::ack(size_t len, uint32_t time) {
-  if(_len == len && _sent = _len){
+  if(_len == len && _sent == _len){
      _status = EVS_MSG_SENT;
   }
 }
