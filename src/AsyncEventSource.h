@@ -29,11 +29,33 @@ class AsyncEventSourceResponse;
 class AsyncEventSourceClient;
 typedef std::function<void(AsyncEventSourceClient *client)> ArEventHandlerFunction;
 
+typedef enum { EVS_MSG_SENDING, EVS_MSG_SENT, EVS_MSG_ERROR } EventSourceMessageStatus;
+
+
+class AsyncEventSourceMessage {
+  private:
+    EventSourceMessageStatus _status;
+    uint8_t * _data; 
+    size_t _len;
+    size_t _sent;
+    //size_t _ack;
+    //size_t _acked; 
+  public:
+    AsyncEventSourceMessage(const char * data, size_t len);
+    ~AsyncEventSourceMessage();
+    void ack(size_t len __attribute__((unused)), uint32_t time __attribute__((unused)));
+    size_t send(AsyncClient *client __attribute__((unused)));
+    bool finished(){ return _status != EVS_MSG_SENDING; }
+};
+
 class AsyncEventSourceClient {
   private:
     AsyncClient *_client;
     AsyncEventSource *_server;
     uint32_t _lastId;
+    LinkedList<AsyncEventSourceMessage *> _messageQueue;
+    void _queueMessage(AsyncEventSourceMessage *dataMessage);
+    void _runQueue();
 
   public:
 
@@ -48,6 +70,8 @@ class AsyncEventSourceClient {
     uint32_t lastId() const { return _lastId; }
 
     //system callbacks (do not call)
+    void _onAck(size_t len, uint32_t time);
+    void _onPoll(); 
     void _onTimeout(uint32_t time);
     void _onDisconnect();
 };
