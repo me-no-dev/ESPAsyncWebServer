@@ -234,7 +234,7 @@ bool AsyncWebSocketBasicMessage::reserve(size_t size) {
   if (size) {
     _data = (uint8_t*)malloc(size +1);
     if (_data) {
-      memset(_data, 0, size); 
+      memset(_data, 0, size + 1); 
       _len = size; 
       _status = WS_MSG_SENDING;
       return true; 
