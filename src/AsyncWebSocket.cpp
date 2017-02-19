@@ -119,6 +119,88 @@ size_t webSocketSendFrame(AsyncClient *client, bool final, uint8_t opcode, bool 
 }
 
 
+/*
+ *    AsyncWebSocketMessageBuffer
+ */
+
+
+
+AsyncWebSocketMessageBuffer::AsyncWebSocketMessageBuffer()
+  :_data(nullptr)
+  ,_len(0)
+  ,_lock(false)
+  ,_count(0)
+{
+  //Serial.printf("%s called\n", __PRETTY_FUNCTION__); 
+
+}
+
+AsyncWebSocketMessageBuffer::AsyncWebSocketMessageBuffer(uint8_t * data, size_t size) 
+  :_data(nullptr)
+  ,_len(size)
+  ,_lock(false)
+  ,_count(0)
+{
+    //Serial.printf("%s called\n", __PRETTY_FUNCTION__); 
+
+  if (!data) {
+    return; 
+  }
+
+  _data = new uint8_t[size + 1]; 
+
+  if (_data) {
+    memcpy(_data, data, _len);
+    _data[_len] = 0; 
+    //Serial.printf(" Data = %s\n", _data); 
+
+  }
+
+}
+
+
+AsyncWebSocketMessageBuffer::AsyncWebSocketMessageBuffer(size_t size)
+  :_data(nullptr)
+  ,_len(size)
+  ,_lock(false)
+  ,_count(0)
+{
+  //Serial.printf("%s called\n", __PRETTY_FUNCTION__); 
+  _data = new uint8_t[size + 1]; 
+  _data[_len] = 0; 
+
+}
+
+AsyncWebSocketMessageBuffer::AsyncWebSocketMessageBuffer(const AsyncWebSocketMessageBuffer & copy)
+  :_data(nullptr)
+  ,_len(0)
+  ,_lock(false)
+  ,_count(0)
+{
+  //Serial.printf("%s called\n", __PRETTY_FUNCTION__); 
+
+}
+
+AsyncWebSocketMessageBuffer::~AsyncWebSocketMessageBuffer()
+{
+    //Serial.printf("%s called\n", __PRETTY_FUNCTION__); 
+    if (_data) {
+      delete[] _data; 
+    }
+}
+
+bool AsyncWebSocketMessageBuffer::reserve(size_t size) 
+{
+    //Serial.printf("%s called\n", __PRETTY_FUNCTION__); 
+
+  if (_data) {
+    delete[] _data;
+    _data = nullptr; 
+  }
+
+  _data = new uint8_t[size]; 
+}
+
 
 
 /*
@@ -197,6 +279,7 @@ AsyncWebSocketBasicMessage::AsyncWebSocketBasicMessage(uint8_t opcode, bool mask
   
 }
 
+
 AsyncWebSocketBasicMessage::~AsyncWebSocketBasicMessage() {
   if(_data != NULL)
     free(_data);
@@ -230,21 +313,90 @@ AsyncWebSocketBasicMessage::~AsyncWebSocketBasicMessage() {
   return sent;
 }
 
-bool AsyncWebSocketBasicMessage::reserve(size_t size) { 
-  if (size) {
-    _data = (uint8_t*)malloc(size +1);
-    if (_data) {
-      memset(_data, 0, size); 
-      _len = size; 
-      _status = WS_MSG_SENDING;
-      return true; 
-    }
+// bool AsyncWebSocketBasicMessage::reserve(size_t size) { 
+//   if (size) {
+//     _data = (uint8_t*)malloc(size +1);
+//     if (_data) {
+//       memset(_data, 0, size); 
+//       _len = size; 
+//       _status = WS_MSG_SENDING;
+//       return true; 
+//     }
+//   }
+//   return false; 
+//  }
+
+
+/*
+ * AsyncWebSocketMultiMessage Message
+ */
+
+
+AsyncWebSocketMultiMessage::AsyncWebSocketMultiMessage(AsyncWebSocketMessageBuffer * buffer, uint8_t opcode, bool mask)
+  :_len(0)
+  ,_sent(0)
+  ,_ack(0)
+  ,_acked(0)
+  ,_WSbuffer(nullptr)
+{
+
+  _opcode = opcode & 0x07;
+  _mask = mask;
+
+  if (buffer) {
+    _WSbuffer = buffer; 
+    (*_WSbuffer)++; //  increments the counter for messages using this buffer
+    _data = buffer->get(); 
+    _len = buffer->length(); 
+    _status = WS_MSG_SENDING;
+    //Serial.printf(" Data = %s\n", _data); 
+
+  } else {
+    _status = WS_MSG_ERROR;
   }
-  return false; 
- }
+
+  //  Serial.printf("%s called, _WSbuffer = %p, _buffer->count() = %u\n", __PRETTY_FUNCTION__, _WSbuffer, _WSbuffer->count()); 
+
+  
+} 
 
 
+AsyncWebSocketMultiMessage::~AsyncWebSocketMultiMessage() {
+  if (_WSbuffer) {
+    (*_WSbuffer)--; // decreases the counter. 
+  }
 
+  //Serial.printf("%s called, bufferCount =%u\n", __PRETTY_FUNCTION__, _WSbuffer->count()); 
+
+}
+
+ void AsyncWebSocketMultiMessage::ack(size_t len, uint32_t time)  {
+  _acked += len;
+  if(_sent == _len && _acked == _ack){
+    _status = WS_MSG_SENT;
+  }
+}
+ size_t AsyncWebSocketMultiMessage::send(AsyncClient *client)  {
+  if(_status != WS_MSG_SENDING)
+    return 0;
+  if(_acked < _ack){
+    return 0;
+  }
+  if(_sent == _len){
+    if(_acked == _ack)
+      _status = WS_MSG_SENT;
+    return 0;
+  }
+  size_t window = webSocketSendFrameWindow(client);
+  size_t toSend = _len - _sent;
+  if(window < toSend) toSend = window;
+  bool final = ((toSend + _sent) == _len);
+  size_t sent = webSocketSendFrame(client, final, (_sent == 0)?_opcode:WS_CONTINUATION, _mask, (uint8_t*)(_data+_sent), toSend);
+  _sent += sent;
+  uint8_t headLen = ((sent < 126)?2:4)+(_mask*4);
+  _ack += sent + headLen;
+  return sent;
+}
 
 
 /*
@@ -292,6 +444,7 @@ void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
         _controlQueue.remove(head);
         _status = WS_DISCONNECTED;
         _client->close(true);
+        //_server->_cleanBuffers(); 
         return;
       }
       _controlQueue.remove(head);
@@ -300,6 +453,9 @@ void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
   if(len && !_messageQueue.isEmpty()){
     _messageQueue.front()->ack(len, time);
   }
+  //Serial.println("_clean buffer called from ACK"); 
+  _server->_cleanBuffers(); 
+
   _runQueue();
 }
 
@@ -548,6 +704,11 @@ void AsyncWebSocketClient::text(const __FlashStringHelper *data){
     text(message, n);
   }
 }
+void AsyncWebSocketClient::text(AsyncWebSocketMessageBuffer * buffer)
+{
+  //Serial.printf("%s called\n", __PRETTY_FUNCTION__); 
+  _queueMessage(new AsyncWebSocketMultiMessage(buffer));
+}
 
 void AsyncWebSocketClient::binary(const char * message, size_t len){
   _queueMessage(new AsyncWebSocketBasicMessage(message, len, WS_BINARY));
@@ -572,6 +733,10 @@ void AsyncWebSocketClient::binary(const __FlashStringHelper *data, size_t len){
       message[b] = pgm_read_byte(p++);
     binary(message, len);
   }
+}
+void AsyncWebSocketClient::binary(AsyncWebSocketMessageBuffer * buffer)
+{
+  _queueMessage(new AsyncWebSocketMultiMessage(buffer, WS_BINARY));
 }
 
 IPAddress AsyncWebSocketClient::remoteIP() {
@@ -599,6 +764,7 @@ AsyncWebSocket::AsyncWebSocket(const String& url)
   ,_clients(LinkedList<AsyncWebSocketClient *>([](AsyncWebSocketClient *c){ delete c; }))
   ,_cNextId(1)
   ,_enabled(true)
+  ,_buffers(LinkedList<AsyncWebSocketMessageBuffer *>([](AsyncWebSocketMessageBuffer *b){ delete b; }))
 {
   _eventHandler = NULL;
 }
@@ -670,11 +836,21 @@ void AsyncWebSocket::text(uint32_t id, const char * message, size_t len){
     c->text(message, len);
 }
 
-void AsyncWebSocket::textAll(const char * message, size_t len){
+void AsyncWebSocket::textAll(AsyncWebSocketMessageBuffer * buffer){
+  if (!buffer) return;
+  buffer->lock(); 
   for(const auto& c: _clients){
     if(c->status() == WS_CONNECTED)
-      c->text(message, len);
+      c->text(buffer);
   }
+  buffer->unlock();
+  _cleanBuffers(); 
+}
+
+
+void AsyncWebSocket::textAll(const char * message, size_t len){
+  AsyncWebSocketMessageBuffer * WSBuffer = makeBuffer((uint8_t *)message, len); 
+    textAll(WSBuffer); 
 }
 
 void AsyncWebSocket::binary(uint32_t id, const char * message, size_t len){
@@ -684,10 +860,20 @@ void AsyncWebSocket::binary(uint32_t id, const char * message, size_t len){
 }
 
 void AsyncWebSocket::binaryAll(const char * message, size_t len){
-  for(const auto& c: _clients){
+  AsyncWebSocketMessageBuffer * buffer = makeBuffer((uint8_t *)message, len); 
+  binaryAll(buffer); 
+}
+
+void AsyncWebSocket::binaryAll(AsyncWebSocketMessageBuffer * buffer)
+{
+  if (!buffer) return;
+  buffer->lock(); 
+    for(const auto& c: _clients){
     if(c->status() == WS_CONNECTED)
-      c->binary(message, len);
+      c->binary(buffer);
   }
+  buffer->unlock(); 
+  _cleanBuffers(); 
 }
 
 void AsyncWebSocket::message(uint32_t id, AsyncWebSocketMessage *message){
@@ -696,11 +882,12 @@ void AsyncWebSocket::message(uint32_t id, AsyncWebSocketMessage *message){
     c->message(message);
 }
 
-void AsyncWebSocket::messageAll(AsyncWebSocketMessage *message){
+void AsyncWebSocket::messageAll(AsyncWebSocketMultiMessage *message){
   for(const auto& c: _clients){
     if(c->status() == WS_CONNECTED)
       c->message(message);
   }
+  _cleanBuffers(); 
 }
 
 size_t AsyncWebSocket::printf(uint32_t id, const char *format, ...){
@@ -718,27 +905,25 @@ size_t AsyncWebSocket::printf(uint32_t id, const char *format, ...){
 size_t AsyncWebSocket::printfAll(const char *format, ...) {
   va_list arg;
   va_start(arg, format);
-  char* temp = new char[64];
-  if(!temp){
+  // char* temp = new char[64];
+  // if(!temp){
+  //   return 0;
+  // }
+  size_t len = vsnprintf(nullptr, 0, format, arg);
+  va_end(arg);
+
+  AsyncWebSocketMessageBuffer * buffer = makeBuffer(len + 1); 
+  if (!buffer) {
     return 0;
   }
-  char* buffer = temp;
-  size_t len = vsnprintf(temp, 64, format, arg);
+
+  va_start(arg, format);
+  vsnprintf( (char *)buffer->get(), len + 1, format, arg);
   va_end(arg);
-  if (len > 63) {
-    buffer = new char[len + 1];
-    if (!buffer) {
-      return 0;
-    }
-    va_start(arg, format);
-    vsnprintf(buffer, len + 1, format, arg);
-    va_end(arg);
-  }
-  textAll(buffer, len);
-  if (buffer != temp) {
-    delete[] buffer;
-  }
-  delete[] temp;
+
+  textAll(buffer);
+
+  //delete[] temp;
   return len;
 }
 
@@ -757,27 +942,25 @@ size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...){
 size_t AsyncWebSocket::printfAll_P(PGM_P formatP, ...) {
   va_list arg;
   va_start(arg, formatP);
-  char* temp = new char[64];
-  if(!temp){
+  // char* temp = new char[64];
+  // if(!temp){
+  //   return 0;
+  // }
+  size_t len = vsnprintf_P(nullptr, 0, formatP, arg);
+  va_end(arg);
+
+  AsyncWebSocketMessageBuffer * buffer = makeBuffer(len + 1); 
+  if (!buffer) {
     return 0;
   }
-  char* buffer = temp;
-  size_t len = vsnprintf_P(temp, 64, formatP, arg);
+
+  va_start(arg, formatP);
+  vsnprintf_P( (char *)buffer->get(), len + 1, formatP, arg);
   va_end(arg);
-  if (len > 63) {
-    buffer = new char[len + 1];
-    if (!buffer) {
-      return 0;
-    }
-    va_start(arg, formatP);
-    vsnprintf_P(buffer, len + 1, formatP, arg);
-    va_end(arg);
-  }
-  textAll(buffer, len);
-  if (buffer != temp) {
-    delete[] buffer;
-  }
-  delete[] temp;
+
+  textAll(buffer);
+
+  //delete[] temp;
   return len;
 }
 
@@ -897,6 +1080,37 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request){
     response->addHeader(WS_STR_PROTOCOL, protocol->value());
   }
   request->send(response);
+}
+
+AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(size_t size)
+{
+  AsyncWebSocketMessageBuffer * buffer = new AsyncWebSocketMessageBuffer(size); 
+  if (buffer) {
+    _buffers.add(buffer);
+  }
+  return buffer; 
+}
+
+AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(uint8_t * data, size_t size)
+{
+  AsyncWebSocketMessageBuffer * buffer = new AsyncWebSocketMessageBuffer(data, size); 
+  //Serial.printf("%s : Creating msg buffer %p\n", __PRETTY_FUNCTION__, buffer); 
+  
+  if (buffer) {
+    _buffers.add(buffer);
+  }
+
+  return buffer; 
+}
+
+void AsyncWebSocket::_cleanBuffers()
+{
+  //Serial.printf("%s called\n", __PRETTY_FUNCTION__); 
+  for(const auto& c: _buffers){
+    //Serial.printf(" Buffer %p: count() = %u, canDelete = %s\n", c, c->count(), (c->canDelete())? "true" : "false" ); 
+    if(c->canDelete()) 
+      _buffers.remove(c);
+  }
 }
 
 
