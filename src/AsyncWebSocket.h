@@ -101,8 +101,6 @@ public:
     virtual bool betweenFrames() const override { return _acked == _ack; }
     virtual void ack(size_t len, uint32_t time) override ;
     virtual size_t send(AsyncClient *client) override ;
-    // uint8_t * buffer() { return _data; }
-    // bool reserve(size_t size);
 };
 
 class AsyncWebSocketMultiMessage: public AsyncWebSocketMessage {
@@ -119,8 +117,6 @@ public:
     virtual bool betweenFrames() const override { return _acked == _ack; }
     virtual void ack(size_t len, uint32_t time) override ;
     virtual size_t send(AsyncClient *client) override ;
-    //AsyncWebSocketMessageBuffer * buffer() { return _WSbuffer; }
-    // bool reserve(size_t size);
 };
 
 class AsyncWebSocketClient {
