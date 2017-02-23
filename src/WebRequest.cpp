@@ -572,15 +572,10 @@ AsyncWebHeader* AsyncWebServerRequest::getHeader(const String& name) const {
 
 AsyncWebHeader* AsyncWebServerRequest::getHeader(const __FlashStringHelper * data) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = 0;
-  while (1) {
-    if (pgm_read_byte(p+n) == 0) break;
-      n += 1;
-  }
+  size_t n = strlen_P(p); 
   char * name = (char*) malloc(n+1);
   if (name) {
-    for(size_t b=0; b<n; b++)
-      name[b] = pgm_read_byte(p++);    
+    strcpy_P(name, p); 
     AsyncWebHeader* result = getHeader( String(name)); 
     free(name); 
     return result; 
@@ -609,16 +604,12 @@ bool AsyncWebServerRequest::hasParam(const String& name, bool post, bool file) c
 
 bool AsyncWebServerRequest::hasParam(const __FlashStringHelper * data, bool post, bool file) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = 0;
-  while (1) {
-    if (pgm_read_byte(p+n) == 0) break;
-      n += 1;
-  }
+  size_t n = strlen_P(p);
+
   char * name = (char*) malloc(n+1);
   name[n] = 0; 
   if (name) {
-    for(size_t b=0; b<n; b++)
-      name[b] = pgm_read_byte(p++);    
+    strcpy_P(name,p);    
     bool result = hasParam( name, post, file); 
     free(name); 
     return result; 
@@ -638,16 +629,10 @@ AsyncWebParameter* AsyncWebServerRequest::getParam(const String& name, bool post
 
 AsyncWebParameter* AsyncWebServerRequest::getParam(const __FlashStringHelper * data, bool post, bool file) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = 0;
-  while (1) {
-    if (pgm_read_byte(p+n) == 0) break;
-      n += 1;
-  }
+  size_t n = strlen_P(p);
   char * name = (char*) malloc(n+1);
-  name[n] = 0; 
   if (name) {
-    for(size_t b=0; b<n; b++)
-      name[b] = pgm_read_byte(p++);    
+    strcpy_P(name, p);   
     AsyncWebParameter* result = getParam(name, post, file); 
     free(name); 
     return result; 
@@ -828,16 +813,10 @@ bool AsyncWebServerRequest::hasArg(const char* name) const {
 
 bool AsyncWebServerRequest::hasArg(const __FlashStringHelper * data) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = 0;
-  while (1) {
-    if (pgm_read_byte(p+n) == 0) break;
-      n += 1;
-  }
+  size_t n = strlen_P(p); 
   char * name = (char*) malloc(n+1);
-  name[n] = 0; 
   if (name) {
-    for(size_t b=0; b<n; b++)
-      name[b] = pgm_read_byte(p++);    
+    strcpy_P(name, p);    
     bool result = hasArg( name ); 
     free(name); 
     return result; 
@@ -858,16 +837,10 @@ const String& AsyncWebServerRequest::arg(const String& name) const {
 
 const String& AsyncWebServerRequest::arg(const __FlashStringHelper * data) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = 0;
-  while (1) {
-    if (pgm_read_byte(p+n) == 0) break;
-      n += 1;
-  }
+  size_t n = strlen_P(p);
   char * name = (char*) malloc(n+1);
-  name[n] = 0; 
   if (name) {
-    for(size_t b=0; b<n; b++)
-      name[b] = pgm_read_byte(p++);    
+    strcpy(name, p);   
     const String & result = arg( String(name) ); 
     free(name); 
     return result; 
@@ -892,16 +865,10 @@ const String& AsyncWebServerRequest::header(const char* name) const {
 
 const String& AsyncWebServerRequest::header(const __FlashStringHelper * data) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = 0;
-  while (1) {
-    if (pgm_read_byte(p+n) == 0) break;
-      n += 1;
-  }
+  size_t n = strlen_P(p); 
   char * name = (char*) malloc(n+1);
-  name[n] = 0; 
   if (name) {
-    for(size_t b=0; b<n; b++)
-      name[b] = pgm_read_byte(p++);    
+    strcpy_P(name, p);  
     const String & result = header( (const char *)name ); 
     free(name); 
     return result; 
