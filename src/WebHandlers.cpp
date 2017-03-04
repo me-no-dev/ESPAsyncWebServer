@@ -22,7 +22,7 @@
 #include "WebHandlerImpl.h"
 
 AsyncStaticWebHandler::AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control)
-  : _fs(fs), _uri(uri), _path(path), _default_file("index.htm"), _cache_control(cache_control), _last_modified("")
+  : _fs(fs), _uri(uri), _path(path), _default_file("index.htm"), _cache_control(cache_control), _last_modified(""), _username(""), _password("")
 {
   // Ensure leading '/'
   if (_uri.length() == 0 || _uri[0] != '/') _uri = "/" + _uri;
@@ -66,6 +66,10 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(struct tm* last_mo
   char result[30];
   strftime (result,30,"%a, %d %b %Y %H:%M:%S %Z", last_modified);
   return setLastModified((const char *)result);
+}
+AsyncStaticWebHandler& AsyncStaticWebHandler::setBasicAuth(const char *username, const char *password){
+  _username = String(username);
+  _password = String(password);
 }
 #ifdef ESP8266
 AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(time_t last_modified){
@@ -180,6 +184,8 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
   String filename = String((char*)request->_tempObject);
   free(request->_tempObject);
   request->_tempObject = NULL;
+  if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
+      return request->requestAuthentication();
 
   if (request->_tempFile == true) {
     String etag = String(request->_tempFile.size());

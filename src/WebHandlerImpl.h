@@ -37,6 +37,8 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     String _default_file;
     String _cache_control;
     String _last_modified;
+    String _username;
+    String _password;
     bool _isDir;
     bool _gzipFirst;
     uint8_t _gzipStats;
@@ -49,6 +51,7 @@ class AsyncStaticWebHandler: public AsyncWebHandler {
     AsyncStaticWebHandler& setCacheControl(const char* cache_control);
     AsyncStaticWebHandler& setLastModified(const char* last_modified);
     AsyncStaticWebHandler& setLastModified(struct tm* last_modified);
+    AsyncStaticWebHandler& setBasicAuth(const char *username, const char *password);
   #ifdef ESP8266
     AsyncStaticWebHandler& setLastModified(time_t last_modified);
     AsyncStaticWebHandler& setLastModified(); //sets to current time. Make sure sntp is runing and time is updated
