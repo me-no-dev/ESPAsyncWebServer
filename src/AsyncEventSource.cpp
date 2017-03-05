@@ -229,6 +229,8 @@ bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
 }
 
 void AsyncEventSource::handleRequest(AsyncWebServerRequest *request){
+  if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
+    return request->requestAuthentication();
   request->send(new AsyncEventSourceResponse(this));
 }
 
