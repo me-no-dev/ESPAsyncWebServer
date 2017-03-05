@@ -564,6 +564,15 @@ server.serveStatic("/", SPIFFS, "/www/");
 server.serveStatic("/", SPIFFS, "/www/").setDefaultFile("default.html");
 ```
 
+### Serving static files with authentication 
+
+```cpp
+server
+    .serveStatic("/", SPIFFS, "/www/")
+    .setDefaultFile("default.html")
+    .setAuthentication("user", "pass");
+```
+
 ### Specifying Cache-Control header
 It is possible to specify Cache-Control header value to reduce the number of calls to the server once the client loaded
 the files. For more information on Cache-Control values see [Cache-Control](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9)
@@ -757,6 +766,8 @@ ws.binary((uint32_t)client_id, flash_binary, 4);
 //send binary to all clients
 ws.binaryAll((char*)binary);
 ws.binaryAll((uint8_t*)binary, (size_t)len);
+//HTTP Authenticate before switch to Websocket protocol 
+ws.setAuthentication("user", "pass"); 
 
 //client methods
 AsyncWebSocketClient * client;
@@ -798,6 +809,8 @@ void setup(){
     // and set reconnect delay to 1 second
     client->send("hello!",NULL,millis(),1000);
   });
+  //HTTP Basic authentication
+  events.setAuthentication("user", "pass");
   server.addHandler(&events);
   // setup ......
 }
