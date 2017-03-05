@@ -290,9 +290,12 @@ class AsyncWebRewrite {
 class AsyncWebHandler {
   protected:
     ArRequestFilterFunction _filter;
+    String _username;
+    String _password;
   public:
-    AsyncWebHandler(){}
+    AsyncWebHandler():_username(""), _password(""){}
     AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
+    AsyncWebHandler& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password);};
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
     virtual bool canHandle(AsyncWebServerRequest *request __attribute__((unused))){
