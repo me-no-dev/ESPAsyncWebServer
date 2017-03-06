@@ -228,21 +228,30 @@ class AsyncWebServerRequest {
 
     size_t headers() const;                     // get header count
     bool hasHeader(const String& name) const;   // check if header exists
+    bool hasHeader(const __FlashStringHelper * data) const;   // check if header exists
+
     AsyncWebHeader* getHeader(const String& name) const;
+    AsyncWebHeader* getHeader(const __FlashStringHelper * data) const;
     AsyncWebHeader* getHeader(size_t num) const;
 
     size_t params() const;                      // get arguments count
     bool hasParam(const String& name, bool post=false, bool file=false) const;
+    bool hasParam(const __FlashStringHelper * data, bool post=false, bool file=false) const;
+
     AsyncWebParameter* getParam(const String& name, bool post=false, bool file=false) const;
+    AsyncWebParameter* getParam(const __FlashStringHelper * data, bool post, bool file) const; 
     AsyncWebParameter* getParam(size_t num) const;
 
     size_t args() const { return params(); }     // get arguments count
     const String& arg(const String& name) const; // get request argument value by name
+    const String& arg(const __FlashStringHelper * data) const; // get request argument value by F(name)    
     const String& arg(size_t i) const;           // get request argument value by number
     const String& argName(size_t i) const;       // get request argument name by number
     bool hasArg(const char* name) const;         // check if argument exists
+    bool hasArg(const __FlashStringHelper * data) const;         // check if F(argument) exists
 
     const String& header(const char* name) const;// get request header value by name
+    const String& header(const __FlashStringHelper * data) const;// get request header value by F(name)    
     const String& header(size_t i) const;        // get request header value by number
     const String& headerName(size_t i) const;    // get request header name by number
     String urlDecode(const String& text) const;
@@ -290,9 +299,12 @@ class AsyncWebRewrite {
 class AsyncWebHandler {
   protected:
     ArRequestFilterFunction _filter;
+    String _username;
+    String _password;
   public:
-    AsyncWebHandler(){}
+    AsyncWebHandler():_username(""), _password(""){}
     AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
+    AsyncWebHandler& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password);};
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
     virtual bool canHandle(AsyncWebServerRequest *request __attribute__((unused))){

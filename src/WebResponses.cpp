@@ -259,7 +259,12 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
 
   if(_state == RESPONSE_CONTENT){
     size_t outLen;
-    if(_chunked || !_sendContentLength){
+    if(_chunked){
+      if(space <= 8){
+        return 0;
+      }
+      outLen = space;
+    } else if(!_sendContentLength){
       outLen = space;
     } else {
       outLen = ((_contentLength - _sentLength) > space)?space:(_contentLength - _sentLength);

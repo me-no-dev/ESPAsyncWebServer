@@ -67,6 +67,7 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(struct tm* last_mo
   strftime (result,30,"%a, %d %b %Y %H:%M:%S %Z", last_modified);
   return setLastModified((const char *)result);
 }
+
 #ifdef ESP8266
 AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(time_t last_modified){
   return setLastModified((struct tm *)gmtime(&last_modified));
@@ -180,6 +181,8 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
   String filename = String((char*)request->_tempObject);
   free(request->_tempObject);
   request->_tempObject = NULL;
+  if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
+      return request->requestAuthentication();
 
   if (request->_tempFile == true) {
     String etag = String(request->_tempFile.size());

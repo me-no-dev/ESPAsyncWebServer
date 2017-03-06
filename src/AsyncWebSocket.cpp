@@ -531,6 +531,7 @@ void AsyncWebSocketClient::text(const __FlashStringHelper *data){
       message[b] = pgm_read_byte(p++);
     message[n] = 0;
     text(message, n);
+    free(message); 
   }
 }
 
@@ -556,6 +557,7 @@ void AsyncWebSocketClient::binary(const __FlashStringHelper *data, size_t len){
     for(size_t b=0; b<len; b++)
       message[b] = pgm_read_byte(p++);
     binary(message, len);
+    free(message); 
   }
 }
 
@@ -867,6 +869,9 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request){
     request->send(400);
     return;
   }
+  if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
+    return request->requestAuthentication();
+
   AsyncWebHeader* version = request->getHeader(WS_STR_VERSION);
   if(version->value().toInt() != 13){
     AsyncWebServerResponse *response = request->beginResponse(400);
