@@ -60,6 +60,24 @@ class AsyncWebSocketMessage {
     virtual bool betweenFrames() const { return false; }
 };
 
+class AsyncWebSocketBasicMessage: public AsyncWebSocketMessage {
+  private:
+    uint8_t * _data;
+    size_t _len;
+    size_t _sent;
+    size_t _ack;
+    size_t _acked;
+public:
+    AsyncWebSocketBasicMessage(const char * data, size_t len, uint8_t opcode=WS_TEXT, bool mask=false);
+    AsyncWebSocketBasicMessage(uint8_t opcode=WS_TEXT, bool mask=false);
+    virtual ~AsyncWebSocketBasicMessage() override;
+    virtual bool betweenFrames() const override { return _acked == _ack; }
+    virtual void ack(size_t len, uint32_t time) override ;
+    virtual size_t send(AsyncClient *client) override ;
+    uint8_t * buffer() { return _data; }
+    bool reserve(size_t size);
+};
+
 class AsyncWebSocketClient {
   private:
     AsyncClient *_client;
