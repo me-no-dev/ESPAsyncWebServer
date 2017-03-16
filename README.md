@@ -790,6 +790,32 @@ const uint8_t flash_binary[] PROGMEM = { 0x01, 0x02, 0x03, 0x04 };
 client->binary(flash_binary, 4);
 ```
 
+### Direct access to web socket message buffer
+When sending a web socket message using the above methods a buffer is created.  Under certain circumstances you might want to manipulate or populate this buffer directly from your application, for example to prevent unnecessary duplications of the data.  This example below shows how to create a buffer and print data to it from an ArduinoJson object then send it.   
+
+```cpp
+void sendDataWs(AsyncWebSocketClient * client)
+{
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& root = jsonBuffer.createObject();
+    root["a"] = "abc";
+    root["b"] = "abcd";
+    root["c"] = "abcde";
+    root["d"] = "abcdef";
+    root["e"] = "abcdefg";
+    size_t len = root.measureLength();
+    AsyncWebSocketMessageBuffer * buffer = ws.makeBuffer(len); //  creates a buffer (len + 1) for you.
+    if (buffer) {
+        root.printTo((char *)buffer->get(), len + 1);
+        if (client) {
+            client->text(buffer);
+        } else {
+            ws.textAll(buffer);
+        }
+    }
+}
+```
+
 ## Async Event Source Plugin
 The server includes EventSource (Server-Sent Events) plugin which can be used to send short text events to the browser.
 Difference between EventSource and WebSockets is that EventSource is single direction, text-only protocol.
