@@ -26,6 +26,8 @@
 #include <time.h>
 
 class AsyncStaticWebHandler: public AsyncWebHandler {
+   using File = fs::File;
+   using FS = fs::FS;
   private:
     bool _getFile(AsyncWebServerRequest *request);
     bool _fileExists(AsyncWebServerRequest *request, const String& path);

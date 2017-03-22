@@ -116,6 +116,8 @@ class AsyncWebHeader {
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
 
 class AsyncWebServerRequest {
+  using File = fs::File;
+  using FS = fs::FS;
   friend class AsyncWebServer;
   private:
     AsyncClient* _client;
