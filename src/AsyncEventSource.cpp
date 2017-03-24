@@ -107,20 +107,15 @@ static String generateEventMessage(const char *message, const char *event, uint3
 // Message
 
 AsyncEventSourceMessage::AsyncEventSourceMessage(const char * data, size_t len)
-: _status(EVS_MSG_ERROR), _data(nullptr), _len(len), _sent(0)
+: _data(nullptr), _len(len), _sent(0), _acked(0)
 {
   _data = (uint8_t*)malloc(_len+1);
-  if(_data == NULL){
+  if(_data == nullptr){
     _len = 0;
-    _status = EVS_MSG_ERROR;
   } else {
-    _status = EVS_MSG_SENDING;
     memcpy(_data, data, len);
     _data[_len] = 0;
-    String temp = data;
   }
-
-  
 }
 
 AsyncEventSourceMessage::~AsyncEventSourceMessage() {
@@ -128,21 +123,28 @@ AsyncEventSourceMessage::~AsyncEventSourceMessage() {
         free(_data);
 }
 
-void AsyncEventSourceMessage::ack(size_t len, uint32_t time) {
-  if(_len == len && _sent == _len){
-     _status = EVS_MSG_SENT;
+size_t AsyncEventSourceMessage::ack(size_t len, uint32_t time) {
+  // If the whole message is now acked...
+  if(_acked + len > _len){
+     // Return the number of extra bytes acked (they will be carried on to the next message)
+     const size_t extra = _acked + len - _len;
+     _acked = _len;
+     return extra;
   }
+  // Return that no extra bytes left.
+  _acked += len;
+  return 0;
 }
 
 size_t AsyncEventSourceMessage::send(AsyncClient *client) {
-  if(!client->canSend()){
+  const size_t len = _len - _sent;
+  if(client->space() < len){
     return 0;
   }
-  if(client->space() < _len){
-    return 0;
-  }
-  size_t sent = client->write((const char *)_data, _len);
-  _sent = sent;
+  size_t sent = client->add((const char *)_data, len);
+  if(client->canSend())
+    client->send();
+  _sent += sent;
   return sent; 
 }
 
@@ -184,20 +186,21 @@ void AsyncEventSourceClient::_queueMessage(AsyncEventSourceMessage *dataMessage)
 
   _messageQueue.add(dataMessage);
 
-  if(_client->canSend()) { _runQueue(); } 
+  _runQueue();
 }
 
 void AsyncEventSourceClient::_onAck(size_t len, uint32_t time){
-
-  if(len && !_messageQueue.isEmpty()){
-    _messageQueue.front()->ack(len, time);
+  while(len && !_messageQueue.isEmpty()){
+    len = _messageQueue.front()->ack(len, time);
+    if(_messageQueue.front()->finished())
+      _messageQueue.remove(_messageQueue.front());
   }
 
   _runQueue();
 }
 
 void AsyncEventSourceClient::_onPoll(){
-  if(_client->canSend() && !_messageQueue.isEmpty()){
+  if(!_messageQueue.isEmpty()){
     _runQueue();
   }
 }
@@ -231,8 +234,10 @@ void AsyncEventSourceClient::_runQueue(){
     _messageQueue.remove(_messageQueue.front());
   }
 
-  if(!_messageQueue.isEmpty()){
-    _messageQueue.front()->send(_client);
+  for(auto i = _messageQueue.begin(); i != _messageQueue.end(); ++i)
+  {
+    if(!(*i)->sent())
+      (*i)->send(_client);
   }
 }
 
