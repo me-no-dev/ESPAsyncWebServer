@@ -72,6 +72,8 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
       return _contentLength;
     }
 
+   size_t getSize() { return _jsonBuffer.size(); }
+
     size_t _fillBuffer(uint8_t *data, size_t len){
       ChunkPrint dest(data, _sentLength, len);
       _root.printTo( dest ) ;
