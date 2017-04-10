@@ -369,7 +369,7 @@ class AsyncWebServer {
     AsyncServer _server;
     LinkedList<AsyncWebRewrite*> _rewrites;
     LinkedList<AsyncWebHandler*> _handlers;
-    AsyncWebHandler* _catchAllHandler;
+    AsyncCallbackWebHandler* _catchAllHandler;
 
   public:
     AsyncWebServer(uint16_t port);

@@ -163,15 +163,15 @@ AsyncStaticWebHandler& AsyncWebServer::serveStatic(const char* uri, fs::FS& fs, 
 }
 
 void AsyncWebServer::onNotFound(ArRequestHandlerFunction fn){
-  ((AsyncCallbackWebHandler*)_catchAllHandler)->onRequest(fn);
+  _catchAllHandler->onRequest(fn);
 }
 
 void AsyncWebServer::onFileUpload(ArUploadHandlerFunction fn){
-  ((AsyncCallbackWebHandler*)_catchAllHandler)->onUpload(fn);
+  _catchAllHandler->onUpload(fn);
 }
 
 void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
-  ((AsyncCallbackWebHandler*)_catchAllHandler)->onBody(fn);
+  _catchAllHandler->onBody(fn);
 }
 
 void AsyncWebServer::reset(){
@@ -179,9 +179,9 @@ void AsyncWebServer::reset(){
   _handlers.free();
   
   if (_catchAllHandler != NULL){
-    ((AsyncCallbackWebHandler*)_catchAllHandler)->onRequest(NULL);
-    ((AsyncCallbackWebHandler*)_catchAllHandler)->onUpload(NULL);
-    ((AsyncCallbackWebHandler*)_catchAllHandler)->onBody(NULL);
+    _catchAllHandler->onRequest(NULL);
+    _catchAllHandler->onUpload(NULL);
+    _catchAllHandler->onBody(NULL);
   }
 }
 
