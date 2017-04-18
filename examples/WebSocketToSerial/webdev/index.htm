@@ -1,0 +1,109 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>ESP8266 WebSocket2Serial</title>
+    <meta name="Description" content="ESP8266 WebSocket to Serial Terminal Proxy."/>
+    <link rel="shortcut icon" href="favicon.ico"/>
+    <script src="js/jquery-1.12.3.min.js"></script>
+    <script src="js/jquery.mousewheel-min.js"></script>
+    <script src="js/jquery.terminal-min.js"></script>
+    <link href="css/jquery.terminal-min.css" rel="stylesheet"/>
+  </head>
+<body>
+<script>
+jQuery(document).ready(function($) {
+  var id = 1;
+  var ws = null;
+
+  // Stop WebSocket
+  function stopWS() {
+    if (ws) {
+      ws.close();
+      ws = null;
+    }    
+  }
+
+  // Start WebSocket
+  function startWS(url) {
+    if (url === undefined )
+      url = document.location.host;
+    stopWS();
+    ws = new WebSocket('ws://'+url+'/ws');
+    ws.binaryType = "arraybuffer";
+
+    ws.onopen = function(e) {
+      console.log("ws connected", e);
+      term.echo("[[b;green;]Connected to "+url+"] Press ctrl-d or type [[b;blue;]!close] to disconnect");
+      term.echo("Type [[b;blue;]ping] so see pong response");
+      term.set_prompt(url+"[[;green;] #]");
+    };
+
+    ws.onclose = function(e){
+      term.echo("[[b;red;]Disconnected]");
+      term.set_prompt('[[;red;]>]');
+    };
+
+    ws.onerror = function(e){
+      console.log("ws error", e);
+      term.echo("Error");
+    };
+
+    ws.onmessage = function(e){
+      var msg = "";
+      if(e.data instanceof ArrayBuffer){
+        // WS binary in blue
+        color = 'blue';
+        var bytes = new Uint8Array(e.data);
+        for (var i = 0; i < bytes.length; i++) {
+          msg += String.fromCharCode(bytes[i]);
+        }
+      } else {
+        // WS text in green
+        color = 'green';
+        msg = e.data;
+      }
+      // remove \r and \n terminal echo them
+      msg.replace(/(\r\n|\n|\r)/gm,"");
+      term.echo("[[;"+color+";]"+msg+"]");
+    };
+  }
+
+  // Instanciate the terminal object
+  var term = $('body').terminal( {
+          help: function() {
+            this.echo("available commands are [[b;blue;]connect], [[b;blue;]help]\n" + 
+                      "connect is done trough WebSocket so real URI is [[bu;;]ws://host:port/ws]\n" +
+                      "as soon as you're connected to Internet you can connect anywhere\n" +
+                      "examples: [[b;blue;]connect]                connect to same host than in browser url\n" +
+                      "          [[b;blue;]connect 192.168.1.22]   connect to 192.168.1.22\n" +
+                      "          [[b;blue;]connect mywebsocket:81] connect to mywebsocket:81"); 
+          },
+          connect: function(arg1) { 
+            startWS(arg1); 
+            this.push(function(command, term) { 
+
+              // Interpreter command, don't send but interpret
+              if ( command.charAt(0) == '!' ) {
+                if (command == "!close") {
+                  stopWS(); 
+                  this.pop(); 
+                }
+              // Send to WebSocket
+              } else {
+                ws.send(command); 
+              }
+            },{ onExit: function(){stopWS();}});
+          },
+        }, 
+
+        {  prompt: '[[;red;]>]', 
+         checkArity : false,
+         greetings: "ESP8266 WebSocket To Serial terminal demo\n" + 
+                    "Type [[b;blue;]help] to see available commands\n" +
+                    "Type [[b;blue;]connect] to connect to [[bu;;]" + document.location.host + "]"
+        }
+  );
+});
+</script>
+</body>
