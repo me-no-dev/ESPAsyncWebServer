@@ -339,7 +339,7 @@ AsyncWebSocketBasicMessage::~AsyncWebSocketBasicMessage() {
   size_t toSend = _len - _sent;
   if(window < toSend) toSend = window;
   bool final = ((toSend + _sent) == _len);
-  size_t sent = webSocketSendFrame(client, final, (_sent == 0)?_opcode:WS_CONTINUATION, _mask, (uint8_t*)(_data+_sent), toSend);
+  size_t sent = webSocketSendFrame(client, final, (_sent == 0)?_opcode:(int)WS_CONTINUATION, _mask, (uint8_t*)(_data+_sent), toSend);
   _sent += sent;
   uint8_t headLen = ((sent < 126)?2:4)+(_mask*4);
   _ack += sent + headLen;
@@ -416,7 +416,7 @@ AsyncWebSocketMultiMessage::~AsyncWebSocketMultiMessage() {
   size_t toSend = _len - _sent;
   if(window < toSend) toSend = window;
   bool final = ((toSend + _sent) == _len);
-  size_t sent = webSocketSendFrame(client, final, (_sent == 0)?_opcode:WS_CONTINUATION, _mask, (uint8_t*)(_data+_sent), toSend);
+  size_t sent = webSocketSendFrame(client, final, (_sent == 0)?_opcode:(int)WS_CONTINUATION, _mask, (uint8_t*)(_data+_sent), toSend);
   _sent += sent;
   uint8_t headLen = ((sent < 126)?2:4)+(_mask*4);
   _ack += sent + headLen;
