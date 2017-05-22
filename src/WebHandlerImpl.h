@@ -65,13 +65,15 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArRequestHandlerFunction _onRequest;
     ArUploadHandlerFunction _onUpload;
     ArBodyHandlerFunction _onBody;
+    ArDisconnectHandlerFunction _onDisconnect;
   public:
-    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL){}
+    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL), _onDisconnect(NULL){}
     void setUri(const String& uri){ _uri = uri; }
     void setMethod(WebRequestMethodComposite method){ _method = method; }
     void onRequest(ArRequestHandlerFunction fn){ _onRequest = fn; }
     void onUpload(ArUploadHandlerFunction fn){ _onUpload = fn; }
     void onBody(ArBodyHandlerFunction fn){ _onBody = fn; }
+    void onDisconnect(ArDisconnectHandlerFunction fn){ _onDisconnect = fn; }
 
     virtual bool canHandle(AsyncWebServerRequest *request) override final{
 
@@ -101,6 +103,10 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     virtual void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) override final {
       if(_onBody)
         _onBody(request, data, len, index, total);
+    }
+    virtual void handleDisconnect(AsyncWebServerRequest *request) override final {
+      if(_onDisconnect)
+        _onDisconnect(request);
     }
 };
 

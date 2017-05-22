@@ -196,6 +196,7 @@ void AsyncWebServerRequest::_onTimeout(uint32_t time){
 
 void AsyncWebServerRequest::_onDisconnect(){
   //os_printf("d\n");
+  if(_handler) _handler->handleDisconnect(this);
   _server->_handleDisconnect(this);
 }
 

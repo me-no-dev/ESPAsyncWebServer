@@ -315,6 +315,7 @@ class AsyncWebHandler {
     virtual void handleRequest(AsyncWebServerRequest *request __attribute__((unused))){}
     virtual void handleUpload(AsyncWebServerRequest *request  __attribute__((unused)), const String& filename __attribute__((unused)), size_t index __attribute__((unused)), uint8_t *data __attribute__((unused)), size_t len __attribute__((unused)), bool final  __attribute__((unused))){}
     virtual void handleBody(AsyncWebServerRequest *request __attribute__((unused)), uint8_t *data __attribute__((unused)), size_t len __attribute__((unused)), size_t index __attribute__((unused)), size_t total __attribute__((unused))){}
+    virtual void handleDisconnect(AsyncWebServerRequest *request __attribute__((unused))){}
 };
 
 /*
@@ -363,6 +364,7 @@ class AsyncWebServerResponse {
 typedef std::function<void(AsyncWebServerRequest *request)> ArRequestHandlerFunction;
 typedef std::function<void(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final)> ArUploadHandlerFunction;
 typedef std::function<void(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)> ArBodyHandlerFunction;
+typedef std::function<void(AsyncWebServerRequest *request)> ArDisconnectHandlerFunction;
 
 class AsyncWebServer {
   protected:
