@@ -37,6 +37,7 @@ To use this library you might need to have the latest git versions of [ESP8266](
 		- [Respond with content coming from a Stream and extra headers](#respond-with-content-coming-from-a-stream-and-extra-headers)
 		- [Respond with content coming from a File](#respond-with-content-coming-from-a-file)
 		- [Respond with content coming from a File and extra headers](#respond-with-content-coming-from-a-file-and-extra-headers)
+		- [Respond with content coming from a File containing templates](#respond-with-content-coming-from-a-file-containing-templates)
 		- [Respond with content using a callback](#respond-with-content-using-a-callback)
 		- [Respond with content using a callback and extra headers](#respond-with-content-using-a-callback-and-extra-headers)
 		- [Chunked Response](#chunked-response)
@@ -48,6 +49,7 @@ To use this library you might need to have the latest git versions of [ESP8266](
 		- [Serving files in directory](#serving-files-in-directory)
 		- [Specifying Cache-Control header](#specifying-cache-control-header)
 		- [Specifying Date-Modified header](#specifying-date-modified-header)
+		- [Specifying Template Processor callback](#specifying-template-processor-callback)
 	- [Using filters](#using-filters)
 		- [Serve different site files in AP mode](#serve-different-site-files-in-ap-mode)
 		- [Rewrite to different index on AP](#rewrite-to-different-index-on-ap)
@@ -411,6 +413,29 @@ response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
+### Respond with content coming from a File containing templates
+Internally uses [Chunked Response](#chunked-response).
+
+Index.htm contents:
+```
+%HELLO_FROM_TEMPLATE%
+```
+
+Somewhere in source files:
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+//Send index.htm with template processor function
+request->send(SPIFFS, "/index.htm", String(), false, processor);
+```
+
 ### Respond with content using a callback
 ```cpp
 //send 128 bytes as plain text
@@ -609,6 +634,23 @@ String date_modified = getNewDateModfied();
 saveDateModified(date_modified); // Save for next reset
 handler->setLastModified(date_modified);
 ```
+
+### Specifying Template Processor callback
+It is possible to specify template processor for static files. For information on template processor see
+[Respond with content coming from a File containing templates](#respond-with-content-coming-from-a-file-containing-templates).
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+server.serveStatic("/", SPIFFS, "/www/").setTemplateProcessor(processor);
+```
+
 
 ## Using filters
 Filters can be set to `Rewrite` or `Handler` in order to control when to apply the rewrite and consider the handler.
