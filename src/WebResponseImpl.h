@@ -21,6 +21,14 @@
 #ifndef ASYNCWEBSERVERRESPONSEIMPL_H_
 #define ASYNCWEBSERVERRESPONSEIMPL_H_
 
+#ifdef Arduino_h
+// arduino is not compatible with std::vector
+#undef min
+#undef max
+#endif
+#include <vector>
+// It is possible to restore these defines, but one can use _min and _max instead. Or std::min, std::max.
+
 class AsyncBasicResponse: public AsyncWebServerResponse {
   private:
     String _content;
@@ -41,16 +49,21 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
     virtual size_t _fillBuffer(uint8_t *buf __attribute__((unused)), size_t maxLen __attribute__((unused))) { return 0; }
 };
 
+#define TEMPLATE_PLACEHOLDER '%'
+#define TEMPLATE_PARAM_NAME_LENGTH 32
 class AsyncFileResponse: public AsyncAbstractResponse {
   using File = fs::File;
   using FS = fs::FS;
   private:
+    std::vector<uint8_t> _cache;
     File _content;
     String _path;
+    AwsTemplateProcessor _callback;
     void _setContentType(const String& path);
+    size_t _readDataFromCacheOrFile(uint8_t* data, const size_t len);
   public:
-    AsyncFileResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    AsyncFileResponse(File content, const String& path, const String& contentType=String(), bool download=false);
+    AsyncFileResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
+    AsyncFileResponse(File content, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
     ~AsyncFileResponse();
     bool _sourceValid() const { return !!(_content); }
     virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;

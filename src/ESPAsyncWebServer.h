@@ -114,6 +114,7 @@ class AsyncWebHeader {
  * */
 
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
+typedef std::function<String(const String&)> AwsTemplateProcessor;
 
 class AsyncWebServerRequest {
   using File = fs::File;
@@ -210,8 +211,8 @@ class AsyncWebServerRequest {
 
     void send(AsyncWebServerResponse *response);
     void send(int code, const String& contentType=String(), const String& content=String());
-    void send(FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    void send(File content, const String& path, const String& contentType=String(), bool download=false);
+    void send(FS &fs, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
+    void send(File content, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
     void send(Stream &stream, const String& contentType, size_t len);
     void send(const String& contentType, size_t len, AwsResponseFiller callback);
     void sendChunked(const String& contentType, AwsResponseFiller callback);
@@ -219,8 +220,8 @@ class AsyncWebServerRequest {
     void send_P(int code, const String& contentType, PGM_P content);
 
     AsyncWebServerResponse *beginResponse(int code, const String& contentType=String(), const String& content=String());
-    AsyncWebServerResponse *beginResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    AsyncWebServerResponse *beginResponse(File content, const String& path, const String& contentType=String(), bool download=false);
+    AsyncWebServerResponse *beginResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
+    AsyncWebServerResponse *beginResponse(File content, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
     AsyncWebServerResponse *beginResponse(Stream &stream, const String& contentType, size_t len);
     AsyncWebServerResponse *beginResponse(const String& contentType, size_t len, AwsResponseFiller callback);
     AsyncWebServerResponse *beginChunkedResponse(const String& contentType, AwsResponseFiller callback);
