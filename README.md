@@ -578,15 +578,15 @@ It is possible to specify Cache-Control header value to reduce the number of cal
 the files. For more information on Cache-Control values see [Cache-Control](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9)
 ```cpp
 // Cache responses for 10 minutes (600 seconds)
-server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age:600");
+server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age=600");
 
 //*** Change Cache-Control after server setup ***
 
 // During setup - keep a pointer to the handler
-AsyncStaticWebHandler* handler = &server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age:600");
+AsyncStaticWebHandler* handler = &server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age=600");
 
 // At a later event - change Cache-Control
-handler->setCacheControl("max-age:30");
+handler->setCacheControl("max-age=30");
 ```
 
 ### Specifying Date-Modified header
