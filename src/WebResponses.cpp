@@ -176,7 +176,7 @@ void AsyncBasicResponse::_respond(AsyncWebServerRequest *request){
     outLen += _contentLength;
     _writtenLength += request->client()->write(out.c_str(), outLen);
     _state = RESPONSE_WAIT_ACK;
-  } else if(space && space < out.length()){
+  } else if(space && space < outLen){
     String partial = out.substring(0, space);
     _content = out.substring(space) + _content;
     _contentLength += outLen - space;
@@ -284,14 +284,14 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     size_t readLen = 0;
 
     if(_chunked){
-      readLen = _fillBuffer(buf+headLen, outLen - 8);
-      char pre[6];
-      sprintf(pre, "%x\r\n", readLen);
-      size_t preLen = strlen(pre);
-      memmove(buf+headLen+preLen, buf+headLen, readLen);
-      for(size_t i=0; i<preLen; i++)
-        buf[i+headLen] = pre[i];
-      outLen = preLen + readLen + headLen;
+      // HTTP 1.1 allows leading zeros in chunk length. Or spaces may be added.
+      // See RFC2616 sections 2, 3.6.1.
+      readLen = _fillBuffer(buf+headLen+6, outLen - 8);
+      outLen = sprintf((char*)buf+headLen, "%x", readLen) + headLen;
+      while(outLen < headLen + 4) buf[outLen++] = ' ';
+      buf[outLen++] = '\r';
+      buf[outLen++] = '\n';
+      outLen += readLen;
       buf[outLen++] = '\r';
       buf[outLen++] = '\n';
     } else {
