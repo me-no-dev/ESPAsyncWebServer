@@ -270,6 +270,7 @@ bool AsyncWebServerRequest::_parseReqHeader(){
     } else if(name.equalsIgnoreCase("Content-Type")){
       if (value.startsWith("multipart/")){
         _boundary = value.substring(value.indexOf('=')+1);
+        _boundary.replace("\"","");
         _contentType = value.substring(0, value.indexOf(';'));
         _isMultipart = true;
       } else {
