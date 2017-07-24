@@ -133,24 +133,25 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
   String gzip = path + ".gz";
 
   if (_gzipFirst) {
-    request->_tempFile = _fs.open(gzip, "r");
-    gzipFound = request->_tempFile == true;
+    gzipFound = _fs.exists(gzip);
     if (!gzipFound){
-      request->_tempFile = _fs.open(path, "r");
-      fileFound = request->_tempFile == true;
+      fileFound = _fs.exists(path);
     }
   } else {
-    request->_tempFile = _fs.open(path, "r");
-    fileFound = request->_tempFile == true;
+    fileFound = _fs.exists(path);
     if (!fileFound){
-      request->_tempFile = _fs.open(gzip, "r");
-      gzipFound = request->_tempFile == true;
+      gzipFound = _fs.exists(gzip);
     }
   }
 
   bool found = fileFound || gzipFound;
 
   if (found) {
+    if(gzipFound)
+      request->_tempFile = _fs.open(gzip, "r");
+    else if(fileFound)
+      request->_tempFile = _fs.open(path, "r");
+
     // Extract the file name from the path and keep it in _tempObject
     size_t pathLen = path.length();
     char * _tempPath = (char*)malloc(pathLen+1);
