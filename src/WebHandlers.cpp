@@ -81,10 +81,13 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(){
 }
 #endif
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request){
-  if (request->method() == HTTP_GET &&
-      request->url().startsWith(_uri) &&
-      _getFile(request)) {
-
+//ISSUE172.2: DESTINGUISH BETWEEN ACTUAL REQUESTED CONNECTING TYPE ---v
+//            All Hanlders do not destinguish between actual Requested Connection Type (RCT_DEFAULT, RCT_HTTP, RCT_WS, RCT_EVENT).
+//            Resulting in a WS connecting to / being handled as HTTP index.htm
+	if(request->method() != HTTP_GET || !request->url().startsWith(_uri) || !request->isExpectedRequestedConnType(RCT_DEFAULT, RCT_HTTP))
+		return false;
+	if (_getFile(request)) {
+//ISSUE172.2: ---^
     // We interested in "If-Modified-Since" header to check if file was modified
     if (_last_modified.length())
       request->addInterestingHeader("If-Modified-Since");
@@ -205,7 +208,6 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
       }
       request->send(response);
     }
-  } else {
-    request->send(404);
-  }
+  } else request->send(404);
+
 }

@@ -46,6 +46,11 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _contentType()
   , _boundary()
   , _authorization()
+//ISSUE172.2: DESTINGUISH BETWEEN ACTUAL REQUESTED CONNECTING TYPE ---v
+//            All Hanlders do not destinguish between actual Requested Connection Type (RCT_DEFAULT, RCT_HTTP, RCT_WS, RCT_EVENT).
+//            Resulting in a WS connecting to / being handled as HTTP index.htm
+  , _reqconntype(RCT_HTTP)
+//ISSUE172.2: ---^
   , _isDigest(false)
   , _isMultipart(false)
   , _isPlainPost(false)
@@ -96,74 +101,85 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
 }
 
 void AsyncWebServerRequest::_onData(void *buf, size_t len){
+  int i = 0;
   while (true) {
 
   if(_parseState < PARSE_REQ_BODY){
     // Find new line in buf
     char *str = (char*)buf;
-    size_t i = 0;
-    for (; i < len; i++) if (str[i] == '\n') break;
-    if (i == len) { // No new line, just add the buffer in _temp
-      char ch = str[len-1];
-      str[len-1] = 0;
-      _temp.reserve(_temp.length()+len);
-      _temp.concat(str);
-      _temp.concat(ch);
-    } else { // Found new line - extract it and parse
-      str[i] = 0; // Terminate the string at the end of the line.
-      _temp.concat(str);
-      _temp.trim();
-      _parseLine();
-      if (++i < len) {
-        // Still have more buffer to process
-        buf = str+i;
-        len-= i;
-        continue;
-      }
-    }
-  } else if(_parseState == PARSE_REQ_BODY){
-    if(_isMultipart){
-      size_t i;
-      for(i=0; i<len; i++){
-        _parseMultipartPostByte(((uint8_t*)buf)[i], i == len - 1);
-        _parsedLength++;
-      }
-    } else {
-      if(_parsedLength == 0){
-        if(_contentType.startsWith("application/x-www-form-urlencoded")){
-          _isPlainPost = true;
-        } else if(_contentType == "text/plain" && __is_param_char(((char*)buf)[0])){
-          size_t i = 0;
-          while (i<len && __is_param_char(((char*)buf)[i++]));
-          if(i < len && ((char*)buf)[i-1] == '='){
-            _isPlainPost = true;
-          }
-        }
-      }
-      if(!_isPlainPost) {
-        //check if authenticated before calling the body
-        if(_handler) _handler->handleBody(this, (uint8_t*)buf, len, _parsedLength, _contentLength);
-        _parsedLength += len;
-      } else {
-        size_t i;
-        for(i=0; i<len; i++){
-          _parsedLength++;
-          _parsePlainPostChar(((uint8_t*)buf)[i]);
-        }
-      }
-    }
-
-    if(_parsedLength == _contentLength){
-      _parseState = PARSE_REQ_END;
-      //check if authenticated before calling handleRequest and request auth instead
-      if(_handler) _handler->handleRequest(this);
-      else send(501);
-    }
-  }
-
-  break;
+		for (i = 0; i < len; i++) if (str[i] == '\n') break;
+		if (i == len) { // No new line, just add the buffer in _temp
+		  char ch = str[len-1];
+		  str[len-1] = 0;
+		  _temp.reserve(_temp.length()+len);
+		  _temp.concat(str);
+		  _temp.concat(ch);
+		} else { // Found new line - extract it and parse
+		  str[i] = 0; // Terminate the string at the end of the line.
+		  _temp.concat(str);
+		  _temp.trim();
+		  _parseLine();
+		  if (++i < len) {
+			// Still have more buffer to process
+			buf = str+i;
+			len-= i;
+			continue;
+		  }
+		}
+	  } else if(_parseState == PARSE_REQ_BODY){
+		if(_isMultipart){
+		  size_t i;
+		  for(i=0; i<len; i++){
+			_parseMultipartPostByte(((uint8_t*)buf)[i], i == len - 1);
+			_parsedLength++;
+		  }
+		} else {
+		  if(_parsedLength == 0){
+			if(_contentType.startsWith("application/x-www-form-urlencoded")){
+			  _isPlainPost = true;
+			} else if(_contentType == "text/plain" && __is_param_char(((char*)buf)[0])){
+			  size_t i = 0;
+			  while (i<len && __is_param_char(((char*)buf)[i++]));
+			  if(i < len && ((char*)buf)[i-1] == '='){
+				_isPlainPost = true;
+			  }
+			}
+		  }
+		  if(!_isPlainPost) {
+			//check if authenticated before calling the body
+			if(_handler) _handler->handleBody(this, (uint8_t*)buf, len, _parsedLength, _contentLength);
+			_parsedLength += len;
+		  } else {
+			size_t i;
+			for(i=0; i<len; i++){
+			  _parsedLength++;
+			  _parsePlainPostChar(((uint8_t*)buf)[i]);
+			}
+		  }
+		}
+		if(_parsedLength == _contentLength){
+		  _parseState = PARSE_REQ_END;
+		  //check if authenticated before calling handleRequest and request auth instead
+		  if(_handler) _handler->handleRequest(this);
+		  else send(501);
+		}
+	  }
+	  break;
   }
 }
+
+//ISSUE172: Remove all headers that are not interesting to the request type ---v
+//          Needed since we needed all header info before handling to determine which ones we actually need,
+//          so now we need to remove the ones we don't need
+void AsyncWebServerRequest::_removeNotInterestingHeaders(){
+	if (_interestingHeaders.containsIgnoreCase("ANY")) return; // nothing to do
+	for(const auto& header: _headers){
+	    if(!_interestingHeaders.containsIgnoreCase(header->name().c_str())){
+	    	_headers.remove(header);
+	    }
+	}
+}
+//ISSUE172: ---^
 
 void AsyncWebServerRequest::_onPoll(){
   //os_printf("p\n");
@@ -258,6 +274,29 @@ bool AsyncWebServerRequest::_parseReqHead(){
   return true;
 }
 
+//ISSUE172.2: DESTINGUISH BETWEEN ACTUAL REQUESTED CONNECTING TYPE ---v
+//            All Hanlders do not destinguish between actual Requested Connection Type (RCT_DEFAULT, RCT_HTTP, RCT_WS, RCT_EVENT).
+//            Resulting in a WS connecting to / being handled as HTTP index.htm
+//            Needed function to check part of header.value to detect Event type and option to ignore case (sorry to put it here...)
+bool strContains(String src, String find, bool mindcase = true) {
+	int pos=0, i=0;
+	const int slen = src.length();
+	const int flen = find.length();
+
+	if (slen < flen) return false;
+	while (pos <= (slen - flen)) {
+		for (i=0; i < flen; i++) {
+			if (mindcase) {
+				if (src[pos+i] != find[i]) i = flen + 1; // no match
+			} else if (tolower(src[pos+i]) != tolower(find[i])) i = flen + 1; // no match
+		}
+		if (i == flen) return true;
+		pos++;
+	}
+	return false;
+}
+//ISSUE172.2: ---^
+
 bool AsyncWebServerRequest::_parseReqHeader(){
   int index = _temp.indexOf(':');
   if(index){
@@ -265,8 +304,12 @@ bool AsyncWebServerRequest::_parseReqHeader(){
     String value = _temp.substring(index + 2);
     if(name.equalsIgnoreCase("Host")){
       _host = value;
-      _server->_rewriteRequest(this);
-      _server->_attachHandler(this);
+//ISSUE172: Remove rewriteRequest() and attachHandler() until all headers are done ---v
+//          Needed since we needed all header info before handling to determine which ones we actually need,
+//          so now we need to remove the ones we don't need
+//    _server->_rewriteRequest(this);
+//    _server->_attachHandler(this);
+//ISSUE172: ---^
     } else if(name.equalsIgnoreCase("Content-Type")){
       if (value.startsWith("multipart/")){
         _boundary = value.substring(value.indexOf('=')+1);
@@ -287,10 +330,27 @@ bool AsyncWebServerRequest::_parseReqHeader(){
         _authorization = value.substring(7);
       }
     } else {
-      if(_interestingHeaders.containsIgnoreCase(name) || _interestingHeaders.containsIgnoreCase("ANY")){
-        _headers.add(new AsyncWebHeader(name, value));
-      }
+
+//ISSUE172.2: DESTINGUISH BETWEEN ACTUAL REQUESTED CONNECTING TYPE ---v
+//            All Hanlders do not destinguish between actual Requested Connection Type (RCT_DEFAULT, RCT_HTTP, RCT_WS, RCT_EVENT).
+//            Resulting in a WS connecting to / being handled as HTTP index.htm
+		if(name.equalsIgnoreCase("Upgrade") && value.equalsIgnoreCase("websocket")){
+			// WebSocket request can be uniquely identified by header: [Upgrade: websocket]
+			_reqconntype = RCT_WS;
+		} else {
+			if(name.equalsIgnoreCase("Accept") && strContains(value, "text/event-stream", false)){
+				// WebEvent request can be uniquely identified by header:  [Accept: text/event-stream]
+				_reqconntype = RCT_EVENT;
+			}
+		}
     }
+//ISSUE172.2: ---^
+//ISSUE172: Store all headers until we can decide which ones we actually need ---v
+//          Needed since we needed all header info before handling to determine which ones we actually need,
+//          so now we need to remove the ones we don't need
+//      if(_interestingHeaders.containsIgnoreCase(name) || _interestingHeaders.containsIgnoreCase("ANY")){
+//ISSUE172: ---^
+    _headers.add(new AsyncWebHeader(name, value));
   }
   _temp = String();
   return true;
@@ -512,7 +572,15 @@ void AsyncWebServerRequest::_parseLine(){
   if(_parseState == PARSE_REQ_HEADERS){
     if(!_temp.length()){
       //end of headers
-      if(_expectingContinue){
+//ISSUE172: Since Host and all needed headers are known, we can start handling the request ---v
+//          Needed since we needed all header info before handling to determine which ones we actually need,
+//          so now we need to remove the ones we don't need
+	  _server->_rewriteRequest(this);
+	  _server->_attachHandler(this);
+//ISSUE172: We can only remove needed headers here, since after _attachHandler() we know which ones we actually need
+	  _removeNotInterestingHeaders();
+//ISSUE172: ---^
+	  if(_expectingContinue){
         const char * response = "HTTP/1.1 100 Continue\r\n\r\n";
         _client->write(response, os_strlen(response));
       }
@@ -925,3 +993,26 @@ const char * AsyncWebServerRequest::methodToString() const {
   else if(_method & HTTP_OPTIONS) return "OPTIONS";
   return "UNKNOWN";
 }
+
+//ISSUE172.2: DESTINGUISH BETWEEN ACTUAL REQUESTED CONNECTING TYPE ---v
+//            All Hanlders do not destinguish between actual Requested Connection Type (RCT_DEFAULT, RCT_HTTP, RCT_WS, RCT_EVENT).
+//            Resulting in a WS connecting to / being handled as HTTP index.htm
+const char *AsyncWebServerRequest::requestedConnTypeToString() const {
+	switch (_reqconntype) {
+		case RCT_NOT_USED: return "RCT_NOT_USED";
+		case RCT_DEFAULT:  return "RCT_DEFAULT";
+		case RCT_HTTP:     return "RCT_HTTP";
+		case RCT_WS:       return "RCT_WS";
+		case RCT_EVENT:    return "RCT_EVENT";
+		default:           return "ERROR";
+	}
+}
+
+bool AsyncWebServerRequest::isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2, RequestedConnectionType erct3) {
+    bool res = false;
+    if ((erct1 != RCT_NOT_USED) && (erct1 == _reqconntype)) res = true;
+    if ((erct2 != RCT_NOT_USED) && (erct2 == _reqconntype)) res = true;
+    if ((erct3 != RCT_NOT_USED) && (erct3 == _reqconntype)) res = true;
+    return res;
+}
+//ISSUE172.2: ---^
