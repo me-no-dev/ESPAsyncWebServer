@@ -81,10 +81,13 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(){
 }
 #endif
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request){
-  if (request->method() == HTTP_GET &&
-      request->url().startsWith(_uri) &&
-      _getFile(request)) {
-
+  if(request->method() != HTTP_GET 
+    || !request->url().startsWith(_uri) 
+    || !request->isExpectedRequestedConnType(RCT_DEFAULT, RCT_HTTP)
+  ){
+    return false;
+  }
+  if (_getFile(request)) {
     // We interested in "If-Modified-Since" header to check if file was modified
     if (_last_modified.length())
       request->addInterestingHeader("If-Modified-Since");
