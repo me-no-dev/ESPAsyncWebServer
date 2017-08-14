@@ -104,6 +104,8 @@ void setup(){
     delay(1000);
     WiFi.begin(ssid, password);
   }
+  Serial.printf("WiFi Connected!\n");
+  Serial.println(WiFi.localIP());
 
   //Send OTA events to the browser
   ArduinoOTA.onStart([]() { events.send("Update Start", "ota"); });
