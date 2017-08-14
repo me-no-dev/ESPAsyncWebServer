@@ -29,10 +29,21 @@
 
 #include "StringArray.h"
 
-#if defined(ESP31B)
-#include <ESP31BWiFi.h>
-#elif defined(ESP8266)
+#if defined(ESP8266)
 #include <ESP8266WiFi.h>
+#elif defined(ESP31B)
+#include <ESP31BWiFi.h>
+#elif defined(ESP32)
+#include <WiFi.h>
+
+// Uncomment to mark that support for ESP32 SPIFFS is available.
+// The library can be downloaded from https://github.com/copercini/arduino-esp32-SPIFFS
+//#define HAS_ARDUINO_ESP32_SPIFFS
+
+#ifdef HAS_ARDUINO_ESP32_SPIFFS
+#include <SPIFFS.h>
+#endif
+
 #else
 #error Platform not supported
 #endif

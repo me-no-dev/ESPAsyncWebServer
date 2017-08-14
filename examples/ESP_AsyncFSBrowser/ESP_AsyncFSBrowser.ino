@@ -1,8 +1,17 @@
+#ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+#elif ESP32
+#include <WiFi.h>
+#include <ESPmDNS.h>
+// To mark that support for ESP32 SPIFFS available, you need to
+// uncomment a preprocessor directive in libraries/ESPAsyncWebServer/src/ESPAsyncWebServer.h
+// The library can be downloaded from https://github.com/copercini/arduino-esp32-SPIFFS
+#else
+#error "Unsupported platform."
+#endif
 #include <ArduinoOTA.h>
 #include <FS.h>
-#include <Hash.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <SPIFFSEditor.h>
@@ -94,7 +103,11 @@ const char* http_password = "admin";
 void setup(){
   Serial.begin(115200);
   Serial.setDebugOutput(true);
+#ifdef ESP8266
   WiFi.hostname(hostName);
+#elif ESP32
+  WiFi.setHostname(hostName);
+#endif
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(hostName);
   WiFi.begin(ssid, password);
@@ -127,7 +140,9 @@ void setup(){
 
   MDNS.addService("http","tcp",80);
 
+#if defined(ESP8266) || defined(HAS_ARDUINO_ESP32_SPIFFS)
   SPIFFS.begin();
+#endif
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
@@ -137,7 +152,9 @@ void setup(){
   });
   server.addHandler(&events);
 
+#if defined(ESP8266) || defined(HAS_ARDUINO_ESP32_SPIFFS)
   server.addHandler(new SPIFFSEditor(http_username,http_password));
+#endif
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->redirect("/edit");
@@ -147,7 +164,9 @@ void setup(){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
 
+#if defined(ESP8266) || defined(HAS_ARDUINO_ESP32_SPIFFS)
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+#endif
 
   server.onNotFound([](AsyncWebServerRequest *request){
     Serial.printf("NOT_FOUND: ");
