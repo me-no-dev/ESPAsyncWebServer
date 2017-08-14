@@ -139,6 +139,10 @@ void setup(){
 
   server.addHandler(new SPIFFSEditor(http_username,http_password));
 
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->redirect("/edit");
+  });
+
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
