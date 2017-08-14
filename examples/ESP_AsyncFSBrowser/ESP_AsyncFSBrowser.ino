@@ -98,7 +98,7 @@ void setup(){
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(hostName);
   WiFi.begin(ssid, password);
-  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.printf("STA: Failed!\n");
     WiFi.disconnect(false);
     delay(1000);
