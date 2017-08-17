@@ -212,7 +212,7 @@ void AsyncWebServerRequest::_addGetParams(const String& params){
     if (equal < 0 || equal > end) equal = end;
     String name = params.substring(start, equal);
     String value = equal + 1 < end ? params.substring(equal + 1, end) : String();
-    _addParam(new AsyncWebParameter(name, value));
+    _addParam(new AsyncWebParameter(name, urlDecode(value)));
     start = end + 1;
   }
 }
@@ -241,7 +241,7 @@ bool AsyncWebServerRequest::_parseReqHead(){
     _method = HTTP_OPTIONS;
   }
 
-  u = urlDecode(u);
+  //u = urlDecode(u);
   String g = String();
   index = u.indexOf('?');
   if(index > 0){
