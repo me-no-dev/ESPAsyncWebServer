@@ -113,6 +113,12 @@ class AsyncWebHeader {
  * REQUEST :: Each incoming Client is wrapped inside a Request and both live together until disconnect
  * */
 
+//ISSUE172.2: DESTINGUISH BETWEEN ACTUAL REQUESTED CONNECTING TYPE ---v
+//            All Hanlders do not destinguish between actual Requested Connection Type (RCT_DEFAULT, RCT_HTTP, RCT_WS, RCT_EVENT).
+//            Resulting in a WS connecting to / being handled as HTTP index.htm
+typedef enum { RCT_NOT_USED = -1, RCT_DEFAULT = 0, RCT_HTTP, RCT_WS, RCT_EVENT, RCT_MAX } RequestedConnectionType;
+//ISSUE172.2: ---^
+
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
 
 class AsyncWebServerRequest {
@@ -136,6 +142,16 @@ class AsyncWebServerRequest {
     String _contentType;
     String _boundary;
     String _authorization;
+//ISSUE172.2: DESTINGUISH BETWEEN ACTUAL REQUESTED CONNECTING TYPE ---v
+//            All Hanlders do not destinguish between actual Requested Connection Type (RCT_DEFAULT, RCT_HTTP, RCT_WS, RCT_EVENT).
+//            Resulting in a WS connecting to / being handled as HTTP index.htm
+    RequestedConnectionType _reqconntype;
+//ISSUE172.2: ---^
+//ISSUE172: Remove all headers that are not interesting to the request type ---v
+//          Needed since we needed all header info before handling to determine which ones we actually need,
+//          so now we need to remove the ones we don't need
+    void _removeNotInterestingHeaders();
+//ISSUE172: ---^
     bool _isDigest;
     bool _isMultipart;
     bool _isPlainPost;
@@ -193,7 +209,14 @@ class AsyncWebServerRequest {
     const String& contentType() const { return _contentType; }
     size_t contentLength() const { return _contentLength; }
     bool multipart() const { return _isMultipart; }
-    const char * methodToString() const;
+    const char *methodToString() const;
+//ISSUE172.2: DESTINGUISH BETWEEN ACTUAL REQUESTED CONNECTING TYPE ---v
+//            All Hanlders do not destinguish between actual Requested Connection Type (RCT_DEFAULT, RCT_HTTP, RCT_WS, RCT_EVENT).
+//            Resulting in a WS connecting to / being handled as HTTP index.htm
+    const char *requestedConnTypeToString() const;
+    RequestedConnectionType requestedConnType() const { return _reqconntype; }
+	bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED);
+//ISSUE172.2: ---^
 
 
     //hash is the string representation of:
