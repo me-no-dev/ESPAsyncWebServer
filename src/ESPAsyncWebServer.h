@@ -113,6 +113,8 @@ class AsyncWebHeader {
  * REQUEST :: Each incoming Client is wrapped inside a Request and both live together until disconnect
  * */
 
+typedef enum { RCT_NOT_USED = -1, RCT_DEFAULT = 0, RCT_HTTP, RCT_WS, RCT_EVENT, RCT_MAX } RequestedConnectionType;
+
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
 typedef std::function<String(const String&)> AwsTemplateProcessor;
 
@@ -137,6 +139,8 @@ class AsyncWebServerRequest {
     String _contentType;
     String _boundary;
     String _authorization;
+    RequestedConnectionType _reqconntype;
+    void _removeNotInterestingHeaders();
     bool _isDigest;
     bool _isMultipart;
     bool _isPlainPost;
@@ -195,7 +199,9 @@ class AsyncWebServerRequest {
     size_t contentLength() const { return _contentLength; }
     bool multipart() const { return _isMultipart; }
     const char * methodToString() const;
-
+    const char * requestedConnTypeToString() const;
+    RequestedConnectionType requestedConnType() const { return _reqconntype; }
+    bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED);
 
     //hash is the string representation of:
     // base64(user:pass) for basic or
