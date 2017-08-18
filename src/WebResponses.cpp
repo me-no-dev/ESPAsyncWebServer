@@ -22,6 +22,17 @@
 #include "WebResponseImpl.h"
 #include "cbuf.h"
 
+// Since ESP8266 does not link memchr by default, here's its implementation.
+void* memchr(void* ptr, int ch, size_t count)
+{
+  unsigned char* p = static_cast<unsigned char*>(ptr);
+  while(count--)
+    if(*p++ == static_cast<unsigned char>(ch))
+      return --p;
+  return nullptr;
+}
+
+
 /*
  * Abstract Response
  * */
@@ -228,6 +239,16 @@ size_t AsyncBasicResponse::_ack(AsyncWebServerRequest *request, size_t len, uint
  * Abstract Response
  * */
 
+AsyncAbstractResponse::AsyncAbstractResponse(AwsTemplateProcessor callback): _callback(callback)
+{
+  // In case of template processing, we're unable to determine real response size
+  if(callback) {
+    _contentLength = 0;
+    _sendContentLength = false;
+    _chunked = true;
+  }
+}
+
 void AsyncAbstractResponse::_respond(AsyncWebServerRequest *request){
   addHeader("Connection","close");
   _head = _assembleHead(request->version());
@@ -277,6 +298,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     }
 
     if(headLen){
+      //TODO: memcpy should be faster?
       sprintf((char*)buf, "%s", _head.c_str());
       _head = String();
     }
@@ -295,7 +317,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
       buf[outLen++] = '\r';
       buf[outLen++] = '\n';
     } else {
-      outLen = _fillBuffer(buf+headLen, outLen) + headLen;
+      outLen = _fillBufferAndProcessTemplates(buf+headLen, outLen) + headLen;
     }
 
     if(outLen)
@@ -308,7 +330,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
 
     free(buf);
 
-    if((_chunked && readLen == 0) || (!_sendContentLength && outLen == 0) || _sentLength == _contentLength){
+    if((_chunked && readLen == 0) || (!_sendContentLength && outLen == 0) || (!_chunked && _sentLength == _contentLength)){
       _state = RESPONSE_WAIT_ACK;
     }
     return outLen;
@@ -323,7 +345,118 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
   return 0;
 }
 
+size_t AsyncAbstractResponse::_readDataFromCacheOrContent(uint8_t* data, const size_t len)
+{
+    // If we have something in cache, copy it to buffer
+    const size_t readFromCache = std::min(len, _cache.size());
+    if(readFromCache) {
+      memcpy(data, _cache.data(), readFromCache);
+      _cache.erase(_cache.begin(), _cache.begin() + readFromCache);
+    }
+    // If we need to read more...
+    const size_t needFromFile = len - readFromCache;
+    const size_t readFromContent = _fillBuffer(data + readFromCache, needFromFile);
+    return readFromCache + readFromContent;
+}
 
+size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size_t len)
+{
+  if(!_callback)
+    return _fillBuffer(data, len);
+
+  const size_t originalLen = len;
+  len = _readDataFromCacheOrContent(data, len);
+  // Now we've read 'len' bytes, either from cache or from file
+  // Search for template placeholders
+  uint8_t* pTemplateStart = data;
+  while((pTemplateStart < &data[len]) && (pTemplateStart = (uint8_t*)memchr(pTemplateStart, TEMPLATE_PLACEHOLDER, &data[len - 1] - pTemplateStart + 1))) { // data[0] ... data[len - 1]
+    uint8_t* pTemplateEnd = (pTemplateStart < &data[len - 1]) ? (uint8_t*)memchr(pTemplateStart + 1, TEMPLATE_PLACEHOLDER, &data[len - 1] - pTemplateStart) : nullptr;
+    // temporary buffer to hold parameter name
+    uint8_t buf[TEMPLATE_PARAM_NAME_LENGTH + 1];
+    String paramName;
+    // cache position to insert remainder of template parameter value
+    std::vector<uint8_t>::iterator i = _cache.end();
+    // If closing placeholder is found:
+    if(pTemplateEnd) {
+      // prepare argument to callback
+      const size_t paramNameLength = std::min(sizeof(buf) - 1, (unsigned int)(pTemplateEnd - pTemplateStart - 1));
+      if(paramNameLength) {
+        memcpy(buf, pTemplateStart + 1, paramNameLength);
+        buf[paramNameLength] = 0;
+        paramName = String(reinterpret_cast<char*>(buf));
+      } else { // double percent sign encountered, this is single percent sign escaped.
+        // remove the 2nd percent sign
+        memmove(pTemplateEnd, pTemplateEnd + 1, &data[len] - pTemplateEnd - 1);
+        len += _readDataFromCacheOrContent(&data[len - 1], 1) - 1;
+        ++pTemplateStart;
+      }
+    } else if(&data[len - 1] - pTemplateStart + 1 < TEMPLATE_PARAM_NAME_LENGTH + 2) { // closing placeholder not found, check if it's in the remaining file data
+      memcpy(buf, pTemplateStart + 1, &data[len - 1] - pTemplateStart);
+      const size_t readFromCacheOrContent = _readDataFromCacheOrContent(buf + (&data[len - 1] - pTemplateStart), TEMPLATE_PARAM_NAME_LENGTH + 2 - (&data[len - 1] - pTemplateStart + 1));
+      if(readFromCacheOrContent) {
+        pTemplateEnd = (uint8_t*)memchr(buf + (&data[len - 1] - pTemplateStart), TEMPLATE_PLACEHOLDER, readFromCacheOrContent);
+        if(pTemplateEnd) {
+          // prepare argument to callback
+          *pTemplateEnd = 0;
+          paramName = String(reinterpret_cast<char*>(buf));
+          // Copy remaining read-ahead data into cache (when std::vector::insert returning iterator will be available, these 3 lines can be simplified into 1)
+          const size_t pos = _cache.size();
+          _cache.insert(_cache.end(), pTemplateEnd + 1, buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
+          i = _cache.begin() + pos;
+          pTemplateEnd = &data[len - 1];
+        }
+        else // closing placeholder not found in file data, store found percent symbol as is and advance to the next position
+        {
+          // but first, store read file data in cache
+          _cache.insert(_cache.end(), buf + (&data[len - 1] - pTemplateStart), buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
+          ++pTemplateStart;
+        }
+      }
+      else // closing placeholder not found in content data, store found percent symbol as is and advance to the next position
+        ++pTemplateStart;
+    }
+    else // closing placeholder not found in content data, store found percent symbol as is and advance to the next position
+      ++pTemplateStart;
+    if(paramName.length()) {
+      // call callback and replace with result.
+      // Everything in range [pTemplateStart, pTemplateEnd] can be safely replaced with parameter value.
+      // Data after pTemplateEnd may need to be moved.
+      // The first byte of data after placeholder is located at pTemplateEnd + 1.
+      // It should be located at pTemplateStart + numBytesCopied (to begin right after inserted parameter value).
+      const String paramValue(_callback(paramName));
+      const char* pvstr = paramValue.c_str();
+      const unsigned int pvlen = paramValue.length();
+      const size_t numBytesCopied = std::min(pvlen, static_cast<unsigned int>(&data[originalLen - 1] - pTemplateStart + 1));
+      // make room for param value
+      // 1. move extra data to cache if parameter value is longer than placeholder AND if there is no room to store
+      if((pTemplateEnd + 1 < pTemplateStart + numBytesCopied) && (originalLen - (pTemplateStart + numBytesCopied - pTemplateEnd - 1) < len)) {
+        size_t pos = i - _cache.begin();
+        _cache.insert(i, &data[originalLen - (pTemplateStart + numBytesCopied - pTemplateEnd - 1)], &data[len]);
+        i = _cache.begin() + pos;
+        //2. parameter value is longer than placeholder text, push the data after placeholder which not saved into cache further to the end
+        memmove(pTemplateStart + numBytesCopied, pTemplateEnd + 1, &data[originalLen] - pTemplateStart - numBytesCopied);
+      } else if(pTemplateEnd + 1 != pTemplateStart + numBytesCopied)
+        //2. Either parameter value is shorter than placeholder text OR there is enough free space in buffer to fit.
+        //   Move the entire data after the placeholder
+        memmove(pTemplateStart + numBytesCopied, pTemplateEnd + 1, &data[len] - pTemplateEnd - 1);
+      // 3. replace placeholder with actual value
+      memcpy(pTemplateStart, pvstr, numBytesCopied);
+      // If result is longer than buffer, copy the remainder into cache (this could happen only if placeholder text itself did not fit entirely in buffer)
+      if(numBytesCopied < pvlen) {
+        _cache.insert(i, pvstr + numBytesCopied, pvstr + pvlen);
+      } else if(pTemplateStart + numBytesCopied < pTemplateEnd + 1) { // result is copied fully; if result is shorter than placeholder text...
+        // there is some free room, fill it from cache
+        const size_t roomFreed = pTemplateEnd + 1 - pTemplateStart - numBytesCopied;
+        const size_t totalFreeRoom = originalLen - len + roomFreed;
+        len += _readDataFromCacheOrContent(&data[len - roomFreed], totalFreeRoom) - roomFreed;
+      } else { // result is copied fully; it is longer than placeholder text
+        const size_t roomTaken = pTemplateStart + numBytesCopied - pTemplateEnd - 1;
+        len = std::min(len + roomTaken, originalLen);
+      }
+    }
+  } // while(pTemplateStart)
+  return len;
+}
 
 
 /*
@@ -357,13 +490,16 @@ void AsyncFileResponse::_setContentType(const String& path){
   else _contentType = "text/plain";
 }
 
-AsyncFileResponse::AsyncFileResponse(FS &fs, const String& path, const String& contentType, bool download){
+AsyncFileResponse::AsyncFileResponse(FS &fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback): AsyncAbstractResponse(callback){
   _code = 200;
   _path = path;
 
   if(!download && !fs.exists(_path) && fs.exists(_path+".gz")){
     _path = _path+".gz";
     addHeader("Content-Encoding", "gzip");
+    _callback = nullptr; // Unable to process zipped templates
+    _sendContentLength = true;
+    _chunked = false;
   }
 
   _content = fs.open(_path, "r");
@@ -386,17 +522,21 @@ AsyncFileResponse::AsyncFileResponse(FS &fs, const String& path, const String& c
     snprintf(buf, sizeof (buf), "inline; filename=\"%s\"", filename);
   }
   addHeader("Content-Disposition", buf);
-
 }
 
-AsyncFileResponse::AsyncFileResponse(File content, const String& path, const String& contentType, bool download){
+AsyncFileResponse::AsyncFileResponse(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback): AsyncAbstractResponse(callback){
   _code = 200;
   _path = path;
+
+  if(!download && String(content.name()).endsWith(".gz") && !path.endsWith(".gz")){
+    addHeader("Content-Encoding", "gzip");
+    _callback = nullptr; // Unable to process gzipped templates
+    _sendContentLength = true;
+    _chunked = false;
+  }
+
   _content = content;
   _contentLength = _content.size();
-
-  if(!download && String(_content.name()).endsWith(".gz") && !path.endsWith(".gz"))
-    addHeader("Content-Encoding", "gzip");
 
   if(contentType == "")
     _setContentType(path);
@@ -424,7 +564,7 @@ size_t AsyncFileResponse::_fillBuffer(uint8_t *data, size_t len){
  * Stream Response
  * */
 
-AsyncStreamResponse::AsyncStreamResponse(Stream &stream, const String& contentType, size_t len){
+AsyncStreamResponse::AsyncStreamResponse(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback): AsyncAbstractResponse(callback) {
   _code = 200;
   _content = &stream;
   _contentLength = len;
@@ -444,55 +584,64 @@ size_t AsyncStreamResponse::_fillBuffer(uint8_t *data, size_t len){
  * Callback Response
  * */
 
-AsyncCallbackResponse::AsyncCallbackResponse(const String& contentType, size_t len, AwsResponseFiller callback){
+AsyncCallbackResponse::AsyncCallbackResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback): AsyncAbstractResponse(templateCallback) {
   _code = 200;
   _content = callback;
   _contentLength = len;
   if(!len)
     _sendContentLength = false;
   _contentType = contentType;
+  _filledLength = 0;
 }
 
 size_t AsyncCallbackResponse::_fillBuffer(uint8_t *data, size_t len){
-  return _content(data, len, _sentLength);
+  size_t ret = _content(data, len, _filledLength);
+  _filledLength += ret;
+  return ret;
 }
 
 /*
  * Chunked Response
  * */
 
-AsyncChunkedResponse::AsyncChunkedResponse(const String& contentType, AwsResponseFiller callback){
+AsyncChunkedResponse::AsyncChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor processorCallback): AsyncAbstractResponse(processorCallback) {
   _code = 200;
   _content = callback;
   _contentLength = 0;
   _contentType = contentType;
   _sendContentLength = false;
   _chunked = true;
+  _filledLength = 0;
 }
 
 size_t AsyncChunkedResponse::_fillBuffer(uint8_t *data, size_t len){
-  return _content(data, len, _sentLength);
+  size_t ret = _content(data, len, _filledLength);
+  _filledLength += ret;
+  return ret;
 }
 
 /*
  * Progmem Response
  * */
 
-AsyncProgmemResponse::AsyncProgmemResponse(int code, const String& contentType, const uint8_t * content, size_t len){
+AsyncProgmemResponse::AsyncProgmemResponse(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback): AsyncAbstractResponse(callback) {
   _code = code;
   _content = content;
   _contentType = contentType;
   _contentLength = len;
+  _readLength = 0;
 }
 
 size_t AsyncProgmemResponse::_fillBuffer(uint8_t *data, size_t len){
-  size_t left = _contentLength - _sentLength;
-    if (left > len) {
-      memcpy_P(data, _content + _sentLength, len);
-      return len;
-    }
-    memcpy_P(data, _content + _sentLength, left);
-    return left;
+  size_t left = _contentLength - _readLength;
+  if (left > len) {
+    memcpy_P(data, _content + _readLength, len);
+    _readLength += len;
+    return len;
+  }
+  memcpy_P(data, _content + _readLength, left);
+  _readLength += left;
+  return left;
 }
 
 

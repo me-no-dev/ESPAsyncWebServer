@@ -710,78 +710,78 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(int code, const St
   return new AsyncBasicResponse(code, contentType, content);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, const String& path, const String& contentType, bool download){
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback){
   if(fs.exists(path) || (!download && fs.exists(path+".gz")))
-    return new AsyncFileResponse(fs, path, contentType, download);
+    return new AsyncFileResponse(fs, path, contentType, download, callback);
   return NULL;
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, const String& path, const String& contentType, bool download){
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback){
   if(content == true)
-    return new AsyncFileResponse(content, path, contentType, download);
+    return new AsyncFileResponse(content, path, contentType, download, callback);
   return NULL;
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, const String& contentType, size_t len){
-  return new AsyncStreamResponse(stream, contentType, len);
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback){
+  return new AsyncStreamResponse(stream, contentType, len, callback);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(const String& contentType, size_t len, AwsResponseFiller callback){
-  return new AsyncCallbackResponse(contentType, len, callback);
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback){
+  return new AsyncCallbackResponse(contentType, len, callback, templateCallback);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginChunkedResponse(const String& contentType, AwsResponseFiller callback){
+AsyncWebServerResponse * AsyncWebServerRequest::beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback){
   if(_version)
-    return new AsyncChunkedResponse(contentType, callback);
-  return new AsyncCallbackResponse(contentType, 0, callback);
+    return new AsyncChunkedResponse(contentType, callback, templateCallback);
+  return new AsyncCallbackResponse(contentType, 0, callback, templateCallback);
 }
 
 AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(const String& contentType, size_t bufferSize){
   return new AsyncResponseStream(contentType, bufferSize);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len){
-  return new AsyncProgmemResponse(code, contentType, content, len);
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback){
+  return new AsyncProgmemResponse(code, contentType, content, len, callback);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, PGM_P content){
-  return beginResponse_P(code, contentType, (const uint8_t *)content, strlen_P(content));
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback){
+  return beginResponse_P(code, contentType, (const uint8_t *)content, strlen_P(content), callback);
 }
 
 void AsyncWebServerRequest::send(int code, const String& contentType, const String& content){
   send(beginResponse(code, contentType, content));
 }
 
-void AsyncWebServerRequest::send(FS &fs, const String& path, const String& contentType, bool download){
+void AsyncWebServerRequest::send(FS &fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback){
   if(fs.exists(path) || (!download && fs.exists(path+".gz"))){
-    send(beginResponse(fs, path, contentType, download));
+    send(beginResponse(fs, path, contentType, download, callback));
   } else send(404);
 }
 
-void AsyncWebServerRequest::send(File content, const String& path, const String& contentType, bool download){
+void AsyncWebServerRequest::send(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback){
   if(content == true){
-    send(beginResponse(content, path, contentType, download));
+    send(beginResponse(content, path, contentType, download, callback));
   } else send(404);
 }
 
-void AsyncWebServerRequest::send(Stream &stream, const String& contentType, size_t len){
-  send(beginResponse(stream, contentType, len));
+void AsyncWebServerRequest::send(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback){
+  send(beginResponse(stream, contentType, len, callback));
 }
 
-void AsyncWebServerRequest::send(const String& contentType, size_t len, AwsResponseFiller callback){
-  send(beginResponse(contentType, len, callback));
+void AsyncWebServerRequest::send(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback){
+  send(beginResponse(contentType, len, callback, templateCallback));
 }
 
-void AsyncWebServerRequest::sendChunked(const String& contentType, AwsResponseFiller callback){
-  send(beginChunkedResponse(contentType, callback));
+void AsyncWebServerRequest::sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback){
+  send(beginChunkedResponse(contentType, callback, templateCallback));
 }
 
-void AsyncWebServerRequest::send_P(int code, const String& contentType, const uint8_t * content, size_t len){
-  send(beginResponse_P(code, contentType, content, len));
+void AsyncWebServerRequest::send_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback){
+  send(beginResponse_P(code, contentType, content, len, callback));
 }
 
-void AsyncWebServerRequest::send_P(int code, const String& contentType, PGM_P content){
-  send(beginResponse_P(code, contentType, content));
+void AsyncWebServerRequest::send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback){
+  send(beginResponse_P(code, contentType, content, callback));
 }
 
 void AsyncWebServerRequest::redirect(const String& url){
