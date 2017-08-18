@@ -212,7 +212,7 @@ void AsyncWebServerRequest::_addGetParams(const String& params){
     if (equal < 0 || equal > end) equal = end;
     String name = params.substring(start, equal);
     String value = equal + 1 < end ? params.substring(equal + 1, end) : String();
-    _addParam(new AsyncWebParameter(name, value));
+    _addParam(new AsyncWebParameter(urlDecode(name), urlDecode(value)));
     start = end + 1;
   }
 }
@@ -241,14 +241,13 @@ bool AsyncWebServerRequest::_parseReqHead(){
     _method = HTTP_OPTIONS;
   }
 
-  u = urlDecode(u);
   String g = String();
   index = u.indexOf('?');
   if(index > 0){
     g = u.substring(index +1);
     u = u.substring(0, index);
   }
-  _url = u;
+  _url = urlDecode(u);
   _addGetParams(g);
 
   if(!_temp.startsWith("HTTP/1.0"))
@@ -301,14 +300,13 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data){
   if(data && (char)data != '&')
     _temp += (char)data;
   if(!data || (char)data == '&' || _parsedLength == _contentLength){
-    _temp = urlDecode(_temp);
     String name = "body";
     String value = _temp;
     if(!_temp.startsWith("{") && !_temp.startsWith("[") && _temp.indexOf('=') > 0){
       name = _temp.substring(0, _temp.indexOf('='));
       value = _temp.substring(_temp.indexOf('=') + 1);
     }
-    _addParam(new AsyncWebParameter(name, value, true));
+    _addParam(new AsyncWebParameter(urlDecode(name), urlDecode(value), true));
     _temp = String();
   }
 }
