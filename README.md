@@ -170,6 +170,7 @@ To use this library you might need to have the latest git versions of [ESP8266](
 - [VZero](https://github.com/andig/vzero) - the Wireless zero-config controller for volkszaehler.org
 - [ESPurna](https://bitbucket.org/xoseperez/espurna) - ESPurna ("spark" in Catalan) is a custom C firmware for ESP8266 based smart switches. It was originally developed with the ITead Sonoff in mind.
 - [fauxmoESP](https://bitbucket.org/xoseperez/fauxmoesp) - Belkin WeMo emulator library for ESP8266.
+- [ESP-RFID] (https://github.com/omersiar/esp-rfid) - MFRC522 RFID Access Control Management project for ESP8266.
 
 ## Request Variables
 
@@ -494,6 +495,8 @@ request->send(response);
 ```
 
 ### Respond with content coming from a File containing templates
+Internally uses [Chunked Response](#chunked-response).
+
 Index.htm contents:
 ```
 %HELLO_FROM_TEMPLATE%
@@ -751,15 +754,15 @@ It is possible to specify Cache-Control header value to reduce the number of cal
 the files. For more information on Cache-Control values see [Cache-Control](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9)
 ```cpp
 // Cache responses for 10 minutes (600 seconds)
-server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age:600");
+server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age=600");
 
 //*** Change Cache-Control after server setup ***
 
 // During setup - keep a pointer to the handler
-AsyncStaticWebHandler* handler = &server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age:600");
+AsyncStaticWebHandler* handler = &server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age=600");
 
 // At a later event - change Cache-Control
-handler->setCacheControl("max-age:30");
+handler->setCacheControl("max-age=30");
 ```
 
 ### Specifying Date-Modified header

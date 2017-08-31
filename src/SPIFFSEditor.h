@@ -2,10 +2,12 @@
 #define SPIFFSEditor_H_
 #include <ESPAsyncWebServer.h>
 
+#define EXCLUDELIST "/.exclude.files"
+
 class SPIFFSEditor: public AsyncWebHandler {
   private:
     String _username;
-    String _password;
+    String _password; 
     bool _authenticated;
     uint32_t _startTime;
   public:
@@ -13,6 +15,7 @@ class SPIFFSEditor: public AsyncWebHandler {
     virtual bool canHandle(AsyncWebServerRequest *request) override final;
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
     virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final;
+
 };
 
 #endif

@@ -205,9 +205,9 @@ bool checkDigestAuthentication(const char * header, const char * method, const c
     }
   } while(nextBreak > 0);
 
-  String ha1 = (passwordIsHash) ? String(password) : myUsername + ":" + myRealm + ":" + String(password);
+  String ha1 = (passwordIsHash) ? String(password) : stringMD5(myUsername + ":" + myRealm + ":" + String(password));
   String ha2 = String(method) + ":" + myUri;
-  String response = stringMD5(ha1) + ":" + myNonce + ":" + myNc + ":" + myCnonce + ":" + myQop + ":" + stringMD5(ha2);
+  String response = ha1 + ":" + myNonce + ":" + myNc + ":" + myCnonce + ":" + myQop + ":" + stringMD5(ha2);
 
   if(myResponse.equals(stringMD5(response))){
     //os_printf("AUTH SUCCESS\n");

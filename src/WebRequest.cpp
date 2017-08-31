@@ -46,6 +46,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _contentType()
   , _boundary()
   , _authorization()
+  , _reqconntype(RCT_HTTP)
   , _isDigest(false)
   , _isMultipart(false)
   , _isPlainPost(false)
@@ -96,13 +97,17 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
 }
 
 void AsyncWebServerRequest::_onData(void *buf, size_t len){
+  int i = 0;
   while (true) {
 
   if(_parseState < PARSE_REQ_BODY){
     // Find new line in buf
     char *str = (char*)buf;
-    size_t i = 0;
-    for (; i < len; i++) if (str[i] == '\n') break;
+    for (i = 0; i < len; i++) {
+      if (str[i] == '\n') {
+        break;
+      }
+    }
     if (i == len) { // No new line, just add the buffer in _temp
       char ch = str[len-1];
       str[len-1] = 0;
@@ -152,7 +157,6 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
         }
       }
     }
-
     if(_parsedLength == _contentLength){
       _parseState = PARSE_REQ_END;
       //check if authenticated before calling handleRequest and request auth instead
@@ -160,8 +164,16 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
       else send(501);
     }
   }
-
   break;
+  }
+}
+
+void AsyncWebServerRequest::_removeNotInterestingHeaders(){
+  if (_interestingHeaders.containsIgnoreCase("ANY")) return; // nothing to do
+  for(const auto& header: _headers){
+      if(!_interestingHeaders.containsIgnoreCase(header->name().c_str())){
+        _headers.remove(header);
+      }
   }
 }
 
@@ -212,7 +224,7 @@ void AsyncWebServerRequest::_addGetParams(const String& params){
     if (equal < 0 || equal > end) equal = end;
     String name = params.substring(start, equal);
     String value = equal + 1 < end ? params.substring(equal + 1, end) : String();
-    _addParam(new AsyncWebParameter(name, value));
+    _addParam(new AsyncWebParameter(urlDecode(name), urlDecode(value)));
     start = end + 1;
   }
 }
@@ -241,14 +253,13 @@ bool AsyncWebServerRequest::_parseReqHead(){
     _method = HTTP_OPTIONS;
   }
 
-  u = urlDecode(u);
   String g = String();
   index = u.indexOf('?');
   if(index > 0){
     g = u.substring(index +1);
     u = u.substring(0, index);
   }
-  _url = u;
+  _url = urlDecode(u);
   _addGetParams(g);
 
   if(!_temp.startsWith("HTTP/1.0"))
@@ -258,6 +269,24 @@ bool AsyncWebServerRequest::_parseReqHead(){
   return true;
 }
 
+bool strContains(String src, String find, bool mindcase = true) {
+  int pos=0, i=0;
+  const int slen = src.length();
+  const int flen = find.length();
+
+  if (slen < flen) return false;
+  while (pos <= (slen - flen)) {
+    for (i=0; i < flen; i++) {
+      if (mindcase) {
+        if (src[pos+i] != find[i]) i = flen + 1; // no match
+      } else if (tolower(src[pos+i]) != tolower(find[i])) i = flen + 1; // no match
+    }
+    if (i == flen) return true;
+    pos++;
+  }
+  return false;
+}
+
 bool AsyncWebServerRequest::_parseReqHeader(){
   int index = _temp.indexOf(':');
   if(index){
@@ -265,11 +294,10 @@ bool AsyncWebServerRequest::_parseReqHeader(){
     String value = _temp.substring(index + 2);
     if(name.equalsIgnoreCase("Host")){
       _host = value;
-      _server->_rewriteRequest(this);
-      _server->_attachHandler(this);
     } else if(name.equalsIgnoreCase("Content-Type")){
       if (value.startsWith("multipart/")){
         _boundary = value.substring(value.indexOf('=')+1);
+        _boundary.replace("\"","");
         _contentType = value.substring(0, value.indexOf(';'));
         _isMultipart = true;
       } else {
@@ -287,10 +315,17 @@ bool AsyncWebServerRequest::_parseReqHeader(){
         _authorization = value.substring(7);
       }
     } else {
-      if(_interestingHeaders.containsIgnoreCase(name) || _interestingHeaders.containsIgnoreCase("ANY")){
-        _headers.add(new AsyncWebHeader(name, value));
+      if(name.equalsIgnoreCase("Upgrade") && value.equalsIgnoreCase("websocket")){
+        // WebSocket request can be uniquely identified by header: [Upgrade: websocket]
+        _reqconntype = RCT_WS;
+      } else {
+        if(name.equalsIgnoreCase("Accept") && strContains(value, "text/event-stream", false)){
+          // WebEvent request can be uniquely identified by header:  [Accept: text/event-stream]
+          _reqconntype = RCT_EVENT;
+        }
       }
     }
+    _headers.add(new AsyncWebHeader(name, value));
   }
   _temp = String();
   return true;
@@ -300,14 +335,13 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data){
   if(data && (char)data != '&')
     _temp += (char)data;
   if(!data || (char)data == '&' || _parsedLength == _contentLength){
-    _temp = urlDecode(_temp);
     String name = "body";
     String value = _temp;
     if(!_temp.startsWith("{") && !_temp.startsWith("[") && _temp.indexOf('=') > 0){
       name = _temp.substring(0, _temp.indexOf('='));
       value = _temp.substring(_temp.indexOf('=') + 1);
     }
-    _addParam(new AsyncWebParameter(name, value, true));
+    _addParam(new AsyncWebParameter(urlDecode(name), urlDecode(value), true));
     _temp = String();
   }
 }
@@ -512,6 +546,9 @@ void AsyncWebServerRequest::_parseLine(){
   if(_parseState == PARSE_REQ_HEADERS){
     if(!_temp.length()){
       //end of headers
+      _server->_rewriteRequest(this);
+      _server->_attachHandler(this);
+      _removeNotInterestingHeaders();
       if(_expectingContinue){
         const char * response = "HTTP/1.1 100 Continue\r\n\r\n";
         _client->write(response, os_strlen(response));
@@ -924,4 +961,23 @@ const char * AsyncWebServerRequest::methodToString() const {
   else if(_method & HTTP_HEAD) return "HEAD";
   else if(_method & HTTP_OPTIONS) return "OPTIONS";
   return "UNKNOWN";
+}
+
+const char *AsyncWebServerRequest::requestedConnTypeToString() const {
+  switch (_reqconntype) {
+    case RCT_NOT_USED: return "RCT_NOT_USED";
+    case RCT_DEFAULT:  return "RCT_DEFAULT";
+    case RCT_HTTP:     return "RCT_HTTP";
+    case RCT_WS:       return "RCT_WS";
+    case RCT_EVENT:    return "RCT_EVENT";
+    default:           return "ERROR";
+  }
+}
+
+bool AsyncWebServerRequest::isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2, RequestedConnectionType erct3) {
+    bool res = false;
+    if ((erct1 != RCT_NOT_USED) && (erct1 == _reqconntype)) res = true;
+    if ((erct2 != RCT_NOT_USED) && (erct2 == _reqconntype)) res = true;
+    if ((erct3 != RCT_NOT_USED) && (erct3 == _reqconntype)) res = true;
+    return res;
 }
