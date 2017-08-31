@@ -17,6 +17,7 @@ To use this library you might need to have the latest git versions of [ESP8266](
 		- [Rewrites and how do they work](#rewrites-and-how-do-they-work)
 		- [Handlers and how do they work](#handlers-and-how-do-they-work)
 		- [Responses and how do they work](#responses-and-how-do-they-work)
+		- [Template processing](#template-processing)
 	- [Libraries and projects that use AsyncWebServer](#libraries-and-projects-that-use-asyncwebserver)
 	- [Request Variables](#request-variables)
 		- [Common Variables](#common-variables)
@@ -32,14 +33,20 @@ To use this library you might need to have the latest git versions of [ESP8266](
 		- [Basic response with string content and extra headers](#basic-response-with-string-content-and-extra-headers)
 		- [Send large webpage from PROGMEM](#send-large-webpage-from-progmem)
 		- [Send large webpage from PROGMEM and extra headers](#send-large-webpage-from-progmem-and-extra-headers)
+		- [Send large webpage from PROGMEM containing templates](#send-large-webpage-from-progmem-containing-templates)
+		- [Send large webpage from PROGMEM containing templates and extra headers](#send-large-webpage-from-progmem-containing-templates-and-extra-headers)
 		- [Send binary content from PROGMEM](#send-binary-content-from-progmem)
 		- [Respond with content coming from a Stream](#respond-with-content-coming-from-a-stream)
 		- [Respond with content coming from a Stream and extra headers](#respond-with-content-coming-from-a-stream-and-extra-headers)
+		- [Respond with content coming from a Stream containing templates](#respond-with-content-coming-from-a-stream-containing-templates)
+		- [Respond with content coming from a Stream containing templates and extra headers](#respond-with-content-coming-from-a-stream-containing-templates-and-extra-headers)
 		- [Respond with content coming from a File](#respond-with-content-coming-from-a-file)
 		- [Respond with content coming from a File and extra headers](#respond-with-content-coming-from-a-file-and-extra-headers)
 		- [Respond with content coming from a File containing templates](#respond-with-content-coming-from-a-file-containing-templates)
 		- [Respond with content using a callback](#respond-with-content-using-a-callback)
 		- [Respond with content using a callback and extra headers](#respond-with-content-using-a-callback-and-extra-headers)
+		- [Respond with content using a callback containing templates](#respond-with-content-using-a-callback-containing-templates)
+		- [Respond with content using a callback containing templates and extra headers](#respond-with-content-using-a-callback-containing-templates-and-extra-headers)
 		- [Chunked Response](#chunked-response)
 		- [Print to response](#print-to-response)
 		- [ArduinoJson Basic Response](#arduinojson-basic-response)
@@ -81,6 +88,7 @@ To use this library you might need to have the latest git versions of [ESP8266](
 - Async EventSource (Server-Sent Events) plugin to send events to the browser
 - URL Rewrite plugin for conditional and permanent url rewrites
 - ServeStatic plugin that supports cache, Last-Modified, default index and more
+- Simple template processing engine to handle templates
 
 ## Important things to remember
 - This is fully asynchronous server and as such does not run on the loop thread.
@@ -145,6 +153,15 @@ To use this library you might need to have the latest git versions of [ESP8266](
   Any time in between is spent to run the user loop and handle other network packets
 - Responding asynchronously is probably the most difficult thing for most to understand
 - Many different options exist for the user to make responding a background task
+
+### Template processing
+- ESPAsyncWebserver contains simple template processing engine.
+- Template processing can be added to most response types.
+- Currently it supports only replacing template placeholders with actual values. No conditional processing, cycles, etc.
+- Placeholders are delimited with ```%``` symbols. Like this: ```%TEMPLATE_PLACEHOLDER%```.
+- It works by extracting placeholder name from response text and passing it to user provided function which should return actual value to be used instead of placeholder.
+- Since it's user provided function, it is possible for library users to implement conditional processing and cycles themselves.
+- Since it's impossible to know the actual response size after template processing step in advance (and, therefore, to include it in response headers), the response becomes [chunked](#chunked-response).
 
 ## Libraries and projects that use AsyncWebServer
 - [WebSocketToSerial](https://github.com/hallard/WebSocketToSerial) - Debug serial devices through the web browser
@@ -313,6 +330,38 @@ response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
+### Send large webpage from PROGMEM containing templates
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+const char index_html[] PROGMEM = "..."; // large char array, tested with 14k
+request->send_P(200, "text/html", index_html, processor);
+```
+
+### Send large webpage from PROGMEM containing templates and extra headers
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+const char index_html[] PROGMEM = "..."; // large char array, tested with 14k
+AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html, processor);
+response->addHeader("Server","ESP Async Web Server");
+request->send(response);
+```
+
 ### Send binary content from PROGMEM
 ```cpp
 
@@ -382,6 +431,38 @@ request->send(Serial, "text/plain", 12);
 ```cpp
 //read 12 bytes from Serial and send them as Content Type text/plain
 AsyncWebServerResponse *response = request->beginResponse(Serial, "text/plain", 12);
+response->addHeader("Server","ESP Async Web Server");
+request->send(response);
+```
+
+### Respond with content coming from a Stream containing templates
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+//read 12 bytes from Serial and send them as Content Type text/plain
+request->send(Serial, "text/plain", 12, processor);
+```
+
+### Respond with content coming from a Stream containing templates and extra headers
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+//read 12 bytes from Serial and send them as Content Type text/plain
+AsyncWebServerResponse *response = request->beginResponse(Serial, "text/plain", 12, processor);
 response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
@@ -464,6 +545,52 @@ response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
+### Respond with content using a callback containing templates
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+//send 128 bytes as plain text
+request->send("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
+  //Write up to "maxLen" bytes into "buffer" and return the amount written.
+  //index equals the amount of bytes that have been already sent
+  //You will not be asked for more bytes once the content length has been reached.
+  //Keep in mind that you can not delay or yield waiting for more data!
+  //Send what you currently have and you will be asked for more again
+  return mySource.read(buffer, maxLen);
+}, processor);
+```
+
+### Respond with content using a callback containing templates and extra headers
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+//send 128 bytes as plain text
+AsyncWebServerResponse *response = request->beginResponse("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
+  //Write up to "maxLen" bytes into "buffer" and return the amount written.
+  //index equals the amount of bytes that have been already sent
+  //You will not be asked for more bytes once the content length has been reached.
+  //Keep in mind that you can not delay or yield waiting for more data!
+  //Send what you currently have and you will be asked for more again
+  return mySource.read(buffer, maxLen);
+}, processor);
+response->addHeader("Server","ESP Async Web Server");
+request->send(response);
+```
+
 ### Chunked Response
 Used when content length is unknown. Works best if the client supports HTTP/1.1
 ```cpp
@@ -474,6 +601,29 @@ AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", [
   //Keep in mind that you can not delay or yield waiting for more data!
   return mySource.read(buffer, maxLen);
 });
+response->addHeader("Server","ESP Async Web Server");
+request->send(response);
+```
+
+### Chunked Response containing templates
+Used when content length is unknown. Works best if the client supports HTTP/1.1
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
+  //Write up to "maxLen" bytes into "buffer" and return the amount written.
+  //index equals the amount of bytes that have been already sent
+  //You will be asked for more data until 0 is returned
+  //Keep in mind that you can not delay or yield waiting for more data!
+  return mySource.read(buffer, maxLen);
+}, processor);
 response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
@@ -590,7 +740,7 @@ server.serveStatic("/", SPIFFS, "/www/");
 server.serveStatic("/", SPIFFS, "/www/").setDefaultFile("default.html");
 ```
 
-### Serving static files with authentication 
+### Serving static files with authentication
 
 ```cpp
 server
@@ -809,8 +959,8 @@ ws.binary((uint32_t)client_id, flash_binary, 4);
 //send binary to all clients
 ws.binaryAll((char*)binary);
 ws.binaryAll((uint8_t*)binary, (size_t)len);
-//HTTP Authenticate before switch to Websocket protocol 
-ws.setAuthentication("user", "pass"); 
+//HTTP Authenticate before switch to Websocket protocol
+ws.setAuthentication("user", "pass");
 
 //client methods
 AsyncWebSocketClient * client;
@@ -1046,7 +1196,7 @@ void setup(){
         return request->requestAuthentication();
     request->send(200, "text/plain", "Login Success!");
   });
-  
+
   // Simple Firmware Update Form
   server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
