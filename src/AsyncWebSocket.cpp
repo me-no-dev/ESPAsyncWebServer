@@ -1075,7 +1075,7 @@ bool AsyncWebSocket::canHandle(AsyncWebServerRequest *request){
   if(!_enabled)
     return false;
   
-  if(request->method() != HTTP_GET || !request->url().equals(_url) || !request->isExpectedRequestedConnType(RCT_WS))
+  if(request->method() != ASYNC_HTTP_GET || !request->url().equals(_url) || !request->isExpectedRequestedConnType(RCT_WS))
     return false;
 
   request->addInterestingHeader(WS_STR_CONNECTION);

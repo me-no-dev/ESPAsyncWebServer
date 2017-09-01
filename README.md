@@ -177,7 +177,7 @@ To use this library you might need to have the latest git versions of [ESP8266](
 ### Common Variables
 ```cpp
 request->version();       // uint8_t: 0 = HTTP/1.0, 1 = HTTP/1.1
-request->method();        // enum:    HTTP_GET, HTTP_POST, HTTP_DELETE, HTTP_PUT, HTTP_PATCH, HTTP_HEAD, HTTP_OPTIONS
+request->method();        // enum:    ASYNC_HTTP_GET, ASYNC_HTTP_POST, ASYNC_HTTP_DELETE, ASYNC_HTTP_PUT, ASYNC_HTTP_PATCH, ASYNC_HTTP_HEAD, ASYNC_HTTP_OPTIONS
 request->url();           // String:  URL of the request (not including host, port or GET parameters)
 request->host();          // String:  The requested host (can be used for virtual hosting)
 request->contentType();   // String:  ContentType of the request (not avaiable in Handler::canHandle)
@@ -1071,7 +1071,7 @@ if (!!window.EventSource) {
 ```cpp
 //First request will return 0 results unless you start scan from somewhere else (loop/setup)
 //Do not request more often than 3-5 seconds
-server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request){
+server.on("/scan", ASYNC_HTTP_GET, [](AsyncWebServerRequest *request){
   String json = "[";
   int n = WiFi.scanComplete();
   if(n == -2){
@@ -1176,32 +1176,32 @@ void setup(){
   server.addHandler(&events);
 
   // respond to GET requests on URL /heap
-  server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/heap", ASYNC_HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
 
   // upload a file to /upload
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/upload", ASYNC_HTTP_POST, [](AsyncWebServerRequest *request){
     request->send(200);
   }, onUpload);
 
   // send a file when /index is requested
-  server.on("/index", HTTP_ANY, [](AsyncWebServerRequest *request){
+  server.on("/index", ASYNC_HTTP_ANY, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/index.htm");
   });
 
   // HTTP basic authentication
-  server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/login", ASYNC_HTTP_GET, [](AsyncWebServerRequest *request){
     if(!request->authenticate(http_username, http_password))
         return request->requestAuthentication();
     request->send(200, "text/plain", "Login Success!");
   });
 
   // Simple Firmware Update Form
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/update", ASYNC_HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
   });
-  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/update", ASYNC_HTTP_POST, [](AsyncWebServerRequest *request){
     shouldReboot = !Update.hasError();
     AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot?"OK":"FAIL");
     response->addHeader("Connection", "close");
@@ -1280,10 +1280,10 @@ public :
 	void begin(){
 
 		// attach global request handler
-		classWebServer.on("/example", HTTP_ANY, handleRequest);
+		classWebServer.on("/example", ASYNC_HTTP_ANY, handleRequest);
 
 		// attach class request handler
-		classWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, this, std::placeholders::_1));
+		classWebServer.on("/example", ASYNC_HTTP_ANY, std::bind(&WebClass::classRequest, this, std::placeholders::_1));
 	}
 };
 
@@ -1293,10 +1293,10 @@ WebClass webClassInstance;
 void setup() {
 
 	// attach global request handler
-	globalWebServer.on("/example", HTTP_ANY, handleRequest);
+	globalWebServer.on("/example", ASYNC_HTTP_ANY, handleRequest);
 
 	// attach class request handler
-	globalWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, webClassInstance, std::placeholders::_1));
+	globalWebServer.on("/example", ASYNC_HTTP_ANY, std::bind(&WebClass::classRequest, webClassInstance, std::placeholders::_1));
 }
 
 void loop() {

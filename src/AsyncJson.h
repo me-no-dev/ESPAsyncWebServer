@@ -5,7 +5,7 @@
 
   example of callback in use
 
-   server.on("/json", HTTP_ANY, [](AsyncWebServerRequest * request) {
+   server.on("/json", ASYNC_HTTP_ANY, [](AsyncWebServerRequest * request) {
 
     AsyncJsonResponse * response = new AsyncJsonResponse();
     JsonObject& root = response->getRoot();
