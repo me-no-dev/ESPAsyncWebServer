@@ -556,8 +556,7 @@ AsyncFileResponse::AsyncFileResponse(File content, const String& path, const Str
 }
 
 size_t AsyncFileResponse::_fillBuffer(uint8_t *data, size_t len){
-  _content.read(data, len);
-  return len;
+  return _content.read(data, len);
 }
 
 /*
