@@ -26,6 +26,10 @@
 #define os_strlen strlen
 #endif
 
+#ifdef ESP32
+#define os_printf ets_printf
+#endif
+
 static const String SharedEmptyString = String();
 
 #define __is_param_char(c) ((c) && ((c) != '{') && ((c) != '[') && ((c) != '&') && ((c) != '='))

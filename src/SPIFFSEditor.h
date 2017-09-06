@@ -2,6 +2,8 @@
 #define SPIFFSEditor_H_
 #include <ESPAsyncWebServer.h>
 
+#if defined(ESP8266) || defined(HAS_ARDUINO_ESP32_SPIFFS)
+
 #define EXCLUDELIST "/.exclude.files"
 
 class SPIFFSEditor: public AsyncWebHandler {
@@ -17,5 +19,7 @@ class SPIFFSEditor: public AsyncWebHandler {
     virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final;
 
 };
+
+#endif
 
 #endif

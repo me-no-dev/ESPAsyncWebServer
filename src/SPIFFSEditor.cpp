@@ -1,6 +1,8 @@
 #include "SPIFFSEditor.h"
 #include <FS.h>
 
+#if defined(ESP8266) || defined(HAS_ARDUINO_ESP32_SPIFFS)
+
 //File: edit.htm.gz, Size: 4128
 #define edit_htm_gz_len 4128
 const uint8_t edit_htm_gz[] PROGMEM = {
@@ -375,11 +377,21 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
   if(request->method() == HTTP_GET){
     if(request->hasParam("list")){
       String path = request->getParam("list")->value();
+#ifdef ESP8266
       Dir dir = SPIFFS.openDir(path);
+#elif ESP32
+      fs::File dir = SPIFFS.open(path, FILE_READ);
+#endif
       path = String();
       String output = "[";
+#ifdef ESP8266
       while(dir.next()){
         fs::File entry = dir.openFile("r");
+#elif ESP32
+      while (true) {
+        fs::File entry = dir.openNextFile(FILE_READ);
+        if (!entry) break;
+#endif
         if (isExcluded(entry.name())) { continue; }
         if (output != "[") output += ',';
         output += "{\"type\":\"";
@@ -451,3 +463,5 @@ void SPIFFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fi
     }
   }
 }
+
+#endif

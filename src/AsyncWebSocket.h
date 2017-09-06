@@ -168,7 +168,11 @@ class AsyncWebSocketClient {
     void message(AsyncWebSocketMessage *message){ _queueMessage(message); }
 
     size_t printf(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
+#if ESP8266
     size_t printf_P(PGM_P formatP, ...)  __attribute__ ((format (printf, 2, 3)));
+#elif ESP32
+    size_t printf_PGM(PGM_P formatP, ...)  __attribute__ ((format (printf, 2, 3)));
+#endif
 
     void text(const char * message, size_t len);
     void text(const char * message);
@@ -257,7 +261,11 @@ class AsyncWebSocket: public AsyncWebHandler {
 
     size_t printf(uint32_t id, const char *format, ...)  __attribute__ ((format (printf, 3, 4)));
     size_t printfAll(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
+#if ESP8266
     size_t printf_P(uint32_t id, PGM_P formatP, ...)  __attribute__ ((format (printf, 3, 4)));
+#elif ESP32
+    size_t printf_PGM(uint32_t id, PGM_P formatP, ...)  __attribute__ ((format (printf, 3, 4)));
+#endif
     size_t printfAll_P(PGM_P formatP, ...)  __attribute__ ((format (printf, 2, 3)));
 
     //event listener

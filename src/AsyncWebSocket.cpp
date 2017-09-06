@@ -23,21 +23,10 @@
 
 #include <libb64/cencode.h>
 
-#ifndef ESP8266
-extern "C" {
-typedef struct {
-    uint32_t state[5];
-    uint32_t count[2];
-    unsigned char buffer[64];
-} SHA1_CTX;
-
-void SHA1Transform(uint32_t state[5], const unsigned char buffer[64]);
-void SHA1Init(SHA1_CTX* context);
-void SHA1Update(SHA1_CTX* context, const unsigned char* data, uint32_t len);
-void SHA1Final(unsigned char digest[20], SHA1_CTX* context);
-}
-#else
+#ifdef ESP8266
 #include <Hash.h>
+#elif ESP32
+#include <mbedtls/sha1.h>
 #endif
 
 #define MAX_PRINTF_LEN 64
@@ -672,7 +661,11 @@ size_t AsyncWebSocketClient::printf(const char *format, ...) {
   return len;
 }
 
+#ifdef ESP8266
 size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
+#elif ESP32
+size_t AsyncWebSocketClient::printf_PGM(PGM_P formatP, ...) {
+#endif
   va_list arg;
   va_start(arg, formatP);
   char* temp = new char[MAX_PRINTF_LEN];
@@ -955,7 +948,11 @@ size_t AsyncWebSocket::printfAll(const char *format, ...) {
   return len;
 }
 
+#ifdef ESP8266
 size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...){
+#elif ESP32
+size_t AsyncWebSocket::printf_PGM(uint32_t id, PGM_P formatP, ...){
+#endif
   AsyncWebSocketClient * c = client(id);
   if(c != NULL){
     va_list arg;
@@ -1159,12 +1156,9 @@ AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket
   }
 #ifdef ESP8266
   sha1(key + WS_STR_UUID, hash);
-#else
-  key += WS_STR_UUID;
-  SHA1_CTX ctx;
-  SHA1Init(&ctx);
-  SHA1Update(&ctx, (const unsigned char*)key.c_str(), key.length());
-  SHA1Final(hash, &ctx);
+#elif ESP32
+  const String key2 = key + WS_STR_UUID;
+  mbedtls_sha1((const unsigned char *)key2.c_str(), key2.length(), hash);
 #endif
   base64_encodestate _state;
   base64_init_encodestate(&_state);
