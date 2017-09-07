@@ -68,7 +68,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArUploadHandlerFunction _onUpload;
     ArBodyHandlerFunction _onBody;
   public:
-    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL){}
+    AsyncCallbackWebHandler() : _uri(), _method(ASYNC_HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL){}
     void setUri(const String& uri){ _uri = uri; }
     void setMethod(WebRequestMethodComposite method){ _method = method; }
     void onRequest(ArRequestHandlerFunction fn){ _onRequest = fn; }
