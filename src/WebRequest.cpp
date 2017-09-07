@@ -97,7 +97,7 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
 }
 
 void AsyncWebServerRequest::_onData(void *buf, size_t len){
-  int i = 0;
+  size_t i = 0;
   while (true) {
 
   if(_parseState < PARSE_REQ_BODY){
