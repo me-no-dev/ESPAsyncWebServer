@@ -24,21 +24,22 @@
 #include "Arduino.h"
 
 #include <functional>
-#include <ESPAsyncTCP.h>
 #include "FS.h"
 
 #include "StringArray.h"
 
-#if defined(ESP31B)
-#include <ESP31BWiFi.h>
+#ifdef ESP32
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include "SPIFFS.h"
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
 #else
 #error Platform not supported
 #endif
 
 #define DEBUGF(...) //Serial.printf(__VA_ARGS__)
-
 
 class AsyncWebServer;
 class AsyncWebServerRequest;

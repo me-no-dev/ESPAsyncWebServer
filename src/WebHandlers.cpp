@@ -128,6 +128,12 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest *request)
   return _fileExists(request, path);
 }
 
+#ifdef ESP32
+#define FILE_IS_REAL(f) (f == true && !f.isDirectory())
+#else
+#define FILE_IS_REAL(f) (f == true)
+#endif
+
 bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const String& path)
 {
   bool fileFound = false;
@@ -137,17 +143,17 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
 
   if (_gzipFirst) {
     request->_tempFile = _fs.open(gzip, "r");
-    gzipFound = request->_tempFile == true;
+    gzipFound = FILE_IS_REAL(request->_tempFile);
     if (!gzipFound){
       request->_tempFile = _fs.open(path, "r");
-      fileFound = request->_tempFile == true;
+      fileFound = FILE_IS_REAL(request->_tempFile);
     }
   } else {
     request->_tempFile = _fs.open(path, "r");
-    fileFound = request->_tempFile == true;
+    fileFound = FILE_IS_REAL(request->_tempFile);
     if (!fileFound){
       request->_tempFile = _fs.open(gzip, "r");
-      gzipFound = request->_tempFile == true;
+      gzipFound = FILE_IS_REAL(request->_tempFile);
     }
   }
 

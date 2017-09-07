@@ -672,6 +672,7 @@ size_t AsyncWebSocketClient::printf(const char *format, ...) {
   return len;
 }
 
+#ifndef ESP32
 size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
   va_list arg;
   va_start(arg, formatP);
@@ -700,6 +701,7 @@ size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
   delete[] temp;
   return len;
 }
+#endif
 
 void AsyncWebSocketClient::text(const char * message, size_t len){
   _queueMessage(new AsyncWebSocketBasicMessage(message, len));
@@ -955,6 +957,7 @@ size_t AsyncWebSocket::printfAll(const char *format, ...) {
   return len;
 }
 
+#ifndef ESP32
 size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...){
   AsyncWebSocketClient * c = client(id);
   if(c != NULL){
@@ -966,6 +969,7 @@ size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...){
   }
   return 0;
 }
+#endif
 
 size_t AsyncWebSocket::printfAll_P(PGM_P formatP, ...) {
   va_list arg;
@@ -1160,7 +1164,7 @@ AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket
 #ifdef ESP8266
   sha1(key + WS_STR_UUID, hash);
 #else
-  key += WS_STR_UUID;
+  (String&)key += WS_STR_UUID;
   SHA1_CTX ctx;
   SHA1Init(&ctx);
   SHA1Update(&ctx, (const unsigned char*)key.c_str(), key.length());

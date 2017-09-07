@@ -202,7 +202,7 @@ void AsyncWebServerRequest::_onError(int8_t error){
 }
 
 void AsyncWebServerRequest::_onTimeout(uint32_t time){
-  os_printf("TIMEOUT: %u, state: %s\n", time, _client->stateToString());
+  //os_printf("TIMEOUT: %u, state: %s\n", time, _client->stateToString());
   _client->close();
 }
 
@@ -505,7 +505,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
     }
   } else if(_multiParseState == DASH3_OR_RETURN2){
     if(data == '-' && (_contentLength - _parsedLength - 4) != 0){
-      os_printf("ERROR: The parser got to the end of the POST but is expecting %u bytes more!\nDrop an issue so we can have more info on the matter!\n", _contentLength - _parsedLength - 4);
+      //os_printf("ERROR: The parser got to the end of the POST but is expecting %u bytes more!\nDrop an issue so we can have more info on the matter!\n", _contentLength - _parsedLength - 4);
       _contentLength = _parsedLength + 4;//lets close the request gracefully
     }
     if(data == '\r'){
