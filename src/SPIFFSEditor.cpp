@@ -288,18 +288,18 @@ static bool matchWild(const char *pattern, const char *testee) {
   return (*pattern == 0);
 }
 
-#define SPIFFS_MAXLENGTH_FILEPATH 64
+#define SPIFFS_MAXLENGTH_FILEPATH 32
 
-static bool isExcluded(const char *filename) {
+static bool isExcluded(fs::FS _fs, const char *filename) {
   const char *excludeList = EXCLUDELIST;
   static char linebuf[SPIFFS_MAXLENGTH_FILEPATH]; 
-  fs::File excludeFile=SPIFFS.open(excludeList, "r");
+  fs::File excludeFile=_fs.open(excludeList, "r");
   if(!excludeFile){
-    excludeFile=SPIFFS.open(excludeList, "w");
+    excludeFile=_fs.open(excludeList, "w");
     excludeFile.println("/*.js.gz");
     excludeFile.println(excludeList);
     excludeFile.close();
-    excludeFile=SPIFFS.open(excludeList, "r");
+    excludeFile=_fs.open(excludeList, "r");
   }
   if (excludeFile.size() > 0){
     uint8_t idx;
@@ -334,8 +334,9 @@ static bool isExcluded(const char *filename) {
 
 // WEB HANDLER IMPLEMENTATION
 
-SPIFFSEditor::SPIFFSEditor(const String& username, const String& password)
-:_username(username)
+SPIFFSEditor::SPIFFSEditor(const String& username, const String& password, const fs::FS& fs)
+:_fs(fs)
+,_username(username)
 ,_password(password)
 ,_authenticated(false)
 ,_startTime(0)
@@ -347,12 +348,12 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
       if(request->hasParam("list"))
         return true;
       if(request->hasParam("edit")){
-        request->_tempFile = SPIFFS.open(request->arg("edit"), "r");
+        request->_tempFile = _fs.open(request->arg("edit"), "r");
         if(!request->_tempFile)
           return false;
       }
       if(request->hasParam("download")){
-        request->_tempFile = SPIFFS.open(request->arg("download"), "r");
+        request->_tempFile = _fs.open(request->arg("download"), "r");
         if(!request->_tempFile)
           return false;
       }
@@ -378,9 +379,9 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
     if(request->hasParam("list")){
       String path = request->getParam("list")->value();
 #ifdef ESP32
-      File dir = SPIFFS.open(path);
+      File dir = _fs.open(path);
 #else
-      Dir dir = SPIFFS.openDir(path);
+      Dir dir = _fs.openDir(path);
 #endif
       path = String();
       String output = "[";
@@ -391,7 +392,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       while(dir.next()){
         fs::File entry = dir.openFile("r");
 #endif
-        if (isExcluded(entry.name())) { continue; }
+        if (isExcluded(_fs, entry.name())) { continue; }
         if (output != "[") output += ',';
         output += "{\"type\":\"";
         output += "file";
@@ -420,22 +421,22 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
     }
   } else if(request->method() == HTTP_DELETE){
     if(request->hasParam("path", true)){
-      SPIFFS.remove(request->getParam("path", true)->value());
+        _fs.remove(request->getParam("path", true)->value());
       request->send(200, "", "DELETE: "+request->getParam("path", true)->value());
     } else
       request->send(404);
   } else if(request->method() == HTTP_POST){
-    if(request->hasParam("data", true, true) && SPIFFS.exists(request->getParam("data", true, true)->value()))
+    if(request->hasParam("data", true, true) && _fs.exists(request->getParam("data", true, true)->value()))
       request->send(200, "", "UPLOADED: "+request->getParam("data", true, true)->value());
     else
       request->send(500);
   } else if(request->method() == HTTP_PUT){
     if(request->hasParam("path", true)){
       String filename = request->getParam("path", true)->value();
-      if(SPIFFS.exists(filename)){
+      if(_fs.exists(filename)){
         request->send(200);
       } else {
-        fs::File f = SPIFFS.open(filename, "w");
+        fs::File f = _fs.open(filename, "w");
         if(f){
           f.write((uint8_t)0x00);
           f.close();
@@ -453,7 +454,7 @@ void SPIFFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fi
   if(!index){
     if(!_username.length() || request->authenticate(_username.c_str(),_password.c_str())){
       _authenticated = true;
-      request->_tempFile = SPIFFS.open(filename, "w");
+      request->_tempFile = _fs.open(filename, "w");
       _startTime = millis();
     }
   }
