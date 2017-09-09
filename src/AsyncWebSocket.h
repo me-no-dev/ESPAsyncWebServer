@@ -94,11 +94,11 @@ class AsyncWebSocketMessage {
 
 class AsyncWebSocketBasicMessage: public AsyncWebSocketMessage {
   private:
-    uint8_t * _data;
     size_t _len;
     size_t _sent;
     size_t _ack;
     size_t _acked;
+    uint8_t * _data;
 public:
     AsyncWebSocketBasicMessage(const char * data, size_t len, uint8_t opcode=WS_TEXT, bool mask=false);
     AsyncWebSocketBasicMessage(uint8_t opcode=WS_TEXT, bool mask=false);

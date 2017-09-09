@@ -307,6 +307,7 @@ AsyncWebSocketBasicMessage::AsyncWebSocketBasicMessage(uint8_t opcode, bool mask
   ,_sent(0)
   ,_ack(0)
   ,_acked(0)
+  ,_data(NULL)
 {
   _opcode = opcode & 0x07;
   _mask = mask;
