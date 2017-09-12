@@ -361,6 +361,7 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
         if(!request->_tempFile)
           return false;
       }
+      request->addInterestingHeader("If-Modified-Since");
       return true;
     }
     else if(request->method() == HTTP_POST)
@@ -419,9 +420,15 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       request->send(request->_tempFile, request->_tempFile.name(), String(), request->hasParam("download"));
     }
     else {
-      AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", edit_htm_gz, edit_htm_gz_len);
-      response->addHeader("Content-Encoding", "gzip");
-      request->send(response);
+      const char * buildTime = __DATE__ " " __TIME__ " GMT";
+      if (request->header("If-Modified-Since").equals(buildTime)) {
+        request->send(304);
+      } else {
+        AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", edit_htm_gz, edit_htm_gz_len);
+        response->addHeader("Content-Encoding", "gzip");
+        response->addHeader("Last-Modified", buildTime);
+        request->send(response);
+      }
     }
   } else if(request->method() == HTTP_DELETE){
     if(request->hasParam("path", true)){
