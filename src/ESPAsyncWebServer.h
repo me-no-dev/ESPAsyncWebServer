@@ -414,6 +414,31 @@ class AsyncWebServer {
     void _rewriteRequest(AsyncWebServerRequest *request);
 };
 
+class DefaultHeaders {
+  using headers_t = LinkedList<AsyncWebHeader *>;
+  headers_t _headers;
+  
+  DefaultHeaders()
+  :_headers(headers_t([](AsyncWebHeader *h){ delete h; }))
+  {}
+public:
+  using ConstIterator = headers_t::ConstIterator;
+
+  void addHeader(const String& name, const String& value){
+    _headers.add(new AsyncWebHeader(name, value));
+  }  
+  
+  ConstIterator begin() const { return _headers.begin(); }
+  ConstIterator end() const { return _headers.end(); }
+
+  DefaultHeaders(DefaultHeaders const &) = delete;
+  DefaultHeaders &operator=(DefaultHeaders const &) = delete;
+  static DefaultHeaders &Instance() {
+    static DefaultHeaders instance;
+    return instance;
+  }
+};
+
 #include "WebResponseImpl.h"
 #include "WebHandlerImpl.h"
 #include "AsyncWebSocket.h"
