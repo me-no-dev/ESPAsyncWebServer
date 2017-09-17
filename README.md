@@ -77,7 +77,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
 	- [Setting up the server](#setting-up-the-server)
 		- [Setup global and class functions as request handlers](#setup-global-and-class-functions-as-request-handlers)
 		- [Methods for controlling websocket connections](#methods-for-controlling-websocket-connections)
-
+	- [Adding default headers to all responses](#adding-default-headers)
 ## Why should you care
 - Using asynchronous network means that you can handle more than one connection at the same time
 - You are called once the request is ready and parsed
@@ -1338,4 +1338,31 @@ Example of OTA code
 
   });
 
+```
+
+### Adding Default Headers
+
+In some cases, such as when working with CORS, or with some sort of custom authentication system, 
+you might need to define a header that should get added to all responses (including static, websocket and EventSource).
+The DefaultHeaders singleton allows you to do this.
+
+Example:
+
+```arduino
+DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+webServer.begin();
+```
+
+*NOTE*: You will still need to respond to the OPTIONS method for CORS pre-flight in most cases. (unless you are only using GET)
+
+This is one option:
+
+```arduino
+webServer.onNotFound([](AsyncWebServerRequest *request) {
+	if (request->method() == HTTP_OPTIONS) {
+		request->send(200);
+	} else {
+		request->send(404);
+	}
+});
 ```
