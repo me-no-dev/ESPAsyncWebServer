@@ -94,7 +94,11 @@ AsyncWebServerResponse::AsyncWebServerResponse()
   , _ackedLength(0)
   , _writtenLength(0)
   , _state(RESPONSE_SETUP)
-{}
+{
+  for(auto header: DefaultHeaders::Instance()) {
+    _headers.add(new AsyncWebHeader(header->name(), header->value()));
+  }
+}
 
 AsyncWebServerResponse::~AsyncWebServerResponse(){
   _headers.free();
