@@ -13,7 +13,7 @@
 # include <cstdint>
 
 # include <pgmspace.h>
-# include <Wstring.h>
+# include <WString.h>
 
 # include "PGMHelper.h"
 # include "StringSource.h"

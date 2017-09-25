@@ -15,7 +15,7 @@
 //# include <ostream>		//??
 
 # include <pgmspace.h>
-# include <Wstring.h>
+# include <WString.h>
 
 # include "StringSource.h"
 
