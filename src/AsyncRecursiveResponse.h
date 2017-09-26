@@ -42,28 +42,65 @@
 
 
 // --------------------------------------------------------------------------------------------------------------------------
+//	forward declarations
+// --------------------------------------------------------------------------------------------------------------------------
+
+class RecursiveNode;
+class AsyncRecursiveResponse;
+
+typedef std::function<RecursiveNode(StringSource)> RecursiveResponseCallback;
+
+
+// --------------------------------------------------------------------------------------------------------------------------
+//	RecursiveNode
+//		- used for passing data from the callback to AsyncRecursiveResponse
+//		- wraps a string and a callback function to call when templates are found in the string
+//
+//	implemented in: AsycnRecursiveResponse.cpp
+// --------------------------------------------------------------------------------------------------------------------------
+
+class RecursiveNode {
+	friend class AsyncRecursiveReponse;
+
+	private:
+		RecursiveResponseCallback callback;
+		StringWrapper str;
+		const char* begin;									// offset into data string (ie. current point of parse), called begin because its the begining of the next substring
+		RecursiveNode* prev;							// previous node
+
+	public:
+		RecursiveNode(RecursiveResponseCallback, StringWrapper);
+		template<class... TArgs> RecursiveNode(RecursiveResponseCallback, TArgs&&...);
+
+		RecursiveNode(const RecursiveNode&) = delete;
+		RecursiveNode& operator=(const RecursiveNode&) = delete;
+		RecursiveNode(RecursiveNode&&);
+		RecursiveNode& operator=(RecursiveNode&&);
+
+		~RecursiveNode();
+	};
+
+
+// ----- template code -----
+template<class... TArgs> RecursiveNode::RecursiveNode(RecursiveResponseCallback callback_, TArgs&&... args) :
+	callback(std::move(callback_)),
+	str(std::forward<TArgs>(args)...) {
+	begin = str.Data();
+	prev = nullptr;
+	}
+
+
+// --------------------------------------------------------------------------------------------------------------------------
 //	AsyncRecursiveReponse
 //		- ??
 //
 //	implemented in: AsyncRecursive.cpp
 // --------------------------------------------------------------------------------------------------------------------------
 
-// ----- RecursiveResponseCallback -----
-typedef std::function<StringWrapper(StringSource)> RecursiveResponseCallback;
-
-
 // ----- AsyncRecursiveReponse -----
 class AsyncRecursiveReponse : public AsyncWebServerResponse {
 
-	public:		//private:
-		// internal types
-		struct RecursiveReponseStack {
-			StringWrapper str;								// actual string data
-			const char* begin;								// offset into data string (ie. current point of parse), called begin because its the begining of the next substring
-			RecursiveReponseStack* next;			// next node of linked list stack
-			RecursiveReponseStack* prev;			// previous node of linked list stack
-			};
-
+	private:
 		// internal constants
 		enum class SubStringCode { end_of_string, found_sentinel, exceeded_len };
 		static constexpr uint8_t TCP_WRITE_FLAG_COPY = 0x01;
@@ -71,15 +108,14 @@ class AsyncRecursiveReponse : public AsyncWebServerResponse {
 		// internal data
 		AsyncWebServerRequest* request;
 	    WebResponseState state;
-		RecursiveResponseCallback call_back;
-		RecursiveReponseStack* stack;
+		RecursiveNode* stack;
 		char sentinel;
 
 		// static helpers
 		static const char* HTTPCodeString(int code);
 
 		// stack helpers
-		void PushStack(StringWrapper&&);
+		void PushStack(RecursiveNode&&);
 		void PopStack();
 		void ClearStack();
 
@@ -94,7 +130,7 @@ class AsyncRecursiveReponse : public AsyncWebServerResponse {
 		void Fail();
 
 	public:
-		AsyncRecursiveReponse(AsyncWebServerRequest*, RecursiveResponseCallback, StringWrapper, char sentinel = '%');
+		AsyncRecursiveReponse(AsyncWebServerRequest*, RecursiveNode, char sentinel = '%');
 
 		AsyncRecursiveReponse(const AsyncRecursiveReponse&) = delete;
 		AsyncRecursiveReponse& operator=(const AsyncRecursiveReponse&) = delete;
@@ -106,10 +142,13 @@ class AsyncRecursiveReponse : public AsyncWebServerResponse {
 		// AsyncWebServerResponse interface
 		virtual void setCode(int code);
 		virtual void setContentLength(size_t len);
+
 		virtual void setContentType(const String& type);
 		virtual void setContentType(const StringWrapper& type);
+
 		virtual void addHeader(const String& name, const String& value);
 		virtual void addHeader(const StringWrapper& name, const StringWrapper& value);
+
 		virtual String _assembleHead(uint8_t version);
 		virtual bool _started() const;
 		virtual bool _finished() const;

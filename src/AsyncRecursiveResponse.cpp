@@ -26,22 +26,50 @@
 
 
 // --------------------------------------------------------------------------------------------------------------------------
+//	RecursiveNode
+// --------------------------------------------------------------------------------------------------------------------------
+
+RecursiveNode::RecursiveNode(RecursiveResponseCallback callback_, StringWrapper str_) :
+	callback(std::move(callback_)),
+	str(std::move(str_)) {
+	begin = str.Data();
+	prev = nullptr;
+	}
+
+
+RecursiveNode::RecursiveNode(RecursiveNode&& rn) :
+	callback(std::move(rn.callback)),
+	str(std::move(rn.str)) {
+	begin = rn.begin; rn.begin = nullptr;
+	prev = rn.prev; rn.prev = nullptr;
+	}
+
+RecursiveNode& RecursiveNode::operator=(RecursiveNode&& rn) {
+	if (this == &rn) return *this;
+	callback = std::move(rn.callback);
+	str = std::move(rn.str);
+	begin = rn.begin; rn.begin = nullptr;
+	prev = rn.prev; rn.prev = nullptr;
+	return *this;
+	}
+
+RecursiveNode::~RecursiveNode() {}
+
+
+// --------------------------------------------------------------------------------------------------------------------------
 //	AsyncRecursiveReponse
 // --------------------------------------------------------------------------------------------------------------------------
 
 // ----- standard member functions -----
-AsyncRecursiveReponse::AsyncRecursiveReponse(AsyncWebServerRequest* request_, RecursiveResponseCallback call_back_, StringWrapper src, char sentinel_) :
-	call_back(std::move(call_back_)) {
+AsyncRecursiveReponse::AsyncRecursiveReponse(AsyncWebServerRequest* request_, RecursiveNode node, char sentinel_) {
 	request = request_;
 	state = RESPONSE_SETUP;
 	stack = nullptr;
 	sentinel = sentinel_;
-	PushStack(std::move(src));
+	PushStack(std::move(node));
 	}
 
-AsyncRecursiveReponse::AsyncRecursiveReponse(AsyncRecursiveReponse&& rr) :
-	call_back(std::move(rr.call_back)) {
-
+AsyncRecursiveReponse::AsyncRecursiveReponse(AsyncRecursiveReponse&& rr) {
 	request = rr.request; rr.request = nullptr;
 	state = rr.state; rr.state = RESPONSE_FAILED;
 	stack = rr.stack; rr.stack = nullptr;
@@ -50,13 +78,11 @@ AsyncRecursiveReponse::AsyncRecursiveReponse(AsyncRecursiveReponse&& rr) :
 
 AsyncRecursiveReponse& AsyncRecursiveReponse::operator=(AsyncRecursiveReponse&& rr) {
 	if (this == &rr) return *this;
-
+	ClearStack();
 	request = rr.request; rr.request = nullptr;
 	state = rr.state; rr.state = RESPONSE_FAILED;
-	call_back = std::move(rr.call_back);
 	stack = rr.stack; rr.stack = nullptr;
 	sentinel = rr.sentinel; rr.sentinel = 0;
-		
 	return *this;
 	}
 
@@ -114,51 +140,21 @@ const char* AsyncRecursiveReponse::HTTPCodeString(int code) {
 
 
 // ----- stack helpers -----
-void AsyncRecursiveReponse::PushStack(StringWrapper&& str) {
-
-	// get node (reuse old if possible, otherwise create new)
-	RecursiveReponseStack* node;
-	if (stack && stack->next) {
-		node = stack->next;
-		}
-	else {
-		node = new RecursiveReponseStack();
-		node->next = nullptr;
-		node->prev = stack;
-		if (stack) stack->next = node;
-		}
-
-	// assign data
-	node->str = std::move(str);
-	node->begin = node->str.Data();
-
-	// adjust stack
+void AsyncRecursiveReponse::PushStack(RecursiveNode&& rn) {
+	RecursiveNode* node = new RecursiveNode(std::move(rn));
+	node->prev = stack;
 	stack = node;
 	}
 
 void AsyncRecursiveReponse::PopStack() {
 	if (stack == nullptr) return;
-
-	// clear data
-	stack->str.Clear();
-	stack->begin = nullptr;
-
-	// 'pop' from stack
-	stack = stack->prev;
+	RecursiveNode* node = stack;
+	stack = node->prev;
+	delete node;
 	}
 
 void AsyncRecursiveReponse::ClearStack() {
-	if (stack == nullptr) return;
-
-	// move to top of stack
-	while (stack->next) stack = stack->next;
-
-	// delete stack
-	do {
-		RecursiveReponseStack* prev_node = stack->prev;
-		delete stack;
-		stack = prev_node;
-		} while (stack);
+	while (stack) PopStack();
 	}
 
 
@@ -427,7 +423,8 @@ size_t AsyncRecursiveReponse::_ack(AsyncWebServerRequest* request, size_t n, uin
 			begin = end + 1;
 			end = begin;
 			if (ReadSubString(end) == SubStringCode::found_sentinel) {
-				PushStack(call_back(StringSource(begin, end)));		// retrieve string associated with template
+				RecursiveResponseCallback& callback = stack->callback;
+				PushStack(callback(StringSource(begin, end)));			// retrieve string associated with template
 				begin = end + 1;														// update old begin to point passed the end of the template id
 				}
 			else {
