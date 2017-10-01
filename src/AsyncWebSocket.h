@@ -145,6 +145,8 @@ class AsyncWebSocketClient {
     void _runQueue();
 
   public:
+    void *_tempObject;
+
     AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server);
     ~AsyncWebSocketClient();
 
