@@ -35,13 +35,26 @@ class AsyncWebSocketClient;
 class AsyncWebSocketControl;
 
 typedef struct {
+    /** Message type as defined by enum AwsFrameType.
+     * Note: Applications will only see WS_TEXT and WS_BINARY.
+     * All other types are handled by the library. */
     uint8_t message_opcode;
+    /** Frame number of a fragmented message. */
     uint32_t num;
+    /** Is this the last frame in a fragmented message ?*/
     uint8_t final;
+    /** Is this frame masked? */
     uint8_t masked;
+    /** Message type as defined by enum AwsFrameType.
+     * This value is the same as message_opcode for non-fragmented
+     * messages, but may also be WS_CONTINUATION in a fragmented message. */
     uint8_t opcode;
+    /** Length of the current frame.
+     * This equals the total length of the message if num == 0 && final == true */
     uint64_t len;
+    /** Mask key */
     uint8_t mask[4];
+    /** Offset of the data inside the current frame. */
     uint64_t index;
 } AwsFrameInfo;
 
