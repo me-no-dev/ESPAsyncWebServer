@@ -1,4 +1,6 @@
 #include <ESP8266WiFi.h>
+#include <Hash.h>
+#include <ESPAsyncTCP.h>
 #include <DNSServer.h>
 #include "ESPAsyncWebServer.h"
 
