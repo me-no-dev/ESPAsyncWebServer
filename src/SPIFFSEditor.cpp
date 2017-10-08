@@ -266,6 +266,16 @@ const uint8_t edit_htm_gz[] PROGMEM = {
  0xE8, 0x9D, 0x36, 0x92, 0x29, 0x00, 0x00
 };
 
+#define SPIFFS_MAXLENGTH_FILEPATH 32
+const char *excludeListFile = "/.exclude.files";
+
+typedef struct ExcludeListS {
+    char *item;
+    ExcludeListS *next;
+} ExcludeList;
+
+static ExcludeList *excludes = NULL;
+
 static bool matchWild(const char *pattern, const char *testee) {
   const char *nxPat = NULL, *nxTst = NULL;
 
@@ -288,47 +298,79 @@ static bool matchWild(const char *pattern, const char *testee) {
   return (*pattern == 0);
 }
 
-#define SPIFFS_MAXLENGTH_FILEPATH 32
+static bool addExclude(const char *item){
+    size_t len = strlen(item);
+    if(!len){
+        return false;
+    }
+    ExcludeList *e = (ExcludeList *)malloc(sizeof(ExcludeList));
+    if(!e){
+        return false;
+    }
+    e->item = (char *)malloc(len+1);
+    if(!e->item){
+        free(e);
+        return false;
+    }
+    memcpy(e->item, item, len+1);
+    e->next = excludes;
+    excludes = e;
+    return true;
+}
 
-static bool isExcluded(fs::FS _fs, const char *filename) {
-  const char *excludeList = EXCLUDELIST;
-  static char linebuf[SPIFFS_MAXLENGTH_FILEPATH]; 
-  fs::File excludeFile=_fs.open(excludeList, "r");
-  if(!excludeFile){
-    excludeFile=_fs.open(excludeList, "w");
-    excludeFile.println("/*.js.gz");
-    excludeFile.println(excludeList);
-    excludeFile.close();
-    excludeFile=_fs.open(excludeList, "r");
-  }
-  if (excludeFile.size() > 0){
-    uint8_t idx;
-    bool isOverflowed = false;
-    while (excludeFile.available()){
-      linebuf[0] = '\0';
-      idx = 0;
-      int lastChar;
-      do {
-        lastChar = excludeFile.read();
-        if(lastChar != '\r'){
-          linebuf[idx++] = (char) lastChar;
+static void loadExcludeList(fs::FS &_fs, const char *filename){
+    static char linebuf[SPIFFS_MAXLENGTH_FILEPATH];
+    fs::File excludeFile=_fs.open(filename, "r");
+    if(!excludeFile){
+        //addExclude("/*.js.gz");
+        return;
+    }
+#ifdef ESP32
+    if(excludeFile.isDirectory()){
+      excludeFile.close();
+      return;
+    }
+#endif
+    if (excludeFile.size() > 0){
+      uint8_t idx;
+      bool isOverflowed = false;
+      while (excludeFile.available()){
+        linebuf[0] = '\0';
+        idx = 0;
+        int lastChar;
+        do {
+          lastChar = excludeFile.read();
+          if(lastChar != '\r'){
+            linebuf[idx++] = (char) lastChar;
+          }
+        } while ((lastChar >= 0) && (lastChar != '\n') && (idx < SPIFFS_MAXLENGTH_FILEPATH));
+
+        if(isOverflowed){
+          isOverflowed = (lastChar != '\n');
+          continue;
         }
-      } while ((lastChar >= 0) && (lastChar != '\n') && (idx < SPIFFS_MAXLENGTH_FILEPATH));
-
-      if(isOverflowed){
-        isOverflowed = (lastChar != '\n');
-        continue;
-      }
-      isOverflowed = (idx >= SPIFFS_MAXLENGTH_FILEPATH);
-      linebuf[idx-1] = '\0';
-
-      if (matchWild(linebuf, filename)){
-        excludeFile.close();
-        return true;
+        isOverflowed = (idx >= SPIFFS_MAXLENGTH_FILEPATH);
+        linebuf[idx-1] = '\0';
+        if(!addExclude(linebuf)){
+            excludeFile.close();
+            return;
+        }
       }
     }
+    excludeFile.close();
+}
+
+static bool isExcluded(fs::FS &_fs, const char *filename) {
+  if(excludes == NULL){
+      loadExcludeList(_fs, excludeListFile);
   }
-  excludeFile.close();
+  ExcludeList *e = excludes;
+  while(e){
+    if (matchWild(e->item, filename)){
+      return true;
+    }
+    e = e->next;
+  }
   return false;
 }
 
@@ -353,13 +395,27 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
         return true;
       if(request->hasParam("edit")){
         request->_tempFile = _fs.open(request->arg("edit"), "r");
-        if(!request->_tempFile)
+        if(!request->_tempFile){
           return false;
+        }
+#ifdef ESP32
+        if(request->_tempFile.isDirectory()){
+          request->_tempFile.close();
+          return false;
+        }
+#endif
       }
       if(request->hasParam("download")){
         request->_tempFile = _fs.open(request->arg("download"), "r");
-        if(!request->_tempFile)
+        if(!request->_tempFile){
           return false;
+        }
+#ifdef ESP32
+        if(request->_tempFile.isDirectory()){
+          request->_tempFile.close();
+          return false;
+        }
+#endif
       }
       request->addInterestingHeader("If-Modified-Since");
       return true;
@@ -397,12 +453,12 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       while(dir.next()){
         fs::File entry = dir.openFile("r");
 #endif
-        /*if (isExcluded(_fs, entry.name())) {
+        if (isExcluded(_fs, entry.name())) {
 #ifdef ESP32
             entry = dir.openNextFile();
 #endif
             continue;
-        }*/
+        }
         if (output != "[") output += ',';
         output += "{\"type\":\"";
         output += "file";
@@ -417,6 +473,9 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
         entry.close();
 #endif
       }
+#ifdef ESP32
+      dir.close();
+#endif
       output += "]";
       request->send(200, "text/json", output);
       output = String();

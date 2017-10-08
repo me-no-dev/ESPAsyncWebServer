@@ -2,8 +2,6 @@
 #define SPIFFSEditor_H_
 #include <ESPAsyncWebServer.h>
 
-#define EXCLUDELIST "/.exclude.files"
-
 class SPIFFSEditor: public AsyncWebHandler {
   private:
     fs::FS _fs;
