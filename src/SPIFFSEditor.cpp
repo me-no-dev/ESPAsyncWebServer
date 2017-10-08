@@ -397,7 +397,12 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       while(dir.next()){
         fs::File entry = dir.openFile("r");
 #endif
-        if (isExcluded(_fs, entry.name())) { continue; }
+        /*if (isExcluded(_fs, entry.name())) {
+#ifdef ESP32
+            entry = dir.openNextFile();
+#endif
+            continue;
+        }*/
         if (output != "[") output += ',';
         output += "{\"type\":\"";
         output += "file";
