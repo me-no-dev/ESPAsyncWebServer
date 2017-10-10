@@ -435,6 +435,7 @@ AsyncWebSocketMultiMessage::~AsyncWebSocketMultiMessage() {
 AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server)
   : _controlQueue(LinkedList<AsyncWebSocketControl *>([](AsyncWebSocketControl *c){ delete  c; }))
   , _messageQueue(LinkedList<AsyncWebSocketMessage *>([](AsyncWebSocketMessage *m){ delete  m; }))
+  , _tempObject(NULL)
 {
   _client = request->client();
   _server = server;
@@ -1151,6 +1152,8 @@ void AsyncWebSocket::_cleanBuffers()
 AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket *server){
   _server = server;
   _code = 101;
+  _sendContentLength = false;
+
   uint8_t * hash = (uint8_t*)malloc(20);
   if(hash == NULL){
     _state = RESPONSE_FAILED;
