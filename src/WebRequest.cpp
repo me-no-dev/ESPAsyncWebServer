@@ -127,12 +127,18 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
       }
     }
   } else if(_parseState == PARSE_REQ_BODY){
+    // A handler should be already attached at this point in _parseLine function.
+    // If handler does nothing (_onRequest is NULL), we don't need to really parse the body.
+    const bool needParse = _handler && !_handler->isRequestHandlerTrivial();
     if(_isMultipart){
-      size_t i;
-      for(i=0; i<len; i++){
-        _parseMultipartPostByte(((uint8_t*)buf)[i], i == len - 1);
-        _parsedLength++;
-      }
+      if(needParse){
+        size_t i;
+        for(i=0; i<len; i++){
+          _parseMultipartPostByte(((uint8_t*)buf)[i], i == len - 1);
+          _parsedLength++;
+        }
+      } else
+          _parsedLength += len;
     } else {
       if(_parsedLength == 0){
         if(_contentType.startsWith("application/x-www-form-urlencoded")){
@@ -149,12 +155,14 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
         //check if authenticated before calling the body
         if(_handler) _handler->handleBody(this, (uint8_t*)buf, len, _parsedLength, _contentLength);
         _parsedLength += len;
-      } else {
+      } else if(needParse) {
         size_t i;
         for(i=0; i<len; i++){
           _parsedLength++;
           _parsePlainPostChar(((uint8_t*)buf)[i]);
         }
+      } else {
+        _parsedLength += len;
       }
     }
     if(_parsedLength == _contentLength){
