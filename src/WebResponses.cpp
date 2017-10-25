@@ -378,8 +378,6 @@ size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size
     // temporary buffer to hold parameter name
     uint8_t buf[TEMPLATE_PARAM_NAME_LENGTH + 1];
     String paramName;
-    // cache position to insert remainder of template parameter value
-    std::vector<uint8_t>::iterator i = _cache.end();
     // If closing placeholder is found:
     if(pTemplateEnd) {
       // prepare argument to callback
@@ -403,16 +401,14 @@ size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size
           // prepare argument to callback
           *pTemplateEnd = 0;
           paramName = String(reinterpret_cast<char*>(buf));
-          // Copy remaining read-ahead data into cache (when std::vector::insert returning iterator will be available, these 3 lines can be simplified into 1)
-          const size_t pos = _cache.size();
-          _cache.insert(_cache.end(), pTemplateEnd + 1, buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
-          i = _cache.begin() + pos;
+          // Copy remaining read-ahead data into cache
+          _cache.insert(_cache.begin(), pTemplateEnd + 1, buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
           pTemplateEnd = &data[len - 1];
         }
         else // closing placeholder not found in file data, store found percent symbol as is and advance to the next position
         {
           // but first, store read file data in cache
-          _cache.insert(_cache.end(), buf + (&data[len - 1] - pTemplateStart), buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
+          _cache.insert(_cache.begin(), buf + (&data[len - 1] - pTemplateStart), buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
           ++pTemplateStart;
         }
       }
@@ -434,9 +430,7 @@ size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size
       // make room for param value
       // 1. move extra data to cache if parameter value is longer than placeholder AND if there is no room to store
       if((pTemplateEnd + 1 < pTemplateStart + numBytesCopied) && (originalLen - (pTemplateStart + numBytesCopied - pTemplateEnd - 1) < len)) {
-        size_t pos = i - _cache.begin();
-        _cache.insert(i, &data[originalLen - (pTemplateStart + numBytesCopied - pTemplateEnd - 1)], &data[len]);
-        i = _cache.begin() + pos;
+        _cache.insert(_cache.begin(), &data[originalLen - (pTemplateStart + numBytesCopied - pTemplateEnd - 1)], &data[len]);
         //2. parameter value is longer than placeholder text, push the data after placeholder which not saved into cache further to the end
         memmove(pTemplateStart + numBytesCopied, pTemplateEnd + 1, &data[originalLen] - pTemplateStart - numBytesCopied);
       } else if(pTemplateEnd + 1 != pTemplateStart + numBytesCopied)
@@ -447,7 +441,7 @@ size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size
       memcpy(pTemplateStart, pvstr, numBytesCopied);
       // If result is longer than buffer, copy the remainder into cache (this could happen only if placeholder text itself did not fit entirely in buffer)
       if(numBytesCopied < pvlen) {
-        _cache.insert(i, pvstr + numBytesCopied, pvstr + pvlen);
+        _cache.insert(_cache.begin(), pvstr + numBytesCopied, pvstr + pvlen);
       } else if(pTemplateStart + numBytesCopied < pTemplateEnd + 1) { // result is copied fully; if result is shorter than placeholder text...
         // there is some free room, fill it from cache
         const size_t roomFreed = pTemplateEnd + 1 - pTemplateStart - numBytesCopied;
