@@ -942,7 +942,7 @@ ws.printfAll(arguments...);
 //printf_P to a client
 ws.printf_P((uint32_t)client_id, PSTR(format), arguments...);
 //printfAll_P to all clients
-ws.printf_P(PSTR(format), arguments...);
+ws.printfAll_P(PSTR(format), arguments...);
 //send text to a client
 ws.text((uint32_t)client_id, (char*)text);
 ws.text((uint32_t)client_id, (uint8_t*)text, (size_t)len);
