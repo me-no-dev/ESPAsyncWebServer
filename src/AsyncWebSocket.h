@@ -154,6 +154,8 @@ class AsyncWebSocketClient {
     uint32_t id(){ return _clientId; }
     AwsClientStatus status(){ return _status; }
     AsyncClient* client(){ return _client; }
+    AsyncWebSocket *server(){ return _server; }
+    AwsFrameInfo const &pinfo() const { return _pinfo; }
 
     IPAddress remoteIP();
     uint16_t  remotePort();
