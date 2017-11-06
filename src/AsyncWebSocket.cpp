@@ -946,7 +946,7 @@ size_t AsyncWebSocket::printfAll(const char *format, ...) {
   va_end(arg);
   delete[] temp;
   
-  AsyncWebSocketMessageBuffer * buffer = makeBuffer(len + 1); 
+  AsyncWebSocketMessageBuffer * buffer = makeBuffer(len); 
   if (!buffer) {
     return 0;
   }
