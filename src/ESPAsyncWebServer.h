@@ -322,6 +322,7 @@ class AsyncWebHandler {
     virtual void handleRequest(AsyncWebServerRequest *request __attribute__((unused))){}
     virtual void handleUpload(AsyncWebServerRequest *request  __attribute__((unused)), const String& filename __attribute__((unused)), size_t index __attribute__((unused)), uint8_t *data __attribute__((unused)), size_t len __attribute__((unused)), bool final  __attribute__((unused))){}
     virtual void handleBody(AsyncWebServerRequest *request __attribute__((unused)), uint8_t *data __attribute__((unused)), size_t len __attribute__((unused)), size_t index __attribute__((unused)), size_t total __attribute__((unused))){}
+    virtual bool isRequestHandlerTrivial(){return true;}
 };
 
 /*

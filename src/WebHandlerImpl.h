@@ -104,6 +104,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       if(_onBody)
         _onBody(request, data, len, index, total);
     }
+    virtual bool isRequestHandlerTrivial() override final {return _onRequest ? false : true;}
 };
 
 #endif /* ASYNCWEBSERVERHANDLERIMPL_H_ */
