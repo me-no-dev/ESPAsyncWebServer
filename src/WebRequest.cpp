@@ -214,7 +214,7 @@ void AsyncWebServerRequest::_onTimeout(uint32_t time){
   _client->close();
 }
 
-void AsyncWebServerRequest::onDisconnect (std::function<void(void)> fn){
+void AsyncWebServerRequest::onDisconnect (ArDisconnectHandler fn){
     _onDisconnectfn=fn;
 }
 
