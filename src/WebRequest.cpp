@@ -214,8 +214,15 @@ void AsyncWebServerRequest::_onTimeout(uint32_t time){
   _client->close();
 }
 
+void AsyncWebServerRequest::onDisconnect (ArDisconnectHandler fn){
+    _onDisconnectfn=fn;
+}
+
 void AsyncWebServerRequest::_onDisconnect(){
   //os_printf("d\n");
+  if(_onDisconnectfn) {
+      _onDisconnectfn();
+    }
   _server->_handleDisconnect(this);
 }
 
