@@ -128,6 +128,7 @@ class AsyncWebServerRequest {
     AsyncWebHandler* _handler;
     AsyncWebServerResponse* _response;
     StringArray _interestingHeaders;
+    std::function<void(void)> _onDisconnectfn;
 
     String _temp;
     uint8_t _parseState;
@@ -202,6 +203,7 @@ class AsyncWebServerRequest {
     const char * requestedConnTypeToString() const;
     RequestedConnectionType requestedConnType() const { return _reqconntype; }
     bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED);
+    void onDisconnect (std::function<void(void)> fn);
 
     //hash is the string representation of:
     // base64(user:pass) for basic or
