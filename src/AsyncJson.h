@@ -1,9 +1,9 @@
-// ESPasyncJson.h
+// AsyncJson.h
 /*
-  Async Response to use with arduinoJson and asyncwebserver
+  Async Response to use with ArduinoJson and AsyncWebServer
   Written by Andrew Melvin (SticilFace) with help from me-no-dev and BBlanchon.
 
-  example of callback in use
+  Example of callback in use
 
    server.on("/json", HTTP_ANY, [](AsyncWebServerRequest * request) {
 
@@ -17,10 +17,27 @@
     request->send(response);
   });
 
+  --------------------
+
+  Async Request to use with ArduinoJson and AsyncWebServer
+  Written by Arsène von Wyss (avonwyss)
+
+  Example
+
+  AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler();
+  handler->setUri("/rest/endpoint");
+  handler->onRequest([](AsyncWebServerRequest *request, JsonVariant &json) {
+    JsonObject& jsonObj = json.as<JsonObject>();
+    // ...
+  });
+  server.addHandler(handler);
+  
 */
 #ifndef ASYNC_JSON_H_
 #define ASYNC_JSON_H_
 #include <ArduinoJson.h>
+
+const char* JSON_MIMETYPE = "application/json";
 
 /*
  * Json Response
@@ -57,7 +74,7 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
   public:
     AsyncJsonResponse(bool isArray=false): _isValid{false} {
       _code = 200;
-      _contentType = "text/json";
+      _contentType = JSON_MIMETYPE;
       if(isArray)
         _root = _jsonBuffer.createArray();
       else
@@ -79,5 +96,76 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
       _root.printTo( dest ) ;
       return len;
     }
+};
+
+typedef std::function<void(AsyncWebServerRequest *request, JsonVariant &json)> ArJsonRequestHandlerFunction;
+
+class AsyncCallbackJsonWebHandler: public AsyncWebHandler {
+private:
+protected:
+  String _uri;
+  WebRequestMethodComposite _method;
+  ArJsonRequestHandlerFunction _onRequest;
+  uint8_t *_buffer;
+  int _ContentLength;
+  int _maxContentLength;
+public:
+  AsyncCallbackJsonWebHandler() : _uri(), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(NULL), _maxContentLength(16384) {}
+  ~AsyncCallbackJsonWebHandler() {
+    if (_buffer != NULL) {
+      free(_buffer);
+    }
+  }
+  void setUri(const String& uri){ _uri = uri; }
+  void setMethod(WebRequestMethodComposite method){ _method = method; }
+  void setMaxContentLength(int maxContentLength){ _maxContentLength = maxContentLength; }
+  void onRequest(ArJsonRequestHandlerFunction fn){ _onRequest = fn; }
+
+  virtual bool canHandle(AsyncWebServerRequest *request) override final{
+    if(!_onRequest)
+      return false;
+
+    if(!(_method & request->method()))
+      return false;
+
+    if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
+      return false;
+
+    if (!request->contentType().equalsIgnoreCase(JSON_MIMETYPE))
+      return false;
+
+    request->addInterestingHeader("ANY");
+    return true;
+  }
+
+  virtual void handleRequest(AsyncWebServerRequest *request) override final {
+    if(_onRequest) {
+      if (_buffer) {
+        DynamicJsonBuffer jsonBuffer;
+        JsonVariant json = jsonBuffer.parse(_buffer);
+        if (json.success()) {
+          _onRequest(request, json);
+          return;
+        }
+      }
+      request->send(_contentLength > _contentLength ? 413 : 400);
+    } else {
+      request->send(500);
+    }
+  }
+  virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final {
+  }
+  virtual void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) override final {
+    if (_onRequest) {
+      _contentLength = total;
+      if (total > 0 && _buffer == NULL && total < _maxContentLength) {
+        _buffer = (uint8_t*)malloc(total);
+      }
+      if (_buffer != NULL) {
+        memcpy(_buffer+index, data, len);
+      }
+    }
+  }
+  virtual bool isRequestHandlerTrivial() override final {return _onRequest ? false : true;}
 };
 #endif
