@@ -107,7 +107,7 @@ protected:
   WebRequestMethodComposite _method;
   ArJsonRequestHandlerFunction _onRequest;
   uint8_t *_buffer;
-  int _ContentLength;
+  int _contentLength;
   int _maxContentLength;
 public:
   AsyncCallbackJsonWebHandler() : _uri(), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(NULL), _maxContentLength(16384) {}
