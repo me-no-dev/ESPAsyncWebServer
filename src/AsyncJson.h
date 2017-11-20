@@ -24,8 +24,7 @@
 
   Example
 
-  AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler();
-  handler->setUri("/rest/endpoint");
+  AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/rest/endpoint");
   handler->onRequest([](AsyncWebServerRequest *request, JsonVariant &json) {
     JsonObject& jsonObj = json.as<JsonObject>();
     // ...
@@ -103,20 +102,19 @@ typedef std::function<void(AsyncWebServerRequest *request, JsonVariant &json)> A
 class AsyncCallbackJsonWebHandler: public AsyncWebHandler {
 private:
 protected:
-  String _uri;
+  const String _uri;
   WebRequestMethodComposite _method;
   ArJsonRequestHandlerFunction _onRequest;
   uint8_t *_buffer;
   int _contentLength;
   int _maxContentLength;
 public:
-  AsyncCallbackJsonWebHandler() : _uri(), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(NULL), _maxContentLength(16384) {}
+  AsyncCallbackJsonWebHandler(const String& uri) : _uri(uri), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(NULL), _maxContentLength(16384) {}
   ~AsyncCallbackJsonWebHandler() {
     if (_buffer != NULL) {
       free(_buffer);
     }
   }
-  void setUri(const String& uri){ _uri = uri; }
   void setMethod(WebRequestMethodComposite method){ _method = method; }
   void setMaxContentLength(int maxContentLength){ _maxContentLength = maxContentLength; }
   void onRequest(ArJsonRequestHandlerFunction fn){ _onRequest = fn; }
@@ -148,7 +146,7 @@ public:
           return;
         }
       }
-      request->send(_contentLength > _contentLength ? 413 : 400);
+      request->send(_contentLength > _maxContentLength ? 413 : 400);
     } else {
       request->send(500);
     }
