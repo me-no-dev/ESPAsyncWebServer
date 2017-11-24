@@ -105,16 +105,10 @@ protected:
   const String _uri;
   WebRequestMethodComposite _method;
   ArJsonRequestHandlerFunction _onRequest;
-  uint8_t *_buffer;
   int _contentLength;
   int _maxContentLength;
 public:
   AsyncCallbackJsonWebHandler(const String& uri) : _uri(uri), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(NULL), _maxContentLength(16384) {}
-  ~AsyncCallbackJsonWebHandler() {
-    if (_buffer != NULL) {
-      free(_buffer);
-    }
-  }
   void setMethod(WebRequestMethodComposite method){ _method = method; }
   void setMaxContentLength(int maxContentLength){ _maxContentLength = maxContentLength; }
   void onRequest(ArJsonRequestHandlerFunction fn){ _onRequest = fn; }
@@ -138,9 +132,9 @@ public:
 
   virtual void handleRequest(AsyncWebServerRequest *request) override final {
     if(_onRequest) {
-      if (_buffer) {
+      if (request->_tempObject != NULL) {
         DynamicJsonBuffer jsonBuffer;
-        JsonVariant json = jsonBuffer.parse(_buffer);
+        JsonVariant json = jsonBuffer.parse((uint8_t*)(request->_tempObject));
         if (json.success()) {
           _onRequest(request, json);
           return;
@@ -156,11 +150,11 @@ public:
   virtual void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) override final {
     if (_onRequest) {
       _contentLength = total;
-      if (total > 0 && _buffer == NULL && total < _maxContentLength) {
-        _buffer = (uint8_t*)malloc(total);
+      if (total > 0 && request->_tempObject == NULL && total < _maxContentLength) {
+        request->_tempObject = malloc(total);
       }
-      if (_buffer != NULL) {
-        memcpy(_buffer+index, data, len);
+      if (request->_tempObject != NULL) {
+        memcpy((uint8_t*)(request->_tempObject) + index, data, len);
       }
     }
   }
