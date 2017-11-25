@@ -12,6 +12,8 @@ To use this library you might need to have the latest git versions of [ESP32](ht
 
 ## Table of contents
 - [ESPAsyncWebServer ](#espasyncwebserver-)
+	- [Installation](#installation)
+		- [Using PlatformIO](#using-platformio)
 	- [Why should you care](#why-should-you-care)
 	- [Important things to remember](#important-things-to-remember)
 	- [Principles of operation](#principles-of-operation)
@@ -78,6 +80,33 @@ To use this library you might need to have the latest git versions of [ESP32](ht
 		- [Setup global and class functions as request handlers](#setup-global-and-class-functions-as-request-handlers)
 		- [Methods for controlling websocket connections](#methods-for-controlling-websocket-connections)
 	- [Adding default headers to all responses](#adding-default-headers)
+
+## Installation
+
+### Using PlatformIO
+
+[PlatformIO](http://platformio.org) is an open source ecosystem for IoT development with cross platform build system, library manager and full support for Espressif ESP8266/ESP32 development. It works on the popular host OS: Mac OS X, Windows, Linux 32/64, Linux ARM (like Raspberry Pi, BeagleBone, CubieBoard).
+
+1. Install [PlatformIO IDE](http://platformio.org/platformio-ide)
+2. Create new project using "PlatformIO Home > New Project"
+3. Update dev/platform to staging version:
+   - [Instruction for Espressif 8266](http://docs.platformio.org/en/latest/platforms/espressif8266.html#using-arduino-framework-with-staging-version)
+   - [Instruction for Espressif 32](http://docs.platformio.org/en/latest/platforms/espressif32.html#using-arduino-framework-with-staging-version)
+ 4. Add "ESP Async WebServer" to project using [Project Configuration File `platformio.ini`](http://docs.platformio.org/page/projectconf.html) and [lib_deps](http://docs.platformio.org/page/projectconf/section_env_library.html#lib-deps) option:
+```ini
+[env:myboard]
+platform = espressif...
+board = ...
+framework = arduino
+
+# using the latest stable version
+lib_deps = ESP Async WebServer
+
+# or using GIT Url (the latest development version)
+lib_deps = https://github.com/me-no-dev/ESPAsyncWebServer.git
+```
+ 5. Happy coding with PlatformIO!
+
 ## Why should you care
 - Using asynchronous network means that you can handle more than one connection at the same time
 - You are called once the request is ready and parsed
