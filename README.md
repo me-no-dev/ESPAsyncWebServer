@@ -322,8 +322,7 @@ Endpoints which consume JSON can use a special handler to get ready to use JSON 
 #include "AsyncJson.h"
 #include "ArduinoJson.h"
 
-AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/rest/endpoint");
-handler->onRequest([](AsyncWebServerRequest *request, JsonVariant &json) {
+AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/rest/endpoint", [](AsyncWebServerRequest *request, JsonVariant &json) {
   JsonObject& jsonObj = json.as<JsonObject>();
   // ...
 });
