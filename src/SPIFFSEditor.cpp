@@ -477,7 +477,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       dir.close();
 #endif
       output += "]";
-      request->send(200, "text/json", output);
+      request->send(200, "application/json", output);
       output = String();
     }
     else if(request->hasParam("edit") || request->hasParam("download")){

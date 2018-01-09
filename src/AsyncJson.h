@@ -57,7 +57,7 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
   public:
     AsyncJsonResponse(bool isArray=false): _isValid{false} {
       _code = 200;
-      _contentType = "text/json";
+      _contentType = "application/json";
       if(isArray)
         _root = _jsonBuffer.createArray();
       else
