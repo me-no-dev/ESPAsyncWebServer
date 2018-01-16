@@ -267,6 +267,7 @@ class AsyncWebServerRequest {
     const String& header(size_t i) const;        // get request header value by number
     const String& headerName(size_t i) const;    // get request header name by number
     String urlDecode(const String& text) const;
+    const String& getItemName() const { return _itemName; }
 };
 
 /*
