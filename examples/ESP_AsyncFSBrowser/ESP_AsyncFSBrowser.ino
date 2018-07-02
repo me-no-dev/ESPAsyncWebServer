@@ -101,10 +101,10 @@ const char* http_password = "admin";
 void setup(){
   Serial.begin(115200);
   Serial.setDebugOutput(true);
-#ifdef ESP8266  
-  WiFi.hostname(hostName);
-#else
+#ifdef ESP32
   WiFi.setHostname(hostName);
+#else
+  WiFi.hostname(hostName);
 #endif  
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(hostName);
