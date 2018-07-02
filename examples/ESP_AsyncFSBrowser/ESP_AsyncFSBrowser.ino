@@ -1,9 +1,16 @@
+#ifdef ESP32
+#include <WiFi.h>
+#include <ESPmDNS.h>
+#include <AsyncTCP.h>
+#include <SPIFFS.h>
+#else
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+#include <ESPAsyncTCP.h>
+#include <Hash.h>
+#endif
 #include <ArduinoOTA.h>
 #include <FS.h>
-#include <Hash.h>
-#include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <SPIFFSEditor.h>
 
@@ -94,7 +101,11 @@ const char* http_password = "admin";
 void setup(){
   Serial.begin(115200);
   Serial.setDebugOutput(true);
+#ifdef ESP8266  
   WiFi.hostname(hostName);
+#else
+  WiFi.setHostname(hostName);
+#endif  
   WiFi.mode(WIFI_AP_STA);
   WiFi.softAP(hostName);
   WiFi.begin(ssid, password);
@@ -135,9 +146,12 @@ void setup(){
   });
   server.addHandler(&events);
 
+#ifdef ESP32
+  server.addHandler(new SPIFFSEditor(SPIFFS, http_username,http_password));
+#else
   server.addHandler(new SPIFFSEditor(http_username,http_password));
-
-  server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
+#endif
+server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
 
