@@ -146,7 +146,7 @@ AsyncWebSocketMessageBuffer::AsyncWebSocketMessageBuffer(uint8_t * data, size_t 
     return; 
   }
 
-  _data = new uint8_t[size + 1]; 
+  _data = new uint8_t[_len + 1];
 
   if (_data) {
     memcpy(_data, data, _len);
@@ -224,10 +224,9 @@ bool AsyncWebSocketMessageBuffer::reserve(size_t size)
     _data = nullptr; 
   }
 
-  _data = new uint8_t[size]; 
 
   if (_data) {
-    _data[_len] = 0; 
+    _data[_len] = 0;
     return true; 
   } else {
     return false; 
@@ -873,8 +872,9 @@ void AsyncWebSocket::textAll(AsyncWebSocketMessageBuffer * buffer){
   if (!buffer) return;
   buffer->lock(); 
   for(const auto& c: _clients){
-    if(c->status() == WS_CONNECTED)
-      c->text(buffer);
+    if(c->status() == WS_CONNECTED){
+        c->text(buffer);
+    }
   }
   buffer->unlock();
   _cleanBuffers(); 
@@ -1140,9 +1140,10 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(uint8_t * data, size_t 
 
 void AsyncWebSocket::_cleanBuffers()
 {
-  for(const auto& c: _buffers){
-    if(c->canDelete()) 
-      _buffers.remove(c);
+  for(AsyncWebSocketMessageBuffer * c: _buffers){
+    if(c && c->canDelete()){
+        _buffers.remove(c);
+    }
   }
 }
 
