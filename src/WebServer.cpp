@@ -79,6 +79,7 @@ bool AsyncWebServer::removeHandler(AsyncWebHandler *handler){
 }
 
 void AsyncWebServer::begin(){
+  _server.setNoDelay(true);
   _server.begin();
 }
 
