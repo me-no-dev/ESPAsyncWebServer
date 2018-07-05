@@ -224,6 +224,7 @@ bool AsyncWebSocketMessageBuffer::reserve(size_t size)
     _data = nullptr; 
   }
 
+  _data = new uint8_t[_len + 1];
 
   if (_data) {
     _data[_len] = 0;
