@@ -64,6 +64,9 @@ typedef enum {
 } WebRequestMethod;
 #endif
 
+//if this value is returned when asked for data, packet will not be sent and you will be asked for data again
+#define RESPONSE_TRY_AGAIN 0xFFFFFFFF
+
 typedef uint8_t WebRequestMethodComposite;
 typedef std::function<void(void)> ArDisconnectHandler;
 
