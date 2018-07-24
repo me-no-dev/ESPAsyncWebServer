@@ -483,7 +483,7 @@ void AsyncFileResponse::_setContentType(const String& path){
   if (path.endsWith(".html")) _contentType = "text/html";
   else if (path.endsWith(".htm")) _contentType = "text/html";
   else if (path.endsWith(".css")) _contentType = "text/css";
-  else if (path.endsWith(".json")) _contentType = "text/json";
+  else if (path.endsWith(".json")) _contentType = "application/json";
   else if (path.endsWith(".js")) _contentType = "application/javascript";
   else if (path.endsWith(".png")) _contentType = "image/png";
   else if (path.endsWith(".gif")) _contentType = "image/gif";
