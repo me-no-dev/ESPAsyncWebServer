@@ -732,7 +732,7 @@ This way of sending Json is great for when the result is below 4KB
 #include "ArduinoJson.h"
 
 
-AsyncResponseStream *response = request->beginResponseStream("text/json");
+AsyncResponseStream *response = request->beginResponseStream("application/json");
 DynamicJsonBuffer jsonBuffer;
 JsonObject &root = jsonBuffer.createObject();
 root["heap"] = ESP.getFreeHeap();
@@ -1141,7 +1141,7 @@ server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request){
     }
   }
   json += "]";
-  request->send(200, "text/json", json);
+  request->send(200, "application/json", json);
   json = String();
 });
 ```
