@@ -894,7 +894,7 @@ const String& AsyncWebServerRequest::arg(const __FlashStringHelper * data) const
   size_t n = strlen_P(p);
   char * name = (char*) malloc(n+1);
   if (name) {
-    strcpy(name, p);   
+    strcpy_P(name, p);
     const String & result = arg( String(name) ); 
     free(name); 
     return result; 

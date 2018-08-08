@@ -59,7 +59,10 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
     virtual size_t _fillBuffer(uint8_t *buf __attribute__((unused)), size_t maxLen __attribute__((unused))) { return 0; }
 };
 
+#ifndef TEMPLATE_PLACEHOLDER
 #define TEMPLATE_PLACEHOLDER '%'
+#endif
+
 #define TEMPLATE_PARAM_NAME_LENGTH 32
 class AsyncFileResponse: public AsyncAbstractResponse {
   using File = fs::File;

@@ -30,6 +30,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
 		- [GET, POST and FILE parameters](#get-post-and-file-parameters)
 		- [FILE Upload handling](#file-upload-handling)
 		- [Body data handling](#body-data-handling)
+		- [JSON body handling with ArduinoJson](#json-body-handling-with-arduinojson)
 	- [Responses](#responses)
 		- [Redirect to another URL](#redirect-to-another-url)
 		- [Basic response with HTTP Code](#basic-response-with-http-code)
@@ -312,6 +313,20 @@ void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_
     Serial.printf("BodyEnd: %u B\n", total);
   }
 }
+```
+If needed, the `_tempObject` field on the request can be used to store a pointer to temporary data (e.g. from the body) associated with the request. If assigned, the pointer will automatically be freed along with the request.
+
+### JSON body handling with ArduinoJson
+Endpoints which consume JSON can use a special handler to get ready to use JSON data in the request callback:
+```cpp
+#include "AsyncJson.h"
+#include "ArduinoJson.h"
+
+AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/rest/endpoint", [](AsyncWebServerRequest *request, JsonVariant &json) {
+  JsonObject& jsonObj = json.as<JsonObject>();
+  // ...
+});
+server.addHandler(handler);
 ```
 
 ## Responses
