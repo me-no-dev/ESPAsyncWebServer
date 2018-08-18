@@ -551,7 +551,12 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketMessage *dataMessage){
     delete dataMessage;
     return;
   }
-  _messageQueue.add(dataMessage);
+  if(_messageQueue.length() > WS_MAX_QUEUED_MESSAGES){
+      ets_printf("ERROR: Too many messages queued\n");
+      delete dataMessage;
+  } else {
+      _messageQueue.add(dataMessage);
+  }
   if(_client->canSend())
     _runQueue();
 }
