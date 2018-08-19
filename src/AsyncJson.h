@@ -102,7 +102,7 @@ public:
 	PrettyAsyncJsonResponse (bool isArray=false) : AsyncJsonResponse{isArray} {}	
 	size_t setLength () {
 		_contentLength = _root.measurePrettyLength ();
-		if (_contentLength) { _isValid = true; }
+		if (_contentLength) {_isValid = true;}
 		return _contentLength;
 	}
 	size_t _fillBuffer (uint8_t *data, size_t len) {
