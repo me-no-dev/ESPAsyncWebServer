@@ -97,18 +97,14 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
     }
 };
 
-class PrettyAsyncJsonResponse: public AsyncJsonResponse {
-	
+class PrettyAsyncJsonResponse: public AsyncJsonResponse {	
 public:
-	PrettyAsyncJsonResponse (bool isArray=false) : AsyncJsonResponse{isArray} {
-	}
-	
+	PrettyAsyncJsonResponse (bool isArray=false) : AsyncJsonResponse{isArray} {}	
 	size_t setLength () {
 		_contentLength = _root.measurePrettyLength ();
 		if (_contentLength) { _isValid = true; }
 		return _contentLength;
 	}
-
 	size_t _fillBuffer (uint8_t *data, size_t len) {
 		ChunkPrint dest (data, _sentLength, len);
 		_root.prettyPrintTo (dest);
