@@ -544,6 +544,12 @@ void AsyncWebSocketClient::_runQueue(){
   }
 }
 
+bool AsyncWebSocketClient::queueIsFull(){
+
+  if((_messageQueue.length() > WS_MAX_QUEUED_MESSAGES) || (_status != WS_CONNECTED) ) return true;
+  return false;
+}
+
 void AsyncWebSocketClient::_queueMessage(AsyncWebSocketMessage *dataMessage){
   if(dataMessage == NULL)
     return;
@@ -874,6 +880,22 @@ void AsyncWebSocket::_handleDisconnect(AsyncWebSocketClient * client){
   _clients.remove_first([=](AsyncWebSocketClient * c){
     return c->id() == client->id();
   });
+}
+
+bool AsyncWebSocket::availableForWriteAll(){
+  bool res = true;
+  for(const auto& c: _clients){
+    if(c->queueIsFull())res =false;
+  }
+  return res;
+}
+
+bool AsyncWebSocket::availableForWrite(uint32_t id){
+  bool res = true;
+  for(const auto& c: _clients){
+    if(c->queueIsFull() && (c->id() == id ))res =false;
+  }
+  return res;
 }
 
 size_t AsyncWebSocket::count() const {
