@@ -36,7 +36,7 @@
 #define ASYNC_JSON_H_
 #include <ArduinoJson.h>
 
-const char* JSON_MIMETYPE = "application/json";
+constexpr char* JSON_MIMETYPE = "application/json";
 
 /*
  * Json Response
