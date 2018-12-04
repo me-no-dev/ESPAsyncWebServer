@@ -105,8 +105,8 @@ protected:
   const String _uri;
   WebRequestMethodComposite _method;
   ArJsonRequestHandlerFunction _onRequest;
-  int _contentLength;
-  int _maxContentLength;
+  size_t _contentLength;
+  size_t _maxContentLength;
 public:
   AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest) : _uri(uri), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(onRequest), _maxContentLength(16384) {}
   void setMethod(WebRequestMethodComposite method){ _method = method; }
