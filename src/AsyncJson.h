@@ -35,6 +35,7 @@
 #ifndef ASYNC_JSON_H_
 #define ASYNC_JSON_H_
 #include <ArduinoJson.h>
+#include <ESPAsyncWebServer.h>
 
 constexpr char* JSON_MIMETYPE = "application/json";
 
