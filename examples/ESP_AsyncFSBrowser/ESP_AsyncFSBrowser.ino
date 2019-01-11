@@ -58,12 +58,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       Serial.printf("ws[%s][%u] frame[%u] %s[%llu - %llu]: ", server->url(), client->id(), info->num, (info->message_opcode == WS_TEXT)?"text":"binary", info->index, info->index + len);
 
       if(info->opcode == WS_TEXT){
-        for(size_t i=0; i < info->len; i++) {
+        for(size_t i=0; i < len; i++) {
           msg += (char) data[i];
         }
       } else {
         char buff[3];
-        for(size_t i=0; i < info->len; i++) {
+        for(size_t i=0; i < len; i++) {
           sprintf(buff, "%02x ", (uint8_t) data[i]);
           msg += buff ;
         }
