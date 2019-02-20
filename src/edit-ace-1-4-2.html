@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+<meta charset="UTF-8"> 
+<title>ESP Editor</title>
+<style media=screen>
+  .cm {
+    z-index: 300;
+    position: absolute;
+    left: 5px;
+    border: 1px solid #444;
+    background-color: #f5f5f5;
+    display: none;
+    box-shadow: 0 0 10px rgba(0, 0, 0, .4);
+    font-size: 12px;
+    font-family: sans-serif;
+    font-weight: 700
+  }
+  
+  .cm ul {
+    list-style: none;
+    top: 0;
+    left: 0;
+    margin: 0;
+    padding: 0
+  }
+  
+  .cm li {
+    position: relative;
+    min-width: 60px;
+    cursor: pointer
+  }
+  
+  .cm span {
+    color: #444;
+    display: inline-block;
+    padding: 6px
+  }
+  
+  .cm li:hover {
+    background: #444
+  }
+  
+  .cm li:hover span {
+    color: #eee
+  }
+  
+  .tvu li,
+  .tvu ul {
+    padding: 0;
+    margin: 0;
+    list-style: none
+  }
+  
+  .tvu input {
+    position: absolute;
+    opacity: 0
+  }
+  
+  .tvu {
+    font: normal 12px Verdana, Arial, Sans-serif;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    color: #444;
+    line-height: 16px
+  }
+  
+  .tvu span {
+    margin-bottom: 5px;
+    padding: 0 0 0 18px;
+    cursor: pointer;
+    display: inline-block;
+    height: 16px;
+    vertical-align: middle;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAADoSURBVBgZBcExblNBGAbA2ceegTRBuIKOgiihSZNTcC5LUHAihNJR0kGKCDcYJY6D3/77MdOinTvzAgCw8ysThIvn/VojIyMjIyPP+bS1sUQIV2s95pBDDvmbP/mdkft83tpYguZq5Jh/OeaYh+yzy8hTHvNlaxNNczm+la9OTlar1UdA/+C2A4trRCnD3jS8BB1obq2Gk6GU6QbQAS4BUaYSQAf4bhhKKTFdAzrAOwAxEUAH+KEM01SY3gM6wBsEAQB0gJ+maZoC3gI6iPYaAIBJsiRmHU0AALOeFC3aK2cWAACUXe7+AwO0lc9eTHYTAAAAAElFTkSuQmCC) no-repeat;
+    background-position: 0 0
+  }
+  
+  .tvu span:hover {
+    text-decoration: underline
+  }
+  
+  @media screen and (-webkit-min-device-pixel-ratio:0) {
+    .tvu {
+      -webkit-animation: webkit-adjacent-element-selector-bugfix infinite 1s
+    }
+    @-webkit-keyframes webkit-adjacent-element-selector-bugfix {
+      from {
+        padding: 0
+      }
+      to {
+        padding: 0
+      }
+    }
+  }
+  
+  #uploader {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 28px;
+    line-height: 24px;
+    padding-left: 10px;
+    background-color: #444;
+    color: #eee
+  }
+  
+  #tree {
+    position: absolute;
+    top: 28px;
+    bottom: 0;
+    left: 0;
+    width: 160px;
+    padding: 8px
+  }
+  
+  #editor,
+  #preview {
+    position: absolute;
+    top: 28px;
+    right: 0;
+    bottom: 0;
+    left: 160px;
+    border-left: 1px solid #eee
+  }
+  
+  #preview {
+    background-color: #eee;
+    padding: 5px
+  }
+  
+  #loader {
+    position: absolute;
+    top: 36%;
+    right: 40%
+  }
+  
+  .loader {
+    z-index: 10000;
+    border: 8px solid #b5b5b5;
+    border-top: 8px solid #3498db;
+    border-bottom: 8px solid #3498db;
+    border-radius: 50%;
+    width: 240px;
+    height: 240px;
+    animation: spin 2s linear infinite;
+    display: none
+  }
+  
+  @keyframes spin {
+    0% {
+      transform: rotate(0)
+    }
+    100% {
+      transform: rotate(360deg)
+    }
+  }
+</style>
+<script>
+  function ge(e) {
+    return document.getElementById(e)
+  }
+
+  function ce(e) {
+    return document.createElement(e)
+  }
+
+  function sortByKey(e, i) {
+    return e.sort(function(e, t) {
+      var n = e[i],
+        a = t[i];
+      return n < a ? -1 : a < n ? 1 : 0
+    })
+  }
+
+  function createFileUploader(e, n, a) {
+    function i(e, t) {
+      200 != e ? alert("ERROR[" + e + "]: " + t) : n.refreshPath(c.value)
+    }
+    var t = ce("button");
+    t.innerHTML = "Refresh List", ge(e).appendChild(t);
+    var o = ce("input");
+    o.type = "file", o.multiple = !1, o.name = "data", o.id = "upload-select", ge(e).appendChild(o);
+    var c = ce("input");
+    c.id = "upload-path", c.type = "text", c.name = "path", c.defaultValue = "/", ge(e).appendChild(c);
+    var s = ce("button");
+    s.innerHTML = "Upload", ge(e).appendChild(s);
+    var d = ce("button");
+    d.innerHTML = "Create", ge(e).appendChild(d);
+    var l = ce("input");
+    l.id = "editor-filename", l.type = "text", l.disabled = !0, l.size = 20, ge(e).appendChild(l);
+    var r = ce("button");
+    r.innerHTML = " Save ", ge(e).appendChild(r), d.onclick = function(e) {
+      var t, n;
+      t = c.value, (n = new FormData).append("path", t), requests.add("PUT", "/edit", n, i), a.loadUrl(c.value), c.value = "/"
+    }, r.onclick = function(e) {
+      a.execCommand("saveCommand")
+    }, t.onclick = function(e) {
+      n.refreshPath(c.value)
+    }, s.onclick = function(e) {
+      if (0 !== o.files.length) {
+        var t = new FormData;
+        t.append("data", o.files[0], c.value), requests.add("POST", "/edit", t, i), ge("upload-path").value = "/", ge("upload-select").value = ""
+      }
+    }, o.onchange = function(e) {
+      if (0 !== o.files.length) {
+        var t = o.files[0].name,
+          n = /(?:\.([^.]+))?$/.exec(t)[1],
+          a = /(.*)\.[^.]+$/.exec(t)[1];
+        void 0 !== typeof a && (t = a), c.value = "/" + t + "." + n
+      }
+    }
+  }
+
+  function createTree(e, c) {
+    function s(e) {
+      ge("editor-filename").value = e, ge("editor").style.display = "none", t.style.display = "block", t.innerHTML = '<img src="/edit?edit=' + e + "&_cb=" + Date.now() + '" style="max-width:100%; max-height:100%; margin:auto; display:block;" />'
+    }
+
+    function r(a, i) {
+      var e = ce("ul");
+      a.appendChild(e);
+      var t = ce("li");
+      e.appendChild(t), u(i) ? (t.innerHTML = "<span>Preview</span>", t.onclick = function(e) {
+        s(i), 0 < document.body.getElementsByClassName("cm").length && document.body.removeChild(a)
+      }) : l(i) && (t.innerHTML = "<span>Edit</span>", t.onclick = function(e) {
+        c.loadUrl(i), 0 < document.body.getElementsByClassName("cm").length && document.body.removeChild(a)
+      });
+      var n = ce("li");
+      e.appendChild(n), n.innerHTML = "<span>Download</span>", n.onclick = function(e) {
+        var t;
+        t = i, ge("download-frame").src = "/edit?download=" + t, 0 < document.body.getElementsByClassName("cm").length && document.body.removeChild(a)
+      };
+      var o = ce("li");
+      e.appendChild(o), o.innerHTML = "<span>Delete</span>", o.onclick = function(e) {
+        var t, n;
+        t = i, (n = new FormData).append("path", t), requests.add("DELETE", "/edit", n, function(e, t) {
+          200 != e ? alert("ERROR[" + e + "]: " + t) : (m.removeChild(m.childNodes[0]), p(m, "/"))
+        }), 0 < document.body.getElementsByClassName("cm").length && document.body.removeChild(a)
+      }
+    }
+
+    function d(e, t, n) {
+      var a = ce("li");
+      a.id = t;
+      var i = ce("span");
+      return i.innerHTML = t, a.appendChild(i), a.onclick = function(e) {
+        l(a.id.toLowerCase()) ? c.loadUrl(a.id) : u(a.id.toLowerCase()) && s(a.id)
+      }, a.oncontextmenu = function(e) {
+        e.preventDefault(), e.stopPropagation(),
+          function(e, t, n) {
+            var a = ce("div"),
+              i = document.body.scrollTop ? document.body.scrollTop : document.documentElement.scrollTop,
+              o = document.body.scrollLeft ? document.body.scrollLeft : document.documentElement.scrollLeft,
+              c = e.clientX + o,
+              s = e.clientY + i;
+            a.className = "cm", a.style.display = "block", a.style.left = c + "px", a.style.top = s + "px", r(a, t), document.body.appendChild(a);
+            var d = a.offsetWidth,
+              l = a.offsetHeight;
+            a.onmouseout = function(e) {
+              (e.clientX < c || e.clientX > c + d || e.clientY < s || e.clientY > s + l) && 0 < document.body.getElementsByClassName("cm").length && document.body.removeChild(a)
+            }
+          }(e, a.id)
+      }, a
+    }
+
+    function l(e) {
+      var t = /(?:\.([^.]+))?$/.exec(e)[1];
+      if (void 0 !== typeof t) switch (t) {
+        case "txt":
+        case "htm":
+        case "html":
+        case "js":
+        case "css":
+        case "xml":
+        case "json":
+        case "conf":
+        case "ini":
+        case "h":
+        case "c":
+        case "cpp":
+        case "php":
+        case "hex":
+        case "ino":
+        case "pde":
+          return !0
+      }
+      return !1
+    }
+
+    function u(e) {
+      var t = /(?:\.([^.]+))?$/.exec(e)[1];
+      if (void 0 !== typeof t) switch (t) {
+        case "png":
+        case "jpg":
+        case "gif":
+        case "bmp":
+          return !0
+      }
+      return !1
+    }
+
+    function n(n, e) {
+      return function(e, t) {
+        200 == e && function(e, t, n) {
+          sortByKey(n, "name");
+          var a = ce("ul");
+          e.appendChild(a);
+          for (var i = n.length, o = 0; o < i; o++) "file" === n[o].type && a.appendChild(d(0, n[o].name, n[o].size))
+        }(n, 0, JSON.parse(t))
+      }
+    }
+
+    function p(e, t) {
+      requests.add("GET", "/edit", {
+        list: t
+      }, n(e))
+    }
+    var t = ge("preview"),
+      m = ce("div");
+    return m.className = "tvu", ge(e).appendChild(m), this.refreshPath = function(e) {
+      m.removeChild(m.childNodes[0]), p(m, "/")
+    }, p(m, "/"), this
+  }
+
+  function createEditor(e, o, n, t, c) {
+    function a(e) {
+      var t = "plain",
+        n = /(?:\.([^.]+))?$/.exec(e)[1];
+      if (void 0 !== typeof n) switch (n) {
+        case "txt":
+        case "hex":
+        case "conf":
+          t = "plain";
+          break;
+        case "htm":
+          t = "html";
+          break;
+        case "js":
+          t = "javascript";
+          break;
+        case "h":
+        case "c":
+        case "cpp":
+          t = "c_cpp";
+          break;
+        case "css":
+        case "scss":
+        case "php":
+        case "html":
+        case "json":
+        case "xml":
+        case "ini":
+          t = n
+      }
+      return t
+    }
+
+    function s(e, t) {
+      200 != e && alert("ERROR[" + e + "]: " + t)
+    }
+
+    function i(e, t) {
+      ge("preview").style.display = "none", ge("editor").style.display = "block", 200 == e ? d.setValue(t) : d.setValue(""), d.clearSelection()
+    }
+    void 0 === o && (o = "/index.html"), void 0 === n && (n = a(o)), void 0 === t && (t = "textmate"), void 0 === c && (c = "text/" + n, "c_cpp" === n && (c = "text/plain"));
+    var d = ace.edit(e);
+    return "plain" !== n && d.getSession().setMode("ace/mode/" + n), d.setTheme("ace/theme/" + t), d.$blockScrolling = 1 / 0, d.getSession().setUseSoftTabs(!0), d.getSession().setTabSize(2), d.setHighlightActiveLine(!0), d.setShowPrintMargin(!1), d.commands.addCommand({
+      name: "saveCommand",
+      bindKey: {
+        win: "Ctrl-S",
+        mac: "Command-S"
+      },
+      exec: function(e) {
+        var t, n, a, i;
+        t = o, n = e.getValue() + "", a = c, (i = new FormData).append("data", new Blob([n], {
+          type: a
+        }), t), requests.add("POST", "/edit", i, s)
+      },
+      readOnly: !1
+    }), d.commands.addCommand({
+      name: "undoCommand",
+      bindKey: {
+        win: "Ctrl-Z",
+        mac: "Command-Z"
+      },
+      exec: function(e) {
+        e.getSession().getUndoManager().undo(!1)
+      },
+      readOnly: !1
+    }), d.commands.addCommand({
+      name: "redoCommand",
+      bindKey: {
+        win: "Ctrl-Shift-Z",
+        mac: "Command-Shift-Z"
+      },
+      exec: function(e) {
+        e.getSession().getUndoManager().redo(!1)
+      },
+      readOnly: !1
+    }), d.loadUrl = function(e) {
+      var t;
+      ge("editor-filename").value = e, n = a(o = e), c = "text/" + n, "plain" !== n && d.getSession().setMode("ace/mode/" + n), t = o, requests.add("GET", "/edit", {
+        edit: t
+      }, i)
+    }, d
+  }
+
+  function onBodyLoad() {
+    var a = {},
+      e = (window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(e, t, n) {
+        a[t] = n
+      }), createEditor("editor", a.file, a.lang, a.theme));
+    createFileUploader("uploader", createTree("tree", e), e), void 0 === a.file && (a.file = "/index.html"), e.loadUrl(a.file)
+  }
+  "undefined" == typeof XMLHttpRequest && (XMLHttpRequest = function() {
+    try {
+      return new ActiveXObject("Msxml2.XMLHTTP.6.0")
+    } catch (e) {}
+    try {
+      return new ActiveXObject("Msxml2.XMLHTTP.3.0")
+    } catch (e) {}
+    try {
+      return new ActiveXObject("Microsoft.XMLHTTP")
+    } catch (e) {}
+    throw new Error("This browser does not support XMLHttpRequest.")
+  });
+  var QueuedRequester = function() {
+    this.queue = [], this.running = !1, this.xmlhttp = null
+  };
+  QueuedRequester.prototype = {
+    _request: function(e) {
+      if (this.running = !0, !(!e instanceof Object)) {
+        var t = this;
+        ge("loader").style.display = "block";
+        var n = "";
+        if (e.params instanceof FormData) n = e.params;
+        else if (e.params instanceof Object)
+          for (var a in e.params) n += "" === n ? "GET" === e.method ? "?" : "" : "&", n += encodeURIComponent(a) + "=" + encodeURIComponent(e.params[a]);
+        this.xmlhttp = new XMLHttpRequest, this.xmlhttp.onreadystatechange = (i = this.xmlhttp, o = e, function() {
+          4 == i.readyState && (ge("loader").style.display = "none", o.callback(i.status, i.responseText), 0 === t.queue.length && (t.running = !1), t.running && t._request(t.queue.shift()))
+        }), "GET" === e.method ? (this.xmlhttp.open(e.method, e.url + n, !0), this.xmlhttp.responseType = "text", this.xmlhttp.send()) : (this.xmlhttp.open(e.method, e.url, !0), this.xmlhttp.responseType = "text", n instanceof String && this.xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded"), this.xmlhttp.send(n))
+      }
+      var i, o
+    },
+    stop: function() {
+      this.running && (this.running = !1), this.xmlhttp && this.xmlhttp.readyState < 4 && this.xmlhttp.abort()
+    },
+    add: function(e, t, n, a) {
+      this.queue.push({
+        url: t,
+        method: e,
+        params: n,
+        callback: a
+      }), this.running || this._request(this.queue.shift())
+    }
+  };
+  var requests = new QueuedRequester
+</script>
+<script charset=utf-8 id=ace src=/ace.js></script>
+<script>
+  if (void 0 === ace.edit) {
+    var script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.2/ace.js", script.async = !1, document.head.appendChild(script)
+  }
+</script>
+</head>
+<body onload=onBodyLoad()>
+  <div id=loader class=loader></div>
+  <div id=uploader></div>
+  <div id=tree></div>
+  <div id=editor></div>
+  <div id=preview style=display:none></div><iframe id=download-frame style=display:none></iframe>
+</body>
+</html>

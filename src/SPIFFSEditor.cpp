@@ -377,9 +377,9 @@ static bool isExcluded(fs::FS &_fs, const char *filename) {
 // WEB HANDLER IMPLEMENTATION
 
 #ifdef ESP32
-SPIFFSEditor::SPIFFSEditor(const fs::FS& fs, const String& username, const String& password)
+SPIFFSEditorBase::SPIFFSEditorBase(const fs::FS& fs, const String& username, const String& password)
 #else
-SPIFFSEditor::SPIFFSEditor(const String& username, const String& password, const fs::FS& fs)
+SPIFFSEditorBase::SPIFFSEditorBase(const String& username, const String& password, const fs::FS& fs)
 #endif
 :_fs(fs)
 ,_username(username)
@@ -388,7 +388,19 @@ SPIFFSEditor::SPIFFSEditor(const String& username, const String& password, const
 ,_startTime(0)
 {}
 
-bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
+#ifdef ESP32
+SPIFFSEditor::SPIFFSEditor(const fs::FS& fs, const String& username, const String& password){
+  SPIFFSEditorBase(fs, username, password);
+}
+#else
+SPIFFSEditor::SPIFFSEditor(const String& username, const String& password, const fs::FS& fs) {
+  SPIFFSEditorBase(username, password, fs);
+}
+#endif
+
+
+
+bool SPIFFSEditorBase::canHandle(AsyncWebServerRequest *request){
   if(request->url().equalsIgnoreCase("/edit")){
     if(request->method() == HTTP_GET){
       if(request->hasParam("list"))
@@ -432,7 +444,7 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
 }
 
 
-void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
+void SPIFFSEditorBase::handleRequest(AsyncWebServerRequest *request){
   if(_username.length() && _password.length() && !request->authenticate(_username.c_str(), _password.c_str()))
     return request->requestAuthentication();
 
@@ -484,15 +496,9 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       request->send(request->_tempFile, request->_tempFile.name(), String(), request->hasParam("download"));
     }
     else {
-      const char * buildTime = __DATE__ " " __TIME__ " GMT";
-      if (request->header("If-Modified-Since").equals(buildTime)) {
-        request->send(304);
-      } else {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", edit_htm_gz, edit_htm_gz_len);
-        response->addHeader("Content-Encoding", "gzip");
-        response->addHeader("Last-Modified", buildTime);
-        request->send(response);
-      }
+
+      finishRequest(request);
+
     }
   } else if(request->method() == HTTP_DELETE){
     if(request->hasParam("path", true)){
@@ -525,7 +531,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
   }
 }
 
-void SPIFFSEditor::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
+void SPIFFSEditorBase::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
   if(!index){
     if(!_username.length() || request->authenticate(_username.c_str(),_password.c_str())){
       _authenticated = true;
@@ -540,5 +546,23 @@ void SPIFFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fi
     if(final){
       request->_tempFile.close();
     }
+  }
+}
+
+void SPIFFSEditorBase::finishRequest(AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/.edit.html.gz", "text/html");
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
+}
+
+void SPIFFSEditor::finishRequest(AsyncWebServerRequest *request) {
+  const char * buildTime = __DATE__ " " __TIME__ " GMT";
+  if (request->header("If-Modified-Since").equals(buildTime)) {
+    request->send(304);
+  } else {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", edit_htm_gz, edit_htm_gz_len);
+    response->addHeader("Content-Encoding", "gzip");
+    response->addHeader("Last-Modified", buildTime);
+    request->send(response);
   }
 }
