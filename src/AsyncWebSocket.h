@@ -140,7 +140,7 @@ public:
 };
 
 class AsyncWebSocketClient {
-  private:
+  protected:
     AsyncClient *_client;
     AsyncWebSocket *_server;
     uint32_t _clientId;
@@ -223,7 +223,7 @@ typedef std::function<void(AsyncWebSocket * server, AsyncWebSocketClient * clien
 
 //WebServer Handler implementation that plays the role of a socket server
 class AsyncWebSocket: public AsyncWebHandler {
-  private:
+  protected:
     String _url;
     LinkedList<AsyncWebSocketClient *> _clients;
     uint32_t _cNextId;
