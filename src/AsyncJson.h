@@ -35,6 +35,9 @@
 #ifndef ASYNC_JSON_H_
 #define ASYNC_JSON_H_
 #include <ArduinoJson.h>
+#include <Print.h>
+
+#define DYNAMYC_JSON_DOCUMENT_SIZE  1024
 
 constexpr char* JSON_MIMETYPE = "application/json";
 
@@ -63,27 +66,33 @@ class ChunkPrint : public Print {
       }
       return 0;
     }
+    size_t write(const uint8_t *buffer, size_t size)
+    {
+      return this->Print::write(buffer, size);
+    }
 };
 
 class AsyncJsonResponse: public AsyncAbstractResponse {
   private:
-    DynamicJsonBuffer _jsonBuffer;
+    // DynamicJsonBuffer _jsonBuffer;
+    DynamicJsonDocument _jsonBuffer;
     JsonVariant _root;
     bool _isValid;
   public:
-    AsyncJsonResponse(bool isArray=false): _isValid{false} {
+    AsyncJsonResponse(bool isArray=false): _jsonBuffer(DYNAMYC_JSON_DOCUMENT_SIZE), _isValid{false} {
       _code = 200;
       _contentType = JSON_MIMETYPE;
       if(isArray)
-        _root = _jsonBuffer.createArray();
+        _root = _jsonBuffer.createNestedArray();
       else
-        _root = _jsonBuffer.createObject();
+        _root = _jsonBuffer.createNestedObject();
     }
     ~AsyncJsonResponse() {}
     JsonVariant & getRoot() { return _root; }
     bool _sourceValid() const { return _isValid; }
     size_t setLength() {
-      _contentLength = _root.measureLength();
+      size_t _contentLength = measureJson(_root);
+      // _contentLength = _root.measureLength();
       if (_contentLength) { _isValid = true; }
       return _contentLength;
     }
@@ -92,7 +101,8 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
 
     size_t _fillBuffer(uint8_t *data, size_t len){
       ChunkPrint dest(data, _sentLength, len);
-      _root.printTo( dest ) ;
+      serializeJson(_root, dest);
+      // _root.printTo( dest ) ;
       return len;
     }
 };
@@ -133,9 +143,14 @@ public:
   virtual void handleRequest(AsyncWebServerRequest *request) override final {
     if(_onRequest) {
       if (request->_tempObject != NULL) {
-        DynamicJsonBuffer jsonBuffer;
-        JsonVariant json = jsonBuffer.parse((uint8_t*)(request->_tempObject));
-        if (json.success()) {
+        DynamicJsonDocument jsonBuffer(DYNAMYC_JSON_DOCUMENT_SIZE);
+        DeserializationError error = deserializeJson(jsonBuffer, (uint8_t*)(request->_tempObject));
+        if(!error) {
+        // DynamicJsonBuffer jsonBuffer;
+        // JsonVariant json = jsonBuffer.parse((uint8_t*)(request->_tempObject));
+        // if (json.success()) {
+
+          JsonVariant json = jsonBuffer.as<JsonVariant>();
           _onRequest(request, json);
           return;
         }
