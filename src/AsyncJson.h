@@ -39,7 +39,7 @@
 
 #define DYNAMYC_JSON_DOCUMENT_SIZE  1024
 
-constexpr char* JSON_MIMETYPE = "application/json";
+constexpr const char* JSON_MIMETYPE = "application/json";
 
 /*
  * Json Response
@@ -79,7 +79,7 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
     JsonVariant _root;
     bool _isValid;
   public:
-    AsyncJsonResponse(bool isArray=false): _jsonBuffer(DYNAMYC_JSON_DOCUMENT_SIZE), _isValid{false} {
+    AsyncJsonResponse(size_t maxJsonBufferSize = DYNAMYC_JSON_DOCUMENT_SIZE, bool isArray=false) : _jsonBuffer(maxJsonBufferSize), _isValid{false} {
       _code = 200;
       _contentType = JSON_MIMETYPE;
       if(isArray)
@@ -116,9 +116,12 @@ protected:
   WebRequestMethodComposite _method;
   ArJsonRequestHandlerFunction _onRequest;
   int _contentLength;
+  const size_t maxJsonBufferSize;
   int _maxContentLength;
 public:
-  AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest) : _uri(uri), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(onRequest), _maxContentLength(16384) {}
+  AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest, size_t maxJsonBufferSize=DYNAMYC_JSON_DOCUMENT_SIZE) 
+  : _uri(uri), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(onRequest), maxJsonBufferSize(maxJsonBufferSize), _maxContentLength(16384) {}
+  
   void setMethod(WebRequestMethodComposite method){ _method = method; }
   void setMaxContentLength(int maxContentLength){ _maxContentLength = maxContentLength; }
   void onRequest(ArJsonRequestHandlerFunction fn){ _onRequest = fn; }
@@ -133,7 +136,7 @@ public:
     if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
       return false;
 
-    if (!request->contentType().equalsIgnoreCase(JSON_MIMETYPE))
+    if ( !request->contentType().equalsIgnoreCase(JSON_MIMETYPE) )
       return false;
 
     request->addInterestingHeader("ANY");
@@ -143,7 +146,7 @@ public:
   virtual void handleRequest(AsyncWebServerRequest *request) override final {
     if(_onRequest) {
       if (request->_tempObject != NULL) {
-        DynamicJsonDocument jsonBuffer(DYNAMYC_JSON_DOCUMENT_SIZE);
+        DynamicJsonDocument jsonBuffer(this->maxJsonBufferSize);
         DeserializationError error = deserializeJson(jsonBuffer, (uint8_t*)(request->_tempObject));
         if(!error) {
         // DynamicJsonBuffer jsonBuffer;
