@@ -6,6 +6,11 @@ os:
 dist:
   - xenial
 
+addons:
+  apt:
+    packages:
+      - xvfb
+
 services:
   - xvfb
 
@@ -15,7 +20,7 @@ script:
 # - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -screen 0 1400x900x24 -ac +extension GLX +render;
   - sleep 3
   - ls -l /usr/bin/Xvfb 
-  - ls -l /tmp/*.pid
+  - ls -l /tmp/*pid
 
 # - export DISPLAY=:1.0
   - wget http://downloads.arduino.cc/arduino-1.6.5-linux64.tar.xz
