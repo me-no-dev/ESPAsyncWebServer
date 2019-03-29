@@ -11,15 +11,14 @@ addons:
     packages:
       - xvfb
 
-services:
-  - xvfb
+# services:
+#   - xvfb
 
 
 script:
-# - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
+ - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
 # - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :1 -screen 0 1400x900x24 -ac +extension GLX +render;
   - sleep 3
-  - ls -l /usr/bin/Xvfb 
   - ls -l /tmp/*pid
 
 # - export DISPLAY=:1.0
