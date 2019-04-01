@@ -37,7 +37,11 @@
 #include <ArduinoJson.h>
 #include <Print.h>
 
-#define DYNAMYC_JSON_DOCUMENT_SIZE  1024
+#if ARDUINOJSON_VERSION_MAJOR == 5
+  #define ARDUINOJSON_5_COMPATIBILITY
+#else
+  #define DYNAMYC_JSON_DOCUMENT_SIZE  1024
+#endif
 
 constexpr const char* JSON_MIMETYPE = "application/json";
 

@@ -332,7 +332,6 @@ AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/rest/en
 });
 server.addHandler(handler);
 ```
-**NOTE**: If you want use an **ArduinoJson** version lower than the newest **6** version please use  ```#define ARDUINOJSON_5_COMPATIBILITY``` before including ```#include "AsyncJson.h"```.
 
 ## Responses
 ### Redirect to another URL
