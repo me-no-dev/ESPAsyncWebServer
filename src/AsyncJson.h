@@ -118,7 +118,7 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
 #ifdef ARDUINOJSON_5_COMPATIBILITY      
       _contentLength = _root.measureLength();
 #else
-      size_t _contentLength = measureJson(_root);
+      _contentLength = measureJson(_root);
 #endif
 
       if (_contentLength) { _isValid = true; }
