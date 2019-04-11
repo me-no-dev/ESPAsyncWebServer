@@ -53,6 +53,7 @@ AsyncWebServer::AsyncWebServer(uint16_t port)
 
 AsyncWebServer::~AsyncWebServer(){
   reset();
+  end();
   delete _catchAllHandler;
 }
 
@@ -81,6 +82,10 @@ bool AsyncWebServer::removeHandler(AsyncWebHandler *handler){
 void AsyncWebServer::begin(){
   _server.setNoDelay(true);
   _server.begin();
+}
+
+void AsyncWebServer::end(){
+  _server.end();
 }
 
 #if ASYNC_TCP_SSL_ENABLED
