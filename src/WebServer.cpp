@@ -52,9 +52,9 @@ AsyncWebServer::AsyncWebServer(uint16_t port)
 }
 
 AsyncWebServer::~AsyncWebServer(){
-  reset();
+  reset();  
   end();
-  delete _catchAllHandler;
+  if(_catchAllHandler) delete _catchAllHandler;
 }
 
 AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
