@@ -67,23 +67,23 @@ class ChunkPrint : public Print {
 
 class AsyncJsonResponse: public AsyncAbstractResponse {
   private:
-    DynamicJsonBuffer _jsonBuffer;
+    DynamicJsonDocument _jsonBuffer;
     JsonVariant _root;
     bool _isValid;
   public:
-    AsyncJsonResponse(bool isArray=false): _isValid{false} {
+   /* TODO AsyncJsonResponse(bool isArray=false): _isValid{false} {
       _code = 200;
       _contentType = JSON_MIMETYPE;
       if(isArray)
-        _root = _jsonBuffer.createArray();
+        _root = _jsonBuffer.to<JsonArray>();
       else
-        _root = _jsonBuffer.createObject();
-    }
+        _root = _jsonBuffer.to<JsonObject>();
+    }*/
     ~AsyncJsonResponse() {}
     JsonVariant & getRoot() { return _root; }
     bool _sourceValid() const { return _isValid; }
     size_t setLength() {
-      _contentLength = _root.measureLength();
+      _contentLength = _root.size();
       if (_contentLength) { _isValid = true; }
       return _contentLength;
     }
@@ -92,7 +92,8 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
 
     size_t _fillBuffer(uint8_t *data, size_t len){
       ChunkPrint dest(data, _sentLength, len);
-      _root.printTo( dest ) ;
+      serializeJson(_jsonBuffer,dest);
+      
       return len;
     }
 };
@@ -133,12 +134,14 @@ public:
   virtual void handleRequest(AsyncWebServerRequest *request) override final {
     if(_onRequest) {
       if (request->_tempObject != NULL) {
-        DynamicJsonBuffer jsonBuffer;
-        JsonVariant json = jsonBuffer.parse((uint8_t*)(request->_tempObject));
-        if (json.success()) {
+        DynamicJsonDocument jsonBuffer(1024);
+        DeserializationError error = deserializeJson(jsonBuffer, (uint8_t*)(request->_tempObject));
+        JsonVariant json = jsonBuffer.as<JsonVariant>();
+        if (!error) {
           _onRequest(request, json);
           return;
         }
+       
       }
       request->send(_contentLength > _maxContentLength ? 413 : 400);
     } else {
