@@ -40,7 +40,7 @@
 #if ARDUINOJSON_VERSION_MAJOR == 5
   #define ARDUINOJSON_5_COMPATIBILITY
 #else
-  #define DYNAMYC_JSON_DOCUMENT_SIZE  1024
+  #define DYNAMIC_JSON_DOCUMENT_SIZE  1024
 #endif
 
 constexpr const char* JSON_MIMETYPE = "application/json";
@@ -100,7 +100,7 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
         _root = _jsonBuffer.createObject();
     }
 #else
-    AsyncJsonResponse(size_t maxJsonBufferSize = DYNAMYC_JSON_DOCUMENT_SIZE, bool isArray=false) : _jsonBuffer(maxJsonBufferSize), _isValid{false} {
+    AsyncJsonResponse(size_t maxJsonBufferSize = DINAMYC_JSON_DOCUMENT_SIZE, bool isArray=false) : _jsonBuffer(maxJsonBufferSize), _isValid{false} {
       _code = 200;
       _contentType = JSON_MIMETYPE;
       if(isArray)
@@ -157,7 +157,7 @@ public:
   AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest) 
   : _uri(uri), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(onRequest), _maxContentLength(16384) {}
 #else
-  AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest, size_t maxJsonBufferSize=DYNAMYC_JSON_DOCUMENT_SIZE) 
+  AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest, size_t maxJsonBufferSize=DINAMYC_JSON_DOCUMENT_SIZE) 
   : _uri(uri), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(onRequest), maxJsonBufferSize(maxJsonBufferSize), _maxContentLength(16384) {}
 #endif
   
