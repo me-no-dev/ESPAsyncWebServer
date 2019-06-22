@@ -104,7 +104,7 @@ def main():
 
     tools_dir = os.path.dirname(os.path.realpath(__file__)) + '/../tools'
     # this is not the correct hardware folder to add.
-    hardware_dir = os.path.dirname(os.path.realpath(__file__)) + '/../cores'
+    hardware_dir = os.path.dirname(ide_path) + '/hardware'
 
     output_name = tmp_dir + '/' + os.path.basename(sketch_path) + '.bin'
     if args.verbose:

@@ -9,7 +9,7 @@ mkdir -p $HOME/Arduino/libraries
 cd $HOME/Arduino/libraries
 ln -s $TRAVIS_BUILD_DIR ESPAsyncWebServer
 git clone https://github.com/bblanchon/ArduinoJson
-git clone https://github.com/me-no-dev/ESPAsyncTCP
+git clone https://github.com/me-no-dev/AsyncTCP
 cd $HOME/arduino_ide/hardware
 mkdir espressif
 cd espressif
