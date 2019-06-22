@@ -393,6 +393,7 @@ class AsyncWebServer {
     ~AsyncWebServer();
 
     void begin();
+    void end();
 
 #if ASYNC_TCP_SSL_ENABLED
     void onSslFileRequest(AcSSlFileHandler cb, void* arg);
