@@ -210,7 +210,7 @@ class AsyncWebSocketClient {
     void binary(const __FlashStringHelper *data, size_t len);
     void binary(AsyncWebSocketMessageBuffer *buffer); 
 
-    bool canSend() { return _messageQueue.length() <= WS_MAX_QUEUED_MESSAGES; }
+    bool canSend() { return _messageQueue.length() < WS_MAX_QUEUED_MESSAGES; }
 
     //system callbacks (do not call)
     void _onAck(size_t len, uint32_t time);
