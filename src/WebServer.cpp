@@ -104,7 +104,7 @@ void AsyncWebServer::_handleDisconnect(AsyncWebServerRequest *request){
 
 void AsyncWebServer::_rewriteRequest(AsyncWebServerRequest *request){
   for(const auto& r: _rewrites){
-    if (r->from() == request->_url && r->filter(request)){
+    if (r->match(request)){
       request->_url = r->toUrl();
       request->_addGetParams(r->params());
     }
