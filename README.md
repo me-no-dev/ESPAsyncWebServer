@@ -11,7 +11,7 @@ For ESP32 it requires [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) to work
 To use this library you might need to have the latest git versions of [ESP32](https://github.com/espressif/arduino-esp32) Arduino Core
 
 ## Table of contents
-- [ESPAsyncWebServer ![Build Status](https://travis-ci.org/me-no-dev/ESPAsyncWebServer)](#espasyncwebserver-build-statushttpstravis-ciorgme-no-devespasyncwebserver)
+- [ESPAsyncWebServer](#espasyncwebserver)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
     - [Using PlatformIO](#using-platformio)
@@ -66,6 +66,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Specifying Cache-Control header](#specifying-cache-control-header)
     - [Specifying Date-Modified header](#specifying-date-modified-header)
     - [Specifying Template Processor callback](#specifying-template-processor-callback)
+  - [Param Rewrite With Matching](#param-rewrite-with-matching)
   - [Using filters](#using-filters)
     - [Serve different site files in AP mode](#serve-different-site-files-in-ap-mode)
     - [Rewrite to different index on AP](#rewrite-to-different-index-on-ap)
@@ -853,6 +854,57 @@ String processor(const String& var)
 server.serveStatic("/", SPIFFS, "/www/").setTemplateProcessor(processor);
 ```
 
+## Param Rewrite With Matching
+It is possible to rewrite the request url with parameter matchg. Here is an example with one parameter:
+Rewrite for example "/radio/{frequence}" -> "/radio?f={frequence}"
+
+```cpp
+class OneParamRewrite : public AsyncWebRewrite
+{
+  protected:
+    String _urlPrefix;
+    int _paramIndex;
+    String _paramsBackup;
+
+  public:
+  OneParamRewrite(const char* from, const char* to)
+    : AsyncWebRewrite(from, to) {
+
+      _paramIndex = _from.indexOf('{');
+
+      if( _paramIndex >=0 && _from.endsWith("}")) {
+        _urlPrefix = _from.substring(0, _paramIndex);
+        int index = _params.indexOf('{');
+        if(index >= 0) {
+          _params = _params.substring(0, index);
+        }
+      } else {
+        _urlPrefix = _from;
+      }
+      _paramsBackup = _params;
+  }
+
+  bool match(AsyncWebServerRequest *request) override {
+    if(request->url().startsWith(_urlPrefix)) {
+      if(_paramIndex >= 0) {
+        _params = _paramsBackup + request->url().substring(_paramIndex);
+      } else {
+        _params = _paramsBackup;
+      }
+    return true;
+
+    } else {
+      return false;
+    }
+  }
+};
+```
+
+Usage:
+
+```cpp
+  server.addRewrite( new OneParamRewrite("/radio/{frequence}", "/radio?f={frequence}") );
+```
 
 ## Using filters
 Filters can be set to `Rewrite` or `Handler` in order to control when to apply the rewrite and consider the handler.
