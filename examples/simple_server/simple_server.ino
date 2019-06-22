@@ -6,9 +6,8 @@
 //
 
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <Hash.h>
-#include <ESPAsyncTCP.h>
+#include <WiFi.h>
+#include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
 AsyncWebServer server(80);
@@ -34,8 +33,6 @@ void setup() {
 
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
-    Serial.print("Hostname: ");
-    Serial.println(WiFi.hostname());
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
         request->send(200, "text/plain", "Hello, world");
