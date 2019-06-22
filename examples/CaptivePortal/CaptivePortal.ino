@@ -1,6 +1,5 @@
-#include <ESP8266WiFi.h>
-#include <Hash.h>
-#include <ESPAsyncTCP.h>
+#include <WiFi.h>
+#include <AsyncTCP.h>
 #include <DNSServer.h>
 #include "ESPAsyncWebServer.h"
 
@@ -31,6 +30,7 @@ public:
 
 void setup(){
   //your other setup stuff...
+  WiFi.softAP("esp-captive");
   dnsServer.start(53, "*", WiFi.softAPIP());
   server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);//only when requested from AP
   //more handlers...
