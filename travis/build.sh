@@ -20,7 +20,7 @@ cd tools
 python get.py
 cd $TRAVIS_BUILD_DIR
 export PATH="$HOME/arduino_ide:$HOME/arduino_ide/hardware/espressif/esp32/tools/xtensa-esp32-elf/bin:$PATH"
-source tools/common.sh
+source travis/common.sh
 echo -e "travis_fold:end:sketch_test_env_prepare"
 
 echo -e "travis_fold:start:sketch_test"
