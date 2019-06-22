@@ -8,7 +8,7 @@ function build_sketches()
     local build_arg=$3
     local build_dir=build.tmp
     mkdir -p $build_dir
-    local build_cmd="python travis/build.py -b esp32 -v -k -p $PWD/$build_dir $build_arg "
+    local build_cmd="python travis/build.py -b esp32 -k -p $PWD/$build_dir $build_arg "
     local sketches=$(find $srcpath -name *.ino)
     export ARDUINO_IDE_PATH=$arduino
     for sketch in $sketches; do
@@ -25,15 +25,15 @@ function build_sketches()
             continue
         fi
         echo -e "\n ------------ Building $sketch ------------ \n";
-        time ($build_cmd $sketch >build.log)
+        time ($build_cmd $sketch >$build_dir/build.log)
         local result=$?
         if [ $result -ne 0 ]; then
             echo "Build failed ($1)"
             echo "Build log:"
-            cat build.log
+            cat $build_dir/build.log
             return $result
         fi
-        rm build.log
+        rm $build_dir/build.log
     done
     #set -e
 }
