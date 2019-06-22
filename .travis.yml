@@ -11,7 +11,7 @@ dist:
   - xenial
 
 script:
-  - bash $TRAVIS_BUILD_DIR/tools/build.sh
+  - bash $TRAVIS_BUILD_DIR/travis/build.sh
 
 notifications:
   email:

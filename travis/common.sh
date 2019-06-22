@@ -8,7 +8,7 @@ function build_sketches()
     local build_arg=$3
     local build_dir=build.tmp
     mkdir -p $build_dir
-    local build_cmd="python tools/build.py -b esp32 -v -k -p $PWD/$build_dir $build_arg "
+    local build_cmd="python travis/build.py -b esp32 -v -k -p $PWD/$build_dir $build_arg "
     local sketches=$(find $srcpath -name *.ino)
     export ARDUINO_IDE_PATH=$arduino
     for sketch in $sketches; do
