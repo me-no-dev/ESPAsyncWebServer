@@ -148,11 +148,11 @@ protected:
   const String _uri;
   WebRequestMethodComposite _method;
   ArJsonRequestHandlerFunction _onRequest;
-  int _contentLength;
+  size_t _contentLength;
 #ifndef ARDUINOJSON_5_COMPATIBILITY   
   const size_t maxJsonBufferSize;
 #endif
-  int _maxContentLength;
+  size_t _maxContentLength;
 public:
 #ifdef ARDUINOJSON_5_COMPATIBILITY      
   AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest) 
