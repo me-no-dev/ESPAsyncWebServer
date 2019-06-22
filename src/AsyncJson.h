@@ -78,7 +78,7 @@ class ChunkPrint : public Print {
 };
 
 class AsyncJsonResponse: public AsyncAbstractResponse {
-  private:
+  protected:
 
 #ifdef ARDUINOJSON_5_COMPATIBILITY
     DynamicJsonBuffer _jsonBuffer;
@@ -138,6 +138,21 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
 #endif
       return len;
     }
+};
+
+class PrettyAsyncJsonResponse: public AsyncJsonResponse {	
+public:
+	PrettyAsyncJsonResponse (bool isArray=false) : AsyncJsonResponse{isArray} {}	
+	size_t setLength () {
+		_contentLength = _root.measurePrettyLength ();
+		if (_contentLength) {_isValid = true;}
+		return _contentLength;
+	}
+	size_t _fillBuffer (uint8_t *data, size_t len) {
+		ChunkPrint dest (data, _sentLength, len);
+		_root.prettyPrintTo (dest);
+		return len;
+	}
 };
 
 typedef std::function<void(AsyncWebServerRequest *request, JsonVariant &json)> ArJsonRequestHandlerFunction;
