@@ -70,6 +70,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Serve different site files in AP mode](#serve-different-site-files-in-ap-mode)
     - [Rewrite to different index on AP](#rewrite-to-different-index-on-ap)
     - [Serving different hosts](#serving-different-hosts)
+    - [Determine interface inside callbacks](#determine-interface-inside-callbacks)
   - [Bad Responses](#bad-responses)
     - [Respond with content using a callback without content length to HTTP/1.0 clients](#respond-with-content-using-a-callback-without-content-length-to-http10-clients)
   - [Async WebSocket Plugin](#async-websocket-plugin)
@@ -883,6 +884,18 @@ bool filterOnHost1(AsyncWebServerRequest *request) { return request->host() == "
 // Server setup: server files in "/host1/" to requests for "host1", and files in "/www/" otherwise.
 server.serveStatic("/", SPIFFS, "/host1/").setFilter(filterOnHost1);
 server.serveStatic("/", SPIFFS, "/www/");
+```
+
+### Determine interface inside callbacks
+```cpp
+  String RedirectUrl = "http://";
+  if (ON_STA_FILTER(request)) {
+    RedirectUrl += WiFi.localIP().toString();
+  } else {
+    RedirectUrl += WiFi.softAPIP().toString();
+  }
+  RedirectUrl += "/index.htm";
+  request->redirect(RedirectUrl);
 ```
 
 ## Bad Responses
