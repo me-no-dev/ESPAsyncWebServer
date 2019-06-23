@@ -31,6 +31,10 @@
 #endif
 #include <ESPAsyncWebServer.h>
 
+#ifdef ESP8266
+#include <Hash.h>
+#endif
+
 class AsyncWebSocket;
 class AsyncWebSocketResponse;
 class AsyncWebSocketClient;
