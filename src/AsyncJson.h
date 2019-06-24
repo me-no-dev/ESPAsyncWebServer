@@ -140,6 +140,7 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
     }
 };
 
+#ifdef ARDUINOJSON_5_COMPATIBILITY
 class PrettyAsyncJsonResponse: public AsyncJsonResponse {	
 public:
 	PrettyAsyncJsonResponse (bool isArray=false) : AsyncJsonResponse{isArray} {}	
@@ -154,6 +155,7 @@ public:
 		return len;
 	}
 };
+#endif
 
 typedef std::function<void(AsyncWebServerRequest *request, JsonVariant &json)> ArJsonRequestHandlerFunction;
 
