@@ -31,6 +31,10 @@
 #endif
 #include <ESPAsyncWebServer.h>
 
+#ifdef ESP8266
+#include <Hash.h>
+#endif
+
 class AsyncWebSocket;
 class AsyncWebSocketResponse;
 class AsyncWebSocketClient;
@@ -189,6 +193,7 @@ class AsyncWebSocketClient {
 
     //data packets
     void message(AsyncWebSocketMessage *message){ _queueMessage(message); }
+    bool queueIsFull();
 
     size_t printf(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
 #ifndef ESP32
@@ -209,6 +214,8 @@ class AsyncWebSocketClient {
     void binary(const String &message);
     void binary(const __FlashStringHelper *data, size_t len);
     void binary(AsyncWebSocketMessageBuffer *buffer); 
+
+    bool canSend() { return _messageQueue.length() < WS_MAX_QUEUED_MESSAGES; }
 
     //system callbacks (do not call)
     void _onAck(size_t len, uint32_t time);
@@ -235,6 +242,8 @@ class AsyncWebSocket: public AsyncWebHandler {
     const char * url() const { return _url.c_str(); }
     void enable(bool e){ _enabled = e; }
     bool enabled() const { return _enabled; }
+    bool availableForWriteAll();
+    bool availableForWrite(uint32_t id);
 
     size_t count() const;
     AsyncWebSocketClient * client(uint32_t id);

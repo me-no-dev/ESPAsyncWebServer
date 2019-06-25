@@ -11,76 +11,82 @@ For ESP32 it requires [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) to work
 To use this library you might need to have the latest git versions of [ESP32](https://github.com/espressif/arduino-esp32) Arduino Core
 
 ## Table of contents
-- [ESPAsyncWebServer ](#espasyncwebserver-)
-	- [Installation](#installation)
-		- [Using PlatformIO](#using-platformio)
-	- [Why should you care](#why-should-you-care)
-	- [Important things to remember](#important-things-to-remember)
-	- [Principles of operation](#principles-of-operation)
-		- [The Async Web server](#the-async-web-server)
-		- [Request Life Cycle](#request-life-cycle)
-		- [Rewrites and how do they work](#rewrites-and-how-do-they-work)
-		- [Handlers and how do they work](#handlers-and-how-do-they-work)
-		- [Responses and how do they work](#responses-and-how-do-they-work)
-		- [Template processing](#template-processing)
-	- [Libraries and projects that use AsyncWebServer](#libraries-and-projects-that-use-asyncwebserver)
-	- [Request Variables](#request-variables)
-		- [Common Variables](#common-variables)
-		- [Headers](#headers)
-		- [GET, POST and FILE parameters](#get-post-and-file-parameters)
-		- [FILE Upload handling](#file-upload-handling)
-		- [Body data handling](#body-data-handling)
-		- [JSON body handling with ArduinoJson](#json-body-handling-with-arduinojson)
-	- [Responses](#responses)
-		- [Redirect to another URL](#redirect-to-another-url)
-		- [Basic response with HTTP Code](#basic-response-with-http-code)
-		- [Basic response with HTTP Code and extra headers](#basic-response-with-http-code-and-extra-headers)
-		- [Basic response with string content](#basic-response-with-string-content)
-		- [Basic response with string content and extra headers](#basic-response-with-string-content-and-extra-headers)
-		- [Send large webpage from PROGMEM](#send-large-webpage-from-progmem)
-		- [Send large webpage from PROGMEM and extra headers](#send-large-webpage-from-progmem-and-extra-headers)
-		- [Send large webpage from PROGMEM containing templates](#send-large-webpage-from-progmem-containing-templates)
-		- [Send large webpage from PROGMEM containing templates and extra headers](#send-large-webpage-from-progmem-containing-templates-and-extra-headers)
-		- [Send binary content from PROGMEM](#send-binary-content-from-progmem)
-		- [Respond with content coming from a Stream](#respond-with-content-coming-from-a-stream)
-		- [Respond with content coming from a Stream and extra headers](#respond-with-content-coming-from-a-stream-and-extra-headers)
-		- [Respond with content coming from a Stream containing templates](#respond-with-content-coming-from-a-stream-containing-templates)
-		- [Respond with content coming from a Stream containing templates and extra headers](#respond-with-content-coming-from-a-stream-containing-templates-and-extra-headers)
-		- [Respond with content coming from a File](#respond-with-content-coming-from-a-file)
-		- [Respond with content coming from a File and extra headers](#respond-with-content-coming-from-a-file-and-extra-headers)
-		- [Respond with content coming from a File containing templates](#respond-with-content-coming-from-a-file-containing-templates)
-		- [Respond with content using a callback](#respond-with-content-using-a-callback)
-		- [Respond with content using a callback and extra headers](#respond-with-content-using-a-callback-and-extra-headers)
-		- [Respond with content using a callback containing templates](#respond-with-content-using-a-callback-containing-templates)
-		- [Respond with content using a callback containing templates and extra headers](#respond-with-content-using-a-callback-containing-templates-and-extra-headers)
-		- [Chunked Response](#chunked-response)
-		- [Print to response](#print-to-response)
-		- [ArduinoJson Basic Response](#arduinojson-basic-response)
-		- [ArduinoJson Advanced Response](#arduinojson-advanced-response)
-	- [Serving static files](#serving-static-files)
-		- [Serving specific file by name](#serving-specific-file-by-name)
-		- [Serving files in directory](#serving-files-in-directory)
-		- [Specifying Cache-Control header](#specifying-cache-control-header)
-		- [Specifying Date-Modified header](#specifying-date-modified-header)
-		- [Specifying Template Processor callback](#specifying-template-processor-callback)
-	- [Using filters](#using-filters)
-		- [Serve different site files in AP mode](#serve-different-site-files-in-ap-mode)
-		- [Rewrite to different index on AP](#rewrite-to-different-index-on-ap)
-		- [Serving different hosts](#serving-different-hosts)
-	- [Bad Responses](#bad-responses)
-		- [Respond with content using a callback without content length to HTTP/1.0 clients](#respond-with-content-using-a-callback-without-content-length-to-http10-clients)
-	- [Async WebSocket Plugin](#async-websocket-plugin)
-		- [Async WebSocket Event](#async-websocket-event)
-		- [Methods for sending data to a socket client](#methods-for-sending-data-to-a-socket-client)
-	- [Async Event Source Plugin](#async-event-source-plugin)
-		- [Setup Event Source on the server](#setup-event-source-on-the-server)
-		- [Setup Event Source in the browser](#setup-event-source-in-the-browser)
-	- [Scanning for available WiFi Networks](#scanning-for-available-wifi-networks)
-	- [Remove handlers and rewrites](#remove-handlers-and-rewrites)
-	- [Setting up the server](#setting-up-the-server)
-		- [Setup global and class functions as request handlers](#setup-global-and-class-functions-as-request-handlers)
-		- [Methods for controlling websocket connections](#methods-for-controlling-websocket-connections)
-	- [Adding default headers to all responses](#adding-default-headers)
+- [ESPAsyncWebServer](#espasyncwebserver)
+  - [Table of contents](#table-of-contents)
+  - [Installation](#installation)
+    - [Using PlatformIO](#using-platformio)
+  - [Why should you care](#why-should-you-care)
+  - [Important things to remember](#important-things-to-remember)
+  - [Principles of operation](#principles-of-operation)
+    - [The Async Web server](#the-async-web-server)
+    - [Request Life Cycle](#request-life-cycle)
+    - [Rewrites and how do they work](#rewrites-and-how-do-they-work)
+    - [Handlers and how do they work](#handlers-and-how-do-they-work)
+    - [Responses and how do they work](#responses-and-how-do-they-work)
+    - [Template processing](#template-processing)
+  - [Libraries and projects that use AsyncWebServer](#libraries-and-projects-that-use-asyncwebserver)
+  - [Request Variables](#request-variables)
+    - [Common Variables](#common-variables)
+    - [Headers](#headers)
+    - [GET, POST and FILE parameters](#get-post-and-file-parameters)
+    - [FILE Upload handling](#file-upload-handling)
+    - [Body data handling](#body-data-handling)
+    - [JSON body handling with ArduinoJson](#json-body-handling-with-arduinojson)
+  - [Responses](#responses)
+    - [Redirect to another URL](#redirect-to-another-url)
+    - [Basic response with HTTP Code](#basic-response-with-http-code)
+    - [Basic response with HTTP Code and extra headers](#basic-response-with-http-code-and-extra-headers)
+    - [Basic response with string content](#basic-response-with-string-content)
+    - [Basic response with string content and extra headers](#basic-response-with-string-content-and-extra-headers)
+    - [Send large webpage from PROGMEM](#send-large-webpage-from-progmem)
+    - [Send large webpage from PROGMEM and extra headers](#send-large-webpage-from-progmem-and-extra-headers)
+    - [Send large webpage from PROGMEM containing templates](#send-large-webpage-from-progmem-containing-templates)
+    - [Send large webpage from PROGMEM containing templates and extra headers](#send-large-webpage-from-progmem-containing-templates-and-extra-headers)
+    - [Send binary content from PROGMEM](#send-binary-content-from-progmem)
+    - [Respond with content coming from a Stream](#respond-with-content-coming-from-a-stream)
+    - [Respond with content coming from a Stream and extra headers](#respond-with-content-coming-from-a-stream-and-extra-headers)
+    - [Respond with content coming from a Stream containing templates](#respond-with-content-coming-from-a-stream-containing-templates)
+    - [Respond with content coming from a Stream containing templates and extra headers](#respond-with-content-coming-from-a-stream-containing-templates-and-extra-headers)
+    - [Respond with content coming from a File](#respond-with-content-coming-from-a-file)
+    - [Respond with content coming from a File and extra headers](#respond-with-content-coming-from-a-file-and-extra-headers)
+    - [Respond with content coming from a File containing templates](#respond-with-content-coming-from-a-file-containing-templates)
+    - [Respond with content using a callback](#respond-with-content-using-a-callback)
+    - [Respond with content using a callback and extra headers](#respond-with-content-using-a-callback-and-extra-headers)
+    - [Respond with content using a callback containing templates](#respond-with-content-using-a-callback-containing-templates)
+    - [Respond with content using a callback containing templates and extra headers](#respond-with-content-using-a-callback-containing-templates-and-extra-headers)
+    - [Chunked Response](#chunked-response)
+    - [Chunked Response containing templates](#chunked-response-containing-templates)
+    - [Print to response](#print-to-response)
+    - [ArduinoJson Basic Response](#arduinojson-basic-response)
+    - [ArduinoJson Advanced Response](#arduinojson-advanced-response)
+  - [Serving static files](#serving-static-files)
+    - [Serving specific file by name](#serving-specific-file-by-name)
+    - [Serving files in directory](#serving-files-in-directory)
+    - [Serving static files with authentication](#serving-static-files-with-authentication)
+    - [Specifying Cache-Control header](#specifying-cache-control-header)
+    - [Specifying Date-Modified header](#specifying-date-modified-header)
+    - [Specifying Template Processor callback](#specifying-template-processor-callback)
+  - [Param Rewrite With Matching](#param-rewrite-with-matching)
+  - [Using filters](#using-filters)
+    - [Serve different site files in AP mode](#serve-different-site-files-in-ap-mode)
+    - [Rewrite to different index on AP](#rewrite-to-different-index-on-ap)
+    - [Serving different hosts](#serving-different-hosts)
+    - [Determine interface inside callbacks](#determine-interface-inside-callbacks)
+  - [Bad Responses](#bad-responses)
+    - [Respond with content using a callback without content length to HTTP/1.0 clients](#respond-with-content-using-a-callback-without-content-length-to-http10-clients)
+  - [Async WebSocket Plugin](#async-websocket-plugin)
+    - [Async WebSocket Event](#async-websocket-event)
+    - [Methods for sending data to a socket client](#methods-for-sending-data-to-a-socket-client)
+    - [Direct access to web socket message buffer](#direct-access-to-web-socket-message-buffer)
+  - [Async Event Source Plugin](#async-event-source-plugin)
+    - [Setup Event Source on the server](#setup-event-source-on-the-server)
+    - [Setup Event Source in the browser](#setup-event-source-in-the-browser)
+  - [Scanning for available WiFi Networks](#scanning-for-available-wifi-networks)
+  - [Remove handlers and rewrites](#remove-handlers-and-rewrites)
+  - [Setting up the server](#setting-up-the-server)
+    - [Setup global and class functions as request handlers](#setup-global-and-class-functions-as-request-handlers)
+    - [Methods for controlling websocket connections](#methods-for-controlling-websocket-connections)
+    - [Adding Default Headers](#adding-default-headers)
 
 ## Installation
 
@@ -848,6 +854,57 @@ String processor(const String& var)
 server.serveStatic("/", SPIFFS, "/www/").setTemplateProcessor(processor);
 ```
 
+## Param Rewrite With Matching
+It is possible to rewrite the request url with parameter matchg. Here is an example with one parameter:
+Rewrite for example "/radio/{frequence}" -> "/radio?f={frequence}"
+
+```cpp
+class OneParamRewrite : public AsyncWebRewrite
+{
+  protected:
+    String _urlPrefix;
+    int _paramIndex;
+    String _paramsBackup;
+
+  public:
+  OneParamRewrite(const char* from, const char* to)
+    : AsyncWebRewrite(from, to) {
+
+      _paramIndex = _from.indexOf('{');
+
+      if( _paramIndex >=0 && _from.endsWith("}")) {
+        _urlPrefix = _from.substring(0, _paramIndex);
+        int index = _params.indexOf('{');
+        if(index >= 0) {
+          _params = _params.substring(0, index);
+        }
+      } else {
+        _urlPrefix = _from;
+      }
+      _paramsBackup = _params;
+  }
+
+  bool match(AsyncWebServerRequest *request) override {
+    if(request->url().startsWith(_urlPrefix)) {
+      if(_paramIndex >= 0) {
+        _params = _paramsBackup + request->url().substring(_paramIndex);
+      } else {
+        _params = _paramsBackup;
+      }
+    return true;
+
+    } else {
+      return false;
+    }
+  }
+};
+```
+
+Usage:
+
+```cpp
+  server.addRewrite( new OneParamRewrite("/radio/{frequence}", "/radio?f={frequence}") );
+```
 
 ## Using filters
 Filters can be set to `Rewrite` or `Handler` in order to control when to apply the rewrite and consider the handler.
@@ -879,6 +936,18 @@ bool filterOnHost1(AsyncWebServerRequest *request) { return request->host() == "
 // Server setup: server files in "/host1/" to requests for "host1", and files in "/www/" otherwise.
 server.serveStatic("/", SPIFFS, "/host1/").setFilter(filterOnHost1);
 server.serveStatic("/", SPIFFS, "/www/");
+```
+
+### Determine interface inside callbacks
+```cpp
+  String RedirectUrl = "http://";
+  if (ON_STA_FILTER(request)) {
+    RedirectUrl += WiFi.localIP().toString();
+  } else {
+    RedirectUrl += WiFi.softAPIP().toString();
+  }
+  RedirectUrl += "/index.htm";
+  request->redirect(RedirectUrl);
 ```
 
 ## Bad Responses

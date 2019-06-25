@@ -303,11 +303,13 @@ class AsyncWebRewrite {
         _toUrl = _toUrl.substring(0, index);
       }
     }
+    virtual ~AsyncWebRewrite(){}
     AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request) const { return _filter == NULL || _filter(request); }
     const String& from(void) const { return _from; }
     const String& toUrl(void) const { return _toUrl; }
     const String& params(void) const { return _params; }
+    virtual bool match(AsyncWebServerRequest *request) { return from() == request->url() && filter(request); }
 };
 
 /*
@@ -393,6 +395,7 @@ class AsyncWebServer {
     ~AsyncWebServer();
 
     void begin();
+    void end();
 
 #if ASYNC_TCP_SSL_ENABLED
     void onSslFileRequest(AcSSlFileHandler cb, void* arg);
