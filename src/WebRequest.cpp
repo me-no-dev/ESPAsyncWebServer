@@ -55,6 +55,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _parsedLength(0)
   , _headers(LinkedList<AsyncWebHeader *>([](AsyncWebHeader *h){ delete h; }))
   , _params(LinkedList<AsyncWebParameter *>([](AsyncWebParameter *p){ delete p; }))
+  , _pathParams(LinkedList<String *>([](String *p){ delete p; }))
   , _multiParseState(0)
   , _boundaryPosition(0)
   , _itemStartIndex(0)
@@ -80,6 +81,7 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
   _headers.free();
 
   _params.free();
+  _pathParams.free();
 
   _interestingHeaders.free();
 
@@ -228,6 +230,10 @@ void AsyncWebServerRequest::_onDisconnect(){
 
 void AsyncWebServerRequest::_addParam(AsyncWebParameter *p){
   _params.add(p);
+}
+
+void AsyncWebServerRequest::_addPathParam(const char *p){
+  _pathParams.add(new String(p));
 }
 
 void AsyncWebServerRequest::_addGetParams(const String& params){
@@ -910,6 +916,11 @@ const String& AsyncWebServerRequest::arg(size_t i) const {
 
 const String& AsyncWebServerRequest::argName(size_t i) const {
   return getParam(i)->name();
+}
+
+const String& AsyncWebServerRequest::pathArg(size_t i) const {
+  auto param = _pathParams.nth(i);
+  return param ? **param : SharedEmptyString;
 }
 
 const String& AsyncWebServerRequest::header(const char* name) const {

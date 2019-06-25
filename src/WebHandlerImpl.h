@@ -70,21 +70,11 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArUploadHandlerFunction _onUpload;
     ArBodyHandlerFunction _onBody;
     bool _isRegex;
-    uint8_t _pathArgsSize;
   public:
-    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL), _pathArgsSize(0), __isRegex(false){}
+    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL), _isRegex(false){}
     void setUri(const String& uri){ 
       _uri = uri; 
        _isRegex = uri.startsWith("^") && uri.endsWith("$");
-      if (_isRegex) {
-          std::regex rgx((_uri + "|").c_str());
-          std::smatch matches;
-          std::string s{""};
-          std::regex_search(s, matches, rgx);
-          _pathArgsSize = matches.size() - 1;
-      } else {
-          _pathArgsSize = 0;
-      }
     }
     void setMethod(WebRequestMethodComposite method){ _method = method; }
     void onRequest(ArRequestHandlerFunction fn){ _onRequest = fn; }
@@ -100,19 +90,16 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
         return false;
 
       if (_isRegex) {
-          unsigned int pathArgIndex = 0;
-          std::regex rgx(_uri.c_str());
-          std::smatch matches;
-          std::string s(request->url().c_str());
-          if(std::regex_search(s, matches, rgx)) {
-              request->pathArgsInit(_pathArgsSize);
-              for (size_t i = 1; i < matches.size(); ++i) { // start from 1
-                  // pathArgs[pathArgIndex] = String(matches[i].str().c_str());
-                  // pathArgIndex++;
-              }
-          } else {
-            return false;
+        std::regex rgx(_uri.c_str());
+        std::smatch matches;
+        std::string s(request->url().c_str());
+        if(std::regex_search(s, matches, rgx)) {
+          for (size_t i = 1; i < matches.size(); ++i) { // start from 1
+            request->_addPathParam(matches[i].str().c_str());
           }
+        } else {
+          return false;
+        }
       } else if (_uri.length() && _uri.endsWith("*")) {
         String uriTemplate = String(_uri);
 	uriTemplate = uriTemplate.substring(0, uriTemplate.length() - 1);
