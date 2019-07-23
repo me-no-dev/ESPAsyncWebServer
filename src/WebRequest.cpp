@@ -316,13 +316,11 @@ bool AsyncWebServerRequest::_parseReqHeader(){
     if(name.equalsIgnoreCase("Host")){
       _host = value;
     } else if(name.equalsIgnoreCase("Content-Type")){
+	  _contentType = value.substring(0, value.indexOf(';'));
       if (value.startsWith("multipart/")){
         _boundary = value.substring(value.indexOf('=')+1);
         _boundary.replace("\"","");
-        _contentType = value.substring(0, value.indexOf(';'));
         _isMultipart = true;
-      } else {
-        _contentType = value;
       }
     } else if(name.equalsIgnoreCase("Content-Length")){
       _contentLength = atoi(value.c_str());
