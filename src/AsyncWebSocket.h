@@ -230,9 +230,11 @@ typedef std::function<void(AsyncWebSocket * server, AsyncWebSocketClient * clien
 
 //WebServer Handler implementation that plays the role of a socket server
 class AsyncWebSocket: public AsyncWebHandler {
+  public:
+    typedef LinkedList<AsyncWebSocketClient *> AsyncWebSocketClientLinkedList;
   private:
     String _url;
-    LinkedList<AsyncWebSocketClient *> _clients;
+    AsyncWebSocketClientLinkedList _clients;
     uint32_t _cNextId;
     AwsEventHandler _eventHandler;
     bool _enabled;
@@ -314,6 +316,8 @@ class AsyncWebSocket: public AsyncWebHandler {
     AsyncWebSocketMessageBuffer * makeBuffer(uint8_t * data, size_t size); 
     LinkedList<AsyncWebSocketMessageBuffer *> _buffers;
     void _cleanBuffers(); 
+
+    AsyncWebSocketClientLinkedList getClients() const;
 };
 
 //WebServer response to authenticate the socket and detach the tcp client from the web server request
