@@ -33,6 +33,9 @@
 
 #ifdef ESP8266
 #include <Hash.h>
+#ifdef CRYPTO_HASH_h // include Hash.h from espressif framework if the first include was from the crypto library
+#include <../src/Hash.h>
+#endif
 #endif
 
 class AsyncWebSocket;
