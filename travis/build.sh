@@ -56,7 +56,7 @@ if [ $PLATFORM == "esp32" ]; then
 	cd tools
 	python get.py
 	PLATFORM_FQBN="espressif:esp32:esp32:PSRAM=enabled,PartitionScheme=huge_app,CPUFreq=240,FlashMode=qio,FlashFreq=80,FlashSize=4M,UploadSpeed=921600,DebugLevel=none"
-	PLATFORM_SIZE_BIN=$TRAVIS_BUILD_DIR/tools/xtensa-esp32-elf/bin/xtensa-esp32-elf-size
+	PLATFORM_SIZE_BIN=$HOME/Arduino/hardware/espressif/esp32/tools/xtensa-esp32-elf/bin/xtensa-esp32-elf-size
 elif [ $PLATFORM == "esp8266" ]; then
 	# ESP8266
 	cd $HOME/Arduino/libraries
@@ -70,7 +70,7 @@ elif [ $PLATFORM == "esp8266" ]; then
 	cd tools
 	python get.py
 	PLATFORM_FQBN="esp8266com:esp8266:generic:xtal=80,FlashFreq=40,FlashMode=qio,baud=921600,eesz=4M1M,ip=lm2f,ResetMethod=nodemcu"
-	PLATFORM_SIZE_BIN=$TRAVIS_BUILD_DIR/tools/xtensa-lx106-elf/bin/xtensa-lx106-elf-size
+	PLATFORM_SIZE_BIN=$HOME/Arduino/hardware/esp8266com/esp8266/tools/xtensa-lx106-elf/bin/xtensa-lx106-elf-size
 fi
 echo -e "travis_fold:end:sketch_test_env_prepare"
 
@@ -80,7 +80,7 @@ ARDUINO_IDE_PATH=$HOME/arduino_ide
 ARDUINO_USR_PATH=$HOME/Arduino
 ARDUINO_BUILD_DIR=$HOME/build.tmp
 ARDUINO_CACHE_DIR=$HOME/cache.tmp
-ARDUINO_BUILD_CMD="$ARDUINO_IDE_PATH/arduino-builder -compile -logger=human -core-api-version=\"10810\" -hardware \"$ARDUINO_IDE_PATH/hardware\" -hardware \"$ARDUINO_USR_PATH/hardware\" -tools \"$ARDUINO_IDE_PATH/tools-builder\" -built-in-libraries \"$ARDUINO_IDE_PATH/libraries\" -libraries \"$ARDUINO_USR_PATH/libraries\" -fqbn=$PLATFORM_FQBN -warnings=\"all\" -build-cache \"$ARDUINO_CACHE_DIR\" -build-path \"$ARDUINO_BUILD_DIR\" -verbose"
+ARDUINO_BUILD_CMD="$ARDUINO_IDE_PATH/arduino-builder -compile -logger=human -core-api-version=10810 -hardware \"$ARDUINO_IDE_PATH/hardware\" -hardware \"$ARDUINO_USR_PATH/hardware\" -tools \"$ARDUINO_IDE_PATH/tools-builder\" -built-in-libraries \"$ARDUINO_IDE_PATH/libraries\" -libraries \"$ARDUINO_USR_PATH/libraries\" -fqbn=$PLATFORM_FQBN -warnings=\"all\" -build-cache \"$ARDUINO_CACHE_DIR\" -build-path \"$ARDUINO_BUILD_DIR\" -verbose"
 
 function print_size_info()
 {
