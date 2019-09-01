@@ -1,3 +1,4 @@
+#include <ESPmDNS.h>
 #include <ArduinoOTA.h>
 #ifdef ESP32
 #include <FS.h>
