@@ -221,7 +221,7 @@ function build_sketches()
         if [ $result -ne 0 ]; then
             return $result
         fi
-        print_size_info $ARDUINO_BUILD_DIR/*.bin >>size.log
+        print_size_info $ARDUINO_BUILD_DIR/*.elf >>size.log
     done
     return 0
 }
