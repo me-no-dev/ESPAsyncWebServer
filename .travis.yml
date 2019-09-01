@@ -1,17 +1,28 @@
 sudo: false
 
 language: python
-python:
-  - "2.7"
 
 os:
   - linux
 
-dist:
-  - xenial
+git:
+  depth: false
 
-script:
-  - bash $TRAVIS_BUILD_DIR/travis/build.sh
+stages:
+  - build
+
+jobs:
+  include:
+
+    - name: "Build Arduino ESP32"
+      if: tag IS blank AND (type = pull_request OR (type = push AND branch = master))
+      stage: build
+      script: bash $TRAVIS_BUILD_DIR/travis/build.sh esp32
+
+    - name: "Build Arduino ESP8266"
+      if: tag IS blank AND (type = pull_request OR (type = push AND branch = master))
+      stage: build
+      script: bash $TRAVIS_BUILD_DIR/travis/build.sh esp8266
 
 notifications:
   email:

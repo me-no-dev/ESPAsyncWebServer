@@ -1,9 +1,15 @@
-#include <WiFi.h>
-#include <ESPmDNS.h>
 #include <ArduinoOTA.h>
+#ifdef ESP32
 #include <FS.h>
 #include <SPIFFS.h>
+#include <ESPmDNS.h>
+#include <WiFi.h>
 #include <AsyncTCP.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#include <ESP8266mDNS.h>
+#endif
 #include <ESPAsyncWebServer.h>
 #include <SPIFFSEditor.h>
 
@@ -134,8 +140,12 @@ void setup(){
   });
   server.addHandler(&events);
 
+#ifdef ESP32
   server.addHandler(new SPIFFSEditor(SPIFFS, http_username,http_password));
-
+#elif defined(ESP8266)
+  server.addHandler(new SPIFFSEditor(http_username,http_password));
+#endif
+  
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
