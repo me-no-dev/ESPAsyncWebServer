@@ -1197,10 +1197,7 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(size_t size)
 {
   AsyncWebSocketMessageBuffer * buffer = new AsyncWebSocketMessageBuffer(size); 
   if (buffer) {
-#ifdef WS_USE_SYNC_LOCK
     AsyncWebLockGuard l(_lock);
-#endif
-
     _buffers.add(buffer);
   }
   return buffer; 
@@ -1211,10 +1208,7 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(uint8_t * data, size_t 
   AsyncWebSocketMessageBuffer * buffer = new AsyncWebSocketMessageBuffer(data, size); 
   
   if (buffer) {
-#ifdef WS_USE_SYNC_LOCK
     AsyncWebLockGuard l(_lock);
-#endif
-
     _buffers.add(buffer);
   }
 
@@ -1223,9 +1217,7 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(uint8_t * data, size_t 
 
 void AsyncWebSocket::_cleanBuffers()
 {
-#ifdef WS_USE_SYNC_LOCK  
   AsyncWebLockGuard l(_lock);
-#endif
 
   for(AsyncWebSocketMessageBuffer * c: _buffers){
     if(c && c->canDelete()){
