@@ -1,6 +1,10 @@
 #ifndef ASYNCWEBSYNCHRONIZATION_H_
 #define ASYNCWEBSYNCHRONIZATION_H_
 
+// Synchronisation is only available on ESP32, as the ESP8266 isn't using FreeRTOS by default
+#ifdef ESP32
+#define WS_USE_SYNC_LOCK
+
 #include <ESPAsyncWebServer.h>
 
 class AsyncWebLock
@@ -56,5 +60,6 @@ public:
     }
   }
 };
+#endif
 
 #endif // ASYNCWEBSYNCHRONIZATION_H_
