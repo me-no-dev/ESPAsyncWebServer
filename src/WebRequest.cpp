@@ -273,6 +273,20 @@ bool AsyncWebServerRequest::_parseReqHead(){
     _method = HTTP_HEAD;
   } else if(m == "OPTIONS"){
     _method = HTTP_OPTIONS;
+  } else if(m == "PROPFIND") {
+    _method = HTTP_PROPFIND;
+  } else if(m == "PROPPATCH") {
+    _method = HTTP_PROPPATCH;
+  } else if(m == "COPY") {
+    _method = HTTP_COPY;
+  } else if(m == "MOVE") {
+    _method = HTTP_MOVE;
+  } else if(m == "MKCOL") {
+    _method = HTTP_MKCOL;
+  } else if(m == "LOCK") {
+    _method = HTTP_LOCK;
+  } else if(m == "UNLOCK") {
+    _method = HTTP_UNLOCK;
   }
 
   String g = String();
