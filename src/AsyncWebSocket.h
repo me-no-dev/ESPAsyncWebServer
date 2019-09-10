@@ -238,7 +238,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     uint32_t _cNextId;
     AwsEventHandler _eventHandler;
     bool _enabled;
-	  AsyncWebLock _lock;
+	AsyncWebLock _lock;
 
   public:
     AsyncWebSocket(const String& url);
