@@ -31,6 +31,8 @@
 #endif
 #include <ESPAsyncWebServer.h>
 
+#include "AsyncWebSynchronization.h"
+
 #ifdef ESP8266
 #include <Hash.h>
 #endif
@@ -236,6 +238,8 @@ class AsyncWebSocket: public AsyncWebHandler {
     uint32_t _cNextId;
     AwsEventHandler _eventHandler;
     bool _enabled;
+    AsyncWebLock _lock;
+
   public:
     AsyncWebSocket(const String& url);
     ~AsyncWebSocket();
