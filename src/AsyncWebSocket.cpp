@@ -680,6 +680,7 @@ void AsyncWebSocketClient::_onData(void *pbuf, size_t plen){
           _client->close(true);
         } else {
           _status = WS_DISCONNECTING;
+          _client->ackLater();
           _queueControl(new AsyncWebSocketControl(WS_DISCONNECT, data, datalen));
         }
       } else if(_pinfo.opcode == WS_PING){
