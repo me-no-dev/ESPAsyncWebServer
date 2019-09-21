@@ -34,6 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - name: Install Python Wheel
+      run: pip install wheel
     - name: Build Tests
       env:
         TRAVIS_BUILD_DIR: ${{ github.workspace }}
@@ -44,6 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - name: Install Python Wheel
+      run: pip install wheel
     - name: Build Tests
       env:
         TRAVIS_BUILD_DIR: ${{ github.workspace }}
