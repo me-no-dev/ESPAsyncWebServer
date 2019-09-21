@@ -1198,6 +1198,7 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(size_t size)
 {
   AsyncWebSocketMessageBuffer * buffer = new AsyncWebSocketMessageBuffer(size); 
   if (buffer) {
+    AsyncWebLockGuard l(_lock);
     _buffers.add(buffer);
   }
   return buffer; 
@@ -1208,6 +1209,7 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(uint8_t * data, size_t 
   AsyncWebSocketMessageBuffer * buffer = new AsyncWebSocketMessageBuffer(data, size); 
   
   if (buffer) {
+    AsyncWebLockGuard l(_lock);
     _buffers.add(buffer);
   }
 
@@ -1216,6 +1218,8 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(uint8_t * data, size_t 
 
 void AsyncWebSocket::_cleanBuffers()
 {
+  AsyncWebLockGuard l(_lock);
+
   for(AsyncWebSocketMessageBuffer * c: _buffers){
     if(c && c->canDelete()){
         _buffers.remove(c);
