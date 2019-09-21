@@ -6,7 +6,10 @@ echo -e "travis_fold:start:install_pio"
 pip install -U platformio
 if [ $? -ne 0 ]; then exit 1; fi
 
-python -m platformio lib install https://github.com/bblanchon/ArduinoJson.git
+python -m platformio lib --storage-dir $PWD
+if [ $? -ne 0 ]; then exit 1; fi
+
+python -m platformio lib -g install https://github.com/bblanchon/ArduinoJson.git
 if [ $? -ne 0 ]; then exit 1; fi
 
 case $BOARD in
