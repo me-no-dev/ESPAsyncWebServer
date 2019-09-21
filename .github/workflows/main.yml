@@ -1,0 +1,54 @@
+name: ESP Async Web Server CI
+
+on:
+  push:
+    branches:
+    - master
+    - release/*
+  pull_request:
+
+jobs:
+
+  build-arduino-esp32:
+    name: Build Arduino ESP32
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build Tests
+      env:
+        TRAVIS_BUILD_DIR: ${{ github.workspace }}
+      run: bash $TRAVIS_BUILD_DIR/travis/build.sh esp32
+
+  build-arduino-esp8266:
+    name: Build Arduino ESP8266
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build Tests
+      env:
+        TRAVIS_BUILD_DIR: ${{ github.workspace }}
+      run: bash $TRAVIS_BUILD_DIR/travis/build.sh esp8266
+
+  build-pio-esp32:
+    name: Build PlatformIO ESP32
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Python Wheel
+      run: pip install wheel
+    - name: Build Tests
+      env:
+        TRAVIS_BUILD_DIR: ${{ github.workspace }}
+      run: bash $TRAVIS_BUILD_DIR/travis/build-pio.sh esp32dev
+
+  build-pio-esp8266:
+    name: Build PlatformIO ESP8266
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Python Wheel
+      run: pip install wheel
+    - name: Build Tests
+      env:
+        TRAVIS_BUILD_DIR: ${{ github.workspace }}
+      run: bash $TRAVIS_BUILD_DIR/travis/build-pio.sh esp12e
