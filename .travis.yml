@@ -24,6 +24,16 @@ jobs:
       stage: build
       script: bash $TRAVIS_BUILD_DIR/travis/build.sh esp8266
 
+    - name: "Build Platformio ESP32"
+      if: tag IS blank AND (type = pull_request OR (type = push AND branch = master))
+      stage: build
+      script: bash $TRAVIS_BUILD_DIR/travis/build-pio.sh esp32dev
+
+    - name: "Build Platformio ESP8266"
+      if: tag IS blank AND (type = pull_request OR (type = push AND branch = master))
+      stage: build
+      script: bash $TRAVIS_BUILD_DIR/travis/build-pio.sh esp12e
+
 notifications:
   email:
     on_success: change
