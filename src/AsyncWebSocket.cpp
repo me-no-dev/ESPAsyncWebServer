@@ -742,6 +742,7 @@ size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
   va_start(arg, formatP);
   char* temp = new char[MAX_PRINTF_LEN];
   if(!temp){
+    va_end(arg);
     return 0;
   }
   char* buffer = temp;
