@@ -78,6 +78,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Async WebSocket Event](#async-websocket-event)
     - [Methods for sending data to a socket client](#methods-for-sending-data-to-a-socket-client)
     - [Direct access to web socket message buffer](#direct-access-to-web-socket-message-buffer)
+	- [Limiting the number of web socket clients](#limiting-the-number-of-web-socket-clients)
   - [Async Event Source Plugin](#async-event-source-plugin)
     - [Setup Event Source on the server](#setup-event-source-on-the-server)
     - [Setup Event Source in the browser](#setup-event-source-in-the-browser)
