@@ -1371,48 +1371,40 @@ void loop(){
 
 ### Setup global and class functions as request handlers
 
-```arduino
+```cpp
 #include <Arduino.h>
 #include <ESPAsyncWebserver.h>
 #include <Hash.h>
 #include <functional>
 
-void handleRequest(AsyncWebServerRequest *request)
-{
-}
+void handleRequest(AsyncWebServerRequest *request){}
 
-class WebClass
-{
+class WebClass {
 public :
-	WebClass(){
-	};
+  AsyncWebServer classWebServer = AsyncWebServer(81);
 
-	AsyncWebServer classWebServer = AsyncWebServer(80);
+  WebClass(){};
 
-	void classRequest (AsyncWebServerRequest *request)
-	{
-	}
+  void classRequest (AsyncWebServerRequest *request){}
 
-	void begin(){
+  void begin(){
+    // attach global request handler
+    classWebServer.on("/example", HTTP_ANY, handleRequest);
 
-		// attach global request handler
-		classWebServer.on("/example", HTTP_ANY, handleRequest);
-
-		// attach class request handler
-		classWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, this, std::placeholders::_1));
-	}
+    // attach class request handler
+    classWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, this, std::placeholders::_1));
+  }
 };
 
 AsyncWebServer globalWebServer(80);
 WebClass webClassInstance;
 
 void setup() {
+  // attach global request handler
+  globalWebServer.on("/example", HTTP_ANY, handleRequest);
 
-	// attach global request handler
-	globalWebServer.on("/example", HTTP_ANY, handleRequest);
-
-	// attach class request handler
-	globalWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, webClassInstance, std::placeholders::_1));
+  // attach class request handler
+  globalWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, webClassInstance, std::placeholders::_1));
 }
 
 void loop() {
@@ -1422,7 +1414,7 @@ void loop() {
 
 ### Methods for controlling websocket connections
 
-```arduino
+```cpp
   // Disable client connections if it was activated
   if ( ws.enabled() )
     ws.enable(false);
@@ -1434,7 +1426,7 @@ void loop() {
 
 Example of OTA code
 
-```arduino
+```cpp
   // OTA callbacks
   ArduinoOTA.onStart([]() {
     // Clean SPIFFS
@@ -1461,7 +1453,7 @@ The DefaultHeaders singleton allows you to do this.
 
 Example:
 
-```arduino
+```cpp
 DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 webServer.begin();
 ```
@@ -1470,12 +1462,12 @@ webServer.begin();
 
 This is one option:
 
-```arduino
+```cpp
 webServer.onNotFound([](AsyncWebServerRequest *request) {
-	if (request->method() == HTTP_OPTIONS) {
-		request->send(200);
-	} else {
-		request->send(404);
-	}
+  if (request->method() == HTTP_OPTIONS) {
+    request->send(200);
+  } else {
+    request->send(404);
+  }
 });
 ```
