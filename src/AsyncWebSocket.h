@@ -37,6 +37,12 @@
 #include <Hash.h>
 #endif
 
+#ifdef ESP32
+#define DEFAULT_MAX_WS_CLIENTS 8
+#else
+#define DEFAULT_MAX_WS_CLIENTS 4
+#endif
+
 class AsyncWebSocket;
 class AsyncWebSocketResponse;
 class AsyncWebSocketClient;
@@ -255,6 +261,7 @@ class AsyncWebSocket: public AsyncWebHandler {
 
     void close(uint32_t id, uint16_t code=0, const char * message=NULL);
     void closeAll(uint16_t code=0, const char * message=NULL);
+    void cleanupClients(uint16_t maxClients = DEFAULT_MAX_WS_CLIENTS);
 
     void ping(uint32_t id, uint8_t *data=NULL, size_t len=0);
     void pingAll(uint8_t *data=NULL, size_t len=0); //  done

@@ -79,6 +79,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Async WebSocket Event](#async-websocket-event)
     - [Methods for sending data to a socket client](#methods-for-sending-data-to-a-socket-client)
     - [Direct access to web socket message buffer](#direct-access-to-web-socket-message-buffer)
+    - [Limiting the number of web socket clients](#limiting-the-number-of-web-socket-clients)
   - [Async Event Source Plugin](#async-event-source-plugin)
     - [Setup Event Source on the server](#setup-event-source-on-the-server)
     - [Setup Event Source in the browser](#setup-event-source-in-the-browser)
@@ -1125,6 +1126,16 @@ void sendDataWs(AsyncWebSocketClient * client)
     }
 }
 ```
+
+### Limiting the number of web socket clients
+Browsers sometimes do not correctly close the websocket connection, even when the close() function is called in javascript.  This will eventually exhaust the web server's resources and will cause the server to crash.  Periodically calling the cleanClients() function from the main loop() function limits the number of clients by closing the oldest client when the maximum number of clients has been exceeded.  This can called be every cycle, however, if you wish to use less power, then calling as infrequently as once per second is sufficient.
+
+```cpp
+void loop(){
+  ws.cleanupClients();
+}
+```
+
 
 ## Async Event Source Plugin
 The server includes EventSource (Server-Sent Events) plugin which can be used to send short text events to the browser.

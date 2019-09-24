@@ -217,4 +217,5 @@ void setup(){
 
 void loop(){
   ArduinoOTA.handle();
+  ws.cleanupClients();
 }

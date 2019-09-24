@@ -927,6 +927,13 @@ void AsyncWebSocket::closeAll(uint16_t code, const char * message){
   }
 }
 
+void AsyncWebSocket::cleanupClients(uint16_t maxClients)
+{
+  if (count() > maxClients){
+    _clients.front()->close();
+  }
+}
+
 void AsyncWebSocket::ping(uint32_t id, uint8_t *data, size_t len){
   AsyncWebSocketClient * c = client(id);
   if(c)
