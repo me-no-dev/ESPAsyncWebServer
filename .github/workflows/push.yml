@@ -10,7 +10,7 @@ on:
 jobs:
 
   build-arduino:
-    name: Arduino Build for ${{ matrix.board }} on ${{ matrix.os }}
+    name: Arduino for ${{ matrix.board }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -22,7 +22,7 @@ jobs:
       run: bash ./.github/scripts/on-push.sh ${{ matrix.board }} 0 1
 
   build-pio:
-    name: PlatformIO Build for ${{ matrix.board }} on ${{ matrix.os }}
+    name: PlatformIO for ${{ matrix.board }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
