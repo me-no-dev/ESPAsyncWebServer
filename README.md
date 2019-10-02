@@ -1,4 +1,5 @@
-# ESPAsyncWebServer [![Build Status](https://travis-ci.org/me-no-dev/ESPAsyncWebServer.svg?branch=master)](https://travis-ci.org/me-no-dev/ESPAsyncWebServer)
+# ESPAsyncWebServer 
+[![Build Status](https://travis-ci.org/me-no-dev/ESPAsyncWebServer.svg?branch=master)](https://travis-ci.org/me-no-dev/ESPAsyncWebServer) ![](https://github.com/me-no-dev/ESPAsyncWebServer/workflows/ESP%20Async%20Web%20Server%20CI/badge.svg) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/395dd42cfc674e6ca2e326af3af80ffc)](https://www.codacy.com/manual/me-no-dev/ESPAsyncWebServer?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=me-no-dev/ESPAsyncWebServer&amp;utm_campaign=Badge_Grade)
 
 For help and support [![Join the chat at https://gitter.im/me-no-dev/ESPAsyncWebServer](https://badges.gitter.im/me-no-dev/ESPAsyncWebServer.svg)](https://gitter.im/me-no-dev/ESPAsyncWebServer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -78,6 +79,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Async WebSocket Event](#async-websocket-event)
     - [Methods for sending data to a socket client](#methods-for-sending-data-to-a-socket-client)
     - [Direct access to web socket message buffer](#direct-access-to-web-socket-message-buffer)
+    - [Limiting the number of web socket clients](#limiting-the-number-of-web-socket-clients)
   - [Async Event Source Plugin](#async-event-source-plugin)
     - [Setup Event Source on the server](#setup-event-source-on-the-server)
     - [Setup Event Source in the browser](#setup-event-source-in-the-browser)
@@ -1125,6 +1127,16 @@ void sendDataWs(AsyncWebSocketClient * client)
 }
 ```
 
+### Limiting the number of web socket clients
+Browsers sometimes do not correctly close the websocket connection, even when the close() function is called in javascript.  This will eventually exhaust the web server's resources and will cause the server to crash.  Periodically calling the cleanClients() function from the main loop() function limits the number of clients by closing the oldest client when the maximum number of clients has been exceeded.  This can called be every cycle, however, if you wish to use less power, then calling as infrequently as once per second is sufficient.
+
+```cpp
+void loop(){
+  ws.cleanupClients();
+}
+```
+
+
 ## Async Event Source Plugin
 The server includes EventSource (Server-Sent Events) plugin which can be used to send short text events to the browser.
 Difference between EventSource and WebSockets is that EventSource is single direction, text-only protocol.
@@ -1371,48 +1383,40 @@ void loop(){
 
 ### Setup global and class functions as request handlers
 
-```arduino
+```cpp
 #include <Arduino.h>
 #include <ESPAsyncWebserver.h>
 #include <Hash.h>
 #include <functional>
 
-void handleRequest(AsyncWebServerRequest *request)
-{
-}
+void handleRequest(AsyncWebServerRequest *request){}
 
-class WebClass
-{
+class WebClass {
 public :
-	WebClass(){
-	};
+  AsyncWebServer classWebServer = AsyncWebServer(81);
 
-	AsyncWebServer classWebServer = AsyncWebServer(80);
+  WebClass(){};
 
-	void classRequest (AsyncWebServerRequest *request)
-	{
-	}
+  void classRequest (AsyncWebServerRequest *request){}
 
-	void begin(){
+  void begin(){
+    // attach global request handler
+    classWebServer.on("/example", HTTP_ANY, handleRequest);
 
-		// attach global request handler
-		classWebServer.on("/example", HTTP_ANY, handleRequest);
-
-		// attach class request handler
-		classWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, this, std::placeholders::_1));
-	}
+    // attach class request handler
+    classWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, this, std::placeholders::_1));
+  }
 };
 
 AsyncWebServer globalWebServer(80);
 WebClass webClassInstance;
 
 void setup() {
+  // attach global request handler
+  globalWebServer.on("/example", HTTP_ANY, handleRequest);
 
-	// attach global request handler
-	globalWebServer.on("/example", HTTP_ANY, handleRequest);
-
-	// attach class request handler
-	globalWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, webClassInstance, std::placeholders::_1));
+  // attach class request handler
+  globalWebServer.on("/example", HTTP_ANY, std::bind(&WebClass::classRequest, webClassInstance, std::placeholders::_1));
 }
 
 void loop() {
@@ -1422,7 +1426,7 @@ void loop() {
 
 ### Methods for controlling websocket connections
 
-```arduino
+```cpp
   // Disable client connections if it was activated
   if ( ws.enabled() )
     ws.enable(false);
@@ -1434,7 +1438,7 @@ void loop() {
 
 Example of OTA code
 
-```arduino
+```cpp
   // OTA callbacks
   ArduinoOTA.onStart([]() {
     // Clean SPIFFS
@@ -1461,7 +1465,7 @@ The DefaultHeaders singleton allows you to do this.
 
 Example:
 
-```arduino
+```cpp
 DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 webServer.begin();
 ```
@@ -1470,12 +1474,12 @@ webServer.begin();
 
 This is one option:
 
-```arduino
+```cpp
 webServer.onNotFound([](AsyncWebServerRequest *request) {
-	if (request->method() == HTTP_OPTIONS) {
-		request->send(200);
-	} else {
-		request->send(404);
-	}
+  if (request->method() == HTTP_OPTIONS) {
+    request->send(200);
+  } else {
+    request->send(404);
+  }
 });
 ```

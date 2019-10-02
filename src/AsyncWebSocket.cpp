@@ -680,6 +680,7 @@ void AsyncWebSocketClient::_onData(void *pbuf, size_t plen){
           _client->close(true);
         } else {
           _status = WS_DISCONNECTING;
+          _client->ackLater();
           _queueControl(new AsyncWebSocketControl(WS_DISCONNECT, data, datalen));
         }
       } else if(_pinfo.opcode == WS_PING){
@@ -710,6 +711,7 @@ size_t AsyncWebSocketClient::printf(const char *format, ...) {
   va_start(arg, format);
   char* temp = new char[MAX_PRINTF_LEN];
   if(!temp){
+    va_end(arg);
     return 0;
   }
   char* buffer = temp;
@@ -740,6 +742,7 @@ size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
   va_start(arg, formatP);
   char* temp = new char[MAX_PRINTF_LEN];
   if(!temp){
+    va_end(arg);
     return 0;
   }
   char* buffer = temp;
@@ -921,6 +924,13 @@ void AsyncWebSocket::closeAll(uint16_t code, const char * message){
   for(const auto& c: _clients){
     if(c->status() == WS_CONNECTED)
       c->close(code, message);
+  }
+}
+
+void AsyncWebSocket::cleanupClients(uint16_t maxClients)
+{
+  if (count() > maxClients){
+    _clients.front()->close();
   }
 }
 
@@ -1197,6 +1207,7 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(size_t size)
 {
   AsyncWebSocketMessageBuffer * buffer = new AsyncWebSocketMessageBuffer(size); 
   if (buffer) {
+    AsyncWebLockGuard l(_lock);
     _buffers.add(buffer);
   }
   return buffer; 
@@ -1207,6 +1218,7 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(uint8_t * data, size_t 
   AsyncWebSocketMessageBuffer * buffer = new AsyncWebSocketMessageBuffer(data, size); 
   
   if (buffer) {
+    AsyncWebLockGuard l(_lock);
     _buffers.add(buffer);
   }
 
@@ -1215,6 +1227,8 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(uint8_t * data, size_t 
 
 void AsyncWebSocket::_cleanBuffers()
 {
+  AsyncWebLockGuard l(_lock);
+
   for(AsyncWebSocketMessageBuffer * c: _buffers){
     if(c && c->canDelete()){
         _buffers.remove(c);
@@ -1222,6 +1236,9 @@ void AsyncWebSocket::_cleanBuffers()
   }
 }
 
+AsyncWebSocket::AsyncWebSocketClientLinkedList AsyncWebSocket::getClients() const {
+  return _clients;
+}
 
 /*
  * Response to Web Socket request - sends the authorization and detaches the TCP Client from the web server
