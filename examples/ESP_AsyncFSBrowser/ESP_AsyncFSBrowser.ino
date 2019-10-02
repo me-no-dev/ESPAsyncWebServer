@@ -24,7 +24,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     client->printf("Hello Client %u :)", client->id());
     client->ping();
   } else if(type == WS_EVT_DISCONNECT){
-    Serial.printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
+    Serial.printf("ws[%s][%u] disconnect\n", server->url(), client->id());
   } else if(type == WS_EVT_ERROR){
     Serial.printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
   } else if(type == WS_EVT_PONG){
