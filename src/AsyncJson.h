@@ -166,7 +166,6 @@ public:
 		return len;
 	}
 };
-#endif
 
 typedef std::function<void(AsyncWebServerRequest *request, JsonVariant &json)> ArJsonRequestHandlerFunction;
 
