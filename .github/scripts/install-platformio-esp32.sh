@@ -100,7 +100,9 @@ function build_pio_sketches() # build_pio_sketches <board> <examples-path> <chun
 		return 1
 	fi
 
+    set +e
     count_sketches "$examples"
+    set -e
     local sketchcount=$?
     local sketches=$(cat sketches.txt)
     rm -rf sketches.txt

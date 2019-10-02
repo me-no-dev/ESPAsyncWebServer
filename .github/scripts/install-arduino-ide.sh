@@ -163,7 +163,9 @@ function build_sketches() # build_sketches <fqbn> <examples-path> <chunk> <total
 		return 1
 	fi
 
+	set +e
     count_sketches "$examples"
+	set -e
     local sketchcount=$?
     local sketches=$(cat sketches.txt)
     rm -rf sketches.txt
