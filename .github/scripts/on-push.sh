@@ -51,7 +51,8 @@ if [ "$BUILD_PIO" -eq 0 ]; then
 	build_sketches "$FQBN" "$GITHUB_WORKSPACE/examples" "$CHUNK_INDEX" "$CHUNKS_CNT"
 else
 	# PlatformIO Test
-	source ./.github/scripts/install-platformio-esp32.sh
+	source ./.github/scripts/install-platformio.sh
+
 	python -m platformio lib --storage-dir "$GITHUB_WORKSPACE" install
 	echo "Installing ArduinoJson ..."
 	python -m platformio lib -g install https://github.com/bblanchon/ArduinoJson.git > /dev/null 2>&1

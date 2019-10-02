@@ -1,33 +1,12 @@
 #!/bin/bash
 
-export PLATFORMIO_ESP32_PATH="$HOME/.platformio/packages/framework-arduinoespressif32"
-
 echo "Installing Python Wheel ..."
 pip install wheel > /dev/null 2>&1
 
 echo "Installing PlatformIO ..."
-pip install -U https://github.com/platformio/platformio/archive/develop.zip > /dev/null 2>&1
+pip install -U platformio > /dev/null 2>&1
 
-echo "Installing Platform ESP32 ..."
-python -m platformio platform install https://github.com/platformio/platform-espressif32.git#feature/stage > /dev/null 2>&1
-
-echo "Replacing the framework version ..."
-if [[ "$OSTYPE" == "darwin"* ]]; then
-	sed 's/https:\/\/github\.com\/espressif\/arduino-esp32\.git/*/' "$HOME/.platformio/platforms/espressif32/platform.json" > "platform.json"
-	mv -f "platform.json" "$HOME/.platformio/platforms/espressif32/platform.json"
-else
-	sed -i 's/https:\/\/github\.com\/espressif\/arduino-esp32\.git/*/' "$HOME/.platformio/platforms/espressif32/platform.json"
-fi
-
-if [ "$GITHUB_REPOSITORY" == "espressif/arduino-esp32" ];  then
-	echo "Linking Core ..."
-	ln -s $GITHUB_WORKSPACE "$PLATFORMIO_ESP32_PATH"
-else
-	echo "Cloning Core Repository ..."
-	git clone https://github.com/espressif/arduino-esp32.git "$PLATFORMIO_ESP32_PATH" > /dev/null 2>&1
-fi
-
-echo "PlatformIO for ESP32 has been installed"
+echo "PlatformIO has been installed"
 echo ""
 
 
