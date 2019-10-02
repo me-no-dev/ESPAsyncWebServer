@@ -106,7 +106,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
         if (!request->url().startsWith(uriTemplate))
           return false;
       }
-      else if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
+      else if(_uri.length() && (_uri != request->url() && !request->url().equals(_uri+"/")))
         return false;
 
       request->addInterestingHeader("ANY");
