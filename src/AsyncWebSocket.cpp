@@ -492,7 +492,7 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
   _client->onData([](void *r, AsyncClient* c, void *buf, size_t len){ ((AsyncWebSocketClient*)(r))->_onData(buf, len); }, this);
   _client->onPoll([](void *r, AsyncClient* c){ ((AsyncWebSocketClient*)(r))->_onPoll(); }, this);
   _server->_addClient(this);
-  _server->_handleEvent(this, WS_EVT_CONNECT, NULL, NULL, 0);
+  _server->_handleEvent(this, WS_EVT_CONNECT, request, NULL, 0);
   delete request;
 }
 
