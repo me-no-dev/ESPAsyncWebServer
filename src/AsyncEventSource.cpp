@@ -289,7 +289,7 @@ void AsyncEventSource::close(){
 }
 
 // pmb fix
-size_t AsyncEventSource::getAvgMQL() const {
+size_t AsyncEventSource::avgPacketsWaiting() const {
   if(_clients.isEmpty())
     return 0;
   
