@@ -69,6 +69,7 @@ class AsyncEventSourceClient {
     void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
     bool connected() const { return (_client != NULL) && _client->connected(); }
     uint32_t lastId() const { return _lastId; }
+    size_t  packetsWaiting() const { return _messageQueue.length(); }
 
     //system callbacks (do not call)
     void _onAck(size_t len, uint32_t time);
@@ -91,6 +92,7 @@ class AsyncEventSource: public AsyncWebHandler {
     void onConnect(ArEventHandlerFunction cb);
     void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
     size_t count() const; //number clinets connected
+    size_t  avgPacketsWaiting() const;
 
     //system callbacks (do not call)
     void _addClient(AsyncEventSourceClient * client);

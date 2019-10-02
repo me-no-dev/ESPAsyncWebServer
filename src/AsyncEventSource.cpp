@@ -288,9 +288,26 @@ void AsyncEventSource::close(){
   }
 }
 
-void AsyncEventSource::send(const char *message, const char *event, uint32_t id, uint32_t reconnect){
+// pmb fix
+size_t AsyncEventSource::avgPacketsWaiting() const {
   if(_clients.isEmpty())
-    return;
+    return 0;
+  
+  size_t    aql=0;
+  uint32_t  nConnectedClients=0;
+  
+  for(const auto &c: _clients){
+    if(c->connected()) {
+      aql+=c->packetsWaiting();
+      ++nConnectedClients;
+    }
+  }
+//  return aql / nConnectedClients;
+  return ((aql) + (nConnectedClients/2))/(nConnectedClients); // round up
+}
+
+void AsyncEventSource::send(const char *message, const char *event, uint32_t id, uint32_t reconnect){
+
 
   String ev = generateEventMessage(message, event, id, reconnect);
   for(const auto &c: _clients){
