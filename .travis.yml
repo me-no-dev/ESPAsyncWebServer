@@ -17,22 +17,22 @@ jobs:
     - name: "Build Arduino ESP32"
       if: tag IS blank AND (type = pull_request OR (type = push AND branch = master))
       stage: build
-      script: bash $TRAVIS_BUILD_DIR/travis/build.sh esp32
+      script: bash $TRAVIS_BUILD_DIR/.github/scripts/on-push.sh esp32
 
     - name: "Build Arduino ESP8266"
       if: tag IS blank AND (type = pull_request OR (type = push AND branch = master))
       stage: build
-      script: bash $TRAVIS_BUILD_DIR/travis/build.sh esp8266
+      script: bash $TRAVIS_BUILD_DIR/.github/scripts/on-push.sh esp8266
 
     - name: "Build Platformio ESP32"
       if: tag IS blank AND (type = pull_request OR (type = push AND branch = master))
       stage: build
-      script: bash $TRAVIS_BUILD_DIR/travis/build-pio.sh esp32dev
+      script: bash $TRAVIS_BUILD_DIR/.github/scripts/on-push.sh esp32 1 1
 
     - name: "Build Platformio ESP8266"
       if: tag IS blank AND (type = pull_request OR (type = push AND branch = master))
       stage: build
-      script: bash $TRAVIS_BUILD_DIR/travis/build-pio.sh esp12e
+      script: bash $TRAVIS_BUILD_DIR/.github/scripts/on-push.sh esp8266 1 1
 
 notifications:
   email:
