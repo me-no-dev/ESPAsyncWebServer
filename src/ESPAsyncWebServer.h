@@ -129,6 +129,7 @@ class AsyncWebServerRequest {
   using File = fs::File;
   using FS = fs::FS;
   friend class AsyncWebServer;
+  friend class AsyncCallbackWebHandler;
   private:
     AsyncClient* _client;
     AsyncWebServer* _server;
@@ -158,6 +159,7 @@ class AsyncWebServerRequest {
 
     LinkedList<AsyncWebHeader *> _headers;
     LinkedList<AsyncWebParameter *> _params;
+    LinkedList<String *> _pathParams;
 
     uint8_t _multiParseState;
     uint8_t _boundaryPosition;
@@ -179,6 +181,7 @@ class AsyncWebServerRequest {
     void _onData(void *buf, size_t len);
 
     void _addParam(AsyncWebParameter*);
+    void _addPathParam(const char *param);
 
     bool _parseReqHead();
     bool _parseReqHeader();
@@ -268,6 +271,8 @@ class AsyncWebServerRequest {
     bool hasArg(const char* name) const;         // check if argument exists
     bool hasArg(const __FlashStringHelper * data) const;         // check if F(argument) exists
 
+    const String& pathArg(size_t i) const;
+
     const String& header(const char* name) const;// get request header value by name
     const String& header(const __FlashStringHelper * data) const;// get request header value by F(name)    
     const String& header(size_t i) const;        // get request header value by number
@@ -303,11 +308,13 @@ class AsyncWebRewrite {
         _toUrl = _toUrl.substring(0, index);
       }
     }
+    virtual ~AsyncWebRewrite(){}
     AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     bool filter(AsyncWebServerRequest *request) const { return _filter == NULL || _filter(request); }
     const String& from(void) const { return _from; }
     const String& toUrl(void) const { return _toUrl; }
     const String& params(void) const { return _params; }
+    virtual bool match(AsyncWebServerRequest *request) { return from() == request->url() && filter(request); }
 };
 
 /*
@@ -393,6 +400,7 @@ class AsyncWebServer {
     ~AsyncWebServer();
 
     void begin();
+    void end();
 
 #if ASYNC_TCP_SSL_ENABLED
     void onSslFileRequest(AcSSlFileHandler cb, void* arg);

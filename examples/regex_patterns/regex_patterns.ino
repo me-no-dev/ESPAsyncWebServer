@@ -1,5 +1,5 @@
 //
-// A simple server implementation showing how to:
+// A simple server implementation with regex routes:
 //  * serve static messages
 //  * read GET and POST parameters
 //  * handle missing pages / 404s
@@ -43,26 +43,17 @@ void setup() {
         request->send(200, "text/plain", "Hello, world");
     });
 
-    // Send a GET request to <IP>/get?message=<message>
-    server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
-        String message;
-        if (request->hasParam(PARAM_MESSAGE)) {
-            message = request->getParam(PARAM_MESSAGE)->value();
-        } else {
-            message = "No message sent";
-        }
-        request->send(200, "text/plain", "Hello, GET: " + message);
+    // Send a GET request to <IP>/sensor/<number>
+    server.on("^\\/sensor\\/([0-9]+)$", HTTP_GET, [] (AsyncWebServerRequest *request) {
+        String sensorNumber = request->pathArg(0);
+        request->send(200, "text/plain", "Hello, sensor: " + sensorNumber);
     });
-
-    // Send a POST request to <IP>/post with a form field message set to <message>
-    server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
-        String message;
-        if (request->hasParam(PARAM_MESSAGE, true)) {
-            message = request->getParam(PARAM_MESSAGE, true)->value();
-        } else {
-            message = "No message sent";
-        }
-        request->send(200, "text/plain", "Hello, POST: " + message);
+	
+	// Send a GET request to <IP>/sensor/<number>/action/<action>
+    server.on("^\\/sensor\\/([0-9]+)\\/action\//([a-zA-Z0-9]+)$", HTTP_GET, [] (AsyncWebServerRequest *request) {
+        String sensorNumber = request->pathArg(0);
+        String action = request->pathArg(1);
+        request->send(200, "text/plain", "Hello, sensor: " + sensorNumber + ", with action: " + action);
     });
 
     server.onNotFound(notFound);
