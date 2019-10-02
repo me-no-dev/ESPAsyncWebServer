@@ -27,10 +27,14 @@ function build_pio_sketch(){ # build_pio_sketch <board> <path-to-ino>
 
 function count_sketches() # count_sketches <examples-path>
 {
-	local examples="$1"
+    local examples="$1"
+    rm -rf sketches.txt
+    if [ ! -d "$examples" ]; then
+        touch sketches.txt
+        return 0
+    fi
     local sketches=$(find $examples -name *.ino)
     local sketchnum=0
-    rm -rf sketches.txt
     for sketch in $sketches; do
         local sketchdir=$(dirname $sketch)
         local sketchdirname=$(basename $sketchdir)
