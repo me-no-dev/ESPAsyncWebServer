@@ -298,7 +298,7 @@ size_t AsyncEventSource::avgPacketsWaiting() const {
   
   for(const auto &c: _clients){
     if(c->connected()) {
-      aql+=c->getMQL();
+      aql+=c->packetsWaiting();
       ++nConnectedClients;
     }
   }
