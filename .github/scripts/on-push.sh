@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ ! -z "$TRAVIS_BUILD_DIR" ]; then
 	export GITHUB_WORKSPACE="$TRAVIS_BUILD_DIR"
 	export GITHUB_REPOSITORY="$TRAVIS_REPO_SLUG"
@@ -28,11 +30,16 @@ if [ "$BUILD_PIO" -eq 0 ]; then
 	# ArduinoIDE Test
 	source ./.github/scripts/install-arduino-ide.sh
 
-	if [[ $TARGET_PLATFORM == "esp32" ]]; then
+	cp -rf "$GITHUB_WORKSPACE" "$ARDUINO_USR_PATH/libraries/ESPAsyncWebServer"
+	git clone https://github.com/bblanchon/ArduinoJson "$ARDUINO_USR_PATH/libraries/ArduinoJson"
+
+	if [[ "$TARGET_PLATFORM" == "esp32" ]]; then
+		git clone https://github.com/me-no-dev/AsyncTCP "$ARDUINO_USR_PATH/libraries/AsyncTCP"
 		FQBN="espressif:esp32:esp32:PSRAM=enabled,PartitionScheme=huge_app"
 		source ./.github/scripts/install-arduino-core-esp32.sh
 		echo "BUILDING ESP32 EXAMPLES"
 	else
+		git clone https://github.com/me-no-dev/ESPAsyncTCP "$ARDUINO_USR_PATH/libraries/ESPAsyncTCP"
 		FQBN="esp8266com:esp8266:generic:eesz=4M1M,ip=lm2f"
 		source ./.github/scripts/install-arduino-core-esp8266.sh
 		echo "BUILDING ESP8266 EXAMPLES"
@@ -41,9 +48,9 @@ if [ "$BUILD_PIO" -eq 0 ]; then
 else
 	# PlatformIO Test
 	source ./.github/scripts/install-platformio-esp32.sh
-	python -m platformio lib --storage-dir $GITHUB_WORKSPACE install
+	python -m platformio lib --storage-dir "$GITHUB_WORKSPACE" install
 	python -m platformio lib -g install https://github.com/bblanchon/ArduinoJson.git
-	if [[ $TARGET_PLATFORM == "esp32" ]]; then
+	if [[ "$TARGET_PLATFORM" == "esp32" ]]; then
 		BOARD="esp32dev"
 		python -m platformio lib -g install https://github.com/me-no-dev/AsyncTCP.git
 		echo "BUILDING ESP32 EXAMPLES"
@@ -52,6 +59,6 @@ else
 		python -m platformio lib -g install https://github.com/me-no-dev/ESPAsyncTCP.git
 		echo "BUILDING ESP8266 EXAMPLES"
 	fi
-	build_pio_sketches $BOARD "$GITHUB_WORKSPACE/examples"
+	build_pio_sketches "$BOARD" "$GITHUB_WORKSPACE/examples"
 fi
 if [ $? -ne 0 ]; then exit 1; fi

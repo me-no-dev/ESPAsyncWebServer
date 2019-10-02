@@ -48,7 +48,7 @@ function build_pio_sketch(){ # build_pio_sketch <board> <path-to-ino>
 	local sketch_dir=$(dirname "$sketch")
 	echo ""
 	echo "Compiling '"$(basename "$sketch")"'..."
-	python -m platformio ci  --board "$board" "$sketch_dir" --project-option="board_build.partitions = huge_app.csv"
+	python -m platformio ci -l '.' --board "$board" "$sketch_dir" --project-option="board_build.partitions = huge_app.csv"
 }
 
 function count_sketches() # count_sketches <examples-path>
