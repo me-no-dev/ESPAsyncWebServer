@@ -83,7 +83,13 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       if(!(_method & request->method()))
         return false;
 
-      if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
+      if (_uri.length() && _uri.endsWith("*")) {
+        String uriTemplate = String(_uri);
+	uriTemplate = uriTemplate.substring(0, uriTemplate.length() - 1);
+        if (!request->url().startsWith(uriTemplate))
+          return false;
+      }
+      else if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
         return false;
 
       request->addInterestingHeader("ANY");
