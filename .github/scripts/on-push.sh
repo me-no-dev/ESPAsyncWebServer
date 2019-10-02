@@ -30,16 +30,20 @@ if [ "$BUILD_PIO" -eq 0 ]; then
 	# ArduinoIDE Test
 	source ./.github/scripts/install-arduino-ide.sh
 
+	echo "Installing ESPAsyncWebServer ..."
 	cp -rf "$GITHUB_WORKSPACE" "$ARDUINO_USR_PATH/libraries/ESPAsyncWebServer"
-	git clone https://github.com/bblanchon/ArduinoJson "$ARDUINO_USR_PATH/libraries/ArduinoJson"
+	echo "Installing ArduinoJson ..."
+	git clone https://github.com/bblanchon/ArduinoJson "$ARDUINO_USR_PATH/libraries/ArduinoJson" > /dev/null 2>&1
 
 	if [[ "$TARGET_PLATFORM" == "esp32" ]]; then
-		git clone https://github.com/me-no-dev/AsyncTCP "$ARDUINO_USR_PATH/libraries/AsyncTCP"
+		echo "Installing AsyncTCP ..."
+		git clone https://github.com/me-no-dev/AsyncTCP "$ARDUINO_USR_PATH/libraries/AsyncTCP" > /dev/null 2>&1
 		FQBN="espressif:esp32:esp32:PSRAM=enabled,PartitionScheme=huge_app"
 		source ./.github/scripts/install-arduino-core-esp32.sh
 		echo "BUILDING ESP32 EXAMPLES"
 	else
-		git clone https://github.com/me-no-dev/ESPAsyncTCP "$ARDUINO_USR_PATH/libraries/ESPAsyncTCP"
+		echo "Installing ESPAsyncTCP ..."
+		git clone https://github.com/me-no-dev/ESPAsyncTCP "$ARDUINO_USR_PATH/libraries/ESPAsyncTCP" > /dev/null 2>&1
 		FQBN="esp8266com:esp8266:generic:eesz=4M1M,ip=lm2f"
 		source ./.github/scripts/install-arduino-core-esp8266.sh
 		echo "BUILDING ESP8266 EXAMPLES"
@@ -49,16 +53,18 @@ else
 	# PlatformIO Test
 	source ./.github/scripts/install-platformio-esp32.sh
 	python -m platformio lib --storage-dir "$GITHUB_WORKSPACE" install
-	python -m platformio lib -g install https://github.com/bblanchon/ArduinoJson.git
+	echo "Installing ArduinoJson ..."
+	python -m platformio lib -g install https://github.com/bblanchon/ArduinoJson.git > /dev/null 2>&1
 	if [[ "$TARGET_PLATFORM" == "esp32" ]]; then
 		BOARD="esp32dev"
-		python -m platformio lib -g install https://github.com/me-no-dev/AsyncTCP.git
+		echo "Installing AsyncTCP ..."
+		python -m platformio lib -g install https://github.com/me-no-dev/AsyncTCP.git > /dev/null 2>&1
 		echo "BUILDING ESP32 EXAMPLES"
 	else
 		BOARD="esp12e"
-		python -m platformio lib -g install https://github.com/me-no-dev/ESPAsyncTCP.git
+		echo "Installing ESPAsyncTCP ..."
+		python -m platformio lib -g install https://github.com/me-no-dev/ESPAsyncTCP.git > /dev/null 2>&1
 		echo "BUILDING ESP8266 EXAMPLES"
 	fi
 	build_pio_sketches "$BOARD" "$GITHUB_WORKSPACE/examples"
 fi
-if [ $? -ne 0 ]; then exit 1; fi
