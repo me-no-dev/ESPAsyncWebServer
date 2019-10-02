@@ -142,7 +142,11 @@ class AsyncJsonResponse: public AsyncAbstractResponse {
 
 class PrettyAsyncJsonResponse: public AsyncJsonResponse {	
 public:
-	PrettyAsyncJsonResponse (bool isArray=false) : AsyncJsonResponse{isArray} {}	
+#ifdef ARDUINOJSON_5_COMPATIBILITY
+	PrettyAsyncJsonResponse (bool isArray=false) : AsyncJsonResponse{isArray} {}
+#else
+	PrettyAsyncJsonResponse (bool isArray=false, size_t maxJsonBufferSize = DYNAMIC_JSON_DOCUMENT_SIZE) : AsyncJsonResponse{isArray, maxJsonBufferSize} {}
+#endif
 	size_t setLength () {
 #ifdef ARDUINOJSON_5_COMPATIBILITY
 		_contentLength = _root.measurePrettyLength ();
