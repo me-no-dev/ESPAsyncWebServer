@@ -28,7 +28,7 @@ if [ "$BUILD_PIO" -eq 0 ]; then
 	# ArduinoIDE Test
 	source ./.github/scripts/install-arduino-ide.sh
 
-	if [ $PLATFORM == "esp32" ]; then
+	if [[ $TARGET_PLATFORM == "esp32" ]]; then
 		FQBN="espressif:esp32:esp32:PSRAM=enabled,PartitionScheme=huge_app"
 		source ./.github/scripts/install-arduino-core-esp32.sh
 		echo "BUILDING ESP32 EXAMPLES"
@@ -43,7 +43,7 @@ else
 	source ./.github/scripts/install-platformio-esp32.sh
 	python -m platformio lib --storage-dir $GITHUB_WORKSPACE install
 	python -m platformio lib -g install https://github.com/bblanchon/ArduinoJson.git
-	if [ $PLATFORM == "esp32" ]; then
+	if [[ $TARGET_PLATFORM == "esp32" ]]; then
 		BOARD="esp32dev"
 		python -m platformio lib -g install https://github.com/me-no-dev/AsyncTCP.git
 		echo "BUILDING ESP32 EXAMPLES"
