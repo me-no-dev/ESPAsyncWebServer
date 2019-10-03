@@ -50,7 +50,7 @@ void setup() {
     });
 	
 	// Send a GET request to <IP>/sensor/<number>/action/<action>
-    server.on("^\\/sensor\\/([0-9]+)\\/action\//([a-zA-Z0-9]+)$", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    server.on("^\\/sensor\\/([0-9]+)\\/action\\/([a-zA-Z0-9]+)$", HTTP_GET, [] (AsyncWebServerRequest *request) {
         String sensorNumber = request->pathArg(0);
         String action = request->pathArg(1);
         request->send(200, "text/plain", "Hello, sensor: " + sensorNumber + ", with action: " + action);
