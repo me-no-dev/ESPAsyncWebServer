@@ -213,7 +213,7 @@ function build_sketches() # build_sketches <fqbn> <examples-path> <chunk> <total
         	continue
         fi
 		local sketchBuildFlags=""
-		if [ -f "$sketchdir/.test.defines"]; then
+		if [ -f "$sketchdir/.test.defines" ]; then
 			while read line; do
 				sketchBuildFlags="$sketchBuildFlags -D$line"
 			done < "$sketchdir/.test.defines"
