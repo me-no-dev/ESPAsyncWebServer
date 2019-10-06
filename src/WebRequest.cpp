@@ -55,7 +55,6 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _parsedLength(0)
   , _headers(LinkedList<AsyncWebHeader *>([](AsyncWebHeader *h){ delete h; }))
   , _params(LinkedList<AsyncWebParameter *>([](AsyncWebParameter *p){ delete p; }))
-  , _pathParams(LinkedList<String *>([](String *p){ delete p; }))
   , _multiParseState(0)
   , _boundaryPosition(0)
   , _itemStartIndex(0)
@@ -68,6 +67,9 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _itemBufferIndex(0)
   , _itemIsFile(false)
   , _tempObject(NULL)
+  #ifdef _ASYNCWEBSERVER_REGEX
+  , _pathParams(LinkedList<String *>([](String *p){ delete p; }))
+  #endif
 {
   c->onError([](void *r, AsyncClient* c, int8_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
   c->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onAck(len, time); }, this);
@@ -81,7 +83,9 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
   _headers.free();
 
   _params.free();
+  #ifdef _ASYNCWEBSERVER_REGEX
   _pathParams.free();
+  #endif
 
   _interestingHeaders.free();
 
@@ -230,10 +234,6 @@ void AsyncWebServerRequest::_onDisconnect(){
 
 void AsyncWebServerRequest::_addParam(AsyncWebParameter *p){
   _params.add(p);
-}
-
-void AsyncWebServerRequest::_addPathParam(const char *p){
-  _pathParams.add(new String(p));
 }
 
 void AsyncWebServerRequest::_addGetParams(const String& params){
@@ -916,11 +916,6 @@ const String& AsyncWebServerRequest::argName(size_t i) const {
   return getParam(i)->name();
 }
 
-const String& AsyncWebServerRequest::pathArg(size_t i) const {
-  auto param = _pathParams.nth(i);
-  return param ? **param : SharedEmptyString;
-}
-
 const String& AsyncWebServerRequest::header(const char* name) const {
   AsyncWebHeader* h = getHeader(String(name));
   return h ? h->value() : SharedEmptyString;
@@ -1005,3 +1000,14 @@ bool AsyncWebServerRequest::isExpectedRequestedConnType(RequestedConnectionType 
     if ((erct3 != RCT_NOT_USED) && (erct3 == _reqconntype)) res = true;
     return res;
 }
+
+#ifdef _ASYNCWEBSERVER_REGEX
+void AsyncWebServerRequest::_addPathParam(const char *p){
+  _pathParams.add(new String(p));
+}
+
+const String& AsyncWebServerRequest::pathArg(size_t i) const {
+  auto param = _pathParams.nth(i);
+  return param ? **param : SharedEmptyString;
+}
+#endif

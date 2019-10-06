@@ -38,6 +38,10 @@
 #error Platform not supported
 #endif
 
+#ifdef ASYNCWEBSERVER_REGEX
+#define _ASYNCWEBSERVER_REGEX
+#endif
+
 #define DEBUGF(...) //Serial.printf(__VA_ARGS__)
 
 class AsyncWebServer;
@@ -159,7 +163,6 @@ class AsyncWebServerRequest {
 
     LinkedList<AsyncWebHeader *> _headers;
     LinkedList<AsyncWebParameter *> _params;
-    LinkedList<String *> _pathParams;
 
     uint8_t _multiParseState;
     uint8_t _boundaryPosition;
@@ -181,7 +184,6 @@ class AsyncWebServerRequest {
     void _onData(void *buf, size_t len);
 
     void _addParam(AsyncWebParameter*);
-    void _addPathParam(const char *param);
 
     bool _parseReqHead();
     bool _parseReqHeader();
@@ -271,13 +273,20 @@ class AsyncWebServerRequest {
     bool hasArg(const char* name) const;         // check if argument exists
     bool hasArg(const __FlashStringHelper * data) const;         // check if F(argument) exists
 
-    const String& pathArg(size_t i) const;
-
     const String& header(const char* name) const;// get request header value by name
     const String& header(const __FlashStringHelper * data) const;// get request header value by F(name)    
     const String& header(size_t i) const;        // get request header value by number
     const String& headerName(size_t i) const;    // get request header name by number
     String urlDecode(const String& text) const;
+
+    #ifdef _ASYNCWEBSERVER_REGEX
+    private:
+      LinkedList<String *> _pathParams;
+      void _addPathParam(const char *param);
+
+    public:
+      const String& pathArg(size_t i) const;
+    #endif
 };
 
 /*

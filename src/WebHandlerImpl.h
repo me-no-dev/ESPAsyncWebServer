@@ -22,7 +22,9 @@
 #define ASYNCWEBSERVERHANDLERIMPL_H_
 
 #include <string>
+#ifdef _ASYNCWEBSERVER_REGEX
 #include <regex>
+#endif
 
 #include "stddef.h"
 #include <time.h>
@@ -69,12 +71,23 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArRequestHandlerFunction _onRequest;
     ArUploadHandlerFunction _onUpload;
     ArBodyHandlerFunction _onBody;
-    bool _isRegex;
+    #ifdef _ASYNCWEBSERVER_REGEX
+    std::regex *_rgx = NULL;
+    #endif
   public:
-    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL), _isRegex(false){}
+    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL){}
+    ~AsyncCallbackWebHandler(){
+      #ifdef _ASYNCWEBSERVER_REGEX
+      if(_rgx != NULL) delete _rgx;
+      #endif
+    }
     void setUri(const String& uri){ 
       _uri = uri; 
-       _isRegex = uri.startsWith("^") && uri.endsWith("$");
+      #ifdef _ASYNCWEBSERVER_REGEX
+      if (uri.startsWith("^") && uri.endsWith("$")) {
+          _rgx = new std::regex(_uri.c_str());
+      }
+      #endif
     }
     void setMethod(WebRequestMethodComposite method){ _method = method; }
     void onRequest(ArRequestHandlerFunction fn){ _onRequest = fn; }
@@ -89,18 +102,20 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       if(!(_method & request->method()))
         return false;
 
-      if (_isRegex) {
-        std::regex rgx(_uri.c_str());
+      #ifdef _ASYNCWEBSERVER_REGEX
+      if (_rgx != NULL) {
         std::smatch matches;
         std::string s(request->url().c_str());
-        if(std::regex_search(s, matches, rgx)) {
+        if(std::regex_search(s, matches, *_rgx)) {
           for (size_t i = 1; i < matches.size(); ++i) { // start from 1
             request->_addPathParam(matches[i].str().c_str());
           }
         } else {
           return false;
         }
-      } else if (_uri.length() && _uri.endsWith("*")) {
+      } else 
+      #endif 
+      if (_uri.length() && _uri.endsWith("*")) {
         String uriTemplate = String(_uri);
 	uriTemplate = uriTemplate.substring(0, uriTemplate.length() - 1);
         if (!request->url().startsWith(uriTemplate))
