@@ -120,7 +120,7 @@ function build_pio_sketches() # build_pio_sketches <board> <examples-path> <chun
             continue
         fi
         local sketchBuildFlags=""
-        if [-f "$sketchdir/.test.defines"]; then
+        if [ -f "$sketchdir/.test.defines" ]; then
             while read line; do
                 sketchBuildFlags="$sketchBuildFlags -D$line"
             done < "$sketchdir/.test.defines"
