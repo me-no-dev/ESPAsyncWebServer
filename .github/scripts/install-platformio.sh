@@ -119,10 +119,12 @@ function build_pio_sketches() # build_pio_sketches <board> <examples-path> <chun
         || [ -f "$sketchdir/.test.skip" ]; then
             continue
         fi
-        local sketchBuildFlags
-        while read line; do
-            sketchBuildFlags="$sketchBuildFlags -D$line"
-        done < "$sketchdir/.test.defines"
+        local sketchBuildFlags=""
+        if [-f "$sketchdir/.test.defines"]; then
+            while read line; do
+                sketchBuildFlags="$sketchBuildFlags -D$line"
+            done < "$sketchdir/.test.defines"
+        fi
         sketchnum=$(($sketchnum + 1))
         if [ "$sketchnum" -le "$start_index" ] \
         || [ "$sketchnum" -gt "$end_index" ]; then

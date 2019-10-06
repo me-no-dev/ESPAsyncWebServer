@@ -212,10 +212,12 @@ function build_sketches() # build_sketches <fqbn> <examples-path> <chunk> <total
         || [ "$sketchnum" -gt "$end_index" ]; then
         	continue
         fi
-		local sketchBuildFlags
-        while read line; do
-            sketchBuildFlags="$sketchBuildFlags -D$line"
-        done < "$sketchdir/.test.defines"
+		local sketchBuildFlags=""
+		if [-f "$sketchdir/.test.defines"]; then
+			while read line; do
+				sketchBuildFlags="$sketchBuildFlags -D$line"
+			done < "$sketchdir/.test.defines"
+		fi
         build_sketch "$fqbn" "$sketch" "$sketchBuildFlags" "$xtra_opts"
         local result=$?
         if [ $result -ne 0 ]; then
