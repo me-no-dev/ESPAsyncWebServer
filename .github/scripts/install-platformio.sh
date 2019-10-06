@@ -23,7 +23,6 @@ function build_pio_sketch(){ # build_pio_sketch <board> <path-to-ino> <build-fla
 	local sketch_dir=$(dirname "$sketch")
 	echo ""
 	echo "Compiling '"$(basename "$sketch")"' ..."
-	echo "With flags '$buildFlags'"
 	python -m platformio ci -l '.' --board "$board" "$sketch_dir" --project-option="board_build.partitions = huge_app.csv" --project-option="build_flags=$buildFlags"
 }
 
@@ -124,7 +123,6 @@ function build_pio_sketches() # build_pio_sketches <board> <examples-path> <chun
         while read line; do
             sketchBuildFlags="$sketchBuildFlags -D$line"
         done < "$sketchdir/.test.defines"
-        echo "sketchBuildFlags: '$sketchBuildFlags'"
         sketchnum=$(($sketchnum + 1))
         if [ "$sketchnum" -le "$start_index" ] \
         || [ "$sketchnum" -gt "$end_index" ]; then
