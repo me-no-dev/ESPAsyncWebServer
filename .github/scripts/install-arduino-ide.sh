@@ -108,7 +108,7 @@ function build_sketch(){ # build_sketch <fqbn> <path-to-ino> <build-flags> [extr
 		-libraries "$ARDUINO_USR_PATH/libraries" \
 		-build-cache "$ARDUINO_CACHE_DIR" \
 		-build-path "$ARDUINO_BUILD_DIR" \
-		-prefs=build.extra_flags='$build_flags' \
+		-prefs=build.extra_flags="$build_flags" \
 		$win_opts $xtra_opts "$sketch"
 }
 
