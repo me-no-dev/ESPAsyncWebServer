@@ -13,7 +13,6 @@
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #endif
-#define ASYNCWEBSERVER_REGEX
 #include <ESPAsyncWebServer.h>
 
 AsyncWebServer server(80);
