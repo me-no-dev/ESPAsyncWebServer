@@ -78,7 +78,7 @@ fi
 function build_sketch(){ # build_sketch <fqbn> <path-to-ino> <build-flags> [extra-options]
     if [ "$#" -lt 2 ]; then
 		echo "ERROR: Illegal number of parameters"
-		echo "USAGE: build_sketch <fqbn> <path-to-ino> [extra-options]"
+		echo "USAGE: build_sketch <fqbn> <path-to-ino> <build-flags> [extra-options]"
 		return 1
 	fi
 
@@ -213,10 +213,10 @@ function build_sketches() # build_sketches <fqbn> <examples-path> <chunk> <total
         	continue
         fi
 		local sketchBuildFlags=""
-		if [ -f "$sketchdir/.test.defines" ]; then
+		if [ -f "$sketchdir/.test.build_flags" ]; then
 			while read line; do
-				sketchBuildFlags="$sketchBuildFlags -D$line"
-			done < "$sketchdir/.test.defines"
+				sketchBuildFlags="$sketchBuildFlags $line"
+			done < "$sketchdir/.test.build_flags"
 		fi
         build_sketch "$fqbn" "$sketch" "$sketchBuildFlags" "$xtra_opts"
         local result=$?
