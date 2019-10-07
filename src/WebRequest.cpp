@@ -67,9 +67,9 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _itemBufferIndex(0)
   , _itemIsFile(false)
   , _tempObject(NULL)
-  #ifdef _ASYNCWEBSERVER_REGEX
+#ifdef _ASYNCWEBSERVER_REGEX
   , _pathParams(LinkedList<String *>([](String *p){ delete p; }))
-  #endif
+#endif
 {
   c->onError([](void *r, AsyncClient* c, int8_t error){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
   c->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onAck(len, time); }, this);
@@ -83,9 +83,9 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
   _headers.free();
 
   _params.free();
-  #ifdef _ASYNCWEBSERVER_REGEX
+#ifdef _ASYNCWEBSERVER_REGEX
   _pathParams.free();
-  #endif
+#endif
 
   _interestingHeaders.free();
 

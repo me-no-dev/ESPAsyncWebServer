@@ -279,14 +279,14 @@ class AsyncWebServerRequest {
     const String& headerName(size_t i) const;    // get request header name by number
     String urlDecode(const String& text) const;
 
-    #ifdef _ASYNCWEBSERVER_REGEX
+#ifdef _ASYNCWEBSERVER_REGEX
     private:
       LinkedList<String *> _pathParams;
       void _addPathParam(const char *param);
 
     public:
       const String& pathArg(size_t i) const;
-    #endif
+#endif
 };
 
 /*

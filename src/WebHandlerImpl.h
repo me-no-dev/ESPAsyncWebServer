@@ -71,23 +71,23 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArRequestHandlerFunction _onRequest;
     ArUploadHandlerFunction _onUpload;
     ArBodyHandlerFunction _onBody;
-    #ifdef _ASYNCWEBSERVER_REGEX
+#ifdef _ASYNCWEBSERVER_REGEX
     std::regex *_rgx = NULL;
-    #endif
+#endif
   public:
     AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL){}
     ~AsyncCallbackWebHandler(){
-      #ifdef _ASYNCWEBSERVER_REGEX
+#ifdef _ASYNCWEBSERVER_REGEX
       if(_rgx != NULL) delete _rgx;
-      #endif
+#endif
     }
     void setUri(const String& uri){ 
       _uri = uri; 
-      #ifdef _ASYNCWEBSERVER_REGEX
+#ifdef _ASYNCWEBSERVER_REGEX
       if (uri.startsWith("^") && uri.endsWith("$")) {
           _rgx = new std::regex(_uri.c_str());
       }
-      #endif
+#endif
     }
     void setMethod(WebRequestMethodComposite method){ _method = method; }
     void onRequest(ArRequestHandlerFunction fn){ _onRequest = fn; }
@@ -102,7 +102,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       if(!(_method & request->method()))
         return false;
 
-      #ifdef _ASYNCWEBSERVER_REGEX
+#ifdef _ASYNCWEBSERVER_REGEX
       if (_rgx != NULL) {
         std::smatch matches;
         std::string s(request->url().c_str());
@@ -114,7 +114,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
           return false;
         }
       } else 
-      #endif 
+#endif 
       if (_uri.length() && _uri.endsWith("*")) {
         String uriTemplate = String(_uri);
 	uriTemplate = uriTemplate.substring(0, uriTemplate.length() - 1);
