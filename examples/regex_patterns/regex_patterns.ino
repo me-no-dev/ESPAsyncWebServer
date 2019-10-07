@@ -5,6 +5,15 @@
 //  * handle missing pages / 404s
 //
 
+// Add buildflag ASYNCWEBSERVER_REGEX to enable the regex support
+
+// For platformio: platformio.ini:
+//  build_flags = 
+//      -DASYNCWEBSERVER_REGEX
+
+// For arduino IDE: platform.local.txt
+// compiler.cpp.extra_flags=-DASYNCWEBSERVER_REGEX=1
+
 #include <Arduino.h>
 #ifdef ESP32
 #include <WiFi.h>
