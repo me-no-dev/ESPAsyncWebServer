@@ -71,7 +71,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArRequestHandlerFunction _onRequest;
     ArUploadHandlerFunction _onUpload;
     ArBodyHandlerFunction _onBody;
-    bool _isRegex = false;
+    bool _isRegex;
   public:
     AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL), _isRegex(false) {}
     void setUri(const String& uri){ 
