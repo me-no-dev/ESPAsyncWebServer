@@ -1498,17 +1498,18 @@ For example we want a `sensorId` parameter in a route rule to match only a integ
 ```
 *NOTE*: All regex patterns starts with `^` and ends with `$`
 
-To enable the `Path variable` support, you have to define the buildflag `-DASYNCWEBSERVER_REGEX`.
+To enable the `Path variable` support, you have to define `ASYNCWEBSERVER_REGEX`.
 
-For Arduino IDE modify `platform.local.txt`:
-```
-  compiler.cpp.extra_flags=-DDASYNCWEBSERVER_REGEX
+For Arduino IDE define `ASYNC_WEBSERVER_REGEX` before including `ESPAsyncWebServer.h`:
+```cpp
+  #define ASYNC_WEBSERVER_REGEX
+  #include <ESPAsyncWebServer.h>
 ```
 
 For platformio modify `platformio.ini`:
 ```ini
 [env:myboard]
 build_flags = 
-  -DASYNCWEBSERVER_REGEX
+  -D ASYNCWEBSERVER_REGEX
 ```
 *NOTE*: By enabling `ASYNCWEBSERVER_REGEX`, `<regex>` will be included. This will add an 100k to your binary.

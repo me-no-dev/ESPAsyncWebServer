@@ -9,10 +9,11 @@
 
 // For platformio: platformio.ini:
 //  build_flags = 
-//      -DASYNCWEBSERVER_REGEX
+//      -D ASYNCWEBSERVER_REGEX
 
-// For arduino IDE: platform.local.txt
-// compiler.cpp.extra_flags=-DASYNCWEBSERVER_REGEX=1
+// For arduino IDE:
+// #define ASYNC_WEBSERVER_REGEX
+// #include <ESPAsyncWebServer.h>
 
 #include <Arduino.h>
 #ifdef ESP32
@@ -22,6 +23,7 @@
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #endif
+#define ASYNC_WEBSERVER_REGEX
 #include <ESPAsyncWebServer.h>
 
 AsyncWebServer server(80);
