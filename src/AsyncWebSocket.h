@@ -94,8 +94,8 @@ class AsyncWebSocketMessageBuffer {
     AsyncWebSocketMessageBuffer(const AsyncWebSocketMessageBuffer &); 
     AsyncWebSocketMessageBuffer(AsyncWebSocketMessageBuffer &&); 
     ~AsyncWebSocketMessageBuffer(); 
-    void operator ++(int i) { _count++; }
-    void operator --(int i) {  if (_count > 0) { _count--; } ;  }
+    void operator ++(int i) { (void)i; _count++; }
+    void operator --(int i) { (void)i; if (_count > 0) { _count--; } ;  }
     bool reserve(size_t size);
     void lock() { _lock = true; }
     void unlock() { _lock = false; }
