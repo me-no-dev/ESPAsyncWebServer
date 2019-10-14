@@ -1500,7 +1500,14 @@ For example we want a `sensorId` parameter in a route rule to match only a integ
 
 To enable the `Path variable` support, you have to define the buildflag `-DASYNCWEBSERVER_REGEX`.
 
-For Arduino IDE modify `platform.local.txt`:
+
+For Arduino IDE create/update `platform.local.txt`:
+
+`Windows`: C:\Users\(username)\AppData\Local\Arduino15\packages\\`{espxxxx}`\hardware\\`espxxxx`\\`{version}`\platform.local.txt
+
+`Linux`: ~/.arduino15/packages/`{espxxxx}`/hardware/`{espxxxx}`/`{version}`/platform.local.txt
+
+Add/Update the following line:
 ```
   compiler.cpp.extra_flags=-DDASYNCWEBSERVER_REGEX
 ```

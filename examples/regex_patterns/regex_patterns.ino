@@ -11,7 +11,10 @@
 //  build_flags = 
 //      -DASYNCWEBSERVER_REGEX
 
-// For arduino IDE: platform.local.txt
+// For arduino IDE: create/update platform.local.txt
+// Windows: C:\Users\(username)\AppData\Local\Arduino15\packages\espxxxx\hardware\espxxxx\{version}\platform.local.txt
+// Linux: ~/.arduino15/packages/espxxxx/hardware/espxxxx/{version}/platform.local.txt
+//
 // compiler.cpp.extra_flags=-DASYNCWEBSERVER_REGEX=1
 
 #include <Arduino.h>
