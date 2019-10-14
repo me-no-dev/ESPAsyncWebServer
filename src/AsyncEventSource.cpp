@@ -124,6 +124,7 @@ AsyncEventSourceMessage::~AsyncEventSourceMessage() {
 }
 
 size_t AsyncEventSourceMessage::ack(size_t len, uint32_t time) {
+  (void)time;
   // If the whole message is now acked...
   if(_acked + len > _len){
      // Return the number of extra bytes acked (they will be carried on to the next message)
@@ -161,8 +162,8 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, A
     
   _client->setRxTimeout(0);
   _client->onError(NULL, NULL);
-  _client->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ ((AsyncEventSourceClient*)(r))->_onAck(len, time); }, this);
-  _client->onPoll([](void *r, AsyncClient* c){ ((AsyncEventSourceClient*)(r))->_onPoll(); }, this);
+  _client->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ (void)c; ((AsyncEventSourceClient*)(r))->_onAck(len, time); }, this);
+  _client->onPoll([](void *r, AsyncClient* c){ (void)c; ((AsyncEventSourceClient*)(r))->_onPoll(); }, this);
   _client->onData(NULL, NULL);
   _client->onTimeout([this](void *r, AsyncClient* c __attribute__((unused)), uint32_t time){ ((AsyncEventSourceClient*)(r))->_onTimeout(time); }, this);
   _client->onDisconnect([this](void *r, AsyncClient* c){ ((AsyncEventSourceClient*)(r))->_onDisconnect(); delete c; }, this);
