@@ -75,16 +75,17 @@ if [ ! -d "$ARDUINO_IDE_PATH" ]; then
 	echo ""
 fi
 
-function build_sketch(){ # build_sketch <fqbn> <path-to-ino> [extra-options]
+function build_sketch(){ # build_sketch <fqbn> <path-to-ino> <build-flags> [extra-options]
     if [ "$#" -lt 2 ]; then
 		echo "ERROR: Illegal number of parameters"
-		echo "USAGE: build_sketch <fqbn> <path-to-ino> [extra-options]"
+		echo "USAGE: build_sketch <fqbn> <path-to-ino> <build-flags> [extra-options]"
 		return 1
 	fi
 
 	local fqbn="$1"
 	local sketch="$2"
-	local xtra_opts="$3"
+    local build_flags="$3"
+    local xtra_opts="$4"
 	local win_opts=""
 	if [ "$OS_IS_WINDOWS" == "1" ]; then
 		local ctags_version=`ls "$ARDUINO_IDE_PATH/tools-builder/ctags/"`
@@ -107,6 +108,7 @@ function build_sketch(){ # build_sketch <fqbn> <path-to-ino> [extra-options]
 		-libraries "$ARDUINO_USR_PATH/libraries" \
 		-build-cache "$ARDUINO_CACHE_DIR" \
 		-build-path "$ARDUINO_BUILD_DIR" \
+        -prefs=compiler.cpp.extra_flags="$build_flags" \
 		$win_opts $xtra_opts "$sketch"
 }
 
@@ -210,7 +212,13 @@ function build_sketches() # build_sketches <fqbn> <examples-path> <chunk> <total
         || [ "$sketchnum" -gt "$end_index" ]; then
         	continue
         fi
-        build_sketch "$fqbn" "$sketch" "$xtra_opts"
+        local sketchBuildFlags=""
+        if [ -f "$sketchdir/.test.build_flags" ]; then
+            while read line; do
+                sketchBuildFlags="$sketchBuildFlags $line"
+            done < "$sketchdir/.test.build_flags"
+        fi
+        build_sketch "$fqbn" "$sketch" "$sketchBuildFlags" "$xtra_opts"
         local result=$?
         if [ $result -ne 0 ]; then
             return $result
