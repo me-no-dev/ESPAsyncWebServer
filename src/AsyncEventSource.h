@@ -40,9 +40,9 @@
 #endif
 
 #ifdef ESP32
-#define DEFAULT_MAX_WS_CLIENTS 8
+#define DEFAULT_MAX_SSE_CLIENTS 8
 #else
-#define DEFAULT_MAX_WS_CLIENTS 4
+#define DEFAULT_MAX_SSE_CLIENTS 4
 #endif
 
 class AsyncEventSource;
