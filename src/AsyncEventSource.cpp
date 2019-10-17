@@ -184,10 +184,14 @@ void AsyncEventSourceClient::_queueMessage(AsyncEventSourceMessage *dataMessage)
     delete dataMessage;
     return;
   }
-
-  _messageQueue.add(dataMessage);
-
-  _runQueue();
+  if(_messageQueue.length() >= SSE_MAX_QUEUED_MESSAGES){
+      ets_printf("ERROR: Too many messages queued\n");
+      delete dataMessage;
+  } else {
+      _messageQueue.add(dataMessage);
+  }
+  if(_client->canSend())
+    _runQueue();
 }
 
 void AsyncEventSourceClient::_onAck(size_t len, uint32_t time){
