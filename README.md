@@ -5,16 +5,17 @@ For help and support [![Join the chat at https://gitter.im/me-no-dev/ESPAsyncWeb
 
 Async HTTP and WebSocket Server for ESP8266 Arduino
 
-For ESP8266 it requires [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP)
+For ESP8266 it requires [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP) to work   
 To use this library you might need to have the latest git versions of [ESP8266](https://github.com/esp8266/Arduino) Arduino Core
 
-For ESP32 it requires [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) to work
+For ESP32 it requires [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) to work   
 To use this library you might need to have the latest git versions of [ESP32](https://github.com/espressif/arduino-esp32) Arduino Core
 
 ## Table of contents
 - [ESPAsyncWebServer](#espasyncwebserver)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
+    - [Using Arduino IDE](#using-arduino-ide)
     - [Using PlatformIO](#using-platformio)
   - [Why should you care](#why-should-you-care)
   - [Important things to remember](#important-things-to-remember)
@@ -92,6 +93,14 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Path variable](#path-variable)
 
 ## Installation
+
+### Using Arduino IDE
+
+This library is not available via the in-built library manager. To install this library on your computer:
+
+1. Under the Clone or Download dropdown on this page, choose "Download ZIP".
+2. In the Arduino IDE, under the Sketch menu, go to "Include Library" > "Add .ZIP library", and navigate to the downloaded zip file.
+3. Check whether the library is installed by going to "File" > "Examples", and looking for "ESP Async WebServer" under "Custom Libraries".
 
 ### Using PlatformIO
 
@@ -525,6 +534,7 @@ request->send(response);
 ```
 
 ### Respond with content coming from a File
+Note: remember to call `SPIFFS.begin()` before attempting to read files from flash.
 ```cpp
 //Send index.htm with default content type
 request->send(SPIFFS, "/index.htm");
