@@ -442,7 +442,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
 #ifdef ESP32
       File dir = _fs.open(path);
 #else
-      Dir dir = _fs.openDir(path);
+      fs::Dir dir = _fs.openDir(path);
 #endif
       path = String();
       String output = "[";
