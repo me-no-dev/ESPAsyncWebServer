@@ -285,10 +285,12 @@ bool AsyncWebServerRequest::_parseReqHead(){
     _method = HTTP_MKCOL;
   } else if(m == "MOVE"){
     _method = HTTP_MOVE;
+  } else if(m == "COPY"){
+    _method = HTTP_COPY;
+  } else if(m == "RESERVED"){
+    _method = HTTP_RESERVED;
   } else if(m == "ANY"){
     _method = HTTP_ANY;
-  }else{
-    _method = HTTP_VERBFAIL;
   }
 
   String g = String();
