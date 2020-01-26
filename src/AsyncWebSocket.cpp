@@ -1166,6 +1166,10 @@ const char * WS_STR_PROTOCOL = "Sec-WebSocket-Protocol";
 const char * WS_STR_ACCEPT = "Sec-WebSocket-Accept";
 const char * WS_STR_UUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
+void AsyncWebSocket::handleHandshake(AwsHandshakeHandler handler){
+  _handshakeHandler = handler;
+}
+
 bool AsyncWebSocket::canHandle(AsyncWebServerRequest *request){
   if(!_enabled)
     return false;
@@ -1191,6 +1195,14 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request){
   if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str())){
     return request->requestAuthentication();
   }
+  
+  if(_handshakeHandler != nullptr){
+    if(!_handshakeHandler(&request){
+      request->send(401);
+      return;
+    }
+  }
+  
   AsyncWebHeader* version = request->getHeader(WS_STR_VERSION);
   if(version->value().toInt() != 13){
     AsyncWebServerResponse *response = request->beginResponse(400);
