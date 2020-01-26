@@ -101,7 +101,7 @@ class AsyncEventSource: public AsyncWebHandler {
     String _url;
     LinkedList<AsyncEventSourceClient *> _clients;
     ArEventHandlerFunction _connectcb;
-    ArAuthHandlerFunction _authcb;
+    ArHandshakeHandlerFunction _handshakecb;
   public:
     AsyncEventSource(const String& url);
     ~AsyncEventSource();
