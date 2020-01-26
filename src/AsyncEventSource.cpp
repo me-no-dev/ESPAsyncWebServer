@@ -347,7 +347,7 @@ void AsyncEventSource::handleRequest(AsyncWebServerRequest *request){
   
   // If Custom Handshake Handler is supplied
   if(_handshakecb != nullptr){
-    if(_handshakecb()){
+    if(_handshakecb(request)){
       // Request Accepted
       request->send(new AsyncEventSourceResponse(this)); 
     }else{
