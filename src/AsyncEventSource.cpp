@@ -263,6 +263,10 @@ void AsyncEventSource::onConnect(ArEventHandlerFunction cb){
   _connectcb = cb;
 }
 
+void AsyncEventSource::onHandshake(ArHandshakeHandlerFunction cb){
+  _handshakecb = cb;
+}
+
 void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
   /*char * temp = (char *)malloc(2054);
   if(temp != NULL){
@@ -339,7 +343,20 @@ bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
 void AsyncEventSource::handleRequest(AsyncWebServerRequest *request){
   if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
     return request->requestAuthentication();
-  request->send(new AsyncEventSourceResponse(this));
+  
+  // If Custom Handshake Handler is supplied
+  if(_handshakecb != nullptr){
+    if(_handshakecb()){
+      // Request Accepted
+      request->send(new AsyncEventSourceResponse(this)); 
+    }else{
+      // Request Rejected. Supply unauthorised http response.
+      request->send(401);
+    }
+  }else{
+    // No Custom Handshake Handler Supplied. Accept as default action.
+    request->send(new AsyncEventSourceResponse(this));
+  }
 }
 
 // Response
