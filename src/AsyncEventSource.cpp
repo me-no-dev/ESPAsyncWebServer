@@ -337,6 +337,7 @@ bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
     return false;
   }
   request->addInterestingHeader("Last-Event-ID");
+  request->addInterestingHeader("Cookie");
   return true;
 }
 
