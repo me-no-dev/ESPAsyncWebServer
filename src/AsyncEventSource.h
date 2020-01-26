@@ -49,6 +49,7 @@ class AsyncEventSource;
 class AsyncEventSourceResponse;
 class AsyncEventSourceClient;
 typedef std::function<void(AsyncEventSourceClient *client)> ArEventHandlerFunction;
+typedef std::function<bool(AsyncWebServerRequest *request)> ArHandshakeHandlerFunction;
 
 class AsyncEventSourceMessage {
   private:
@@ -100,6 +101,7 @@ class AsyncEventSource: public AsyncWebHandler {
     String _url;
     LinkedList<AsyncEventSourceClient *> _clients;
     ArEventHandlerFunction _connectcb;
+    ArAuthHandlerFunction _authcb;
   public:
     AsyncEventSource(const String& url);
     ~AsyncEventSource();
@@ -107,6 +109,8 @@ class AsyncEventSource: public AsyncWebHandler {
     const char * url() const { return _url.c_str(); }
     void close();
     void onConnect(ArEventHandlerFunction cb);
+    void onHandshake(ArHandshakeHandlerFunction cb);
+  
     void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
     size_t count() const; //number clinets connected
     size_t  avgPacketsWaiting() const;
