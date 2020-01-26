@@ -1197,7 +1197,7 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request){
   }
   
   if(_handshakeHandler != nullptr){
-    if(!_handshakeHandler(&request){
+    if(!_handshakeHandler(request){
       request->send(401);
       return;
     }
