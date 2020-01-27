@@ -263,6 +263,10 @@ void AsyncEventSource::onConnect(ArEventHandlerFunction cb){
   _connectcb = cb;
 }
 
+void AsyncEventSource::authorizeConnect(ArAuthorizeConnectHandler cb){
+  _authorizeConnectHandler = cb;
+}
+
 void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
   /*char * temp = (char *)malloc(2054);
   if(temp != NULL){
@@ -339,6 +343,12 @@ bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
 void AsyncEventSource::handleRequest(AsyncWebServerRequest *request){
   if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
     return request->requestAuthentication();
+
+  if(_authorizeConnectHandler != NULL){
+    if(!_authorizeConnectHandler(request)){
+      return request->send(401);
+    }
+  }
   request->send(new AsyncEventSourceResponse(this));
 }
 
