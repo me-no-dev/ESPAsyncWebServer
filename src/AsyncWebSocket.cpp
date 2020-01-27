@@ -1191,14 +1191,6 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request){
   if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str())){
     return request->requestAuthentication();
   }
-
-  if(_handshakeHandler != NULL){
-    if(!_handshakeHandler(request)){
-      request->send(401);
-      return;
-    }
-  }
-
   AsyncWebHeader* version = request->getHeader(WS_STR_VERSION);
   if(version->value().toInt() != 13){
     AsyncWebServerResponse *response = request->beginResponse(400);
