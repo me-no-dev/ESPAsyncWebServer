@@ -1011,13 +1011,29 @@ void AsyncWebSocket::messageAll(AsyncWebSocketMultiMessage *message){
   _cleanBuffers(); 
 }
 
-size_t AsyncWebSocket::printf(uint32_t id, const char *format, ...){
+size_t AsyncWebSocket::printf(uint32_t id, const char *format, ...) {
   AsyncWebSocketClient * c = client(id);
   if(c){
     va_list arg;
+    char* temp = new char[MAX_PRINTF_LEN];
+    if(!temp){
+      return 0;
+    }
     va_start(arg, format);
-    size_t len = c->printf(format, arg);
+    size_t len = vsnprintf(temp, MAX_PRINTF_LEN, format, arg);
     va_end(arg);
+    delete[] temp;
+
+    AsyncWebSocketMessageBuffer * buffer = makeBuffer(len);
+    if (!buffer) {
+      return 0;
+    }
+
+    va_start(arg, format);
+    vsnprintf( (char *)buffer->get(), len + 1, format, arg);
+    va_end(arg);
+
+    c->text(buffer);
     return len;
   }
   return 0;
@@ -1052,9 +1068,25 @@ size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...){
   AsyncWebSocketClient * c = client(id);
   if(c != NULL){
     va_list arg;
+    char* temp = new char[MAX_PRINTF_LEN];
+    if(!temp){
+      return 0;
+    }
     va_start(arg, formatP);
-    size_t len = c->printf_P(formatP, arg);
+    size_t len = vsnprintf_P(temp, MAX_PRINTF_LEN, formatP, arg);
     va_end(arg);
+    delete[] temp;
+
+    AsyncWebSocketMessageBuffer * buffer = makeBuffer(len + 1);
+    if (!buffer) {
+      return 0;
+    }
+
+    va_start(arg, formatP);
+    vsnprintf_P((char *)buffer->get(), len + 1, formatP, arg);
+    va_end(arg);
+
+    c->text(buffer);
     return len;
   }
   return 0;
