@@ -383,8 +383,8 @@ size_t AsyncAbstractResponse::_readDataFromCacheOrContent(uint8_t* data, const s
 // Valid variable name characters:
 //     0123456789-.@_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 size_t AsyncAbstractResponse::_validVarName (uint8_t* posStart, uint8_t* posEnd) {
-	const char* validChars PROGMEM = "0123456789-.@_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-	unsigned int validLen = strlen_P(validChars);
+	const char* validChars = "0123456789-.@_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	unsigned int validLen = strlen(validChars);
     size_t varLen = (posEnd - posStart - 1);
 	size_t res = (varLen < TEMPLATE_PARAM_NAME_LENGTH ? 1 : 0);
 	if (res) {
