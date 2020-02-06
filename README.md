@@ -42,6 +42,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Send large webpage from PROGMEM](#send-large-webpage-from-progmem)
     - [Send large webpage from PROGMEM and extra headers](#send-large-webpage-from-progmem-and-extra-headers)
     - [Send large webpage from PROGMEM containing templates](#send-large-webpage-from-progmem-containing-templates)
+    - [Send large webpage from PROGMEM containing templates with custom variable name tags](#send-large-webpage-from-progmem-containing-templates-with-custom-variable-name-tags)
     - [Send large webpage from PROGMEM containing templates and extra headers](#send-large-webpage-from-progmem-containing-templates-and-extra-headers)
     - [Send binary content from PROGMEM](#send-binary-content-from-progmem)
     - [Respond with content coming from a Stream](#respond-with-content-coming-from-a-stream)
@@ -226,6 +227,8 @@ request->host();          // String:  The requested host (can be used for virtua
 request->contentType();   // String:  ContentType of the request (not avaiable in Handler::canHandle)
 request->contentLength(); // size_t:  ContentLength of the request (not avaiable in Handler::canHandle)
 request->multipart();     // bool:    True if the request has content type "multipart"
+request->varBegin;        // char:    Template variable name begin character. Default '%'.
+request->varEnd;          // char:    Template variable name end character. Default '%'.
 ```
 
 ### Headers
@@ -399,6 +402,23 @@ String processor(const String& var)
 // ...
 
 const char index_html[] PROGMEM = "..."; // large char array, tested with 14k
+request->send_P(200, "text/html", index_html, processor);
+```
+
+### Send large webpage from PROGMEM containing templates with custom variable name tags
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+// ...
+
+const char index_html[] PROGMEM = "..."; // large char array, tested with 14k
+request->varBegin = '{';                 // Template variable name begin character. Default '%'.
+request->varEnd = '}';                   // Template variable name end character. Default '%'.
 request->send_P(200, "text/html", index_html, processor);
 ```
 
