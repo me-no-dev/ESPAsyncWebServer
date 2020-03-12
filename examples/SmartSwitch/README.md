@@ -1,11 +1,11 @@
-![](SCREENSHOT.PNG) ![](AWIFIMAN.JPG)
+![](AWIFIMAN.JPG) ![](SCREENSHOT.PNG) 
 
 ## SmartSwitch
-* Based on ESP_AsyncFSBrowser
-* Temperature Control for heater with schedule for car block heater or battery charger
+* Remote Temperature Control application with schedule (example car block heater or battery charger)
+* Based on the ESP_AsyncFSBrowser example
 * Wide browser compatibility, no extra server-side needed.
 * HTTP server and WebSocket, single port  
-* Standalone, no JS dependencies for the browser from Internet (I hope)
+* Standalone, no JS dependencies for the browser from Internet (I hope), ace editor included
 * Added ESPAsyncWiFiManager
 * Real Time (NTP) w/ Time Zones
 * Memorized settings to EEPROM

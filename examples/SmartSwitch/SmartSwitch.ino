@@ -13,7 +13,8 @@ Multiple clients can be connected at same time, they see each other requests
 Use latest ESP core lib (from github)
 */
 
-#define USE_WFM  // to use ESPAsyncWiFiManager
+#define USE_WFM   // to use ESPAsyncWiFiManager
+#define USE_AUTH  // .setAuthentication for all static
 
 #include <ArduinoOTA.h>
 #ifdef ESP32
@@ -449,8 +450,11 @@ void setup(){
     request->send(200, "text/plain","Erasing WiFi data ...");
   });
 
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm"); //.setAuthentication(http_username,http_password); //append or remove auth part
-  
+#ifdef USE_AUTH
+  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setAuthentication(http_username,http_password);
+#else
+  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+#endif
 
   server.onNotFound([](AsyncWebServerRequest *request){  // nothing known
     Serial.print(F("NOT_FOUND: "));
