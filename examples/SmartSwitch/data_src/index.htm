@@ -251,12 +251,14 @@
         <tr align="center">
             <td colspan=3>
                 <form name="sched">
-                    <label class="container">Auto&nbsp;&nbsp;
+                    <label class="container">Auto&nbsp;
                         <input type="radio" name="radio" onclick="handleClick(this);" value="Z0"><span class="checkmark"></span></label>
-                    <label class="container">Mon-Fri&nbsp;&nbsp;
+                    <label class="container">M-F&nbsp;
                         <input type="radio" name="radio" onclick="handleClick(this);" value="Z1"><span class="checkmark"></span></label>
-                    <label class="container">Sat-Sun
+                    <label class="container">Sat
                         <input type="radio" name="radio" onclick="handleClick(this);" value="Z2"><span class="checkmark"></span></label>
+                    <label class="container">Sun
+                        <input type="radio" name="radio" onclick="handleClick(this);" value="Z3"><span class="checkmark"></span></label>
                 </form>
             </td>
         </tr>
@@ -327,7 +329,7 @@
     <script src="app.min.js"></script>
 
     <script type="text/javascript">
-        const MYCORS = '192.168.0.55';
+        const MYCORS = '192.168.0.12';
         var g1, g2;
         var Analog0 = new Array();
 

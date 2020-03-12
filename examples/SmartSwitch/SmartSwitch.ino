@@ -14,6 +14,9 @@ Use latest ESP core lib (from github)
 */
 
 #define USE_WFM   // to use ESPAsyncWiFiManager
+//#define DEL_WFM   // delete Wifi credentials stored 
+                  //(use once then comment and flash again), also HTTP /erase-wifi can do the same live
+                  
 #define USE_AUTH  // .setAuthentication for all static
 
 #include <ArduinoOTA.h>
@@ -44,7 +47,7 @@ Use latest ESP core lib (from github)
 #define EECH    104  // fixed eeprom address to keep selected active channel, only for reference here 
 #define EEBEGIN EECH + 1
 #define EEMARK  0x5A
-#define MEMMAX  1   // 0,1,2... last max index (only 2 channels)
+#define MEMMAX  2   // 0,1,2... last max index (only 3 channels)
 #define EEALL   512
 
 #define HYST 0.5 // C +/- hysteresis 
@@ -140,8 +143,9 @@ void showTime()
   Serial.printf("RTC: %02d:%02d\n", tm->tm_hour, tm->tm_min);
 
   if (sched == 0) { // automatic
-      if ((tm->tm_wday > 0)&&(tm->tm_wday < 6)) tmpch = 0; //weekdays 
-      else tmpch = 0; //weekend
+      if ((tm->tm_wday > 0)&&(tm->tm_wday < 6)) tmpch = 0; //Mon - Fri
+      else if (tm->tm_wday == 6) tmpch = 1; //Sat
+      else if (tm->tm_wday == 0) tmpch = 2; //Sun
   } else { // manual
     tmpch = sched - 1; //and stays
   }
@@ -372,8 +376,10 @@ void setup(){
 //Wifi 
 #ifdef USE_WFM 
   AsyncWiFiManager wifiManager(&server,&dns);
- //wifiManager.resetSettings();
-  wifiManager.autoConnect("SmartSW");
+ #ifdef DEL_WFM
+  wifiManager.resetSettings();
+ #endif
+  wifiManager.autoConnect(hostName);
 #else
     //WiFi.mode(WIFI_AP_STA); // Core SVN 5179 use STA as default interface in mDNS (#7042)
     //WiFi.softAP(hostName);  // Core SVN 5179 use STA as default interface in mDNS (#7042)
