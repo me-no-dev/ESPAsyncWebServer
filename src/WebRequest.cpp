@@ -96,6 +96,10 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
   if(_tempFile){
     _tempFile.close();
   }
+  
+  if(_itemBuffer){
+    free(_itemBuffer);
+  }
 }
 
 void AsyncWebServerRequest::_onData(void *buf, size_t len){

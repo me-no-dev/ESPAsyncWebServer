@@ -496,6 +496,7 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
   _server->_addClient(this);
   _server->_handleEvent(this, WS_EVT_CONNECT, request, NULL, 0);
   delete request;
+  memset(&_pinfo,0,sizeof(_pinfo)); //
 }
 
 AsyncWebSocketClient::~AsyncWebSocketClient(){

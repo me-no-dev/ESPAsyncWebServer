@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Inline Timepicker Example</title>
+    <!-- [1 - LOAD THE LIBRARIES] -->
+    <link href="tpick-light.css" rel="stylesheet">
+    <script src="tpick.js"></script>
+    <style>
+      html, body {font-family: arial;}
+	  .myrow{display:block;float:left}
+	  #pick-inline-on{width:45%}#t0{width:10%}#pick-inline-off{width:45%}
+    </style>
+  </head>
+  <body>
+    <h1>Inline Time Picker</h1>
+    <!-- [2 - DEFINE YOUR TEXT INPUT + CONTAINER] -->
+    <div id="pick-inline-on" class="myrow"><input  type="text" id="input-inline-on"/> TIME ON</div>
+	<div id="t0" class="myrow"></div>
+	<div id="pick-inline-off" class="myrow"><input  type="text" id="input-inline-off"/> TIME OFF</div>
+
+    <!-- [3 - ATTACH DATE PICKER ON LOAD] -->
+    <script>
+      window.addEventListener("load", function(){
+        // container + target input
+        tpick.attach("pick-inline-on", "input-inline-on");
+		tpick.attach("pick-inline-off", "input-inline-off");
+      });
+    </script>
+  </body>
+</html>
