@@ -60,7 +60,11 @@ AsyncWebServer server(80); //single port - easy for forwarding
 AsyncWebSocket ws("/ws");
 
 #ifdef USE_WFM 
- DNSServer dns;
+ #ifdef USE_EADNS
+  AsyncDNSServer dns;
+ #else
+  DNSServer dns;
+ #endif
 #else
  const char* ssid = "MYSSD";
  const char* password = "MYPASSWD";
