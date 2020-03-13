@@ -10,7 +10,7 @@ Based on ESP_AsyncFSBrowser
 Real Time (NTP) w/ Time Zones
 Memorized settings to EEPROM
 Multiple clients can be connected at same time, they see each other requests
-Use latest ESP core lib (from github)
+Use latest ESP core lib (from Github)
 */
 
 #define USE_WFM   // to use ESPAsyncWiFiManager
@@ -452,6 +452,11 @@ void setup(){
   server.on("/erase-wifi", HTTP_GET, [](AsyncWebServerRequest *request){
       request->onDisconnect([]() {
         WiFi.disconnect(true);  
+#ifdef ESP32
+        ESP.restart();
+#elif defined(ESP8266)
+        ESP.reset();
+#endif
       });
     request->send(200, "text/plain","Erasing WiFi data ...");
   });
