@@ -242,6 +242,7 @@
             border-radius: 50%;
             background: white
         }
+		
     </style>
 </head>
 
@@ -251,13 +252,13 @@
         <tr align="center">
             <td colspan=3>
                 <form name="sched">
-                    <label class="container">Auto&nbsp;
+                    <label class="container" id="LZ0">Auto&nbsp;&nbsp;&nbsp;
                         <input type="radio" name="radio" onclick="handleClick(this);" value="Z0"><span class="checkmark"></span></label>
-                    <label class="container">M-F&nbsp;
+                    <label class="container" id="LZ1">M-F
                         <input type="radio" name="radio" onclick="handleClick(this);" value="Z1"><span class="checkmark"></span></label>
-                    <label class="container">Sat
+                    <label class="container" id="LZ2">Sat
                         <input type="radio" name="radio" onclick="handleClick(this);" value="Z2"><span class="checkmark"></span></label>
-                    <label class="container">Sun
+                    <label class="container" id="LZ3">Sun
                         <input type="radio" name="radio" onclick="handleClick(this);" value="Z3"><span class="checkmark"></span></label>
                 </form>
             </td>
@@ -332,6 +333,7 @@
         const MYCORS = '192.168.0.12';
         var g1, g2;
         var Analog0 = new Array();
+        var auto = true;
 
         const successNotification = window.createNotification({
             positionClass: 'nfc-bottom-right',
@@ -454,9 +456,16 @@
                         else if (delta < -0.5) document.getElementById("W").style.backgroundColor = "#2196f3";
                         break;
                     case "Clock":
-                        var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'];
-                        var dayName = days[parseInt(msgArray[3])] || '*'; // 0...6
+					            	var dn = parseInt(msgArray[3]);
+                        var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                        var dayName = days[dn] || '*'; // 0...6
+						            var shedtype = 0; 
+					              if (dn == 0) shedtype = 3;
+						            else if (dn == 6) shedtype = 2;
+						            else if ((dn > 0) && (dn < 6)) shedtype = 1;
                         document.getElementById('C').innerHTML = msgArray[2] + ' ' + dayName;
+						            if (auto) document.getElementById('LZ' + shedtype).classList.add('son');
+						            else document.getElementById('LZ' + shedtype).classList.remove('son');
                         break;
                     case "Setting":
                         document.getElementById('input-popup-start').value = msgArray[2];
@@ -545,6 +554,9 @@
         };
 
         function handleClick(e) {
+            if (e.value == 'Z0' ) auto = true;
+            else auto = false;
+            document.getElementById('L' + e.value).classList.remove('son');
             if (connection.readyState === WebSocket.OPEN) connection.send(e.value + "|");
         }
 

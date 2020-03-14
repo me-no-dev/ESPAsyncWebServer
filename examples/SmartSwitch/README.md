@@ -1,4 +1,6 @@
-![](AWIFIMAN.JPG) ![](SCREENSHOT.PNG) 
+![](1.PNG) ![](2.PNG) 
+##
+![](3.PNG) ![](4.PNG) 
 
 ## SmartSwitch
 * Remote Temperature Control application with schedule (example car block heater or battery charger)
