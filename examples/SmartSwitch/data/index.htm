@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-<html>
-
-<head>
+<html lang="en">
+    <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <title>Smart Switch</title>
     <meta name="viewport" content="width=device-width">
@@ -531,7 +530,7 @@
         function buttonEClick() {
             var murl = '/edit';
             if (document.location.host.length < 5) murl = 'http://' + MYCORS + '/edit'; //CORS
-            window.open(murl, '_blank')
+            window.open(murl, '_blank');
             warningNotification({
                 message: 'Editor'
             });
