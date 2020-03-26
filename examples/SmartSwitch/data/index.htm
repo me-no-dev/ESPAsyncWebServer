@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+  
     <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <title>Smart Switch</title>
@@ -24,7 +25,7 @@
             padding-inline: 2%
         }
         
-        input[type=text] {
+       [id^="input-"] {
             width: 70%;
             text-align: center;
             padding: 0px;
@@ -143,11 +144,7 @@
             float: left
         }
         
-        #g1 {
-            width: 50%
-        }
-        
-        #g2 {
+        #g1, #g2 {
             width: 50%
         }
         
@@ -165,6 +162,7 @@
             animation: blinkingText 1.2s infinite;
             -webkit-animation: blinkingText 1.2s infinite;
         }
+
         
         @keyframes blinkingText {
             0% {
@@ -265,15 +263,15 @@
         <tr align="center">
             <td onclick="ent1Click();">
                 <label for="input-temperature">Temp °C</label>
-                <input type="text" readonly="readonly" id="input-temperature" />
+                <input  readonly="readonly" id="input-temperature" />
             </td>
             <td onclick="ent2Click();">
                 <label for="input-popup-start">Time On</label>
-                <input type="text" readonly="readonly" id="input-popup-start" />
+                <input  readonly="readonly" id="input-popup-start" />
             </td>
             <td onclick="ent2Click();">
                 <label for="input-popup-stop">Time Off</label>
-                <input type="text" readonly="readonly" id="input-popup-stop" />
+                <input  readonly="readonly" id="input-popup-stop" />
             </td>
         </tr>
         <tr align="center">
