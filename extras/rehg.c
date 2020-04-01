@@ -24,7 +24,7 @@
 
 /*
  * rehg.c (rehg.exe): Tool to reverse C-code array to file converted by ehg.exe
- * Based on https://github.com/birkett/cbintools/tree/master/bin2c  
+ * Based on https://github.com/birkett/cbintools/tree/master/c2bin
  * and compiled with TynyCC https://bellard.org/tcc/
  */
  
@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BUFFER_SIZE 80
+#define BUFFER_SIZE 500
 
 int main(int argc, char *argv[])
 {
@@ -92,10 +92,7 @@ int main(int argc, char *argv[])
         pch = strtok(sBuffer, ",");
         while (pch != NULL)
         {
-            // Use atoi() to convert from decimal to a char.
-            //fprintf(outputFile, "%c", atoi(pch)); // decimal
-			fprintf(outputFile, "%c", strtol(pch, NULL, 16)); // hex
-            //printf("%s\n", pch);
+			fprintf(outputFile, "%c", strtol(pch, NULL, 0)); // autodetect
             pch = strtok(NULL, ",");
         }
     }
