@@ -1,0 +1,28 @@
+ehg.c (ehg.exe): Tool to generate C-code array from file' bytes
+Based on https://github.com/TheLivingOne/bin2array/ and compiled on TynyCC
+
+rehg.c (rehg.exe): Tool to generate C-code array from file' bytes
+Based on https://github.com/birkett/cbintools/tree/master/bin2c  and compiled on TynyCC
+
+Tools used (on Win 10):
+
+https://www.7-zip.org (install 7z and use gzip - command line)
+https://nodejs.org   (install node then: npm install html-minifier-terser -g)
+https://www.npmjs.com/package/html-minifier-terser 
+Optional:
+https://bellard.org/tcc/ (to compile ehg.c and rehg.c)
+
+
+do.bat: Batch file for generating edit.htm.gz.h
+
+copy ..\src\edit.htm edit_src.htm
+call html-minifier-terser --collapse-whitespace --remove-comments --remove-optional-tags --remove-redundant-attributes --remove-script-type-attributes --remove-tag-whitespace --minify-css true --minify-js true -o edit.htm edit_src.htm
+"C:\Program Files\7-Zip\7z.exe" a -tgzip -mx9 edit.htm.gz edit.htm
+ehg.exe edit.htm.gz
+copy edit.htm.gz.h ..\src\edit.htm.gz.h
+
+
+undo.bat: Batch file to revert from c array header (file still minified!)
+copy ..\src\edit.htm.gz.h edit.htm.gz.h 
+rehg edit.htm.gz.h edit.htm.gz
+"C:\Program Files\7-Zip\7z.exe" e -tgzip edit.htm.gz
