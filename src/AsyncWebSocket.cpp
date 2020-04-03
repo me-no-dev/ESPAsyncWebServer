@@ -484,6 +484,7 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
   _clientId = _server->_getNextId();
   _status = WS_CONNECTED;
   _pstate = 0;
+  memset(&_pinfo,0,sizeof(_pinfo));
   _lastMessageTime = millis();
   _keepAlivePeriod = 0;
   _client->setRxTimeout(0);
