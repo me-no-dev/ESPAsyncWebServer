@@ -606,8 +606,8 @@ bool AsyncWebServerRequest::hasHeader(const __FlashStringHelper * data) const {
       n += 1;
   }
   char * name = (char*) malloc(n+1);
-  name[n] = 0; 
   if (name) {
+    name[n] = 0;
     for(size_t b=0; b<n; b++)
       name[b] = pgm_read_byte(p++);    
     bool result = hasHeader( String(name) ); 
@@ -664,8 +664,8 @@ bool AsyncWebServerRequest::hasParam(const __FlashStringHelper * data, bool post
   size_t n = strlen_P(p);
 
   char * name = (char*) malloc(n+1);
-  name[n] = 0; 
   if (name) {
+    name[n] = 0;
     strcpy_P(name,p);    
     bool result = hasParam( name, post, file); 
     free(name); 
