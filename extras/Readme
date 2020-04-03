@@ -7,22 +7,18 @@ Based on https://github.com/birkett/cbintools/tree/master/c2bin  and compiled wi
 Tools used (on Win 10):
 
 https://www.7-zip.org (install 7z and use gzip - command line)
-https://nodejs.org   (install node then: npm install html-minifier-terser -g)
+https://nodejs.org   
+(install node and npm install html-minifier-terser -g,  npm install -g github-files-fetcher)
 https://www.npmjs.com/package/html-minifier-terser 
+https://www.npmjs.com/package/github-files-fetcher  
+
 Optional:
 https://bellard.org/tcc/ (to compile ehg.c and rehg.c)
 
+Provided batch files (MS Win)
 
-do.bat: Batch file for generating edit.htm.gz.h
+do.bat: Generates edit.htm.gz.h
 
-copy ..\src\edit.htm edit_src.htm
-call html-minifier-terser --collapse-whitespace --remove-comments --remove-optional-tags --remove-redundant-attributes --remove-script-type-attributes --remove-tag-whitespace --minify-css true --minify-js true -o edit.htm edit_src.htm
-"C:\Program Files\7-Zip\7z.exe" a -tgzip -mx9 edit.htm.gz edit.htm
-ehg.exe edit.htm.gz
-copy edit.htm.gz.h ..\src\edit.htm.gz.h
+undo.bat: Reverts edit.htm from C array header to file (still minified!)
 
-
-undo.bat: Batch file to revert from c array header (file still minified!)
-copy ..\src\edit.htm.gz.h edit.htm.gz.h 
-rehg edit.htm.gz.h edit.htm.gz
-"C:\Program Files\7-Zip\7z.exe" e -tgzip edit.htm.gz
+update_ace.bat: Updates acefull.js.gz from latest Github sources
