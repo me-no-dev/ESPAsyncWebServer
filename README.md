@@ -90,6 +90,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Methods for controlling websocket connections](#methods-for-controlling-websocket-connections)
     - [Adding Default Headers](#adding-default-headers)
     - [Path variable](#path-variable)
+  - [Performance considerations](#performance-considerations)
 
 ## Installation
 
@@ -1519,3 +1520,9 @@ build_flags =
   -DASYNCWEBSERVER_REGEX
 ```
 *NOTE*: By enabling `ASYNCWEBSERVER_REGEX`, `<regex>` will be included. This will add an 100k to your binary.
+
+## Performance considerations
+
+On the ESP32, when in STA mode, modem sleep is enabled by default. This disables the WiFi interface, waking it up periodically to check for new data from the AP. This can significantly reduce the performance of the server.
+
+If you're having performance issues with a server in STA mode, you can try to use `WiFi.setSleep(false)` to disable modem sleep.
