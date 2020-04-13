@@ -23,6 +23,8 @@
 
 #include <libb64/cencode.h>
 
+using namespace stringarray;
+
 #ifndef ESP8266
 extern "C" {
 typedef struct {
