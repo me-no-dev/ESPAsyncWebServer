@@ -105,6 +105,13 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
         }
       } else 
 #endif
+      if (_uri.length() && _uri.startsWith("/*.")) {
+         String uriTemplate = String (_uri);
+         uriTemplate = uriTemplate.substring(uriTemplate.lastIndexOf("."));
+         if (!request->url().endsWith(uriTemplate))
+           return false;
+      }
+      else
       if (_uri.length() && _uri.endsWith("*")) {
         String uriTemplate = String(_uri);
 	uriTemplate = uriTemplate.substring(0, uriTemplate.length() - 1);
