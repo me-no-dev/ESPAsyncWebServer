@@ -4,6 +4,9 @@
 <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <title>ESP Editor</title>
+    <link rel="apple-touch-icon" href="/ace.ico" type="image/x-icon" />
+    <link rel="shortcut icon" href="/ace.ico" type="image/x-icon" />
+    <link rel="icon" href="/ace.ico" type="image/x-icon" />
     <style type="text/css" media="screen">
         label {
             font-size: 12px;
@@ -205,11 +208,11 @@
             var l = ce("input");
             l.id = "editor-filename", l.type = "text", l.disabled = !0, l.size = 20, ge(e).appendChild(l);
             var y = ce("input");
-            y.id = "ipad-fix", y.name = "ipad-fix", y.type = "checkbox", ge(e).appendChild(y), isIpad ? y.checked = true : y.checked = false;
+            y.id = "ipad-fix", y.name = "ipad-fix", y.type = "checkbox", isIpad ? y.checked = true : y.checked = false;
             var z = ce("label");
-            z.for = y.id, z.innerHTML = "Old iOS ", ge(e).appendChild(z);
+            z.for = y.id, z.innerHTML = " Alt.";
             var u = ce("button");
-            u.innerHTML = " Save ", ge(e).appendChild(u), r.onclick = function(e) {
+            u.innerHTML = " Save ", ge(e).appendChild(u), ge(e).appendChild(z), ge(e).appendChild(y), r.onclick = function(e) {
                 i(d.value), n.loadUrl(d.value), d.value = "/"
             }, u.onclick = function(e) {
                 if (y.checked) {

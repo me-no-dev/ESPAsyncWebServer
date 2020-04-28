@@ -38,10 +38,15 @@ Use latest ESP core lib (from Github)
 #include <SPIFFSEditor.h>
 #include <EEPROM.h>
 #include <Ticker.h>
-#include <TZ.h>
 #include <DHT.h>
-#define MYTZ TZ_America_Toronto
+
 #define RTC_UTC_TEST 1577836800 // Some Date
+#ifdef ESP32
+ #define MYTZ -5*3600,3600
+#elif defined(ESP8266)
+ #include <TZ.h>
+ #define MYTZ TZ_America_Toronto  
+#endif
 
 #define EESC    100  // fixed eeprom address for sched choice
 #define EECH    104  // fixed eeprom address to keep selected active channel, only for reference here 
@@ -69,11 +74,17 @@ AsyncWebSocket ws("/ws");
  #else
   DNSServer dns;
  #endif
+ 
+//Fallback timeout in seconds allowed to config or it creates an own AP, then serves 192.168.4.1 
+ #define FBTO 120
+ const char* fbssid = "FBSSW"; 
+ const char* fbpassword = "FBpassword4";
+ 
 #else
- const char* ssid = "MYSSD";
- const char* password = "MYPASSWD";
+ const char* ssid = "MYROUTERSSD";
+ const char* password = "MYROUTERPASSWD";
 #endif 
-const char * hostName = "smartsw";
+const char* hostName = "smartsw";
 const char* http_username = "smart"; // for SPIFFSEditor (and static html)
 const char* http_password = "switch";
 
@@ -379,8 +390,17 @@ void setup(){
  #ifdef DEL_WFM
   wifiManager.resetSettings();
  #endif
-  wifiManager.autoConnect(hostName);
+  wifiManager.setTimeout(FBTO); // seconds to config or it creates an own AP, then browse 192.168.4.1
+  if (!wifiManager.autoConnect(hostName)){  
+    Serial.print(F("*FALLBACK AP*\n"));
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(fbssid, fbpassword);
+ // MDNS.begin(fbssid);
+ // MDNS.addService("http","tcp",80); // Core SVN 5179 use STA as default interface in mDNS (#7042)
+  }
+  
 #else
+// Manual simple STA mode to connect to known router
     //WiFi.mode(WIFI_AP_STA); // Core SVN 5179 use STA as default interface in mDNS (#7042)
     //WiFi.softAP(hostName);  // Core SVN 5179 use STA as default interface in mDNS (#7042)
   WiFi.mode(WIFI_STA);      // Core SVN 5179 use STA as default interface in mDNS (#7042)
@@ -437,6 +457,17 @@ void setup(){
   server.on("/free-ram", HTTP_GET, [](AsyncWebServerRequest *request){  // direct request->answer
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
+
+
+  server.on("/get-time", HTTP_GET, [](AsyncWebServerRequest *request){  
+      if(request->hasParam("btime")){
+       time_t rtc = (request->getParam("btime")->value()).toInt();
+       timeval tv = { rtc, 0 };            
+       settimeofday(&tv, nullptr);  
+      }
+       request->send(200, "text/plain","Got browser time ...");
+  });
+
 
   server.on("/hw-reset", HTTP_GET, [](AsyncWebServerRequest *request){
       request->onDisconnect([]() {

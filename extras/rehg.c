@@ -65,8 +65,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Skip the first 2 lines.
-    for (i = 0; i < 2; i++)
+    // Skip the first 4 lines.
+    for (i = 0; i < 4; i++)
     {
         fgets(sBuffer, BUFFER_SIZE, inputFile);
     }

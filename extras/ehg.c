@@ -19,12 +19,16 @@ char* replace_char(char* str, char find, char replace){
 
 int main(int argc, char * argv[])
 {
-    if (argc != 2) {
-        printf("USAGE: %s <input file>\n", argv[0]);
+    if ((argc > 3)||(argc < 2)) {
+        printf("USAGE: %s <input file> [PROGMEM]\n", argv[0]);
         return 1;
     }
 	
     const char * in = argv[1];
+	const char * pr = argv[2];
+    char pr_o[8] = " ";
+	
+	if (argv[2]) sprintf(pr_o, "%s", pr);
 
     // Hello stack overflow :)
     char out_cpp[4096];
@@ -97,11 +101,15 @@ int main(int argc, char * argv[])
     }
     fprintf(
         fout,
+		"\n//File: %s, Size: %ld\n"
 		"#define %s_len %ld\n"
-		"const uint8_t %s[] PROGMEM = {\n",
+		"const uint8_t %s[] %s = {\n",
+		in,
+		(long)size,
 		usname,
 		(long)size,
-		usname);
+		usname,
+		pr_o);
     if (fwrite(text, out_ptr - text, 1, fout) != 1) {
         printf("Error writing output file!");
         free(text);

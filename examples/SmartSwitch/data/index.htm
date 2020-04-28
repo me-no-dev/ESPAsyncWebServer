@@ -1,6 +1,6 @@
 <!DOCTYPE html>
+
 <html lang="en">
-  
     <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <title>Smart Switch</title>
@@ -53,6 +53,7 @@
             -moz-appearance: none;
             appearance: none;
         }
+        
         
         .switch {
             position: relative;
@@ -116,6 +117,12 @@
         .clk {
             font-size: 54px;
             color: #444;
+            cursor: pointer
+        }
+        
+        .clk2 {
+            font-size: 32px;
+            color: #444
         }
         
         .clear:after,
@@ -136,6 +143,7 @@
             left: 0;
             margin: auto;
             max-width: 500px;
+            text-align: center;
             border: 0px solid #ccc
         }
         
@@ -185,7 +193,7 @@
         .container {
             display: inline-block;
             position: relative;
-            padding-left: 28px;
+            padding-left: 19px;
             padding-top: 4px;
             margin-top: 8px;
             margin-bottom: 8px;
@@ -194,6 +202,9 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
+            
+            width: 12.5%;
+            
             user-select: none
         }
         
@@ -239,6 +250,7 @@
             border-radius: 50%;
             background: white
         }
+        
 		
     </style>
 </head>
@@ -249,7 +261,7 @@
         <tr align="center">
             <td colspan=3>
                 <form name="sched">
-                    <label class="container" id="LZ0">Auto&nbsp;&nbsp;&nbsp;
+                    <label class="container" id="LZ0">Def
                         <input type="radio" name="radio" onclick="handleClick(this);" value="Z0"><span class="checkmark"></span></label>
                     <label class="container" id="LZ1">M-F
                         <input type="radio" name="radio" onclick="handleClick(this);" value="Z1"><span class="checkmark"></span></label>
@@ -292,26 +304,22 @@
                     <input type="button" id="N" value="WSoff" onclick="statusWs();" />
                 </div>
             </td>
-            <td><span id="sid"></span></td>
+            <td><span id="sid"></span><div id="free-ram"></div><div id="erase-wifi"></div><div id="hw-reset"></div><div id="get-time"></div></td>
             <td>
-                <div id="hw-reset">
-                    <input type="button" id="R" value="HWrst" onclick="loadDoc('hw-reset', 1);" />
+                <div id="ebut">
+                    <input type="button" id="E" value="WEdit" onclick="buttonEClick();" />
                 </div>
             </td>
         </tr>
         <tr align="center">
             <td>
-                <div id="hbut">
-                    <input type="button" id="H" value="Heap" onclick="loadDoc('free-ram', 0);" />
-                </div>
+                <input type="button" id="X" value="xWiFi" onclick="loadDoc('erase-wifi', 1);"/>
+            </td>            
+            <td>
+                <input type="button" id="H" value="Heap" onclick="loadDoc('free-ram', 0);" />
             </td>
             <td>
-                <div id="free-ram"></div>
-            </td>
-            <td>
-                <div id="ebut">
-                    <input type="button" id="E" value="WEdit" onclick="buttonEClick();" />
-                </div>
+                <input type="button" id="R" value="HWrst" onclick="loadDoc('hw-reset', 1);"/>
             </td>
         </tr>
     </table>
@@ -319,15 +327,14 @@
     <div class="wrapper clear">
         <div id="g1" class="gauge"></div>
         <div id="g2" class="gauge"></div>
-        <center>
-            <label id="C" class="clk"></label>
-        </center>
+        <div id="C" class="clk" onclick="getBtime();"></div>
+        <div id="C2" class="clk2"></div>
     </div>
 
     <script src="app.min.js"></script>
 
     <script type="text/javascript">
-        const MYCORS = '192.168.0.12';
+        const MYCORS = '192.168.1.12';
         var g1, g2;
         var Analog0 = new Array();
         var auto = true;
@@ -346,12 +353,18 @@
 
         document.addEventListener("DOMContentLoaded", function(event) {
             console.log("DOM fully loaded and parsed");
+            
+            document.getElementById("R").style.backgroundColor = "red";
+            document.getElementById("X").style.backgroundColor = "red";
+            
             g1 = new JustGage({
                 id: "g1",
                 value: -5.5,
                 min: -40,
                 max: 50,
                 decimals: 1,
+                labelFontColor: "#444",
+                valueFontColor: "#444",
                 title: "Temperature",
                 titlePosition: "below",
                 label: "°C",
@@ -379,6 +392,8 @@
                 min: 0,
                 max: 100,
                 decimals: 1,
+                labelFontColor: "#444",
+                valueFontColor: "#444",
                 title: "Humidity",
                 titlePosition: "below",
                 label: "%",
@@ -454,13 +469,14 @@
                         break;
                     case "Clock":
 					            	var dn = parseInt(msgArray[3]);
-                        var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                        var days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
                         var dayName = days[dn] || '*'; // 0...6
 						            var shedtype = 0; 
 					              if (dn == 0) shedtype = 3;
 						            else if (dn == 6) shedtype = 2;
 						            else if ((dn > 0) && (dn < 6)) shedtype = 1;
-                        document.getElementById('C').innerHTML = msgArray[2] + ' ' + dayName;
+                        document.getElementById('C').innerHTML = msgArray[2];
+                        document.getElementById('C2').innerHTML = dayName;
 						            if (auto) document.getElementById('LZ' + shedtype).classList.add('son');
 						            else document.getElementById('LZ' + shedtype).classList.remove('son');
                         break;
@@ -528,10 +544,10 @@
         function buttonEClick() {
             var murl = '/edit';
             if (document.location.host.length < 5) murl = 'http://' + MYCORS + '/edit'; //CORS
-            window.open(murl, '_blank');
-            warningNotification({
+            successNotification({
                 message: 'Editor'
             });
+            window.open(murl, '_blank');
         };
 
         function checkboxClick(e) {
@@ -558,9 +574,10 @@
         }
 
         // XMLHttpRequest /non WebSocket/ command. same as command' div' id to get response to
-        function loadDoc(cmd, r) {
-            var murl = '/' + cmd;
-            if (document.location.host.length < 5) murl = 'http://' + MYCORS + '/' + cmd; //CORS
+        function loadDoc(cmd, r, param) {
+            var par = param || '';
+            var murl = '/' + cmd + par;
+            if (document.location.host.length < 5) murl = 'http://' + MYCORS + '/' + cmd + par; //CORS
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
@@ -569,7 +586,7 @@
             };
             xhttp.open("GET", murl, true);
             xhttp.send();
-            warningNotification({
+            successNotification({
                 message: 'Cmd: ' + cmd
             });
             if (r) { //restart?
@@ -577,14 +594,19 @@
                 document.getElementById("N").value = "WSon";
             }
         };
+        
+        function getBtime() {
+          loadDoc('get-time', 0, '?btime=' + Math.round(new Date().getTime()/1000)); 
+          document.getElementById('C').innerHTML ='';
+          document.getElementById('C2').innerHTML ='';
+          window.location.reload();
+        }
 
         function statusWs() {
             if (connection.readyState === WebSocket.OPEN) {
                 connection.close();
                 document.getElementById("N").value = "WSon";
-                warningNotification({
-                    message: 'WS Closed'
-                });
+                warningNotification({ message: 'WS Closed'});
             } else {
                 window.location.reload();
             }

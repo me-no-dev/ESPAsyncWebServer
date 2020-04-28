@@ -22,11 +22,11 @@
 #include "WebHandlerImpl.h"
 
 AsyncStaticWebHandler::AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control)
-  : _fs(fs), _uri(uri), _path(path), _default_file("index.htm"), _cache_control(cache_control), _last_modified(""), _callback(nullptr)
+  : _fs(fs), _uri(uri), _path(path), _default_file(F("index.htm")), _cache_control(cache_control), _last_modified(), _callback(nullptr)
 {
   // Ensure leading '/'
-  if (_uri.length() == 0 || _uri[0] != '/') _uri = "/" + _uri;
-  if (_path.length() == 0 || _path[0] != '/') _path = "/" + _path;
+  if (_uri.length() == 0 || _uri[0] != '/') _uri = String('/') + _uri;
+  if (_path.length() == 0 || _path[0] != '/') _path = String('/') + _path;
 
   // If path ends with '/' we assume a hint that this is a directory to improve performance.
   // However - if it does not end with '/' we, can't assume a file, path can still be a directory.
@@ -63,8 +63,12 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(const char* last_m
 }
 
 AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(struct tm* last_modified){
+  auto formatP = PSTR("%a, %d %b %Y %H:%M:%S %Z");
+  char format[strlen_P(formatP) + 1];
+  strcpy_P(format, formatP);
+
   char result[30];
-  strftime (result,30,"%a, %d %b %Y %H:%M:%S %Z", last_modified);
+  strftime(result, sizeof(result), format, last_modified);
   return setLastModified((const char *)result);
 }
 
@@ -81,8 +85,8 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(){
 }
 #endif
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request){
-  if(request->method() != HTTP_GET 
-    || !request->url().startsWith(_uri) 
+  if(request->method() != HTTP_GET
+    || !request->url().startsWith(_uri)
     || !request->isExpectedRequestedConnType(RCT_DEFAULT, RCT_HTTP)
   ){
     return false;
@@ -90,10 +94,10 @@ bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request){
   if (_getFile(request)) {
     // We interested in "If-Modified-Since" header to check if file was modified
     if (_last_modified.length())
-      request->addInterestingHeader("If-Modified-Since");
+      request->addInterestingHeader(F("If-Modified-Since"));
 
     if(_cache_control.length())
-      request->addInterestingHeader("If-None-Match");
+      request->addInterestingHeader(F("If-None-Match"));
 
     DEBUGF("[AsyncStaticWebHandler::canHandle] TRUE\n");
     return true;
@@ -122,7 +126,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest *request)
 
   // Try to add default file, ensure there is a trailing '/' ot the path.
   if (path.length() == 0 || path[path.length()-1] != '/')
-    path += "/";
+    path += String('/');
   path += _default_file;
 
   return _fileExists(request, path);
@@ -139,20 +143,20 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
   bool fileFound = false;
   bool gzipFound = false;
 
-  String gzip = path + ".gz";
+  String gzip = path + F(".gz");
 
   if (_gzipFirst) {
-    request->_tempFile = _fs.open(gzip, "r");
+    request->_tempFile = _fs.open(gzip, fs::FileOpenMode::read);
     gzipFound = FILE_IS_REAL(request->_tempFile);
     if (!gzipFound){
-      request->_tempFile = _fs.open(path, "r");
+      request->_tempFile = _fs.open(path, fs::FileOpenMode::read);
       fileFound = FILE_IS_REAL(request->_tempFile);
     }
   } else {
-    request->_tempFile = _fs.open(path, "r");
+    request->_tempFile = _fs.open(path, fs::FileOpenMode::read);
     fileFound = FILE_IS_REAL(request->_tempFile);
     if (!fileFound){
-      request->_tempFile = _fs.open(gzip, "r");
+      request->_tempFile = _fs.open(gzip, fs::FileOpenMode::read);
       gzipFound = FILE_IS_REAL(request->_tempFile);
     }
   }
@@ -163,7 +167,7 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
     // Extract the file name from the path and keep it in _tempObject
     size_t pathLen = path.length();
     char * _tempPath = (char*)malloc(pathLen+1);
-    snprintf(_tempPath, pathLen+1, "%s", path.c_str());
+    snprintf_P(_tempPath, pathLen+1, PSTR("%s"), path.c_str());
     request->_tempObject = (void*)_tempPath;
 
     // Calculate gzip statistic
@@ -190,27 +194,27 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
   String filename = String((char*)request->_tempObject);
   free(request->_tempObject);
   request->_tempObject = NULL;
-  if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
+  if((_username.length() && _password.length()) && !request->authenticate(_username.c_str(), _password.c_str()))
       return request->requestAuthentication();
 
   if (request->_tempFile == true) {
     String etag = String(request->_tempFile.size());
-    if (_last_modified.length() && _last_modified == request->header("If-Modified-Since")) {
+    if (_last_modified.length() && _last_modified == request->header(F("If-Modified-Since"))) {
       request->_tempFile.close();
       request->send(304); // Not modified
-    } else if (_cache_control.length() && request->hasHeader("If-None-Match") && request->header("If-None-Match").equals(etag)) {
+    } else if (_cache_control.length() && request->hasHeader(F("If-None-Match")) && request->header(F("If-None-Match")).equals(etag)) {
       request->_tempFile.close();
       AsyncWebServerResponse * response = new AsyncBasicResponse(304); // Not modified
-      response->addHeader("Cache-Control", _cache_control);
-      response->addHeader("ETag", etag);
+      response->addHeader(F("Cache-Control"), _cache_control);
+      response->addHeader(F("ETag"), etag);
       request->send(response);
     } else {
       AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, filename, String(), false, _callback);
       if (_last_modified.length())
-        response->addHeader("Last-Modified", _last_modified);
+        response->addHeader(F("Last-Modified"), _last_modified);
       if (_cache_control.length()){
-        response->addHeader("Cache-Control", _cache_control);
-        response->addHeader("ETag", etag);
+        response->addHeader(F("Cache-Control"), _cache_control);
+        response->addHeader(F("ETag"), etag);
       }
       request->send(response);
     }

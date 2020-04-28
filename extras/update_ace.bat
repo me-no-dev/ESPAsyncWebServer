@@ -10,5 +10,7 @@ cd tmp1
 type ace.js mode-html.js theme-monokai.js > acefull.js
 "C:\Program Files\7-Zip\7z.exe" a -tgzip -mx9 acefull.js.gz acefull.js
 REM update:
-copy acefull.js.gz ..\..\examples\SmartSwitch\data\acefull.js.gz
 pause
+copy acefull.js.gz ..\..\examples\SmartSwitch\data\acefull.js.gz
+del *.js *.gz
+
