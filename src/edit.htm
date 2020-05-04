@@ -441,9 +441,9 @@
                     edit: e
                 }, s)
             }
-            "undefined" == typeof t && (t = "/index.html"), "undefined" == typeof n && (n = o(t)), "undefined" == typeof a && (a = "monokai"), "undefined" == typeof i && (i = "text/" + n, "c_cpp" === n && (i = "text/plain"));
+            "undefined" == typeof t && (t = "/index.htm"), "undefined" == typeof n && (n = o(t)), "undefined" == typeof a && (a = "monokai"), "undefined" == typeof i && (i = "text/" + n, "c_cpp" === n && (i = "text/plain"));
             var l = ace.edit(e);
-            return "plain" !== n && l.getSession().setMode("ace/mode/" + n), l.setTheme("ace/theme/" + a), l.$blockScrolling = 1 / 0, l.getSession().setUseSoftTabs(!0), l.getSession().setTabSize(2), l.getSession().setUseWorker(!1), l.setHighlightActiveLine(!0), l.setShowPrintMargin(!1), l.commands.addCommand({
+            return "plain" !== n && l.getSession().setMode("ace/mode/" + n), l.setTheme("ace/theme/" + a), l.$blockScrolling = 1 / 0, l.getSession().setUseSoftTabs(!0), l.getSession().setTabSize(2), l.getSession().setUseWorker(!0), l.setHighlightActiveLine(!0), l.setShowPrintMargin(!1), l.commands.addCommand({
                 name: "saveCommand",
                 bindKey: {
                     win: "Ctrl-S",
@@ -485,6 +485,12 @@
                     e[n] = a
                 }), createEditor("editor", e.file, e.lang, e.theme)),
                 n = createTree("tree", t);
+				
+			window.define = ace.define;
+			window.require = ace.require;
+            ace.config.set('basePath', '/');
+			ace.config.set("workerPath", '/');
+				
             createFileUploader("uploader", n, t), "undefined" == typeof e.file && (e.file = "/index.htm"), t.loadUrl(e.file)
         }
         "undefined" == typeof XMLHttpRequest && (XMLHttpRequest = function() {

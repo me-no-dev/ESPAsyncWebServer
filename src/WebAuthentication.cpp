@@ -36,6 +36,12 @@ bool checkBasicAuthentication(const char * hash, const char * username, const ch
   size_t toencodeLen = strlen(username)+strlen(password)+1;
   size_t encodedLen = base64_encode_expected_len(toencodeLen);
   if(strlen(hash) != encodedLen)
+// Fix from https://github.com/me-no-dev/ESPAsyncWebServer/issues/667
+#ifdef ARDUINO_ARCH_ESP32
+    if(strlen(hash) != encodedLen)
+#else
+    if (strlen(hash) != encodedLen - 1)
+#endif
     return false;
 
   char *toencode = new char[toencodeLen+1];

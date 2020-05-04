@@ -17,7 +17,8 @@ Use latest ESP core lib (from Github)
 //#define DEL_WFM   // delete Wifi credentials stored 
                   //(use once then comment and flash again), also HTTP /erase-wifi can do the same live
                   
-#define USE_AUTH  // .setAuthentication for all static
+#define USE_AUTH_STAT  // .setAuthentication also for static (editor always requires auth)
+//#define USE_AUTH_WS    // .setAuthentication also for ws, broken for Safari iOS
 
 #include <ArduinoOTA.h>
 #ifdef ESP32
@@ -41,12 +42,7 @@ Use latest ESP core lib (from Github)
 #include <DHT.h>
 
 #define RTC_UTC_TEST 1577836800 // Some Date
-#ifdef ESP32
- #define MYTZ -5*3600,3600
-#elif defined(ESP8266)
- #include <TZ.h>
- #define MYTZ TZ_America_Toronto  
-#endif
+#define MYTZ PSTR("EST5EDT,M3.2.0,M11.1.0")
 
 #define EESC    100  // fixed eeprom address for sched choice
 #define EECH    104  // fixed eeprom address to keep selected active channel, only for reference here 
@@ -85,7 +81,7 @@ AsyncWebSocket ws("/ws");
  const char* password = "MYROUTERPASSWD";
 #endif 
 const char* hostName = "smartsw";
-const char* http_username = "smart"; // for SPIFFSEditor (and static html)
+const char* http_username = "smart"; 
 const char* http_password = "switch";
 
 // RTC
@@ -148,7 +144,7 @@ void showTime()
   const tm* tm = localtime(&now);
   ws.printfAll("Now,Clock,%02d:%02d,%d", tm->tm_hour, tm->tm_min, tm->tm_wday);
   if ((2==tm->tm_hour )&&(2==tm->tm_min)) {
-    configTime(MYTZ, "pool.ntp.org");
+    configTzTime(MYTZ, "pool.ntp.org");
     Serial.print(F("Sync Clock at 02:02\n"));
   }
   Serial.printf("RTC: %02d:%02d\n", tm->tm_hour, tm->tm_min);
@@ -424,7 +420,7 @@ void setup(){
   timeval tv = { rtc, 0 };     
                                //timezone tz = { 0, 0 };   //(insert) <#5194
   settimeofday(&tv, nullptr);  //settimeofday(&tv, &tz);   // <#5194
-  configTime(MYTZ, "pool.ntp.org");
+  configTzTime(MYTZ, "pool.ntp.org");
   
 //MDNS (not needed)
   // MDNS.begin(hostName);
@@ -445,6 +441,9 @@ void setup(){
 //SPIFFS
   SPIFFS.begin();
 
+#ifdef USE_AUTH_WS
+  ws.setAuthentication(http_username,http_password);
+#endif
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
@@ -492,7 +491,7 @@ void setup(){
     request->send(200, "text/plain","Erasing WiFi data ...");
   });
 
-#ifdef USE_AUTH
+#ifdef USE_AUTH_STAT
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setAuthentication(http_username,http_password);
 #else
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
