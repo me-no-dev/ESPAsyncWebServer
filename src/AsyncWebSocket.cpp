@@ -1146,6 +1146,7 @@ void AsyncWebSocket::binaryAll(const __FlashStringHelper *message, size_t len){
 const char __WS_STR_CONNECTION[] PROGMEM = { "Connection" };
 const char __WS_STR_UPGRADE[] PROGMEM = { "Upgrade" };
 const char __WS_STR_ORIGIN[] PROGMEM = { "Origin" };
+const char __WS_STR_COOKIE[] PROGMEM = { "Cookie" };
 const char __WS_STR_VERSION[] PROGMEM = { "Sec-WebSocket-Version" };
 const char __WS_STR_KEY[] PROGMEM = { "Sec-WebSocket-Key" };
 const char __WS_STR_PROTOCOL[] PROGMEM = { "Sec-WebSocket-Protocol" };
@@ -1155,6 +1156,7 @@ const char __WS_STR_UUID[] PROGMEM = { "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" };
 #define WS_STR_CONNECTION FPSTR(__WS_STR_CONNECTION)
 #define WS_STR_UPGRADE FPSTR(__WS_STR_UPGRADE)
 #define WS_STR_ORIGIN FPSTR(__WS_STR_ORIGIN)
+#define WS_STR_COOKIE FPSTR(__WS_STR_COOKIE)
 #define WS_STR_VERSION FPSTR(__WS_STR_VERSION)
 #define WS_STR_KEY FPSTR(__WS_STR_KEY)
 #define WS_STR_PROTOCOL FPSTR(__WS_STR_PROTOCOL)
@@ -1171,6 +1173,7 @@ bool AsyncWebSocket::canHandle(AsyncWebServerRequest *request){
   request->addInterestingHeader(WS_STR_CONNECTION);
   request->addInterestingHeader(WS_STR_UPGRADE);
   request->addInterestingHeader(WS_STR_ORIGIN);
+  request->addInterestingHeader(WS_STR_COOKIE);
   request->addInterestingHeader(WS_STR_VERSION);
   request->addInterestingHeader(WS_STR_KEY);
   request->addInterestingHeader(WS_STR_PROTOCOL);
@@ -1185,6 +1188,14 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request){
   if((_username.length() && _password.length()) && !request->authenticate(_username.c_str(), _password.c_str())){
     return request->requestAuthentication();
   }
+//////////////////////////////////////////  
+  if(_handshakeHandler != nullptr){
+    if(!_handshakeHandler(request)){
+      request->send(401);
+      return;
+    }
+  }
+//////////////////////////////////////////  
   AsyncWebHeader* version = request->getHeader(WS_STR_VERSION);
   if(version->value().toInt() != 13){
     AsyncWebServerResponse *response = request->beginResponse(400);

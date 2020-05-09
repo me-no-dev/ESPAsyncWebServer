@@ -16,9 +16,21 @@ Use latest ESP core lib (from Github)
 #define USE_WFM   // to use ESPAsyncWiFiManager
 //#define DEL_WFM   // delete Wifi credentials stored 
                   //(use once then comment and flash again), also HTTP /erase-wifi can do the same live
-                  
-#define USE_AUTH_STAT  // .setAuthentication also for static (editor always requires auth)
-//#define USE_AUTH_WS    // .setAuthentication also for ws, broken for Safari iOS
+
+// AUTH COOKIE uses only the password, Base uses both
+#define http_username "smart"
+#define http_password "switch"
+
+//See https://github.com/me-no-dev/ESPAsyncWebServer/pull/684
+#define USE_AUTH_COOKIE
+#define MY_COOKIE_FULL "LLKQ=7;max-age=31536000;"
+#define MY_COOKIE_DEL "LLKQ="
+#define MY_COOKIE "LLKQ=7"
+
+#ifndef USE_AUTH_COOKIE             
+  #define USE_AUTH_STAT   //Base Auth for stat, /commands and SPIFFSEditor
+  //#define USE_AUTH_WS     //Base Auth also for WS, not very supported 
+#endif
 
 #include <ArduinoOTA.h>
 #ifdef ESP32
@@ -55,7 +67,10 @@ Use latest ESP core lib (from Github)
 
 // DHT
 #define DHTTYPE DHT22  // DHT 11 // DHT 22, AM2302, AM2321 // DHT 21, AM2301
-#define DHTPIN 4       //D2 
+#define DHTPIN 4       //D2
+
+#define DHT_T_CORR -0.5 //Temperature offset compensation of the sensor (can be -)
+#define DHT_H_CORR  1.5 //Humidity offset compensation of the sensor 
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -80,9 +95,7 @@ AsyncWebSocket ws("/ws");
  const char* ssid = "MYROUTERSSD";
  const char* password = "MYROUTERPASSWD";
 #endif 
-const char* hostName = "smartsw";
-const char* http_username = "smart"; 
-const char* http_password = "switch";
+ const char* hostName = "smartsw32";
 
 // RTC
 static timeval tv;
@@ -91,6 +104,15 @@ static time_t now;
 // HW I/O
 const int btnPin = 0; //D3
 const int ledPin = 2; //D4
+
+#ifdef ESP32
+  #define LED_ON 0x1
+  #define LED_OFF 0x0
+#elif defined(ESP8266)
+  #define LED_ON 0x0
+  #define LED_OFF 0x1
+#endif
+
 int btnState = HIGH; 
 
 // Globals
@@ -101,7 +123,7 @@ float t = 0;
 float h = 0;
 bool udht = false;
 bool heat_enabled_prev = false;
-int ledState;                     
+int ledState = LED_OFF;                     
 
 struct EE_bl { 
   byte memid;  //here goes the EEMARK stamp
@@ -178,30 +200,32 @@ void showTime()
   }
 
   if (heat_enabled_prev) { // smart control (delayed one cycle)
-    if (((t - HYST) < ee.tempe)&&(ledState == HIGH)) { // OFF->ON once
-      ledState = LOW;
+    if (((t - HYST) < ee.tempe)&&(ledState == LED_OFF)) { // OFF->ON once
+      ledState = LED_ON;
       digitalWrite(ledPin, ledState); // apply change
       ws.textAll("led,ledon");
     }
-    if ((((t + HYST) > ee.tempe)&&(ledState == LOW))||(!heat_enabled)) { // ON->OFF once, also turn off at end of period.
-      ledState = HIGH;
+    if ((((t + HYST) > ee.tempe)&&(ledState == LED_ON))||(!heat_enabled)) { // ON->OFF once, also turn off at end of period.
+      ledState = LED_OFF;
       digitalWrite(ledPin, ledState); // apply change
       ws.textAll("led,ledoff");
     }
-    Serial.printf(ledState ? "LED OFF" : "LED ON");
+    
+    Serial.printf(ledState == LED_ON ? "LED ON" : "LED OFF");
     Serial.print(F(", Smart enabled\n"));
   }
   heat_enabled_prev = heat_enabled; //update 
 }
 
 void updateDHT(){
-  h = dht.readHumidity();
-  t = dht.readTemperature(); //Celsius or dht.readTemperature(true) for Fahrenheit
-  if (isnan(h) || isnan(t)) {
+  float h1 = dht.readHumidity();
+  float t1 = dht.readTemperature(); //Celsius or dht.readTemperature(true) for Fahrenheit
+  if (isnan(h1) || isnan(t1)) {
   Serial.print(F("Failed to read from DHT sensor!"));
-     h = 0; // debug w/o sensor
-     t = 0;
-   } 
+   } else {
+     h = h1 + DHT_H_CORR;
+     t = t1 + DHT_T_CORR;
+   }
 }
 
 void analogSample()
@@ -216,7 +240,7 @@ void checkPhysicalButton()
     if (btnState != LOW) {     // btnState is used to avoid sequential toggles
       ledState = !ledState;
       digitalWrite(ledPin, ledState);
-      if (ledState) ws.textAll("led,ledoff");
+      if (ledState == LED_OFF) ws.textAll("led,ledoff");
       else ws.textAll("led,ledon");
     }
     btnState = LOW;
@@ -241,6 +265,16 @@ void mytimer() {
     }
 }
 
+#ifdef USE_AUTH_COOKIE
+bool myHandshake(AsyncWebServerRequest *request){ // false will 401
+   if (request->hasHeader("Cookie")){
+    String cookie = request->header("Cookie");
+    if (cookie.indexOf(MY_COOKIE) != -1) return true;
+    else return false;
+   } else return false;
+}
+#endif
+
 // server
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
   if(type == WS_EVT_CONNECT){
@@ -252,7 +286,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
     Serial.printf("[%u] Connected from %d.%d.%d.%d\n", client->id(), ip[0], ip[1], ip[2], ip[3]);
     showTime();
     analogSample();
-    if (ledState) ws.textAll("led,ledoff");
+    if (ledState == LED_OFF) ws.textAll("led,ledoff");
     else ws.textAll("led,ledon");
     
     ws.printfAll("Now,Setting,%02d:%02d,%02d:%02d,%+2.1f", ee.hstart, ee.mstart, ee.hstop, ee.mstop, ee.tempe);
@@ -279,11 +313,11 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         }
               if(data[0] == 'L') { // LED
                 if(data[1] == '1') {
-                  ledState = LOW;
+                  ledState = LED_ON;
                   ws.textAll("led,ledon"); // for others
                 }
                 else if(data[1] == '0') {
-                  ledState = HIGH;
+                  ledState = LED_OFF;
                   ws.textAll("led,ledoff"); 
                 }
                 digitalWrite(ledPin, ledState); // apply change
@@ -444,31 +478,74 @@ void setup(){
 #ifdef USE_AUTH_WS
   ws.setAuthentication(http_username,http_password);
 #endif
+
+#ifdef USE_AUTH_COOKIE
+  ws.handleHandshake(myHandshake);
+#endif
+
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
 #ifdef ESP32
+ #ifdef USE_AUTH_STAT
   server.addHandler(new SPIFFSEditor(SPIFFS, http_username,http_password));
+ #elif defined(USE_AUTH_COOKIE)
+  server.addHandler(new SPIFFSEditor(SPIFFS)).setFilter(myHandshake);
+ #endif
 #elif defined(ESP8266)
+ #ifdef USE_AUTH_STAT
   server.addHandler(new SPIFFSEditor(http_username,http_password));
+ #elif defined(USE_AUTH_COOKIE)
+  server.addHandler(new SPIFFSEditor()).setFilter(myHandshake);
+ #endif
 #endif
-  
-  server.on("/free-ram", HTTP_GET, [](AsyncWebServerRequest *request){  // direct request->answer
-    request->send(200, "text/plain", String(ESP.getFreeHeap()));
+
+#ifdef USE_AUTH_COOKIE
+  server.on("/lg2n", HTTP_POST, [](AsyncWebServerRequest *request){  // cookie test
+    if((request->hasParam("pa2w",true) && (String(request->getParam("pa2w",true)->value().c_str()) == String(http_password)))||(request->hasParam("lg0f",true))){
+      AsyncWebServerResponse *response = request->beginResponse(301);
+      response->addHeader("Location", "/");
+      response->addHeader("Cache-Control", "no-cache");
+      if(request->hasParam("lg0f",true)) response->addHeader("Set-Cookie", MY_COOKIE_DEL);
+        else response->addHeader("Set-Cookie", MY_COOKIE_FULL);
+      request->send(response);
+    } else request->send(200, "text/plain","Wrong Password!");
   });
+#endif
 
+// below paths need individual auth ////////////////////////////////////////////////
 
-  server.on("/get-time", HTTP_GET, [](AsyncWebServerRequest *request){  
+  server.on("/free-ram", HTTP_GET, [](AsyncWebServerRequest *request){  // direct request->answer
+#ifdef USE_AUTH_STAT
+    if(!request->authenticate(http_username, http_password)) return request->requestAuthentication();
+#endif
+    request->send(200, "text/plain", String(ESP.getFreeHeap()));
+#ifdef USE_AUTH COOKIE
+  }).setFilter(myHandshake);
+#else
+  });
+#endif
+
+  server.on("/get-time", HTTP_GET, [](AsyncWebServerRequest *request){
+#ifdef USE_AUTH_STAT
+      if(!request->authenticate(http_username, http_password)) return request->requestAuthentication();
+#endif    
       if(request->hasParam("btime")){
        time_t rtc = (request->getParam("btime")->value()).toInt();
        timeval tv = { rtc, 0 };            
        settimeofday(&tv, nullptr);  
       }
        request->send(200, "text/plain","Got browser time ...");
+#ifdef USE_AUTH COOKIE
+  }).setFilter(myHandshake);
+#else
   });
-
+#endif
 
   server.on("/hw-reset", HTTP_GET, [](AsyncWebServerRequest *request){
+#ifdef USE_AUTH_STAT
+    if(!request->authenticate(http_username, http_password)) return request->requestAuthentication();
+#endif
       request->onDisconnect([]() {
 #ifdef ESP32
         ESP.restart();
@@ -477,9 +554,16 @@ void setup(){
 #endif
       });
     request->send(200, "text/plain","Restarting ...");
+#ifdef USE_AUTH COOKIE
+  }).setFilter(myHandshake);
+#else
   });
+#endif
 
   server.on("/erase-wifi", HTTP_GET, [](AsyncWebServerRequest *request){
+#ifdef USE_AUTH_STAT
+    if(!request->authenticate(http_username, http_password)) return request->requestAuthentication();
+#endif
       request->onDisconnect([]() {
         WiFi.disconnect(true);  
 #ifdef ESP32
@@ -489,12 +573,23 @@ void setup(){
 #endif
       });
     request->send(200, "text/plain","Erasing WiFi data ...");
-  });
-
-#ifdef USE_AUTH_STAT
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setAuthentication(http_username,http_password);
+#ifdef USE_AUTH COOKIE
+  }).setFilter(myHandshake);
 #else
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+  });
+#endif
+  
+// above paths need individual auth ////////////////////////////////////////////////
+
+#ifdef USE_AUTH_COOKIE
+  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setFilter(myHandshake);
+  server.serveStatic("/", SPIFFS, "/login/").setDefaultFile("index.htm").setFilter(!myHandshake);
+#else
+  #ifdef USE_AUTH_STAT
+    server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setAuthentication(http_username,http_password);
+  #else
+    server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+  #endif
 #endif
 
   server.onNotFound([](AsyncWebServerRequest *request){  // nothing known

@@ -237,6 +237,7 @@ class AsyncWebSocketClient {
     void _onData(void *pbuf, size_t plen);
 };
 
+typedef std::function<bool(AsyncWebServerRequest *request)> AwsHandshakeHandler;
 typedef std::function<void(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)> AwsEventHandler;
 
 //WebServer Handler implementation that plays the role of a socket server
@@ -248,6 +249,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     AsyncWebSocketClientLinkedList _clients;
     uint32_t _cNextId;
     AwsEventHandler _eventHandler;
+	AwsHandshakeHandler _handshakeHandler;
     bool _enabled;
     AsyncWebLock _lock;
 
@@ -316,6 +318,11 @@ class AsyncWebSocket: public AsyncWebHandler {
       _eventHandler = handler;
     }
 
+    // Handshake Handler
+    void handleHandshake(AwsHandshakeHandler handler){
+      _handshakeHandler = handler; 
+    }
+	
     //system callbacks (do not call)
     uint32_t _getNextId(){ return _cNextId++; }
     void _addClient(AsyncWebSocketClient * client);
