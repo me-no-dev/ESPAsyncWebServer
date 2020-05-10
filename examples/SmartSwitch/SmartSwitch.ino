@@ -23,9 +23,10 @@ Use latest ESP core lib (from Github)
 
 //See https://github.com/me-no-dev/ESPAsyncWebServer/pull/684
 #define USE_AUTH_COOKIE
-#define MY_COOKIE_FULL "LLKQ=7;max-age=31536000;"
-#define MY_COOKIE_DEL "LLKQ="
-#define MY_COOKIE "LLKQ=7"
+// 1 year age, path helps Safari to unset
+#define MY_COOKIE_FULL "LLKQ=3; Max-Age=31536000; Path=/;"
+#define MY_COOKIE_DEL "LLKQ=; Max-Age=-1; Path=/;"
+#define MY_COOKIE "LLKQ=3"
 
 #ifndef USE_AUTH_COOKIE             
   #define USE_AUTH_STAT   //Base Auth for stat, /commands and SPIFFSEditor
