@@ -625,7 +625,7 @@ AsyncWebServerResponse *response = request->beginResponse(
   contentType,
   srcFile.size(),
   [src_file](uint8_t *buffer, size_t maxLen, size_t total) -> size_t {
-     File file = src_file; // local copy of file pointer
+     File file = srcFile; // local copy of file pointer
 
      int bytes = file.read(buffer, maxLen);
        
