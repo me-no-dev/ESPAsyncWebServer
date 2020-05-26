@@ -612,21 +612,19 @@ without memory problems.
 You need to create a file handler in outer function (to have a single one for request) but use
 it in a lambda. The catch is that the lambda has it's own lifecycle which may/will cause it's 
 called after the original function is over thus the original file handle is destroyed. Using the 
-file handle in the lambda then causes segfault (Hello, Exception 9!) and the whole ESP crashes.  
+captured `&file` in the lambda then causes segfault (Hello, Exception 9!) and the whole ESP crashes.  
 By using this code, you tell the compiler to move the handle into the lambda so it won't be
 destroyed when outer function (that one where you call `request->send(response)`) ends.
 
 ```cpp
-const File srcFile = ... // e.g. SPIFFS.open(path, "r"); 
+const File file = ... // e.g. SPIFFS.open(path, "r"); 
 
 const contentType = "application/javascript";
 
 AsyncWebServerResponse *response = request->beginResponse(
   contentType,
-  srcFile.size(),
-  [src_file](uint8_t *buffer, size_t maxLen, size_t total) -> size_t {
-     File file = srcFile; // local copy of file pointer
-
+  file.size(),
+  [file](uint8_t *buffer, size_t maxLen, size_t total) mutable -> size_t {
      int bytes = file.read(buffer, maxLen);
        
      // close file at the end
