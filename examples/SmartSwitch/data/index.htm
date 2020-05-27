@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
     <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
@@ -115,13 +114,13 @@
         }
         
         .clk {
-            font-size: 54px;
+            font-size: 52px;
             color: #444;
             cursor: pointer
         }
         
         .clk2 {
-            font-size: 32px;
+            font-size: 24px;
             color: #444
         }
         
@@ -329,7 +328,7 @@
         <div id="g2" class="gauge"></div>
         <div id="C" class="clk" onclick="getBtime();"></div>
         <div id="C2" class="clk2"></div>
-        <p><a href="/login">Logoff</a></p>
+       <input type="button" id="O" value="Logout" onclick="buttonOClick();" />
     </div>
 
     <script src="app.min.js"></script>
@@ -378,10 +377,10 @@
                 }, {
                     color: "#32a852",
                     lo: 0,
-                    hi: 25
+                    hi: 35
                 }, {
                     color: "#ff4d4d",
-                    lo: 25,
+                    lo: 35,
                     hi: 50
                 }],
                 formatNumber: true
@@ -531,7 +530,7 @@
                     message: 'Timer REQ'
                 });
             }
-        };
+        }
 
         function button2Click(e) {
             if (connection.readyState === WebSocket.OPEN) {
@@ -540,32 +539,40 @@
                     message: 'Temp. REQ'
                 });
             }
-        };
+        }
 
         function buttonEClick() {
             var murl = '/edit';
             if (document.location.host.length < 5) murl = 'http://' + MYCORS + '/edit'; //CORS
-            successNotification({
-                message: 'Editor'
-            });
+            successNotification({message: 'Editor'});
             window.open(murl, '_blank');
-        };
-
+        }
+        
+        function buttonOClick() {
+            // If base  auth
+            var murl = document.location.href.replace("http://", "http://" + new Date().getTime() + "@");
+            // If cookie auth
+            murl += 'login';
+            if (document.location.host.length < 5) murl = 'http://' + MYCORS + '/login'; //CORS
+            warningNotification({ message: 'Logout'});
+            window.open(murl, '_self');
+        }
+        
         function checkboxClick(e) {
             if (connection.readyState === WebSocket.OPEN) {
                 if (e.checked) connection.send('L1');
                 else connection.send('L0');
             }
-        };
+        }
 
         function ent1Click() {
             document.getElementById("input-temperature").className = "blinking";
-        };
+        }
 
         function ent2Click() {
             document.getElementById("input-popup-stop").className = "blinking";
             document.getElementById("input-popup-start").className = "blinking";
-        };
+        }
 
         function handleClick(e) {
             if (e.value == 'Z0' ) auto = true;

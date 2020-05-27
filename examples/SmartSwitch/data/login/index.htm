@@ -8,13 +8,29 @@
     <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 </head>
-<body style="background-color:#bbb;font-family:arial;"><center>
+<body style="background-color:#bbb;font-family:arial;">
+<center>
 <br><br>
-<h4>Password</h4>
+<h4>Login - Logout</h4>
 <form action="/lg2n"  method="post">
-  <input type="password" name="pa2w"><br><br>
-  <input type="checkbox" name="lg0f"><label for="lg0f">Logoff</label><br><br>
+  <input type="password" id="pwd" name="pa2w" placeholder="Enter the password"><br><br>
+  <input type="checkbox" id="lof" name="lg0f" onclick="hidep()"><label for="lg0f">Logout</label><br><br>
   <input type="submit" value="Submit">
-</form></center> 
+</form>
+<br><a href='/'>Back</a>
+</center> 
+
+<script>
+function hidep() {
+  var checkBox = document.getElementById("lof");
+  var text = document.getElementById("pwd");
+  if (checkBox.checked == true){
+    text.style.display = "none";
+  } else {
+     text.style.display = "inline";
+  }
+}
+</script>
+
 </body>
 </html>

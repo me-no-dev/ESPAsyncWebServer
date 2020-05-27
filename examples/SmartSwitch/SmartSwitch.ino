@@ -17,20 +17,23 @@ Use latest ESP core lib (from Github)
 //#define DEL_WFM   // delete Wifi credentials stored 
                   //(use once then comment and flash again), also HTTP /erase-wifi can do the same live
 
-// AUTH COOKIE uses only the password, Base uses both
+// AUTH COOKIE uses only the password and unsigned long MY_SECRET_NUMBER
+
 #define http_username "smart"
 #define http_password "switch"
 
+#define MY_SECRET_NUMBER  0xA217B02F
+
 //See https://github.com/me-no-dev/ESPAsyncWebServer/pull/684
+//SSWI or other 4 chars
 #define USE_AUTH_COOKIE
-// 1 year age, path helps Safari to unset
-#define MY_COOKIE_FULL "LLKQ=3; Max-Age=31536000; Path=/;"
-#define MY_COOKIE_DEL "LLKQ=; Max-Age=-1; Path=/;"
-#define MY_COOKIE "LLKQ=3"
+#define MY_COOKIE_DEL "SSWI=;Max-Age=-1;Path=/;"
+#define MY_COOKIE_PREF "SSWI="
+#define MY_COOKIE_SUFF ";Max-Age=31536000;Path=/;"
 
 #ifndef USE_AUTH_COOKIE             
   #define USE_AUTH_STAT   //Base Auth for stat, /commands and SPIFFSEditor
-  //#define USE_AUTH_WS     //Base Auth also for WS, not very supported 
+  //#define USE_AUTH_WS   //Base Auth also for WS, not very supported 
 #endif
 
 #include <ArduinoOTA.h>
@@ -54,6 +57,11 @@ Use latest ESP core lib (from Github)
 #include <Ticker.h>
 #include <DHT.h>
 
+#ifdef USE_AUTH_COOKIE
+ #include <stdint.h>
+ #include "Xtea.h"
+#endif
+
 #define RTC_UTC_TEST 1577836800 // Some Date
 #define MYTZ PSTR("EST5EDT,M3.2.0,M11.1.0")
 
@@ -70,12 +78,13 @@ Use latest ESP core lib (from Github)
 #define DHTTYPE DHT22  // DHT 11 // DHT 22, AM2302, AM2321 // DHT 21, AM2301
 #define DHTPIN 4       //D2
 
-#define DHT_T_CORR -0.5 //Temperature offset compensation of the sensor (can be -)
-#define DHT_H_CORR  1.5 //Humidity offset compensation of the sensor 
+#define DHT_T_CORR -0.3 //Temperature offset compensation of the sensor (can be -)
+#define DHT_H_CORR -2.2 //Humidity offset compensation of the sensor 
+
+// SKETCH BEGIN MAIN DECLARATIONS
 
 DHT dht(DHTPIN, DHTTYPE);
 
-// SKETCH BEGIN MAIN DECLARATIONS
 Ticker tim;
 AsyncWebServer server(80); //single port - easy for forwarding 
 AsyncWebSocket ws("/ws");
@@ -86,7 +95,7 @@ AsyncWebSocket ws("/ws");
  #else
   DNSServer dns;
  #endif
- 
+
 //Fallback timeout in seconds allowed to config or it creates an own AP, then serves 192.168.4.1 
  #define FBTO 120
  const char* fbssid = "FBSSW"; 
@@ -96,7 +105,8 @@ AsyncWebSocket ws("/ws");
  const char* ssid = "MYROUTERSSD";
  const char* password = "MYROUTERPASSWD";
 #endif 
- const char* hostName = "smartsw32";
+
+const char* hostName = "smartsw";
 
 // RTC
 static timeval tv;
@@ -222,7 +232,7 @@ void updateDHT(){
   float h1 = dht.readHumidity();
   float t1 = dht.readTemperature(); //Celsius or dht.readTemperature(true) for Fahrenheit
   if (isnan(h1) || isnan(t1)) {
-  Serial.print(F("Failed to read from DHT sensor!"));
+  Serial.println(F("Failed to read from DHT sensor!"));
    } else {
      h = h1 + DHT_H_CORR;
      t = t1 + DHT_T_CORR;
@@ -241,8 +251,13 @@ void checkPhysicalButton()
     if (btnState != LOW) {     // btnState is used to avoid sequential toggles
       ledState = !ledState;
       digitalWrite(ledPin, ledState);
-      if (ledState == LED_OFF) ws.textAll("led,ledoff");
-      else ws.textAll("led,ledon");
+      if (ledState == LED_OFF) {
+        ws.textAll("led,ledoff");
+        Serial.println(F("LED-OFF"));
+      } else {
+        ws.textAll("led,ledon");
+        Serial.println(F("LED-ON"));
+      }
     }
     btnState = LOW;
   } else {
@@ -267,12 +282,41 @@ void mytimer() {
 }
 
 #ifdef USE_AUTH_COOKIE
+ unsigned long key[4] = {0x01F20304,0x05060708,0x090a0b0c,0x0d0e0f00};
+ Xtea x(key);
+
+void encip(String &mtk, unsigned long token){
+  unsigned long res[2] = {random(0xFFFFFFFF),token};
+  x.encrypt(res);
+  char buf1[18];
+  sprintf(buf1, "%08X_%08X",res[0],res[1]); //8 bytes for encryping the IP cookie 
+  mtk = (String)buf1; 
+}
+
+unsigned long decip(const char *pch){
+  unsigned long res[2] = {0,0};
+  res[0] = strtoul(pch, NULL, 16);
+  res[1] = strtoul(&pch[9], NULL, 16);
+  x.decrypt(res);
+  return res[1];
+}
+
 bool myHandshake(AsyncWebServerRequest *request){ // false will 401
+   bool rslt = false;
    if (request->hasHeader("Cookie")){
     String cookie = request->header("Cookie");
-    if (cookie.indexOf(MY_COOKIE) != -1) return true;
-    else return false;
-   } else return false;
+    Serial.println(cookie);
+    
+    uint8_t pos = cookie.indexOf(MY_COOKIE_PREF);
+    if (pos != -1){
+      unsigned long ix = decip(cookie.substring(pos+5, pos+22).c_str());
+      Serial.printf("Ask:%08X Got:%08X\n", MY_SECRET_NUMBER, ix);
+      if (MY_SECRET_NUMBER == ix)
+       rslt=true;
+    } else rslt=false;
+   } else rslt=false;
+   Serial.printf(rslt ? "C-YES\n" : "C-NO\n");
+   return rslt;
 }
 #endif
 
@@ -322,8 +366,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
                   ws.textAll("led,ledoff"); 
                 }
                 digitalWrite(ledPin, ledState); // apply change
-              
-                                
+                                  
               } else if(data[0] == 'T') { // timeset
                   if (len > 11) {
                     data[3] = data[6] = data[9] = data[12] = 0; // cut strings 
@@ -444,7 +487,8 @@ void setup(){
   }
 #endif 
 
-  Serial.print(F("*CONNECTED*\n"));
+  Serial.print(F("*CONNECTED* OWN IP:"));
+  Serial.println(WiFi.localIP());
   
 //DHT
   dht.begin();
@@ -492,25 +536,41 @@ void setup(){
   server.addHandler(new SPIFFSEditor(SPIFFS, http_username,http_password));
  #elif defined(USE_AUTH_COOKIE)
   server.addHandler(new SPIFFSEditor(SPIFFS)).setFilter(myHandshake);
+ #else
+  server.addHandler(new SPIFFSEditor(SPIFFS));
  #endif
 #elif defined(ESP8266)
  #ifdef USE_AUTH_STAT
   server.addHandler(new SPIFFSEditor(http_username,http_password));
  #elif defined(USE_AUTH_COOKIE)
   server.addHandler(new SPIFFSEditor()).setFilter(myHandshake);
+ #else
+  server.addHandler(new SPIFFSEditor()); 
  #endif
 #endif
 
 #ifdef USE_AUTH_COOKIE
-  server.on("/lg2n", HTTP_POST, [](AsyncWebServerRequest *request){  // cookie test
-    if((request->hasParam("pa2w",true) && (String(request->getParam("pa2w",true)->value().c_str()) == String(http_password)))||(request->hasParam("lg0f",true))){
-      AsyncWebServerResponse *response = request->beginResponse(301);
+  server.on("/lg2n", HTTP_POST, [](AsyncWebServerRequest *request){
+       
+    String ckx;
+    encip(ckx, MY_SECRET_NUMBER);  
+    
+    AsyncWebServerResponse *response;
+    
+    if(request->hasParam("lg0f",true)){
+      response = request->beginResponse(200, "text/html;charset=utf-8", "<h1>Logged Out! <a href='/'>Back</a></h1>");
+      response->addHeader("Cache-Control", "no-cache");
+      response->addHeader("Set-Cookie", MY_COOKIE_DEL);
+      
+    } else if(request->hasParam("pa2w",true) && (String(request->getParam("pa2w",true)->value().c_str()) == String(http_password))){
+      response = request->beginResponse(301);
       response->addHeader("Location", "/");
       response->addHeader("Cache-Control", "no-cache");
-      if(request->hasParam("lg0f",true)) response->addHeader("Set-Cookie", MY_COOKIE_DEL);
-        else response->addHeader("Set-Cookie", MY_COOKIE_FULL);
-      request->send(response);
-    } else request->send(200, "text/plain","Wrong Password!");
+      response->addHeader("Set-Cookie",  MY_COOKIE_PREF + ckx + MY_COOKIE_SUFF);
+      
+    } else response = request->beginResponse(200, "text/html;charset=utf-8", "<h1>Wrong password! <a href='/'>Back</a></h1>");
+    
+    request->send(response);
   });
 #endif
 
@@ -520,7 +580,14 @@ void setup(){
 #ifdef USE_AUTH_STAT
     if(!request->authenticate(http_username, http_password)) return request->requestAuthentication();
 #endif
-    request->send(200, "text/plain", String(ESP.getFreeHeap()));
+    
+#ifdef ESP32
+    request->send(200, "text/plain", String(ESP.getMinFreeHeap()) + ':' + String(ESP.getFreeHeap()) + ':'+ String(ESP.getHeapSize())); 
+#else
+    request->send(200, "text/plain", String(ESP.getFreeHeap())); 
+#endif
+
+
 #ifdef USE_AUTH COOKIE
   }).setFilter(myHandshake);
 #else
@@ -584,7 +651,7 @@ void setup(){
 
 #ifdef USE_AUTH_COOKIE
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setFilter(myHandshake);
-  server.serveStatic("/", SPIFFS, "/login/").setDefaultFile("index.htm").setFilter(!myHandshake);
+  server.serveStatic("/", SPIFFS, "/login/").setDefaultFile("index.htm");
 #else
   #ifdef USE_AUTH_STAT
     server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setAuthentication(http_username,http_password);
