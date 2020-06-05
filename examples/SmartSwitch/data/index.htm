@@ -549,11 +549,12 @@
         }
         
         function buttonOClick() {
+		    var murl = "";
             // If base  auth
-            var murl = document.location.href.replace("http://", "http://" + new Date().getTime() + "@");
+            //murl = document.location.href.replace("http://", "http://" + new Date().getTime() + "@");
             // If cookie auth
-            murl += 'login';
-            if (document.location.host.length < 5) murl = 'http://' + MYCORS + '/login'; //CORS
+            murl += 'login/';
+            if (document.location.host.length < 5) murl = 'http://' + MYCORS + '/login/'; //CORS
             warningNotification({ message: 'Logout'});
             window.open(murl, '_self');
         }

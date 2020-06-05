@@ -3,6 +3,10 @@
 
 #include "edit.htm.gz.h"
 
+#ifdef ESP32 
+ #define fullName(x) name(x)
+#endif
+
 #define SPIFFS_MAXLENGTH_FILEPATH 32
 const char *excludeListFile = "/.exclude.files";
 
@@ -190,7 +194,10 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       while(dir.next()){
         fs::File entry = dir.openFile("r");
 #endif
-        if (isExcluded(_fs, entry.name())) {
+		String fname = entry.fullName();
+		if (fname.charAt(0) != '/') fname = "/" + fname;
+		
+        if (isExcluded(_fs, fname.c_str())) {
 #ifdef ESP32
             entry = dir.openNextFile();
 #endif
@@ -200,7 +207,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
         output += "{\"type\":\"";
         output += "file";
         output += "\",\"name\":\"";
-        output += String(entry.name());
+        output += String(fname);
         output += "\",\"size\":";
         output += String(entry.size());
         output += "}";
@@ -218,7 +225,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       output = String();
     }
     else if(request->hasParam("edit") || request->hasParam("download")){
-      request->send(request->_tempFile, request->_tempFile.name(), String(), request->hasParam("download"));
+      request->send(request->_tempFile, request->_tempFile.fullName(), String(), request->hasParam("download"));
     }
     else {
       const char * buildTime = __DATE__ " " __TIME__ " GMT";

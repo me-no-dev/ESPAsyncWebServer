@@ -16,16 +16,24 @@ call fetcher --url="https://github.com/ajaxorg/ace-builds/blob/master/src-min-no
 cd tmp1
 type ace.js mode-html.js theme-monokai.js ext-searchbox.js > acefull.js
 "C:\Program Files\7-Zip\7z.exe" a -tgzip -mx9 acefull.js.gz acefull.js
-REM
 "C:\Program Files\7-Zip\7z.exe" a -tgzip -mx9 worker-html.js.gz worker-html.js
 "C:\Program Files\7-Zip\7z.exe" a -tgzip -mx9 worker-javascript.js.gz worker-javascript.js
 "C:\Program Files\7-Zip\7z.exe" a -tgzip -mx9 worker-css.js.gz worker-css.js
 
-REM update:
+REM update SmartSwitch /data:
 pause
 copy acefull.js.gz ..\..\examples\SmartSwitch\data\acefull.js.gz
-REM
 copy worker-html.js.gz ..\..\examples\SmartSwitch\data\worker-html.js.gz
 copy worker-javascript.js.gz ..\..\examples\SmartSwitch\data\worker-javascript.js.gz
 copy worker-css.js.gz ..\..\examples\SmartSwitch\data\worker-css.js.gz
+
+REM update ESP_AsyncFSBrowser /data:
+pause
+copy acefull.js.gz ..\..\examples\ESP_AsyncFSBrowser\data\acefull.js.gz
+copy worker-html.js.gz ..\..\examples\ESP_AsyncFSBrowser\data\worker-html.js.gz
+copy worker-javascript.js.gz ..\..\examples\ESP_AsyncFSBrowser\data\worker-javascript.js.gz
+copy worker-css.js.gz ..\..\examples\ESP_AsyncFSBrowser\data\worker-css.js.gz
+
+REM delete temporary stuff
+pause
 del *.js *.gz

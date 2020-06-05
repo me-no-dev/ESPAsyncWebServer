@@ -13,6 +13,8 @@ Multiple clients can be connected at same time, they see each other requests
 Use latest ESP core lib (from Github)
 */
 
+#define USE_LittleFS  // possible only for ESP8266 for now
+
 #define USE_WFM   // to use ESPAsyncWiFiManager
 //#define DEL_WFM   // delete Wifi credentials stored 
                   //(use once then comment and flash again), also HTTP /erase-wifi can do the same live
@@ -44,10 +46,16 @@ Use latest ESP core lib (from Github)
  #include <WiFi.h>
  #include <AsyncTCP.h>
 #elif defined(ESP8266)
+ #ifdef USE_LittleFS
+	#include <FS.h>
+	#define SPIFFS LittleFS
+	#include <LittleFS.h> 
+ #endif
  #include <ESP8266WiFi.h>
  #include <ESPAsyncTCP.h>
  #include <ESP8266mDNS.h>
 #endif
+
 #include <ESPAsyncWebServer.h>
 #ifdef USE_WFM 
  #include "ESPAsyncWiFiManager.h"
@@ -61,6 +69,7 @@ Use latest ESP core lib (from Github)
  #include <stdint.h>
  #include "Xtea.h"
 #endif
+
 
 #define RTC_UTC_TEST 1577836800 // Some Date
 #define MYTZ PSTR("EST5EDT,M3.2.0,M11.1.0")
@@ -517,8 +526,12 @@ void setup(){
   Serial.printf("Timer set %02d:%02d - %02d:%02d\n", ee.hstart, ee.mstart, ee.hstop, ee.mstop);
   Serial.printf("Temp set %+2.1f\n", ee.tempe);
 
-//SPIFFS
-  SPIFFS.begin();
+//FS
+  if (SPIFFS.begin()) {
+    Serial.print(F("FS mounted\n"));
+  } else {
+	Serial.print(F("FS mount failed\n"));  
+  }
 
 #ifdef USE_AUTH_WS
   ws.setAuthentication(http_username,http_password);
@@ -676,7 +689,10 @@ void setup(){
   ArduinoOTA.setHostname(hostName);
   ArduinoOTA.onStart([]() { 
     Serial.print(F("OTA Started ...\n"));
+    SPIFFS.end(); // Clean FS
     ws.textAll("Now,OTA"); // for all clients
+    ws.enable(false);
+    ws.closeAll();
   });
   ArduinoOTA.begin();
 } // setup end

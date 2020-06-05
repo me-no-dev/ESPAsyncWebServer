@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <title>ESP Editor</title>
@@ -196,7 +195,7 @@
                 t.append("path", e), requests.add("PUT", "/edit", t, a)
             }
             var o = ce("button");
-            o.innerHTML = "Refresh List", ge(e).appendChild(o);
+            o.innerHTML = "Root Dir", ge(e).appendChild(o);
             var c = ce("input");
             c.type = "file", c.multiple = !1, c.name = "data", c.id = "upload-select", ge(e).appendChild(c);
             var d = ce("input");
@@ -255,6 +254,7 @@
         }
 
         function createTree(e, t) {
+		
             function n(e) {
                 ge("download-frame").src = "/edit?download=" + e
             }
@@ -274,10 +274,12 @@
                     t.loadUrl(i), document.body.getElementsByClassName("cm").length > 0 && document.body.removeChild(e)
                 });
                 var d = ce("li");
-                o.appendChild(d), d.innerHTML = "<span>Download</span>", d.onclick = function(t) {
+                o.appendChild(d), s(i) || r(i) ? (d.innerHTML = "<span>Download</span>", d.onclick = function(t) {
                     n(i), document.body.getElementsByClassName("cm").length > 0 && document.body.removeChild(e)
-                };
-                var l = ce("li");
+                }) : z(i) ? (o.appendChild(d), d.innerHTML = "<span>ChDir</span>", d.onclick = function(t) {
+                   f.removeChild(f.childNodes[0]), m(f, i), document.body.getElementsByClassName("cm").length > 0 && document.body.removeChild(e)
+                }) : ();
+				var l = ce("li");
                 o.appendChild(l), l.innerHTML = "<span>Delete</span>", l.onclick = function(t) {
                     u(i), document.body.getElementsByClassName("cm").length > 0 && document.body.removeChild(e)
                 }
@@ -302,7 +304,7 @@
                 c.id = n;
                 var d = ce("span");
                 return d.innerHTML = n, c.appendChild(d), c.onclick = function(e) {
-                    s(c.id.toLowerCase()) ? t.loadUrl(c.id) : r(c.id.toLowerCase()) && a(c.id)
+                    s(c.id.toLowerCase()) ? t.loadUrl(c.id) : r(c.id.toLowerCase()) ? a(c.id) : z(c.id) ? f.removeChild(f.childNodes[0]) && m(f, c.id.toLowerCase()) : ()
                 }, c.oncontextmenu = function(e) {
                     e.preventDefault(), e.stopPropagation(), o(e, c.id, !0)
                 }, c
@@ -314,6 +316,11 @@
                 e.appendChild(a);
                 for (var i = n.length, o = 0; i > o; o++) "file" === n[o].type && a.appendChild(c(t, n[o].name, n[o].size))
             }
+			
+			function z(e) {
+				if (e.indexOf('.') == -1) return !0
+				else return !1
+			}
 
             function s(e) {
                 var t = /(?:.([^.]+))?$/.exec(e)[1];
