@@ -26,6 +26,11 @@
 #include <regex>
 #endif
 
+#ifdef ASYNCWEBSERVER_URI_PLACEHOLDERS
+#include <vector>
+#include <sstream>
+#endif
+
 #include "stddef.h"
 #include <time.h>
 
@@ -72,11 +77,13 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArUploadHandlerFunction _onUpload;
     ArBodyHandlerFunction _onBody;
     bool _isRegex;
+    bool _hasPlaceholders;
   public:
-    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL), _isRegex(false) {}
+    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL), _isRegex(false), _hasPlaceholders(false) {}
     void setUri(const String& uri){ 
       _uri = uri; 
       _isRegex = uri.startsWith("^") && uri.endsWith("$");
+      _hasPlaceholders = uri.indexOf("{}") > 0;
     }
     void setMethod(WebRequestMethodComposite method){ _method = method; }
     void onRequest(ArRequestHandlerFunction fn){ _onRequest = fn; }
@@ -105,6 +112,44 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
         }
       } else 
 #endif
+
+#ifdef ASYNCWEBSERVER_URI_PLACEHOLDERS
+      if (_hasPlaceholders) {
+        // split uri / url
+        std::string item;
+        
+        std::stringstream ssUri(_uri.c_str());
+        std::vector<std::string> partsUri;
+        
+        while (std::getline(ssUri, item, '/')) {
+          partsUri.push_back(item);
+        }
+        
+        std::stringstream ssUrl(request->url().c_str());
+        std::vector<std::string> partsUrl;
+
+        while (std::getline(ssUrl, item, '/')) {
+          partsUrl.push_back(item);
+        }
+
+        // check if size matches
+        if (partsUri.size() != partsUrl.size()) {
+            return false;
+        }
+
+        // iterate through data
+        for (size_t i = 0; i < partsUri.size(); ++i) {
+            if (partsUri[i] != "{}") {
+
+                if (partsUri[i] != partsUrl[i])
+                    return false;
+            } else {
+                request->_addPathParam(partsUrl[i].c_str());
+            }
+        }
+      } else 
+#endif
+
       if (_uri.length() && _uri.endsWith("*")) {
         String uriTemplate = String(_uri);
 	uriTemplate = uriTemplate.substring(0, uriTemplate.length() - 1);
