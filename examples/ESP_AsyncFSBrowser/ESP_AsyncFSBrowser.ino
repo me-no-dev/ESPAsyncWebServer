@@ -1,12 +1,18 @@
 #define USE_LittleFS  // possible only for ESP8266 for now
 
 #include <ArduinoOTA.h>
+
 #ifdef ESP32
-#include <FS.h>
-#include <SPIFFS.h>
-#include <ESPmDNS.h>
-#include <WiFi.h>
-#include <AsyncTCP.h>
+ #include <FS.h>
+ #ifdef USE_LittleFS
+  #define SPIFFS LITTLEFS
+  #include <LITTLEFS.h> 
+ #else
+  #include <SPIFFS.h>
+ #endif
+ #include <ESPmDNS.h>
+ #include <WiFi.h>
+ #include <AsyncTCP.h>
 #elif defined(ESP8266)
  #ifdef USE_LittleFS
 	#include <FS.h>

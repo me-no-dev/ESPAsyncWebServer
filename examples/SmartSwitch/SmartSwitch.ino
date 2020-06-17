@@ -13,7 +13,7 @@ Multiple clients can be connected at same time, they see each other requests
 Use latest ESP core lib (from Github)
 */
 
-#define USE_LittleFS  // possible only for ESP8266 for now
+#define USE_LittleFS
 
 #define USE_WFM   // to use ESPAsyncWiFiManager
 //#define DEL_WFM   // delete Wifi credentials stored 
@@ -41,7 +41,12 @@ Use latest ESP core lib (from Github)
 #include <ArduinoOTA.h>
 #ifdef ESP32
  #include <FS.h>
- #include <SPIFFS.h>
+ #ifdef USE_LittleFS
+  #define SPIFFS LITTLEFS
+  #include <LITTLEFS.h> 
+ #else
+  #include <SPIFFS.h>
+ #endif
  #include <ESPmDNS.h>
  #include <WiFi.h>
  #include <AsyncTCP.h>
