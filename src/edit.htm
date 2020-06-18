@@ -274,7 +274,7 @@
                     t.loadUrl(i), document.body.getElementsByClassName("cm").length > 0 && document.body.removeChild(e)
                 });
                 var d = ce("li");
-                o.appendChild(d), s(i) || r(i) ? (d.innerHTML = "<span>Download</span>", d.onclick = function(t) {
+                o.appendChild(d), s(i) || r(i) || k(i) ? (d.innerHTML = "<span>Download</span>", d.onclick = function(t) {
                     n(i), document.body.getElementsByClassName("cm").length > 0 && document.body.removeChild(e)
                 }) : z(i) ? (o.appendChild(d), d.innerHTML = "<span>ChDir</span>", d.onclick = function(t) {
                    f.removeChild(f.childNodes[0]), m(f, i), document.body.getElementsByClassName("cm").length > 0 && document.body.removeChild(e)
@@ -353,6 +353,20 @@
                     case "jpg":
                     case "gif":
                     case "bmp":
+                        return !0
+                }
+                return !1
+            }
+			
+			function k(e) {  // other types may be there and good for download 
+                var t = /(?:.([^.]+))?$/.exec(e)[1];
+                if (void 0 !== typeof t) switch (t) {
+                    case "ico":
+                    case "gz":
+                    case "zip":
+                    case "wav":
+					case "mp3":
+					case "pdf":
                         return !0
                 }
                 return !1
