@@ -300,7 +300,7 @@ void mytimer() {
  Xtea x(key);
 
 void encip(String &mtk, unsigned long token){
-  unsigned long res[2] = {random(0xFFFFFFFF),token};
+  unsigned long res[2] = {(unsigned long)random(0xFFFFFFFF),token};
   x.encrypt(res);
   char buf1[18];
   sprintf(buf1, "%08X_%08X",res[0],res[1]); //8 bytes for encryping the IP cookie 
@@ -606,7 +606,7 @@ void setup(){
 #endif
 
 
-#ifdef USE_AUTH COOKIE
+#ifdef USE_AUTH_COOKIE
   }).setFilter(myHandshake);
 #else
   });
@@ -622,7 +622,7 @@ void setup(){
        settimeofday(&tv, nullptr);  
       }
        request->send(200, "text/plain","Got browser time ...");
-#ifdef USE_AUTH COOKIE
+#ifdef USE_AUTH_COOKIE
   }).setFilter(myHandshake);
 #else
   });
@@ -640,7 +640,7 @@ void setup(){
 #endif
       });
     request->send(200, "text/plain","Restarting ...");
-#ifdef USE_AUTH COOKIE
+#ifdef USE_AUTH_COOKIE
   }).setFilter(myHandshake);
 #else
   });
@@ -659,7 +659,7 @@ void setup(){
 #endif
       });
     request->send(200, "text/plain","Erasing WiFi data ...");
-#ifdef USE_AUTH COOKIE
+#ifdef USE_AUTH_COOKIE
   }).setFilter(myHandshake);
 #else
   });
