@@ -240,10 +240,13 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
     }
   } else if(request->method() == HTTP_DELETE){
     if(request->hasParam("path", true)){
+
+        if(!(_fs.remove(request->getParam("path", true)->value()))){
 #ifdef ESP32
-        _fs.rmdir(request->getParam("path", true)->value()); // try rmdir for littlefs
+			_fs.rmdir(request->getParam("path", true)->value()); // try rmdir for littlefs
 #endif
-        _fs.remove(request->getParam("path", true)->value());
+		}			
+			
       request->send(200, "", "DELETE: "+request->getParam("path", true)->value());
     } else
       request->send(404);

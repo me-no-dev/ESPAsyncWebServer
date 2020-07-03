@@ -1,6 +1,6 @@
 # In this fork
 - SPIFFSEditor improvements
-- Added [extras](https://github.com/lorol/ESPAsyncWebServer/tree/master/extras) folder with (Win) tools for re-packing, allow editing, updating and compressing html to binary arrays, embedded to source
+- Added [extras](https://github.com/lorol/ESPAsyncWebServer/tree/master/extras) folder with (Win) tools for re-packing, editing, updating and compressing html to binary arrays embedded to source
 - Added a [SmartSwitch](https://github.com/lorol/ESPAsyncWebServer/tree/master/examples/SmartSwitch) example to test code features
 - Applied the memory optimizations from [sascha432](https://github.com/sascha432/ESPAsyncWebServer) fork
 - Cookie Authentication including on Websocket part, based on [ayushsharma82](https://github.com/me-no-dev/ESPAsyncWebServer/pull/684) PR, new functions added:
@@ -9,6 +9,7 @@
 - [Additions to this README.md from jendakol&#39; PR](https://github.com/me-no-dev/ESPAsyncWebServer/pull/770)
   - [Respond with file content using a callback and extra headers](#respond-with-file-content-using-a-callback-and-extra-headers)
   - [Serving static files by custom handling](#serving-static-files-by-custom-handling)
+  - Added LittleFS choice for both [esp8266](https://github.com/esp8266/Arduino/tree/master/libraries/LittleFS) / [esp32](https://github.com/lorol/LITTLEFS) , see [SmartSwitch](https://github.com/lorol/ESPAsyncWebServer/blob/master/examples/SmartSwitch/SmartSwitch.ino#L16 )
 ------------------------------------------------------------------------------------------
 
 # ESPAsyncWebServer 
