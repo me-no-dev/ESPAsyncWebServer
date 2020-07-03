@@ -240,6 +240,9 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
     }
   } else if(request->method() == HTTP_DELETE){
     if(request->hasParam("path", true)){
+#ifdef ESP32
+        _fs.rmdir(request->getParam("path", true)->value()); // try rmdir for littlefs
+#endif
         _fs.remove(request->getParam("path", true)->value());
       request->send(200, "", "DELETE: "+request->getParam("path", true)->value());
     } else
@@ -275,7 +278,27 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       String filename = request->getParam("path", true)->value();
       if(_fs.exists(filename)){
         request->send(200);
-      } else {
+      } else {  
+/*******************************************************/
+#ifdef ESP32  
+		if (strchr(filename.c_str(), '/')) {
+			// For file creation, silently make subdirs as needed.  If any fail,
+			// it will be caught by the real file open later on
+			char *pathStr = strdup(filename.c_str());
+			if (pathStr) {
+				// Make dirs up to the final fnamepart
+				char *ptr = strchr(pathStr, '/');
+				while (ptr) {
+					*ptr = 0;
+					_fs.mkdir(pathStr);
+					*ptr = '/';
+					ptr = strchr(ptr+1, '/');
+				}
+			}
+			free(pathStr);
+		}		  
+#endif		  
+/*******************************************************/		  
         fs::File f = _fs.open(filename, "w");
         if(f){
           f.write((uint8_t)0x00);
