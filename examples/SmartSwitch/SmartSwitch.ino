@@ -13,7 +13,12 @@ Multiple clients can be connected at same time, they see each other requests
 Use latest ESP core lib (from Github)
 */
 
+// Defaulut is SPIFFS, FatFS: only on ESP32
+// Comment 2 lines below or uncomment only one of them
+
 #define USE_LittleFS
+//#define USE_FatFS // select partition scheme w/ ffat!
+
 
 #define USE_WFM   // to use ESPAsyncWiFiManager
 //#define DEL_WFM   // delete Wifi credentials stored 
@@ -42,10 +47,17 @@ Use latest ESP core lib (from Github)
 #ifdef ESP32
  #include <FS.h>
  #ifdef USE_LittleFS
-  #define SPIFFS LITTLEFS
-  #include <LITTLEFS.h> 
+  #define HSTNM "ssw32-littlefs"
+  #define MYFS LITTLEFS
+  #include "LITTLEFS.h"
+ #elif defined(USE_FatFS)
+  #define HSTNM "ssw32-ffat"
+  #define MYFS FFat
+  #include "FFat.h"
  #else
+  #define MYFS SPIFFS
   #include <SPIFFS.h>
+  #define HSTNM "ssw32-spiffs"
  #endif
  #include <ESPmDNS.h>
  #include <WiFi.h>
@@ -53,8 +65,14 @@ Use latest ESP core lib (from Github)
 #elif defined(ESP8266)
  #ifdef USE_LittleFS
 	#include <FS.h>
-	#define SPIFFS LittleFS
+  #define HSTNM "ssw8266-littlefs"
+	#define MYFS LittleFS
 	#include <LittleFS.h> 
+ #elif defined(USE_FatFS)
+  #error "FatFS only on ESP32 for now!"
+ #else
+  #define HSTNM "ssw8266-spiffs"
+  #define MYFS SPIFFS
  #endif
  #include <ESP8266WiFi.h>
  #include <ESPAsyncTCP.h>
@@ -120,7 +138,7 @@ AsyncWebSocket ws("/ws");
  const char* password = "MYROUTERPASSWD";
 #endif 
 
-const char* hostName = "smartsw";
+const char* hostName = HSTNM;
 
 // RTC
 static timeval tv;
@@ -532,7 +550,7 @@ void setup(){
   Serial.printf("Temp set %+2.1f\n", ee.tempe);
 
 //FS
-  if (SPIFFS.begin()) {
+  if (MYFS.begin()) {
     Serial.print(F("FS mounted\n"));
   } else {
 	Serial.print(F("FS mount failed\n"));  
@@ -551,19 +569,19 @@ void setup(){
 
 #ifdef ESP32
  #ifdef USE_AUTH_STAT
-  server.addHandler(new SPIFFSEditor(SPIFFS, http_username,http_password));
+  server.addHandler(new SPIFFSEditor(MYFS, http_username,http_password));
  #elif defined(USE_AUTH_COOKIE)
-  server.addHandler(new SPIFFSEditor(SPIFFS)).setFilter(myHandshake);
+  server.addHandler(new SPIFFSEditor(MYFS)).setFilter(myHandshake);
  #else
-  server.addHandler(new SPIFFSEditor(SPIFFS));
+  server.addHandler(new SPIFFSEditor(MYFS));
  #endif
 #elif defined(ESP8266)
  #ifdef USE_AUTH_STAT
-  server.addHandler(new SPIFFSEditor(http_username,http_password));
+  server.addHandler(new SPIFFSEditor(http_username,http_password,MYFS));
  #elif defined(USE_AUTH_COOKIE)
-  server.addHandler(new SPIFFSEditor()).setFilter(myHandshake);
+  server.addHandler(new SPIFFSEditor("","",MYFS)).setFilter(myHandshake);
  #else
-  server.addHandler(new SPIFFSEditor()); 
+  server.addHandler(new SPIFFSEditor("","",MYFS)); 
  #endif
 #endif
 
@@ -668,13 +686,13 @@ void setup(){
 // above paths need individual auth ////////////////////////////////////////////////
 
 #ifdef USE_AUTH_COOKIE
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setFilter(myHandshake);
-  server.serveStatic("/", SPIFFS, "/login/").setDefaultFile("index.htm");
+  server.serveStatic("/", MYFS, "/").setDefaultFile("index.htm").setFilter(myHandshake);
+  server.serveStatic("/", MYFS, "/login/").setDefaultFile("index.htm");
 #else
   #ifdef USE_AUTH_STAT
-    server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm").setAuthentication(http_username,http_password);
+    server.serveStatic("/", MYFS, "/").setDefaultFile("index.htm").setAuthentication(http_username,http_password);
   #else
-    server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+    server.serveStatic("/", MYFS, "/").setDefaultFile("index.htm");
   #endif
 #endif
 
@@ -694,7 +712,7 @@ void setup(){
   ArduinoOTA.setHostname(hostName);
   ArduinoOTA.onStart([]() { 
     Serial.print(F("OTA Started ...\n"));
-    SPIFFS.end(); // Clean FS
+    MYFS.end(); // Clean FS
     ws.textAll("Now,OTA"); // for all clients
     ws.enable(false);
     ws.closeAll();
