@@ -157,7 +157,16 @@ void setup(){
 
   MDNS.addService("http","tcp",80);
 
-  MYFS.begin();
+//FS
+#ifdef USE_FatFS
+  if (MYFS.begin(false,"/ffat",3)) { //limit the RAM usage, bottom line 8kb + 4kb takes per each file, default is 10
+#else
+  if (MYFS.begin()) {
+#endif
+    Serial.print(F("FS mounted\n"));
+  } else {
+    Serial.print(F("FS mount failed\n"));  
+  }
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);

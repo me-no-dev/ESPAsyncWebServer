@@ -64,10 +64,10 @@ Use latest ESP core lib (from Github)
  #include <AsyncTCP.h>
 #elif defined(ESP8266)
  #ifdef USE_LittleFS
-	#include <FS.h>
+    #include <FS.h>
   #define HSTNM "ssw8266-littlefs"
-	#define MYFS LittleFS
-	#include <LittleFS.h> 
+    #define MYFS LittleFS
+    #include <LittleFS.h> 
  #elif defined(USE_FatFS)
   #error "FatFS only on ESP32 for now!"
  #else
@@ -550,10 +550,14 @@ void setup(){
   Serial.printf("Temp set %+2.1f\n", ee.tempe);
 
 //FS
+#ifdef USE_FatFS
+  if (MYFS.begin(false,"/ffat",3)) { //limit the RAM usage, bottom line 8kb + 4kb takes per each file, default is 10
+#else
   if (MYFS.begin()) {
+#endif
     Serial.print(F("FS mounted\n"));
   } else {
-	Serial.print(F("FS mount failed\n"));  
+    Serial.print(F("FS mount failed\n"));  
   }
 
 #ifdef USE_AUTH_WS
