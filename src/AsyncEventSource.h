@@ -21,13 +21,17 @@
 #define ASYNCEVENTSOURCE_H_
 
 #include <Arduino.h>
+#include <Arduino.h>
 #ifdef ESP32
 #include <AsyncTCP.h>
-#define SSE_MAX_QUEUED_MESSAGES 32
 #else
 #include <ESPAsyncTCP.h>
-#define SSE_MAX_QUEUED_MESSAGES 8
 #endif
+
+#ifndef SSE_MAX_QUEUED_MESSAGES
+#define SSE_MAX_QUEUED_MESSAGES 32
+#endif
+
 #include <ESPAsyncWebServer.h>
 
 #include "AsyncWebSynchronization.h"
@@ -52,11 +56,11 @@ typedef std::function<void(AsyncEventSourceClient *client)> ArEventHandlerFuncti
 
 class AsyncEventSourceMessage {
   private:
-    uint8_t * _data; 
+    uint8_t * _data;
     size_t _len;
     size_t _sent;
     //size_t _ack;
-    size_t _acked; 
+    size_t _acked;
   public:
     AsyncEventSourceMessage(const char * data, size_t len);
     ~AsyncEventSourceMessage();
@@ -90,7 +94,7 @@ class AsyncEventSourceClient {
 
     //system callbacks (do not call)
     void _onAck(size_t len, uint32_t time);
-    void _onPoll(); 
+    void _onPoll();
     void _onTimeout(uint32_t time);
     void _onDisconnect();
 };
