@@ -44,7 +44,11 @@ extern "C" {
   #include "user_interface.h"
 }
 #else
+#if __has_include(<esp32/rom/rtc.h>) 
+#include <esp32/rom/rtc.h>
+#else 
 #include <rom/rtc.h>
+#endif
 #endif
 
 const char WFM_HTTP_HEAD[] PROGMEM            = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/><title>{v}</title>";
