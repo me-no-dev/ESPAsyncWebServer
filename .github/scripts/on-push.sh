@@ -7,7 +7,7 @@ if [ ! -z "$TRAVIS_BUILD_DIR" ]; then
 	export GITHUB_REPOSITORY="$TRAVIS_REPO_SLUG"
 elif [ -z "$GITHUB_WORKSPACE" ]; then
 	export GITHUB_WORKSPACE="$PWD"
-	export GITHUB_REPOSITORY="me-no-dev/ESPAsyncWebServer"
+	export GITHUB_REPOSITORY="lorol/ESPAsyncWebServer"
 fi
 
 TARGET_PLATFORM="$1"
@@ -34,8 +34,12 @@ if [ "$BUILD_PIO" -eq 0 ]; then
 	cp -rf "$GITHUB_WORKSPACE" "$ARDUINO_USR_PATH/libraries/ESPAsyncWebServer"
 	echo "Installing ArduinoJson ..."
 	git clone https://github.com/bblanchon/ArduinoJson "$ARDUINO_USR_PATH/libraries/ArduinoJson" > /dev/null 2>&1
+    echo "Installing DHT sensor library ..."
+	git clone https://github.com/adafruit/DHT-sensor-library "$ARDUINO_USR_PATH/libraries/DHT-sensor-library" > /dev/null 2>&1
 
 	if [[ "$TARGET_PLATFORM" == "esp32" ]]; then
+  		echo "Installing LITTLEFS for ESP32 ..."
+		git clone https://github.com/lorol/LITTLEFS "$ARDUINO_USR_PATH/libraries/LITTLEFS" > /dev/null 2>&1  
 		echo "Installing AsyncTCP ..."
 		git clone https://github.com/me-no-dev/AsyncTCP "$ARDUINO_USR_PATH/libraries/AsyncTCP" > /dev/null 2>&1
 		FQBN="espressif:esp32:esp32:PSRAM=enabled,PartitionScheme=huge_app"

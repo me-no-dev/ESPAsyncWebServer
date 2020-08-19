@@ -146,18 +146,26 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
   String gzip = path + F(".gz");
 
   if (_gzipFirst) {
-    request->_tempFile = _fs.open(gzip, fs::FileOpenMode::read);
-    gzipFound = FILE_IS_REAL(request->_tempFile);
+    if (_fs.exists(gzip)) {                             
+     request->_tempFile = _fs.open(gzip, fs::FileOpenMode::read);
+     gzipFound = FILE_IS_REAL(request->_tempFile);
+    } 
     if (!gzipFound){
+     if (_fs.exists(path)) {                              
       request->_tempFile = _fs.open(path, fs::FileOpenMode::read);
       fileFound = FILE_IS_REAL(request->_tempFile);
+     }  
     }
   } else {
-    request->_tempFile = _fs.open(path, fs::FileOpenMode::read);
-    fileFound = FILE_IS_REAL(request->_tempFile);
+    if (_fs.exists(path)) {                           
+     request->_tempFile = _fs.open(path, fs::FileOpenMode::read);
+     fileFound = FILE_IS_REAL(request->_tempFile);
+    }
     if (!fileFound){
+     if (_fs.exists(gzip)) {                             
       request->_tempFile = _fs.open(gzip, fs::FileOpenMode::read);
       gzipFound = FILE_IS_REAL(request->_tempFile);
+     }
     }
   }
 
