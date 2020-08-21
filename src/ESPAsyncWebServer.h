@@ -373,6 +373,7 @@ class AsyncWebServerResponse {
   public:
     AsyncWebServerResponse();
     virtual ~AsyncWebServerResponse();
+    virtual int code() const;
     virtual void setCode(int code);
     virtual void setContentLength(size_t len);
     virtual void setContentType(const String& type);
