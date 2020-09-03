@@ -664,9 +664,9 @@ void AsyncWebSocketClient::_onData(void *pbuf, size_t plen){
         if(_pinfo.opcode){
           _pinfo.message_opcode = _pinfo.opcode;
           _pinfo.num = 0;
-        } else _pinfo.num += 1;
+        }
       }
-      _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, (uint8_t*)data, datalen);
+      if (datalen > 0) _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, (uint8_t*)data, datalen);
 
       _pinfo.index += datalen;
     } else if((datalen + _pinfo.index) == _pinfo.len){
@@ -694,6 +694,8 @@ void AsyncWebSocketClient::_onData(void *pbuf, size_t plen){
           _server->_handleEvent(this, WS_EVT_PONG, NULL, data, datalen);
       } else if(_pinfo.opcode < 8){//continuation or text/binary frame
         _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, data, datalen);
+        if (_pinfo.final) _pinfo.num = 0;
+        else _pinfo.num += 1;   
       }
     } else {
       //os_printf("frame error: len: %u, index: %llu, total: %llu\n", datalen, _pinfo.index, _pinfo.len);

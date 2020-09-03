@@ -672,11 +672,23 @@ void setup(){
 #ifdef USE_AUTH_STAT
     if(!request->authenticate(http_username, http_password)) return request->requestAuthentication();
 #endif
-      request->onDisconnect([]() {
-        WiFi.disconnect(true);  
+      request->onDisconnect([]() { 
 #ifdef ESP32
+/*          
+        //https://github.com/espressif/arduino-esp32/issues/400#issuecomment-499631249 
+        //WiFi.disconnect(true); // doesn't work on esp32, below needs #include "esp_wifi.h"
+        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT(); //load the flash-saved configs
+        esp_wifi_init(&cfg); //initiate and allocate wifi resources (does not matter if connection fails)
+        if(esp_wifi_restore()!=ESP_OK){
+            Serial.print(F("WiFi is not initialized by esp_wifi_init "));
+        } else {
+            Serial.print(F("WiFi Configurations Cleared!"));
+        }
+*/        
+        WiFi.disconnect(true, true); // Works on esp32
         ESP.restart();
 #elif defined(ESP8266)
+        WiFi.disconnect(true); 
         ESP.reset();
 #endif
       });
