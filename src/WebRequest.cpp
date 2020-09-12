@@ -210,8 +210,7 @@ void AsyncWebServerRequest::_onAck(size_t len, uint32_t time){
   if(_response != NULL){
     if(!_response->_finished()){
       _response->_ack(this, len, time);
-    }
-    if(_response->_finished()){
+    } else if(_response->_finished()){
       AsyncWebServerResponse* r = _response;
       _response = NULL;
       delete r;
