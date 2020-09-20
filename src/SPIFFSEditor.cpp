@@ -1,14 +1,14 @@
 #include "SPIFFSEditor.h"
 #include <FS.h>
 
-#include "edit.htm.gz.h"
+//#include "edit.htm.gz.h" // moved to FS
 
 #ifdef ESP32 
  #define fullName(x) name(x)
 #endif
 
 #define SPIFFS_MAXLENGTH_FILEPATH 32
-const char *excludeListFile = "/.exclude.files";
+static const char excludeListFile[] PROGMEM = "/.exclude.files";
 
 typedef struct ExcludeListS {
     char *item;
@@ -103,7 +103,7 @@ static void loadExcludeList(fs::FS &_fs, const char *filename){
 
 static bool isExcluded(fs::FS &_fs, const char *filename) {
   if(excludes == NULL){
-      loadExcludeList(_fs, excludeListFile);
+      loadExcludeList(_fs, String(FPSTR(excludeListFile)).c_str());
   }
   ExcludeList *e = excludes;
   while(e){
@@ -130,12 +130,12 @@ SPIFFSEditor::SPIFFSEditor(const String& username, const String& password, const
 {}
 
 bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
-  if(request->url().equalsIgnoreCase("/edit")){
+  if(request->url().equalsIgnoreCase(F("/edit"))){
     if(request->method() == HTTP_GET){
-      if(request->hasParam("list"))
+      if(request->hasParam(F("list")))
         return true;
-      if(request->hasParam("edit")){
-        request->_tempFile = _fs.open(request->arg("edit"), "r");
+      if(request->hasParam(F("edit"))){
+        request->_tempFile = _fs.open(request->arg(F("edit")), "r");
         if(!request->_tempFile){
           return false;
         }
@@ -147,7 +147,7 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
 #endif
       }
       if(request->hasParam("download")){
-        request->_tempFile = _fs.open(request->arg("download"), "r");
+        request->_tempFile = _fs.open(request->arg(F("download")), "r");
         if(!request->_tempFile){
           return false;
         }
@@ -158,7 +158,7 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
         }
 #endif
       }
-      request->addInterestingHeader("If-Modified-Since");
+      request->addInterestingHeader(F("If-Modified-Since"));
       return true;
     }
     else if(request->method() == HTTP_POST)
@@ -178,8 +178,8 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
     return request->requestAuthentication();
 
   if(request->method() == HTTP_GET){
-    if(request->hasParam("list")){
-      String path = request->getParam("list")->value();
+    if(request->hasParam(F("list"))){
+      String path = request->getParam(F("list"))->value();
 #ifdef ESP32
       File dir = _fs.open(path);
 #else
@@ -204,11 +204,11 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
             continue;
         }
         if (output != "[") output += ',';
-        output += "{\"type\":\"";
-        output += "file";
-        output += "\",\"name\":\"";
+        output += F("{\"type\":\"");
+        output += F("file");
+        output += F("\",\"name\":\"");
         output += String(fname);
-        output += "\",\"size\":";
+        output += F("\",\"size\":");
         output += String(entry.size());
         output += "}";
 #ifdef ESP32
@@ -221,41 +221,42 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       dir.close();
 #endif
       output += "]";
-      request->send(200, "application/json", output);
+      request->send(200, F("application/json"), output);
       output = String();
     }
-    else if(request->hasParam("edit") || request->hasParam("download")){
-      request->send(request->_tempFile, request->_tempFile.fullName(), String(), request->hasParam("download"));
+    else if(request->hasParam(F("edit")) || request->hasParam(F("download"))){
+      request->send(request->_tempFile, request->_tempFile.fullName(), String(), request->hasParam(F("download")));
     }
     else {
       const char * buildTime = __DATE__ " " __TIME__ " GMT";
-      if (request->header("If-Modified-Since").equals(buildTime)) {
+      if (request->header(F("If-Modified-Since")).equals(buildTime)) {
         request->send(304);
       } else {
-        AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", edit_htm_gz, edit_htm_gz_len);
-        response->addHeader("Content-Encoding", "gzip");
-        response->addHeader("Last-Modified", buildTime);
-        request->send(response);
+        request->send(_fs, F("/extras/edit.htm"), String(F("text/html")), false);
+        // AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", edit_htm_gz, edit_htm_gz_len);
+        // response->addHeader("Content-Encoding", "gzip");
+        // response->addHeader("Last-Modified", buildTime);
+        // request->send(response);
       }
     }
   } else if(request->method() == HTTP_DELETE){
-    if(request->hasParam("path", true)){
+    if(request->hasParam(F("path"), true)){
 
-        if(!(_fs.remove(request->getParam("path", true)->value()))){
+        if(!(_fs.remove(request->getParam(F("path"), true)->value()))){
 #ifdef ESP32
-			_fs.rmdir(request->getParam("path", true)->value()); // try rmdir for littlefs
+			_fs.rmdir(request->getParam(F("path"), true)->value()); // try rmdir for littlefs
 #endif
 		}			
 			
-      request->send(200, "", "DELETE: "+request->getParam("path", true)->value());
+      request->send(200, "", String(F("DELETE: "))+request->getParam(F("path"), true)->value());
     } else
       request->send(404);
   } else if(request->method() == HTTP_POST){
-    if(request->hasParam("data", true, true) && _fs.exists(request->getParam("data", true, true)->value()))
-      request->send(200, "", "UPLOADED: "+request->getParam("data", true, true)->value());
+    if(request->hasParam(F("data"), true, true) && _fs.exists(request->getParam(F("data"), true, true)->value()))
+      request->send(200, "", String(F("UPLOADED: "))+request->getParam(F("data"), true, true)->value());
   
-	else if(request->hasParam("rawname", true) &&  request->hasParam("raw0", true)){
-	  String rawnam = request->getParam("rawname", true)->value();
+	else if(request->hasParam(F("rawname"), true) &&  request->hasParam(F("raw0"), true)){
+	  String rawnam = request->getParam(F("rawname"), true)->value();
 	  
 	  if (_fs.exists(rawnam)) _fs.remove(rawnam); // delete it to allow a mode
 	  
@@ -263,22 +264,22 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
 	  uint16_t i = 0;
 	  fs::File f = _fs.open(rawnam, "a");
 	  
-	  while (request->hasParam("raw" + String(k), true)) { //raw0 .. raw1
+	  while (request->hasParam(String(F("raw")) + String(k), true)) { //raw0 .. raw1
 		if(f){
-			i += f.print(request->getParam("raw" + String(k), true)->value());  
+			i += f.print(request->getParam(String(F("raw")) + String(k), true)->value());  
 		}
 		k++;
 	  }
 	  f.close();
-	  request->send(200, "", "IPADWRITE: " + rawnam + ":" + String(i));
+	  request->send(200, "", String(F("IPADWRITE: ")) + rawnam + ":" + String(i));
 	  
     } else {
       request->send(500);
     }	  
   
   } else if(request->method() == HTTP_PUT){
-    if(request->hasParam("path", true)){
-      String filename = request->getParam("path", true)->value();
+    if(request->hasParam(F("path"), true)){
+      String filename = request->getParam(F("path"), true)->value();
       if(_fs.exists(filename)){
         request->send(200);
       } else {  
@@ -306,7 +307,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
         if(f){
           f.write((uint8_t)0x00);
           f.close();
-          request->send(200, "", "CREATE: "+filename);
+          request->send(200, "", String(F("CREATE: "))+filename);
         } else {
           request->send(500);
         }
