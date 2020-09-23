@@ -243,12 +243,12 @@ void showTime()
   }
 
   if (heat_enabled_prev) { // smart control (delayed one cycle)
-    if (((t - HYST) < ee.tempe)&&(ledState == LED_OFF)) { // OFF->ON once
+    if (((t + HYST) < ee.tempe)&&(ledState == LED_OFF)) { // OFF->ON once
       ledState = LED_ON;
       digitalWrite(ledPin, ledState); // apply change
       ws.textAll("led,ledon");
     }
-    if ((((t + HYST) > ee.tempe)&&(ledState == LED_ON))||(!heat_enabled)) { // ON->OFF once, also turn off at end of period.
+    if ((((t - HYST) > ee.tempe)&&(ledState == LED_ON))||(!heat_enabled)) { // ON->OFF once, also turn off at end of period.
       ledState = LED_OFF;
       digitalWrite(ledPin, ledState); // apply change
       ws.textAll("led,ledoff");

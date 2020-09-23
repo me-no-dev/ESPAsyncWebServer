@@ -1,7 +1,11 @@
 #include "SPIFFSEditor.h"
 #include <FS.h>
 
-//#include "edit.htm.gz.h" // moved to FS
+#define EDFS
+
+#ifndef EDFS
+ #include "edit.htm.gz.h"
+#endif
 
 #ifdef ESP32 
  #define fullName(x) name(x)
@@ -232,16 +236,18 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       if (request->header(F("If-Modified-Since")).equals(buildTime)) {
         request->send(304);
       } else {
-        request->send(_fs, F("/extras/edit.htm"), String(F("text/html")), false);
-        // AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", edit_htm_gz, edit_htm_gz_len);
-        // response->addHeader("Content-Encoding", "gzip");
-        // response->addHeader("Last-Modified", buildTime);
-        // request->send(response);
+#ifdef EDFS 
+         AsyncWebServerResponse *response = request->beginResponse(_fs, F("/edit.htm"), F("text/html"), false);
+#else
+         AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), edit_htm_gz, edit_htm_gz_len);
+#endif
+         response->addHeader(F("Content-Encoding"), F("gzip"));
+         response->addHeader(F("Last-Modified"), buildTime);
+         request->send(response);
       }
     }
   } else if(request->method() == HTTP_DELETE){
     if(request->hasParam(F("path"), true)){
-
         if(!(_fs.remove(request->getParam(F("path"), true)->value()))){
 #ifdef ESP32
 			_fs.rmdir(request->getParam(F("path"), true)->value()); // try rmdir for littlefs
