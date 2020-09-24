@@ -17,6 +17,9 @@ until a } is found on separate new line.
  ``` npm install html-minifier-terser -g,  npm install -g github-files-fetcher ```
 
 ### Batch files provided
-- **do.bat:** Generates **edit.htm.gz.h** file
+- **do_emb.bat:** Generates **edit.htm.gz.h** file for embedding to **SPIFFSEditor.cpp** as binary C array -  
+You need to comment **#define EDFS** at **SPIFFSEditor.cpp** for this choice
+- **do_ed_fs.bat:** Alternatively, makes a gzip-ed **edit.htm** file for fs -  
+uncomment **#define EDFS** for this choice. Saves about 4k of program flash storage.
 - **undo.bat:** Reverts **edit.htm** from C array header to file (still minified!)
 - **update_ace.bat:** Updates **acefull.js.gz** file from latest GitHub Ace sources
