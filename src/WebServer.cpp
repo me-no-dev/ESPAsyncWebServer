@@ -31,7 +31,12 @@ bool ON_AP_FILTER(AsyncWebServerRequest *request) {
 
 
 AsyncWebServer::AsyncWebServer(uint16_t port)
-  : _server(port)
+  : AsyncWebServer(IPADDR_ANY, port)
+{
+}
+
+AsyncWebServer::AsyncWebServer(IPAddress ipAddr, uint16_t port)
+  : _server(ipAddr, port)
   , _rewrites(LinkedList<AsyncWebRewrite*>([](AsyncWebRewrite* r){ delete r; }))
   , _handlers(LinkedList<AsyncWebHandler*>([](AsyncWebHandler* h){ delete h; }))
 {
