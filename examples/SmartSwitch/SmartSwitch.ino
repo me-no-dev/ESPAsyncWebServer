@@ -166,7 +166,8 @@ float t = 0;
 float h = 0;
 bool udht = false;
 bool heat_enabled_prev = false;
-int ledState = LED_OFF;                     
+bool ledState = LED_OFF;
+bool ledOut = LED_OFF;
 
 struct EE_bl { 
   byte memid;  //here goes the EEMARK stamp
@@ -180,7 +181,7 @@ struct EE_bl {
 EE_bl ee = {0,0,0,0,0,0.1}; //populate as initial
 
 // SUBS
-void writeEE() {
+void writeEE(){
   ee.memid = EEMARK;
   //EEPROM.put(EESC, sched); // only separately when needed with commit()
   //EEPROM.put(EECH, memch); // not need to store and retrieve memch
@@ -188,7 +189,7 @@ void writeEE() {
   EEPROM.commit(); //needed for ESP8266?
 }
 
-void readEE() {
+void readEE(){
   byte ChkEE;
   if (memch > MEMMAX) memch = 0;
   EEPROM.get(EEBEGIN + memch*sizeof(ee), ChkEE);
@@ -196,6 +197,15 @@ void readEE() {
     EEPROM.get(EEBEGIN  + memch*sizeof(ee), ee);
     EEPROM.get(EESC, sched);
     if (sched > MEMMAX + 1) sched = 0;
+  }
+}
+
+void doOut(){
+  if (ledOut != ledState){ // only if changed
+    digitalWrite(ledPin, ledState); //consolidated here
+    ledOut = ledState; //update
+    if (ledState == LED_OFF) ws.textAll("led,ledoff");
+    else ws.textAll("led,ledon");
   }
 }
 
@@ -208,13 +218,13 @@ void showTime()
   now = time(nullptr);
   const tm* tm = localtime(&now);
   ws.printfAll("Now,Clock,%02d:%02d,%d", tm->tm_hour, tm->tm_min, tm->tm_wday);
-  if ((2==tm->tm_hour )&&(2==tm->tm_min)) {
+  if ((2==tm->tm_hour )&&(2==tm->tm_min)){
     configTzTime(MYTZ, "pool.ntp.org");
     Serial.print(F("Sync Clock at 02:02\n"));
   }
   Serial.printf("RTC: %02d:%02d\n", tm->tm_hour, tm->tm_min);
 
-  if (sched == 0) { // automatic
+  if (sched == 0){ // automatic
       if ((tm->tm_wday > 0)&&(tm->tm_wday < 6)) tmpch = 0; //Mon - Fri
       else if (tm->tm_wday == 6) tmpch = 1; //Sat
       else if (tm->tm_wday == 0) tmpch = 2; //Sun
@@ -222,7 +232,7 @@ void showTime()
     tmpch = sched - 1; //and stays
   }
 
-  if (tmpch != memch) { // update if different
+  if (tmpch != memch){ // update if different
     memch = tmpch;
     readEE();
     ws.printfAll("Now,Setting,%02d:%02d,%02d:%02d,%+2.1f", ee.hstart, ee.mstart, ee.hstop, ee.mstop, ee.tempe);    
@@ -237,20 +247,18 @@ void showTime()
   else { //enable smart if different
 
     if (((bmi < emi)&&(bmi <= xmi)&&(xmi < emi))||
-        ((emi < bmi)&&((bmi <= xmi)||(xmi < emi)))) {
+        ((emi < bmi)&&((bmi <= xmi)||(xmi < emi)))){
          heat_enabled = true;
        } else heat_enabled = false;
   }
 
-  if (heat_enabled_prev) { // smart control (delayed one cycle)
-    if (((t + HYST) < ee.tempe)&&(ledState == LED_OFF)) { // OFF->ON once
+  if (heat_enabled_prev){ // smart control (delayed one cycle)
+    if (((t + HYST) < ee.tempe)&&(ledState == LED_OFF)){ // OFF->ON once
       ledState = LED_ON;
-      digitalWrite(ledPin, ledState); // apply change
       ws.textAll("led,ledon");
     }
-    if ((((t - HYST) > ee.tempe)&&(ledState == LED_ON))||(!heat_enabled)) { // ON->OFF once, also turn off at end of period.
+    if ((((t - HYST) > ee.tempe)&&(ledState == LED_ON))||(!heat_enabled)){ // ON->OFF once, also turn off at end of period.
       ledState = LED_OFF;
-      digitalWrite(ledPin, ledState); // apply change
       ws.textAll("led,ledoff");
     }
     
@@ -263,7 +271,7 @@ void showTime()
 void updateDHT(){
   float h1 = dht.readHumidity();
   float t1 = dht.readTemperature(); //Celsius or dht.readTemperature(true) for Fahrenheit
-  if (isnan(h1) || isnan(t1)) {
+  if (isnan(h1) || isnan(t1)){
   Serial.println(F("Failed to read from DHT sensor!"));
    } else {
      h = h1 + DHT_H_CORR;
@@ -279,11 +287,10 @@ void analogSample()
 
 void checkPhysicalButton()
 {
-  if (digitalRead(btnPin) == LOW) {
-    if (btnState != LOW) {     // btnState is used to avoid sequential toggles
+  if (digitalRead(btnPin) == LOW){
+    if (btnState != LOW){     // btnState is used to avoid sequential toggles
       ledState = !ledState;
-      digitalWrite(ledPin, ledState);
-      if (ledState == LED_OFF) {
+      if (ledState == LED_OFF){
         ws.textAll("led,ledoff");
         Serial.println(F("LED-OFF"));
       } else {
@@ -297,17 +304,17 @@ void checkPhysicalButton()
   }
 }
 
-void mytimer() {
+void mytimer(){
     ++count;          //200ms increments
     checkPhysicalButton();
-    if ((count % 25) == 1) { // update temp every 5 seconds
+    if ((count % 25) == 1){ // update temp every 5 seconds
       analogSample();
       udht = true;
     }
-    if ((count % 50) == 0) { // update temp every 10 seconds
+    if ((count % 50) == 0){ // update temp every 10 seconds
       ws.cleanupClients();
     }
-    if (count >= 150) { // cycle every 30 sec
+    if (count >= 150){ // cycle every 30 sec
       showTime();
       count = 0;
     }
@@ -385,22 +392,21 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       Serial.printf("ws[%s][%u] %s-message[%llu]: ", server->url(), client->id(), (info->opcode == WS_TEXT)?"text":"binary", info->len);
 
       if(info->opcode == WS_TEXT){
-        for(size_t i=0; i < info->len; i++) { //debug
+        for(size_t i=0; i < info->len; i++){ //debug
           msg += (char) data[i];
         }
-              if(data[0] == 'L') { // LED
-                if(data[1] == '1') {
+              if(data[0] == 'L'){ // LED
+                if(data[1] == '1'){
                   ledState = LED_ON;
                   ws.textAll("led,ledon"); // for others
                 }
-                else if(data[1] == '0') {
+                else if(data[1] == '0'){
                   ledState = LED_OFF;
                   ws.textAll("led,ledoff"); 
                 }
-                digitalWrite(ledPin, ledState); // apply change
                                   
-              } else if(data[0] == 'T') { // timeset
-                  if (len > 11) {
+              } else if(data[0] == 'T'){ // timeset
+                  if (len > 11){
                     data[3] = data[6] = data[9] = data[12] = 0; // cut strings 
                     ee.hstart = (uint8_t) atoi((const char *) &data[1]);
                     ee.mstart = (uint8_t) atoi((const char *) &data[4]);
@@ -411,8 +417,8 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
                     memch = 255; // to force showTime()to send Setting
                     showTime();
                   }
-              } else if(data[0] == 'W') { // temperatureset
-                  if (len > 3) {
+              } else if(data[0] == 'W'){ // temperatureset
+                  if (len > 3){
                     if (ee.tempe != (float) atof((const char *) &data[1])){
                      ee.tempe = (float) atof((const char *) &data[1]);
                      Serial.printf("[%u] Temp set %+2.1f\n", client->id(), ee.tempe);
@@ -421,7 +427,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
                      showTime();
                    }
                   }
-              } else if ((data[0] == 'Z')&&(len > 2)) { // sched
+              } else if ((data[0] == 'Z')&&(len > 2)){ // sched
                   data[2] = 0;
                   if (sched != (uint8_t) atoi((const char *) &data[1])){
                     sched = (uint8_t) atoi((const char *) &data[1]);
@@ -434,7 +440,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
         
       } else {
         char buff[3];
-        for(size_t i=0; i < info->len; i++) {
+        for(size_t i=0; i < info->len; i++){
           sprintf(buff, "%02x ", (uint8_t) data[i]);
           msg += buff ;
         }
@@ -457,12 +463,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
       Serial.printf("ws[%s][%u] frame[%u] %s[%llu - %llu]: ", server->url(), client->id(), info->num, (info->message_opcode == WS_TEXT)?"text":"binary", info->index, info->index + len);
 
       if(info->opcode == WS_TEXT){
-        for(size_t i=0; i < len; i++) {
+        for(size_t i=0; i < len; i++){
           msg += (char) data[i];
         }
       } else {
         char buff[3];
-        for(size_t i=0; i < len; i++) {
+        for(size_t i=0; i < len; i++){
           sprintf(buff, "%02x ", (uint8_t) data[i]);
           msg += buff ;
         }
@@ -488,7 +494,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
 
 void setup(){
   Serial.begin(115200);
-  Serial.setDebugOutput(true);
+  //Serial.setDebugOutput(true);
 
 //Wifi 
 #ifdef USE_WFM 
@@ -511,7 +517,7 @@ void setup(){
     //WiFi.softAP(hostName);  // Core SVN 5179 use STA as default interface in mDNS (#7042)
   WiFi.mode(WIFI_STA);      // Core SVN 5179 use STA as default interface in mDNS (#7042)
   WiFi.begin(ssid, password);
-  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+  if (WiFi.waitForConnectResult() != WL_CONNECTED){
     Serial.print(F("STA: Failed!\n"));
     WiFi.disconnect(false);
     delay(1000);
@@ -545,15 +551,14 @@ void setup(){
   EEPROM.begin(EEALL);
   //EEPROM.get(EECH, memch); //current channel, no need
   readEE(); // populate structure if healthy 
-  digitalWrite(ledPin, ledState);
   Serial.printf("Timer set %02d:%02d - %02d:%02d\n", ee.hstart, ee.mstart, ee.hstop, ee.mstop);
   Serial.printf("Temp set %+2.1f\n", ee.tempe);
 
 //FS
 #ifdef USE_FatFS
-  if (MYFS.begin(false,"/ffat",3)) { //limit the RAM usage, bottom line 8kb + 4kb takes per each file, default is 10
+  if (MYFS.begin(false,"/ffat",3)){ //limit the RAM usage, bottom line 8kb + 4kb takes per each file, default is 10
 #else
-  if (MYFS.begin()) {
+  if (MYFS.begin()){
 #endif
     Serial.print(F("FS mounted\n"));
   } else {
@@ -654,7 +659,7 @@ void setup(){
 #ifdef USE_AUTH_STAT
     if(!request->authenticate(http_username, http_password)) return request->requestAuthentication();
 #endif
-      request->onDisconnect([]() {
+      request->onDisconnect([](){
 #ifdef ESP32
         ESP.restart();
 #elif defined(ESP8266)
@@ -672,7 +677,7 @@ void setup(){
 #ifdef USE_AUTH_STAT
     if(!request->authenticate(http_username, http_password)) return request->requestAuthentication();
 #endif
-      request->onDisconnect([]() { 
+      request->onDisconnect([](){ 
 #ifdef ESP32
 /*          
         //https://github.com/espressif/arduino-esp32/issues/400#issuecomment-499631249 
@@ -726,7 +731,7 @@ void setup(){
 
    //OTA
   ArduinoOTA.setHostname(hostName);
-  ArduinoOTA.onStart([]() { 
+  ArduinoOTA.onStart([](){ 
     Serial.print(F("OTA Started ...\n"));
     MYFS.end(); // Clean FS
     ws.textAll("Now,OTA"); // for all clients
@@ -742,5 +747,6 @@ void loop(){
     updateDHT();
     udht = false;
   }
+  doOut();
   ArduinoOTA.handle();
 }
