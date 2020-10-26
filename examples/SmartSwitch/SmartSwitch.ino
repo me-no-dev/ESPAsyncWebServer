@@ -204,8 +204,13 @@ void doOut(){
   if (ledOut != ledState){ // only if changed
     digitalWrite(ledPin, ledState); //consolidated here
     ledOut = ledState; //update
-    if (ledState == LED_OFF) ws.textAll("led,ledoff");
-    else ws.textAll("led,ledon");
+    if (ledState == LED_OFF){
+        ws.textAll("led,ledoff");
+        Serial.println(F("LED-OFF"));
+    } else {
+        ws.textAll("led,ledon");
+        Serial.println(F("LED-ON"));
+    }
   }
 }
 
@@ -257,7 +262,7 @@ void showTime()
       ledState = LED_ON;
       ws.textAll("led,ledon");
     }
-    if ((((t - HYST) > ee.tempe)&&(ledState == LED_ON))||(!heat_enabled)){ // ON->OFF once, also turn off at end of period.
+    if ((((t - HYST) > ee.tempe)&&(ledState == LED_ON))||(!heat_enabled)){ // ->OFF
       ledState = LED_OFF;
       ws.textAll("led,ledoff");
     }
@@ -290,13 +295,6 @@ void checkPhysicalButton()
   if (digitalRead(btnPin) == LOW){
     if (btnState != LOW){     // btnState is used to avoid sequential toggles
       ledState = !ledState;
-      if (ledState == LED_OFF){
-        ws.textAll("led,ledoff");
-        Serial.println(F("LED-OFF"));
-      } else {
-        ws.textAll("led,ledon");
-        Serial.println(F("LED-ON"));
-      }
     }
     btnState = LOW;
   } else {

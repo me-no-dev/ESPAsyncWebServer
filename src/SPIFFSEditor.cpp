@@ -237,7 +237,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
         request->send(304);
       } else {
 #ifdef EDFS 
-         AsyncWebServerResponse *response = request->beginResponse(_fs, F("/edit.htm"), F("text/html"), false);
+         AsyncWebServerResponse *response = request->beginResponse(_fs, F("/edit_gz"), F("text/html"), false);
 #else
          AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), edit_htm_gz, edit_htm_gz_len);
 #endif
