@@ -2,6 +2,9 @@
 #define SPIFFSEditor_H_
 #include <ESPAsyncWebServer.h>
 
+//this indicates that this implementation will not serve the wsec.json file from FS
+#define SPIFFS_EDITOR_AIRCOOOKIE
+
 class SPIFFSEditor: public AsyncWebHandler {
   private:
     fs::FS _fs;
