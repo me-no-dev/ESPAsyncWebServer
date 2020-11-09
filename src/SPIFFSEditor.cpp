@@ -267,112 +267,8 @@ const uint8_t edit_htm_gz[] PROGMEM = {
 };
 
 #define SPIFFS_MAXLENGTH_FILEPATH 32
-const char *excludeListFile = "/.exclude.files";
 
-typedef struct ExcludeListS {
-    char *item;
-    ExcludeListS *next;
-} ExcludeList;
-
-static ExcludeList *excludes = NULL;
-
-static bool matchWild(const char *pattern, const char *testee) {
-  const char *nxPat = NULL, *nxTst = NULL;
-
-  while (*testee) {
-    if (( *pattern == '?' ) || (*pattern == *testee)){
-      pattern++;testee++;
-      continue;
-    }
-    if (*pattern=='*'){
-      nxPat=pattern++; nxTst=testee;
-      continue;
-    }
-    if (nxPat){ 
-      pattern = nxPat+1; testee=++nxTst;
-      continue;
-    }
-    return false;
-  }
-  while (*pattern=='*'){pattern++;}  
-  return (*pattern == 0);
-}
-
-static bool addExclude(const char *item){
-    size_t len = strlen(item);
-    if(!len){
-        return false;
-    }
-    ExcludeList *e = (ExcludeList *)malloc(sizeof(ExcludeList));
-    if(!e){
-        return false;
-    }
-    e->item = (char *)malloc(len+1);
-    if(!e->item){
-        free(e);
-        return false;
-    }
-    memcpy(e->item, item, len+1);
-    e->next = excludes;
-    excludes = e;
-    return true;
-}
-
-static void loadExcludeList(fs::FS &_fs, const char *filename){
-    static char linebuf[SPIFFS_MAXLENGTH_FILEPATH];
-    fs::File excludeFile=_fs.open(filename, "r");
-    if(!excludeFile){
-        //addExclude("/*.js.gz");
-        return;
-    }
-#ifdef ESP32
-    if(excludeFile.isDirectory()){
-      excludeFile.close();
-      return;
-    }
-#endif
-    if (excludeFile.size() > 0){
-      uint8_t idx;
-      bool isOverflowed = false;
-      while (excludeFile.available()){
-        linebuf[0] = '\0';
-        idx = 0;
-        int lastChar;
-        do {
-          lastChar = excludeFile.read();
-          if(lastChar != '\r'){
-            linebuf[idx++] = (char) lastChar;
-          }
-        } while ((lastChar >= 0) && (lastChar != '\n') && (idx < SPIFFS_MAXLENGTH_FILEPATH));
-
-        if(isOverflowed){
-          isOverflowed = (lastChar != '\n');
-          continue;
-        }
-        isOverflowed = (idx >= SPIFFS_MAXLENGTH_FILEPATH);
-        linebuf[idx-1] = '\0';
-        if(!addExclude(linebuf)){
-            excludeFile.close();
-            return;
-        }
-      }
-    }
-    excludeFile.close();
-}
-
-static bool isExcluded(fs::FS &_fs, const char *filename) {
-  if(excludes == NULL){
-      loadExcludeList(_fs, excludeListFile);
-  }
-  ExcludeList *e = excludes;
-  while(e){
-    if (matchWild(e->item, filename)){
-      return true;
-    }
-    e = e->next;
-  }
-  return false;
-}
+/* Exclusion list feature not needed and omitted */
 
 // WEB HANDLER IMPLEMENTATION
 
@@ -394,6 +290,7 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
       if(request->hasParam("list"))
         return true;
       if(request->hasParam("edit")){
+        if (request->arg("edit").indexOf("wsec") > -1) return false; //make sure wsec.json is not served
         request->_tempFile = _fs.open(request->arg("edit"), "r");
         if(!request->_tempFile){
           return false;
@@ -406,6 +303,7 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
 #endif
       }
       if(request->hasParam("download")){
+        if (request->arg("download").indexOf("wsec") > -1) return false; //make sure wsec.json is not served
         request->_tempFile = _fs.open(request->arg("download"), "r");
         if(!request->_tempFile){
           return false;
@@ -453,20 +351,17 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       while(dir.next()){
         fs::File entry = dir.openFile("r");
 #endif
-        if (isExcluded(_fs, entry.name())) {
-#ifdef ESP32
-            entry = dir.openNextFile();
-#endif
-            continue;
+        String fname = entry.name();
+        if (fname.indexOf("wsec") == -1) {
+          if (output != "[") output += ',';
+          output += "{\"type\":\"";
+          output += "file";
+          output += "\",\"name\":\"";
+          output += fname;
+          output += "\",\"size\":";
+          output += String(entry.size());
+          output += "}";
         }
-        if (output != "[") output += ',';
-        output += "{\"type\":\"";
-        output += "file";
-        output += "\",\"name\":\"";
-        output += String(entry.name());
-        output += "\",\"size\":";
-        output += String(entry.size());
-        output += "}";
 #ifdef ESP32
         entry = dir.openNextFile();
 #else
