@@ -73,7 +73,7 @@ class AsyncEventSourceClient {
     uint32_t _lastId;
     LinkedList<AsyncEventSourceMessage *> _messageQueue;
     // ArFi 2020-08-27 for protecting/serializing _messageQueue
-    AsyncWebLockMQ _lockmq;
+    AsyncPlainLock _lockmq;
     void _queueMessage(AsyncEventSourceMessage *dataMessage);
     void _runQueue();
 
@@ -103,7 +103,7 @@ class AsyncEventSource: public AsyncWebHandler {
     LinkedList<AsyncEventSourceClient *> _clients;
     // Same as for individual messages, protect mutations of _clients list
     // since simultaneous access from different tasks is possible
-    AsyncWebLockMQ _client_queue_lock;
+    AsyncPlainLock _client_queue_lock;
     ArEventHandlerFunction _connectcb;
 
   public:
