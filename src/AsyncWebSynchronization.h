@@ -8,6 +8,36 @@
 #ifdef ESP32
 
 // This is the ESP32 version of the Sync Lock, using the FreeRTOS Semaphore
+// Modified 'AsyncWebLock' to just only use mutex since pxCurrentTCB is not
+// always available. According to example by Arjan Filius, changed name,
+// added unimplemented version for ESP8266
+class AsyncPlainLock
+{
+private:
+  SemaphoreHandle_t _lock;
+  mutable void *_lockedBy;
+
+public:
+  AsyncPlainLock() {
+    _lock = xSemaphoreCreateBinary();
+    xSemaphoreGive(_lock);
+  }
+
+  ~AsyncPlainLock() {
+    vSemaphoreDelete(_lock);
+  }
+
+  bool lock() const {
+      xSemaphoreTake(_lock, portMAX_DELAY);
+      return true;
+  }
+
+  void unlock() const {
+    xSemaphoreGive(_lock);
+  }
+};
+
+// This is the ESP32 version of the Sync Lock, using the FreeRTOS Semaphore
 class AsyncWebLock
 {
 private:
@@ -61,6 +91,10 @@ public:
   void unlock() const {
   }
 };
+
+// Same for AsyncPlainLock, for ESP8266 this is just the unimplemented version above. 
+using AsyncPlainLock = AsyncWebLock;
+
 #endif
 
 class AsyncWebLockGuard
