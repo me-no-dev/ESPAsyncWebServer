@@ -8,6 +8,43 @@
 #ifdef ESP32
 
 // This is the ESP32 version of the Sync Lock, using the FreeRTOS Semaphore
+// Modified 'AsyncWebLock' to just only use mutex.
+// AsyncWebLock does not work in ServerSide Events with _RunQueue locking, as it is called from different proceses?
+// Name is upto discussion, right now it's just simple mutex implementation
+class AsyncWebLockMQ
+{
+private:
+  SemaphoreHandle_t _lock;
+  mutable void *_lockedBy;
+
+public:
+  AsyncWebLockMQ() {
+    _lock = xSemaphoreCreateBinary();
+    //_lockedBy = NULL;
+    xSemaphoreGive(_lock);
+  }
+
+  ~AsyncWebLockMQ() {
+    vSemaphoreDelete(_lock);
+  }
+
+  bool lock() const {
+    //extern void *pxCurrentTCB;
+    //if (_lockedBy != pxCurrentTCB) {
+      xSemaphoreTake(_lock, portMAX_DELAY);
+     // _lockedBy = pxCurrentTCB;
+      return true;
+    // }
+    // return false;
+  }
+
+  void unlock() const {
+    //_lockedBy = NULL;
+    xSemaphoreGive(_lock);
+  }
+};
+
+// This is the ESP32 version of the Sync Lock, using the FreeRTOS Semaphore
 class AsyncWebLock
 {
 private:
