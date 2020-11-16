@@ -137,16 +137,17 @@ size_t AsyncEventSourceMessage::ack(size_t len, uint32_t time) {
   return 0;
 }
 
+// This could also return void as the return value is not used.
+// Leaving as-is for compatibility...
 size_t AsyncEventSourceMessage::send(AsyncClient *client) {
-  const size_t len = _len - _sent;
-  if(client->space() < len){
-    return 0;
-  }
-  size_t sent = client->add((const char *)_data, len);
-  if(client->canSend())
-    client->send();
-  _sent += sent;
-  return sent; 
+    if (_sent >= _len) {
+      return 0;
+    }
+    const size_t len_to_send = _len - _sent;
+    auto position = reinterpret_cast<const char*>(_data + _sent * sizeof(*_data));
+    const size_t sent_now = client->write(position, len_to_send);
+    _sent += sent_now;
+    return sent_now;
 }
 
 // Client
