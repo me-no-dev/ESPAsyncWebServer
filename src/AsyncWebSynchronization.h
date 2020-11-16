@@ -15,11 +15,13 @@ class AsyncPlainLock
 {
 private:
   SemaphoreHandle_t _lock;
-  mutable void *_lockedBy;
 
 public:
   AsyncPlainLock() {
     _lock = xSemaphoreCreateBinary();
+    // In this fails, the system is likely that much out of memory that
+    // we should abort anyways. If assertions are disabled, nothing is lost..
+    assert(_lock);
     xSemaphoreGive(_lock);
   }
 
@@ -47,6 +49,9 @@ private:
 public:
   AsyncWebLock() {
     _lock = xSemaphoreCreateBinary();
+    // In this fails, the system is likely that much out of memory that
+    // we should abort anyways. If assertions are disabled, nothing is lost..
+    assert(_lock);
     _lockedBy = NULL;
     xSemaphoreGive(_lock);
   }
