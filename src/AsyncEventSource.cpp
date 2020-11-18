@@ -144,7 +144,7 @@ size_t AsyncEventSourceMessage::send(AsyncClient *client) {
       return 0;
     }
     const size_t len_to_send = _len - _sent;
-    auto position = reinterpret_cast<const char*>(_data + _sent * sizeof(*_data));
+    auto position = reinterpret_cast<const char*>(_data + _sent);
     const size_t sent_now = client->write(position, len_to_send);
     _sent += sent_now;
     return sent_now;
