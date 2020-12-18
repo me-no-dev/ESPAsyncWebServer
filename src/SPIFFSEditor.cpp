@@ -390,7 +390,7 @@ SPIFFSEditor::SPIFFSEditor(const String& username, const String& password, const
 
 bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
   if(request->url().equalsIgnoreCase("/edit")){
-    if(request->method() == HTTP_GET){
+    if(request->method() == WebRequestMethod::HTTP_GET){
       if(request->hasParam("list"))
         return true;
       if(request->hasParam("edit")){
@@ -420,11 +420,11 @@ bool SPIFFSEditor::canHandle(AsyncWebServerRequest *request){
       request->addInterestingHeader("If-Modified-Since");
       return true;
     }
-    else if(request->method() == HTTP_POST)
+    else if(request->method() == WebRequestMethod::HTTP_POST)
       return true;
-    else if(request->method() == HTTP_DELETE)
+    else if(request->method() == WebRequestMethod::HTTP_DELETE)
       return true;
-    else if(request->method() == HTTP_PUT)
+    else if(request->method() == WebRequestMethod::HTTP_PUT)
       return true;
 
   }
@@ -436,7 +436,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
   if(_username.length() && _password.length() && !request->authenticate(_username.c_str(), _password.c_str()))
     return request->requestAuthentication();
 
-  if(request->method() == HTTP_GET){
+  if(request->method() == WebRequestMethod::HTTP_GET){
     if(request->hasParam("list")){
       String path = request->getParam("list")->value();
 #ifdef ESP32
@@ -494,18 +494,18 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
         request->send(response);
       }
     }
-  } else if(request->method() == HTTP_DELETE){
+  } else if(request->method() == WebRequestMethod::HTTP_DELETE){
     if(request->hasParam("path", true)){
         _fs.remove(request->getParam("path", true)->value());
       request->send(200, "", "DELETE: "+request->getParam("path", true)->value());
     } else
       request->send(404);
-  } else if(request->method() == HTTP_POST){
+  } else if(request->method() == WebRequestMethod::HTTP_POST){
     if(request->hasParam("data", true, true) && _fs.exists(request->getParam("data", true, true)->value()))
       request->send(200, "", "UPLOADED: "+request->getParam("data", true, true)->value());
     else
       request->send(500);
-  } else if(request->method() == HTTP_PUT){
+  } else if(request->method() == WebRequestMethod::HTTP_PUT){
     if(request->hasParam("path", true)){
       String filename = request->getParam("path", true)->value();
       if(_fs.exists(filename)){
