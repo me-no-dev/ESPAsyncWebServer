@@ -81,7 +81,7 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(){
 }
 #endif
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request){
-  if(request->method() != WebRequestMethod::HTTP_GET 
+  if(request->method() != static_cast<uint8_t>(WebRequestMethod::HTTP_GET) 
     || !request->url().startsWith(_uri) 
     || !request->isExpectedRequestedConnType(RCT_DEFAULT, RCT_HTTP)
   ){

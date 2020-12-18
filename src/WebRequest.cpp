@@ -40,7 +40,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _temp()
   , _parseState(0)
   , _version(0)
-  , _method(WebRequestMethod::HTTP_ANY)
+  , _method(static_cast<uint8_t>(WebRequestMethod::HTTP_ANY))
   , _url()
   , _host()
   , _contentType()
@@ -260,19 +260,19 @@ bool AsyncWebServerRequest::_parseReqHead(){
   _temp = _temp.substring(index+1);
 
   if(m == "GET"){
-    _method = WebRequestMethod::HTTP_GET;
+    _method = static_cast<uint8_t>(WebRequestMethod::HTTP_GET);
   } else if(m == "POST"){
-    _method = WebRequestMethod::HTTP_POST;
+    _method = static_cast<uint8_t>(WebRequestMethod::HTTP_POST);
   } else if(m == "DELETE"){
-    _method = WebRequestMethod::HTTP_DELETE;
+    _method = static_cast<uint8_t>(WebRequestMethod::HTTP_DELETE);
   } else if(m == "PUT"){
-    _method = WebRequestMethod::HTTP_PUT;
+    _method = static_cast<uint8_t>(WebRequestMethod::HTTP_PUT);
   } else if(m == "PATCH"){
-    _method = WebRequestMethod::HTTP_PATCH;
+    _method = static_cast<uint8_t>(WebRequestMethod::HTTP_PATCH);
   } else if(m == "HEAD"){
-    _method = WebRequestMethod::HTTP_HEAD;
+    _method = static_cast<uint8_t>(WebRequestMethod::HTTP_HEAD);
   } else if(m == "OPTIONS"){
-    _method = WebRequestMethod::HTTP_OPTIONS;
+    _method = static_cast<uint8_t>(WebRequestMethod::HTTP_OPTIONS);
   }
 
   String g = String();
@@ -977,14 +977,14 @@ String AsyncWebServerRequest::urlDecode(const String& text) const {
 
 
 const char * AsyncWebServerRequest::methodToString() const {
-  if(_method == WebRequestMethod::HTTP_ANY) return "ANY";
-  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequestMethod::HTTP_GET)) return "GET";
-  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequestMethod::HTTP_POST)) return "POST";
-  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequestMethod::HTTP_DELETE)) return "DELETE";
-  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequestMethod::HTTP_PUT)) return "PUT";
-  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequestMethod::HTTP_PATCH)) return "PATCH";
-  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequestMethod::HTTP_HEAD)) return "HEAD";
-  else if(static_cast<uint8_t>(_method) & static_cast<uint8_t>(WebRequestMethod::HTTP_OPTIONS)) return "OPTIONS";
+  if(_method == static_cast<uint8_t>(WebRequestMethod::HTTP_ANY)) return "ANY";
+  else if(_method & static_cast<uint8_t>(WebRequestMethod::HTTP_GET)) return "GET";
+  else if(_method & static_cast<uint8_t>(WebRequestMethod::HTTP_POST)) return "POST";
+  else if(_method & static_cast<uint8_t>(WebRequestMethod::HTTP_DELETE)) return "DELETE";
+  else if(_method & static_cast<uint8_t>(WebRequestMethod::HTTP_PUT)) return "PUT";
+  else if(_method & static_cast<uint8_t>(WebRequestMethod::HTTP_PATCH)) return "PATCH";
+  else if(_method & static_cast<uint8_t>(WebRequestMethod::HTTP_HEAD)) return "HEAD";
+  else if(_method & static_cast<uint8_t>(WebRequestMethod::HTTP_OPTIONS)) return "OPTIONS";
   return "UNKNOWN";
 }
 
