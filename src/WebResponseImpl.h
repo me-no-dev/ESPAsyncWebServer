@@ -30,7 +30,7 @@
 // It is possible to restore these defines, but one can use _min and _max instead. Or std::min, std::max.
 
 #ifndef TEMPLATE_PLACEHOLDER
-#define TEMPLATE_PLACEHOLDER '%'
+#define TEMPLATE_PLACEHOLDER '$'
 #endif
 
 class AsyncBasicResponse: public AsyncWebServerResponse {
