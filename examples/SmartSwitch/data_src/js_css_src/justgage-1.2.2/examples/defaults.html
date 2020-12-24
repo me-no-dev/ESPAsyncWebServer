@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Defaults</title>
+  <meta name="viewport" content="width=device-width">
+  <style>
+  .container {
+    width: 600px;
+    margin: 100px auto;
+    text-align: center;
+  }
+
+  .gauge {
+    width: 250px;
+    height: 250px;
+    display: inline-block;
+  }
+
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div id="gg1" class="gauge"></div>
+    <div id="gg2" class="gauge" data-value="25"></div>
+  </div>
+  <script src="../raphael-2.1.4.min.js"></script>
+  <script src="../justgage.js"></script>
+  <script>
+  document.addEventListener("DOMContentLoaded", function(event) {
+
+    var dflt = {
+      min: 0,
+      max: 200,
+      donut: true,
+      gaugeWidthScale: 0.6,
+      counter: true,
+      hideInnerShadow: true
+    }
+
+    var gg1 = new JustGage({
+      id: 'gg1',
+      value: 125,
+      title: 'javascript call',
+      defaults: dflt
+    });
+
+    var gg2 = new JustGage({
+      id: 'gg2',
+      title: 'data-attributes',
+      defaults: dflt
+    });
+
+  });
+  </script>
+</body>
+
+</html>

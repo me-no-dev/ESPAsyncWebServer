@@ -1,3 +1,17 @@
+# In this fork
+- SPIFFSEditor modifications
+- Added [extras](https://github.com/lorol/ESPAsyncWebServer/tree/master/extras) folder with (Win) tools for re-packing, editing, updating and compressing html to binary arrays embedded to source
+- Added a [SmartSwitch](https://github.com/lorol/ESPAsyncWebServer/tree/master/examples/SmartSwitch) example to test code features
+- Applied the memory optimizations from [sascha432](https://github.com/sascha432/ESPAsyncWebServer) fork
+- Cookie Authentication including on Websocket part, based on [ayushsharma82](https://github.com/me-no-dev/ESPAsyncWebServer/pull/684) PR, new functions added:
+  - For Websocket: ```void handleHandshake(AwsHandshakeHandler handler) ```
+  - For EventSource: ```void authorizeConnect(ArAuthorizeConnectHandler cb)```
+- [Additions to this README.md from jendakol&#39; PR](https://github.com/me-no-dev/ESPAsyncWebServer/pull/770)
+  - [Respond with file content using a callback and extra headers](#respond-with-file-content-using-a-callback-and-extra-headers)
+  - [Serving static files by custom handling](#serving-static-files-by-custom-handling)
+  - Added LittleFS choice for both [esp8266](https://github.com/esp8266/Arduino/tree/master/libraries/LittleFS) / [esp32](https://github.com/lorol/LITTLEFS) , and FatFS tests for esp32 see [SmartSwitch](https://github.com/lorol/ESPAsyncWebServer/blob/master/examples/SmartSwitch/SmartSwitch.ino#L16 )
+------------------------------------------------------------------------------------------
+
 # ESPAsyncWebServer 
 [![Build Status](https://travis-ci.org/me-no-dev/ESPAsyncWebServer.svg?branch=master)](https://travis-ci.org/me-no-dev/ESPAsyncWebServer) ![](https://github.com/me-no-dev/ESPAsyncWebServer/workflows/ESP%20Async%20Web%20Server%20CI/badge.svg) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/395dd42cfc674e6ca2e326af3af80ffc)](https://www.codacy.com/manual/me-no-dev/ESPAsyncWebServer?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=me-no-dev/ESPAsyncWebServer&amp;utm_campaign=Badge_Grade)
 
@@ -53,6 +67,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Respond with content coming from a File containing templates](#respond-with-content-coming-from-a-file-containing-templates)
     - [Respond with content using a callback](#respond-with-content-using-a-callback)
     - [Respond with content using a callback and extra headers](#respond-with-content-using-a-callback-and-extra-headers)
+    - [Respond with file content using a callback and extra headers](#respond-with-file-content-using-a-callback-and-extra-headers)
     - [Respond with content using a callback containing templates](#respond-with-content-using-a-callback-containing-templates)
     - [Respond with content using a callback containing templates and extra headers](#respond-with-content-using-a-callback-containing-templates-and-extra-headers)
     - [Chunked Response](#chunked-response)
@@ -67,6 +82,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Specifying Cache-Control header](#specifying-cache-control-header)
     - [Specifying Date-Modified header](#specifying-date-modified-header)
     - [Specifying Template Processor callback](#specifying-template-processor-callback)
+    - [Serving static files by custom handling](#serving-static-files-by-custom-handling)
   - [Param Rewrite With Matching](#param-rewrite-with-matching)
   - [Using filters](#using-filters)
     - [Serve different site files in AP mode](#serve-different-site-files-in-ap-mode)
@@ -602,6 +618,43 @@ response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
+### Respond with file content using a callback and extra headers
+
+With this code your ESP is able to serve even large (large in terms of ESP, e.g. 100kB) files
+without memory problems.
+
+You need to create a file handler in outer function (to have a single one for request) but use
+it in a lambda. The catch is that the lambda has it's own lifecycle which may/will cause it's 
+called after the original function is over thus the original file handle is destroyed. Using the 
+captured `&file` in the lambda then causes segfault (Hello, Exception 9!) and the whole ESP crashes.  
+By using this code, you tell the compiler to move the handle into the lambda so it won't be
+destroyed when outer function (that one where you call `request->send(response)`) ends.
+
+```cpp
+const File file = ... // e.g. SPIFFS.open(path, "r"); 
+
+const contentType = "application/javascript";
+
+AsyncWebServerResponse *response = request->beginResponse(
+  contentType,
+  file.size(),
+  [file](uint8_t *buffer, size_t maxLen, size_t total) mutable -> size_t {
+     int bytes = file.read(buffer, maxLen);
+       
+     // close file at the end
+     if (bytes + total == file.size()) file.close();
+
+     return max(0, bytes); // return 0 even when no bytes were loaded
+   }
+);
+
+if (gzipped) {
+  response->addHeader(F("Content-Encoding"), F("gzip"));
+}
+
+request->send(response);
+```
+
 ### Respond with content using a callback containing templates
 ```cpp
 String processor(const String& var)
@@ -857,6 +910,53 @@ String processor(const String& var)
 
 server.serveStatic("/", SPIFFS, "/www/").setTemplateProcessor(processor);
 ```
+
+### Serving static files by custom handling
+
+It may happen your static files are too big and the ESP will crash the request before it sends the whole file.  
+In that case, you can handle static files with custom file serving through not found handler.
+
+This code below is more-or-less equivalent to this:
+```cpp
+webServer.serveStatic("/", SPIFFS, STATIC_FILES_PREFIX).setDefaultFile("index.html")
+```
+
+First, declare the handling function:
+```cpp
+bool handleStaticFile(AsyncWebServerRequest *request) {
+  String path = STATIC_FILES_PREFIX + request->url();
+  
+  if (path.endsWith("/")) path += F("index.html");
+  
+  String contentType = getContentType(path);
+  String pathWithGz = path + ".gz";
+  
+  if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {
+    bool gzipped = false;
+    if (SPIFFS.exists(pathWithGz)) {
+        gzipped = true;
+        path += ".gz";
+    }
+      
+    // TODO serve the file
+    
+    return true;
+  }
+  
+  return false;
+}
+```
+And then configure your webserver:
+```cpp
+webServer.onNotFound([](AsyncWebServerRequest *request) {
+  if (handleStaticFile(request)) return;
+  
+  request->send(404);
+});
+```
+
+You may want to try [Respond with file content using a callback and extra headers](#respond-with-file-content-using-a-callback-and-extra-headers)
+For actual serving the file.
 
 ## Param Rewrite With Matching
 It is possible to rewrite the request url with parameter matchg. Here is an example with one parameter:

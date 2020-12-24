@@ -1,0 +1,58 @@
+{
+  "name": "styled-notifications",
+  "version": "1.0.1",
+  "description": "A simple JavaScript notifications library",
+  "main": "dist/notifications.js",
+  "scripts": {
+    "start": "webpack --watch",
+    "build": "webpack -p",
+    "test": "jest",
+    "prepare": "yarn run test && yarn run build"
+  },
+  "pre-commit": [
+    "prepare"
+  ],
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JamieLivingstone/Notifications.git"
+  },
+  "keywords": [
+    "notification",
+    "popup",
+    "alert",
+    "toast"
+  ],
+  "author": "Jamie Livingstone",
+  "contributors": [
+    {
+      "name": "Jamie Livingstone (https://github.com/JamieLivingstone)"
+    },
+    {
+      "name": "cavebeavis (https://github.com/cavebeavis)"
+    }
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JamieLivingstone/Notifications/issues"
+  },
+  "homepage": "https://github.com/JamieLivingstone/Notifications#readme",
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-jest": "^21.0.2",
+    "babel-loader": "^7.1.2",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-es2015-ie": "^6.7.0",
+    "css-loader": "^0.28.7",
+    "eslint": "^4.6.1",
+    "extract-text-webpack-plugin": "^3.0.0",
+    "jest": "^21.0.2",
+    "node-sass": "^4.5.3",
+    "pre-commit": "^1.2.2",
+    "sass-loader": "^6.0.6",
+    "style-loader": "^0.18.2",
+    "webpack": "^3.5.6"
+  }
+}

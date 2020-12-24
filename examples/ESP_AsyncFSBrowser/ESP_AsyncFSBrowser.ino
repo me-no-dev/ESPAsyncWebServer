@@ -1,17 +1,42 @@
+// Defaulut is SPIFFS, FatFS: only on ESP32, also choose partition scheme w/ ffat. 
+// Comment 2 lines below or uncomment only one of them
+
+//#define USE_LittleFS
+//#define USE_FatFS // Only ESP32
+
 #include <ArduinoOTA.h>
 #ifdef ESP32
-#include <FS.h>
-#include <SPIFFS.h>
-#include <ESPmDNS.h>
-#include <WiFi.h>
-#include <AsyncTCP.h>
+ #include <FS.h>
+ #ifdef USE_LittleFS
+  #define MYFS LITTLEFS
+  #include "LITTLEFS.h"
+ #elif defined(USE_FatFS)
+  #define MYFS FFat
+  #include "FFat.h"
+ #else
+  #define MYFS SPIFFS
+  #include <SPIFFS.h>
+ #endif
+ #include <ESPmDNS.h>
+ #include <WiFi.h>
+ #include <AsyncTCP.h>
 #elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESPAsyncTCP.h>
-#include <ESP8266mDNS.h>
+ #ifdef USE_LittleFS
+  #include <FS.h>
+  #define MYFS LittleFS
+  #include <LittleFS.h> 
+ #elif defined(USE_FatFS)
+  #error "FatFS only on ESP32 for now!"
+ #else
+  #define MYFS SPIFFS
+ #endif
+ #include <ESP8266WiFi.h>
+ #include <ESPAsyncTCP.h>
+ #include <ESP8266mDNS.h>
 #endif
 #include <ESPAsyncWebServer.h>
 #include <SPIFFSEditor.h>
+
 
 // SKETCH BEGIN
 AsyncWebServer server(80);
@@ -90,10 +115,9 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   }
 }
 
-
-const char* ssid = "*******";
-const char* password = "*******";
-const char * hostName = "esp-async";
+const char* ssid = "*****";
+const char* password = "*****";
+const char* hostName = "esp-async";
 const char* http_username = "admin";
 const char* http_password = "admin";
 
@@ -109,6 +133,9 @@ void setup(){
     delay(1000);
     WiFi.begin(ssid, password);
   }
+  
+  Serial.print(F("*CONNECTED* IP:"));
+  Serial.println(WiFi.localIP());
 
   //Send OTA events to the browser
   ArduinoOTA.onStart([]() { events.send("Update Start", "ota"); });
@@ -130,7 +157,16 @@ void setup(){
 
   MDNS.addService("http","tcp",80);
 
-  SPIFFS.begin();
+//FS
+#ifdef USE_FatFS
+  if (MYFS.begin(false,"/ffat",3)) { //limit the RAM usage, bottom line 8kb + 4kb takes per each file, default is 10
+#else
+  if (MYFS.begin()) {
+#endif
+    Serial.print(F("FS mounted\n"));
+  } else {
+    Serial.print(F("FS mount failed\n"));  
+  }
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
@@ -141,16 +177,16 @@ void setup(){
   server.addHandler(&events);
 
 #ifdef ESP32
-  server.addHandler(new SPIFFSEditor(SPIFFS, http_username,http_password));
+  server.addHandler(new SPIFFSEditor(MYFS, http_username,http_password));
 #elif defined(ESP8266)
-  server.addHandler(new SPIFFSEditor(http_username,http_password));
+  server.addHandler(new SPIFFSEditor(http_username,http_password, MYFS));
 #endif
   
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
 
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+  server.serveStatic("/", MYFS, "/").setDefaultFile("index.htm");
 
   server.onNotFound([](AsyncWebServerRequest *request){
     Serial.printf("NOT_FOUND: ");

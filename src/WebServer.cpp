@@ -29,6 +29,11 @@ bool ON_AP_FILTER(AsyncWebServerRequest *request) {
   return WiFi.localIP() != request->client()->localIP();
 }
 
+#ifndef HAVE_FS_FILE_OPEN_MODE
+const char *fs::FileOpenMode::read = "r";
+const char *fs::FileOpenMode::write = "w";
+const char *fs::FileOpenMode::append = "a";
+#endif
 
 AsyncWebServer::AsyncWebServer(uint16_t port)
   : _server(port)
@@ -52,7 +57,7 @@ AsyncWebServer::AsyncWebServer(uint16_t port)
 }
 
 AsyncWebServer::~AsyncWebServer(){
-  reset();  
+  reset();
   end();
   if(_catchAllHandler) delete _catchAllHandler;
 }
@@ -118,8 +123,8 @@ void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
       return;
     }
   }
-  
-  request->addInterestingHeader("ANY");
+
+  request->addInterestingHeader(F("ANY"));
   request->setHandler(_catchAllHandler);
 }
 
@@ -183,7 +188,7 @@ void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
 void AsyncWebServer::reset(){
   _rewrites.free();
   _handlers.free();
-  
+
   if (_catchAllHandler != NULL){
     _catchAllHandler->onRequest(NULL);
     _catchAllHandler->onUpload(NULL);

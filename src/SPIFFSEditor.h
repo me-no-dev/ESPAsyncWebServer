@@ -13,7 +13,8 @@ class SPIFFSEditor: public AsyncWebHandler {
 #ifdef ESP32
     SPIFFSEditor(const fs::FS& fs, const String& username=String(), const String& password=String());
 #else
-    SPIFFSEditor(const String& username=String(), const String& password=String(), const fs::FS& fs=SPIFFS);
+    //SPIFFSEditor(const String& username=String(), const String& password=String(), const fs::FS& fs=SPIFFS);
+    SPIFFSEditor(const String& username, const String& password, const fs::FS& fs); // do not show warning that SPIFFS has been deprecated
 #endif
     virtual bool canHandle(AsyncWebServerRequest *request) override final;
     virtual void handleRequest(AsyncWebServerRequest *request) override final;

@@ -1,0 +1,65 @@
+/* [CONTAINER] */
+.tpop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  transition: all 0.5s;
+  visibility: hidden;
+  opacity: 0;
+}
+.tpop.show {
+  visibility: visible;
+  opacity: 1;
+}
+.tpicker {
+  background: #f2f2f2;
+  padding: 10px;
+  width: 100%;
+  max-width: 320px;
+  white-space: nowrap;
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+}
+.tpop .tpicker {
+  margin: 20px auto 0 auto;
+}
+
+/* [HR + MIN + AM/PM] */
+.tpicker-h, .tpicker-m, .tpicker-ap {
+  display: inline-block;
+  width: 30%;
+}
+.tpicker input[type=text] {
+  box-sizing: border-box;
+  width: 70%;
+  padding: 10px;
+  margin: 5px 0;
+  border: 0;
+  background: #fff;
+  color: #888;
+  text-align: center;
+  font-size: 28px;
+}
+.tpicker-up, .tpicker-down {
+  text-align: center;
+  color: #ff853f;
+  cursor: pointer;
+}
+
+/* [CANCEL + OK BUTTON] */
+.tpicker-btn {
+  margin-top: 10px;
+}
+.tpicker-btn input[type=button] {
+  width: 50%;
+  padding: 10px 0;
+  border: 0;
+  background: #a83a0b;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
