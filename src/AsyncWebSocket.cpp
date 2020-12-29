@@ -540,7 +540,6 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
   _client->onTimeout([](void *r, AsyncClient* c, uint32_t time){ (void)c; ((AsyncWebSocketClient*)(r))->_onTimeout(time); }, this);
   _client->onData([](void *r, AsyncClient* c, void *buf, size_t len){ (void)c; ((AsyncWebSocketClient*)(r))->_onData(buf, len); }, this);
   _client->onPoll([](void *r, AsyncClient* c){ (void)c; ((AsyncWebSocketClient*)(r))->_onPoll(); }, this);
-  _server->_addClient(this);
   _server->_handleEvent(this, WS_EVT_CONNECT, request, NULL, 0);
   delete request;
   memset(&_pinfo,0,sizeof(_pinfo));
@@ -614,9 +613,8 @@ void AsyncWebSocketClient::_runQueue(){
   _clearQueue();
 }
 
-bool AsyncWebSocketClient::queueIsFull(){
-  if((_messageQueue.length() >= WS_MAX_QUEUED_MESSAGES) || (_status != WS_CONNECTED) ) return true;
-  return false;
+bool AsyncWebSocketClient::queueIsFull() const {
+  return (_messageQueue.length() >= WS_MAX_QUEUED_MESSAGES) || (_status != WS_CONNECTED);
 }
 
 void AsyncWebSocketClient::_queueMessage(AsyncWebSocketMessage *dataMessage){
@@ -909,14 +907,14 @@ void AsyncWebSocketClient::binary(AsyncWebSocketMessageBuffer * buffer)
   _queueMessage(new AsyncWebSocketMultiMessage(buffer, WS_BINARY));
 }
 
-IPAddress AsyncWebSocketClient::remoteIP() {
+IPAddress AsyncWebSocketClient::remoteIP() const {
     if(!_client) {
         return IPAddress(0U);
     }
     return _client->remoteIP();
 }
 
-uint16_t AsyncWebSocketClient::remotePort() {
+uint16_t AsyncWebSocketClient::remotePort() const {
     if(!_client) {
         return 0;
     }
@@ -931,7 +929,6 @@ uint16_t AsyncWebSocketClient::remotePort() {
 
 AsyncWebSocket::AsyncWebSocket(const String& url)
   :_url(url)
-  ,_clients(LinkedList<AsyncWebSocketClient *>([](AsyncWebSocketClient *c){ delete c; }))
   ,_cNextId(1)
   ,_enabled(true)
 {
@@ -946,64 +943,65 @@ void AsyncWebSocket::_handleEvent(AsyncWebSocketClient * client, AwsEventType ty
   }
 }
 
-void AsyncWebSocket::_addClient(AsyncWebSocketClient * client){
-  _clients.add(client);
+AsyncWebSocketClient *AsyncWebSocket::_newClient(AsyncWebServerRequest *request)
+{
+    _clients.emplace_back(request, this);
+    return &_clients.back();
 }
 
 void AsyncWebSocket::_handleDisconnect(AsyncWebSocketClient * client){
-
-  _clients.remove_first([=](AsyncWebSocketClient * c){
-    return c->id() == client->id();
-  });
+  const auto client_id = client->id();
+  const auto iter = std::find_if(std::begin(_clients), std::end(_clients),
+                                 [client_id](const AsyncWebSocketClient &c){ return c.id() == client_id; });
+  if (iter != std::end(_clients))
+    _clients.erase(iter);
 }
 
 bool AsyncWebSocket::availableForWriteAll(){
-  for(const auto& c: _clients){
-    if(c->queueIsFull()) return false;
-  }
-  return true;
+  return std::none_of(std::begin(_clients), std::end(_clients),
+                      [](const AsyncWebSocketClient &c){ return c.queueIsFull(); });
 }
 
 bool AsyncWebSocket::availableForWrite(uint32_t id){
-  for(const auto& c: _clients){
-    if(c->queueIsFull() && (c->id() == id )) return false;
-  }
-  return true;
+  const auto iter = std::find_if(std::begin(_clients), std::end(_clients),
+                                 [id](const AsyncWebSocketClient &c){ return c.id() == id; });
+  if (iter == std::end(_clients))
+    return true; // don't know why me-no-dev decided like this?
+  return !iter->queueIsFull();
 }
 
 size_t AsyncWebSocket::count() const {
-  return _clients.count_if([](AsyncWebSocketClient * c){
-    return c->status() == WS_CONNECTED;
-  });
+  return std::count_if(std::begin(_clients), std::end(_clients),
+                       [](const AsyncWebSocketClient &c){ return c.status() == WS_CONNECTED; });
 }
 
 AsyncWebSocketClient * AsyncWebSocket::client(uint32_t id){
-  for(const auto &c: _clients){
-    if(c->id() == id && c->status() == WS_CONNECTED){
-      return c;
-    }
-  }
-  return nullptr;
+  const auto iter = std::find_if(std::begin(_clients), std::end(_clients),
+                                 [id](const AsyncWebSocketClient &c){ return c.id() == id && c.status() == WS_CONNECTED; });
+  if (iter == std::end(_clients))
+    return nullptr;
+
+  return &(*iter);
 }
 
 
 void AsyncWebSocket::close(uint32_t id, uint16_t code, const char * message){
-  AsyncWebSocketClient * c = client(id);
-  if(c)
+  AsyncWebSocketClient *c = client(id);
+  if (c)
     c->close(code, message);
 }
 
 void AsyncWebSocket::closeAll(uint16_t code, const char * message){
-  for(const auto& c: _clients){
-    if(c->status() == WS_CONNECTED)
-      c->close(code, message);
+  for(auto& c: _clients){
+    if(c.status() == WS_CONNECTED)
+      c.close(code, message);
   }
 }
 
 void AsyncWebSocket::cleanupClients(uint16_t maxClients)
 {
   if (count() > maxClients){
-    _clients.front()->close();
+    _clients.front().close();
   }
 }
 
@@ -1014,14 +1012,14 @@ void AsyncWebSocket::ping(uint32_t id, uint8_t *data, size_t len){
 }
 
 void AsyncWebSocket::pingAll(uint8_t *data, size_t len){
-  for(const auto& c: _clients){
-    if(c->status() == WS_CONNECTED)
-      c->ping(data, len);
+  for(auto& c: _clients){
+    if(c.status() == WS_CONNECTED)
+      c.ping(data, len);
   }
 }
 
 void AsyncWebSocket::text(uint32_t id, const char * message, size_t len){
-  AsyncWebSocketClient * c = client(id);
+  AsyncWebSocketClient *c = client(id);
   if(c)
     c->text(message, len);
 }
@@ -1029,9 +1027,9 @@ void AsyncWebSocket::text(uint32_t id, const char * message, size_t len){
 void AsyncWebSocket::textAll(AsyncWebSocketMessageBuffer * buffer){
   if (!buffer) return;
   buffer->lock();
-  for(const auto& c: _clients){
-    if(c->status() == WS_CONNECTED){
-        c->text(buffer);
+  for(auto& c: _clients){
+    if(c.status() == WS_CONNECTED){
+        c.text(buffer);
     }
   }
   buffer->unlock();
@@ -1060,24 +1058,24 @@ void AsyncWebSocket::binaryAll(AsyncWebSocketMessageBuffer * buffer)
 {
   if (!buffer) return;
   buffer->lock();
-    for(const auto& c: _clients){
-    if(c->status() == WS_CONNECTED)
-      c->binary(buffer);
+    for(auto& c: _clients){
+    if(c.status() == WS_CONNECTED)
+      c.binary(buffer);
   }
   buffer->unlock();
   _cleanBuffers();
 }
 
 void AsyncWebSocket::message(uint32_t id, AsyncWebSocketMessage *message){
-  AsyncWebSocketClient * c = client(id);
-  if(c)
+  AsyncWebSocketClient *c = client(id);
+  if (c)
     c->message(message);
 }
 
 void AsyncWebSocket::messageAll(AsyncWebSocketMultiMessage *message){
-  for(const auto& c: _clients){
-    if(c->status() == WS_CONNECTED)
-      c->message(message);
+  for(auto& c: _clients){
+    if(c.status() == WS_CONNECTED)
+      c.message(message);
   }
   _cleanBuffers();
 }
@@ -1186,9 +1184,9 @@ void AsyncWebSocket::textAll(const String &message){
   textAll(message.c_str(), message.length());
 }
 void AsyncWebSocket::textAll(const __FlashStringHelper *message){
-  for(const auto& c: _clients){
-    if(c->status() == WS_CONNECTED)
-      c->text(message);
+  for(auto& c: _clients){
+    if(c.status() == WS_CONNECTED)
+      c.text(message);
   }
 }
 void AsyncWebSocket::binary(uint32_t id, const char * message){
@@ -1221,9 +1219,9 @@ void AsyncWebSocket::binaryAll(const String &message){
   binaryAll(message.c_str(), message.length());
 }
 void AsyncWebSocket::binaryAll(const __FlashStringHelper *message, size_t len){
-  for(const auto& c: _clients){
-    if(c->status() == WS_CONNECTED)
-      c-> binary(message, len);
+  for(auto& c: _clients){
+    if(c.status() == WS_CONNECTED)
+      c.binary(message, len);
   }
  }
 
@@ -1333,7 +1331,7 @@ void AsyncWebSocket::_cleanBuffers()
   }
 }
 
-AsyncWebSocket::AsyncWebSocketClientLinkedList AsyncWebSocket::getClients() const {
+const AsyncWebSocket::AsyncWebSocketClientLinkedList &AsyncWebSocket::getClients() const {
   return _clients;
 }
 
@@ -1391,7 +1389,7 @@ void AsyncWebSocketResponse::_respond(AsyncWebServerRequest *request){
 size_t AsyncWebSocketResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time){
   (void)time;
   if(len){
-    new AsyncWebSocketClient(request, _server);
+    _server->_newClient(request);
   }
   return 0;
 }

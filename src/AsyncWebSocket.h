@@ -184,14 +184,16 @@ class AsyncWebSocketClient {
     ~AsyncWebSocketClient();
 
     //client id increments for the given server
-    uint32_t id(){ return _clientId; }
-    AwsClientStatus status(){ return _status; }
-    AsyncClient* client(){ return _client; }
+    uint32_t id() const { return _clientId; }
+    AwsClientStatus status() const { return _status; }
+    AsyncClient* client() { return _client; }
+    const AsyncClient* client() const { return _client; }
     AsyncWebSocket *server(){ return _server; }
+    const AsyncWebSocket *server() const { return _server; }
     AwsFrameInfo const &pinfo() const { return _pinfo; }
 
-    IPAddress remoteIP();
-    uint16_t  remotePort();
+    IPAddress remoteIP() const;
+    uint16_t  remotePort() const;
 
     //control frames
     void close(uint16_t code=0, const char * message=NULL);
@@ -207,7 +209,7 @@ class AsyncWebSocketClient {
 
     //data packets
     void message(AsyncWebSocketMessage *message){ _queueMessage(message); }
-    bool queueIsFull();
+    bool queueIsFull() const;
     size_t queueLen() { return _messageQueue.length() + _controlQueue.length(); }
 
     size_t printf(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
@@ -247,7 +249,7 @@ typedef std::function<void(AsyncWebSocket * server, AsyncWebSocketClient * clien
 //WebServer Handler implementation that plays the role of a socket server
 class AsyncWebSocket: public AsyncWebHandler {
   public:
-    typedef LinkedList<AsyncWebSocketClient *> AsyncWebSocketClientLinkedList;
+    typedef std::list<AsyncWebSocketClient> AsyncWebSocketClientLinkedList;
   private:
     String _url;
     AsyncWebSocketClientLinkedList _clients;
@@ -329,7 +331,7 @@ class AsyncWebSocket: public AsyncWebHandler {
 	
     //system callbacks (do not call)
     uint32_t _getNextId(){ return _cNextId++; }
-    void _addClient(AsyncWebSocketClient * client);
+    AsyncWebSocketClient *_newClient(AsyncWebServerRequest *request);
     void _handleDisconnect(AsyncWebSocketClient * client);
     void _handleEvent(AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
     virtual bool canHandle(AsyncWebServerRequest *request) override final;
@@ -342,7 +344,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     std::list<AsyncWebSocketMessageBuffer> _buffers;
     void _cleanBuffers();
 
-    AsyncWebSocketClientLinkedList getClients() const;
+    const AsyncWebSocketClientLinkedList &getClients() const;
 };
 
 //WebServer response to authenticate the socket and detach the tcp client from the web server request
