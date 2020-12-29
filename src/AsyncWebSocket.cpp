@@ -522,8 +522,7 @@ AsyncWebSocketMultiMessage::~AsyncWebSocketMultiMessage() {
  const size_t AWSC_PING_PAYLOAD_LEN = 22;
 
 AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server)
-  : _controlQueue(LinkedList<AsyncWebSocketControl *>([](AsyncWebSocketControl *c){ delete  c; }))
-  , _messageQueue(LinkedList<AsyncWebSocketMessage *>([](AsyncWebSocketMessage *m){ delete  m; }))
+  : _messageQueue(LinkedList<AsyncWebSocketMessage *>([](AsyncWebSocketMessage *m){ delete  m; }))
   , _tempObject(NULL)
 {
   _client = request->client();
@@ -548,7 +547,7 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
 AsyncWebSocketClient::~AsyncWebSocketClient(){
   // Serial.printf("%u FREE Q\n", id());
   _messageQueue.free();
-  _controlQueue.free();
+  _controlQueue.clear();
   _server->_cleanBuffers();
   _server->_handleEvent(this, WS_EVT_DISCONNECT, NULL, NULL, 0);
 }
@@ -562,17 +561,17 @@ void AsyncWebSocketClient::_clearQueue(){
 void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
   // Serial.printf("%u onAck\n", id());
   _lastMessageTime = millis();
-  if(!_controlQueue.isEmpty()){
-    auto head = _controlQueue.front();
-    if(head->finished()){
-      len -= head->len();
-      if(_status == WS_DISCONNECTING && head->opcode() == WS_DISCONNECT){
-        _controlQueue.remove(head);
+  if(!_controlQueue.empty()){
+    auto &head = _controlQueue.front();
+    if(head.finished()){
+      len -= head.len();
+      if(_status == WS_DISCONNECTING && head.opcode() == WS_DISCONNECT){
+        _controlQueue.pop_front();
         _status = WS_DISCONNECTED;
         _client->close(true);
         return;
       }
-      _controlQueue.remove(head);
+      _controlQueue.pop_front();
     }
   }
 
@@ -588,10 +587,9 @@ void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
 }
 
 void AsyncWebSocketClient::_onPoll(){
-  if(_client->canSend() && (!_controlQueue.isEmpty() || !_messageQueue.isEmpty())){
-    // Serial.println("RUN 2");
+  if(_client->canSend() && (!_controlQueue.empty() || !_messageQueue.isEmpty())){
     _runQueue();
-  } else if(_keepAlivePeriod > 0 && _controlQueue.isEmpty() && _messageQueue.isEmpty() && (millis() - _lastMessageTime) >= _keepAlivePeriod){
+  } else if(_keepAlivePeriod > 0 && _controlQueue.empty() && _messageQueue.isEmpty() && (millis() - _lastMessageTime) >= _keepAlivePeriod){
     ping((uint8_t *)AWSC_PING_PAYLOAD, AWSC_PING_PAYLOAD_LEN);
   }
 }
@@ -602,9 +600,9 @@ void AsyncWebSocketClient::_runQueue(){
   //size_t m0 = _messageQueue.isEmpty()? 0 : _messageQueue.length();
   //size_t m1 = _messageQueue.isEmpty()? 0 : _messageQueue.front()->betweenFrames();
   // Serial.printf("%u R C = %u %u\n", _clientId, m0, m1);
-  if(!_controlQueue.isEmpty() && (_messageQueue.isEmpty() || _messageQueue.front()->betweenFrames()) && webSocketSendFrameWindow(_client) > (size_t)(_controlQueue.front()->len() - 1)){
+  if(!_controlQueue.empty() && (_messageQueue.isEmpty() || _messageQueue.front()->betweenFrames()) && webSocketSendFrameWindow(_client) > (size_t)(_controlQueue.front().len() - 1)){
     //  Serial.printf("%u R S C\n", _clientId);
-    _controlQueue.front()->send(_client);
+    _controlQueue.front().send(_client);
   } else if(!_messageQueue.isEmpty() && _messageQueue.front()->betweenFrames() && webSocketSendFrameWindow(_client)){
     //  Serial.printf("%u R S M = ", _clientId);
     _messageQueue.front()->send(_client);
@@ -615,6 +613,10 @@ void AsyncWebSocketClient::_runQueue(){
 
 bool AsyncWebSocketClient::queueIsFull() const {
   return (_messageQueue.length() >= WS_MAX_QUEUED_MESSAGES) || (_status != WS_CONNECTED);
+}
+
+size_t AsyncWebSocketClient::queueLen() const {
+  return _messageQueue.length() + _controlQueue.size();
 }
 
 void AsyncWebSocketClient::_queueMessage(AsyncWebSocketMessage *dataMessage){
@@ -642,11 +644,9 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketMessage *dataMessage){
   }
 }
 
-void AsyncWebSocketClient::_queueControl(AsyncWebSocketControl *controlMessage){
-  if(controlMessage == NULL)
-    return;
-  _controlQueue.add(controlMessage);
-  if(_client->canSend()) {
+void AsyncWebSocketClient::_queueControl(uint8_t opcode, uint8_t *data, size_t len, bool mask){
+  _controlQueue.emplace_back(opcode, data, len, mask);
+  if (_client->canSend()) {
     // Serial.println("RUN 4");
     _runQueue();
   }
@@ -669,17 +669,17 @@ void AsyncWebSocketClient::close(uint16_t code, const char * message){
       if(message != NULL){
         memcpy(buf+2, message, packetLen -2);
       }
-      _queueControl(new AsyncWebSocketControl(WS_DISCONNECT,(uint8_t*)buf,packetLen));
+      _queueControl(WS_DISCONNECT, (uint8_t*)buf, packetLen);
       free(buf);
       return;
     }
   }
-  _queueControl(new AsyncWebSocketControl(WS_DISCONNECT));
+  _queueControl(WS_DISCONNECT);
 }
 
 void AsyncWebSocketClient::ping(uint8_t *data, size_t len){
   if(_status == WS_CONNECTED)
-    _queueControl(new AsyncWebSocketControl(WS_PING, data, len));
+    _queueControl(WS_PING, data, len);
 }
 
 void AsyncWebSocketClient::_onError(int8_t){
@@ -765,10 +765,10 @@ void AsyncWebSocketClient::_onData(void *pbuf, size_t plen){
         } else {
           _status = WS_DISCONNECTING;
           _client->ackLater();
-          _queueControl(new AsyncWebSocketControl(WS_DISCONNECT, data, datalen));
+          _queueControl(WS_DISCONNECT, data, datalen);
         }
       } else if(_pinfo.opcode == WS_PING){
-        _queueControl(new AsyncWebSocketControl(WS_PONG, data, datalen));
+        _queueControl(WS_PONG, data, datalen);
       } else if(_pinfo.opcode == WS_PONG){
         if(datalen != AWSC_PING_PAYLOAD_LEN || memcmp(AWSC_PING_PAYLOAD, data, AWSC_PING_PAYLOAD_LEN) != 0)
           _server->_handleEvent(this, WS_EVT_PONG, NULL, data, datalen);

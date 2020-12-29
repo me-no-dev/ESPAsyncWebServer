@@ -34,6 +34,7 @@
 #include "AsyncWebSynchronization.h"
 
 #include <list>
+#include <deque>
 
 #ifdef ESP8266
 #include <Hash.h>
@@ -163,7 +164,7 @@ class AsyncWebSocketClient {
     uint32_t _clientId;
     AwsClientStatus _status;
 
-    LinkedList<AsyncWebSocketControl *> _controlQueue;
+    std::deque<AsyncWebSocketControl> _controlQueue;
     LinkedList<AsyncWebSocketMessage *> _messageQueue;
 
     uint8_t _pstate;
@@ -173,7 +174,7 @@ class AsyncWebSocketClient {
     uint32_t _keepAlivePeriod;
 
     void _queueMessage(AsyncWebSocketMessage *dataMessage);
-    void _queueControl(AsyncWebSocketControl *controlMessage);
+    void _queueControl(uint8_t opcode, uint8_t *data=NULL, size_t len=0, bool mask=false);
     void _runQueue();
     void _clearQueue();
 
@@ -210,7 +211,7 @@ class AsyncWebSocketClient {
     //data packets
     void message(AsyncWebSocketMessage *message){ _queueMessage(message); }
     bool queueIsFull() const;
-    size_t queueLen() { return _messageQueue.length() + _controlQueue.length(); }
+    size_t queueLen() const;
 
     size_t printf(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
 #ifndef ESP32
