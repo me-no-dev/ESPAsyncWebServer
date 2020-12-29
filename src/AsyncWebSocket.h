@@ -33,6 +33,8 @@
 
 #include "AsyncWebSynchronization.h"
 
+#include <list>
+
 #ifdef ESP8266
 #include <Hash.h>
 #ifdef CRYPTO_HASH_h // include Hash.h from espressif framework if the first include was from the crypto library
@@ -337,7 +339,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     //  messagebuffer functions/objects.
     AsyncWebSocketMessageBuffer * makeBuffer(size_t size = 0);
     AsyncWebSocketMessageBuffer * makeBuffer(uint8_t * data, size_t size);
-    LinkedList<AsyncWebSocketMessageBuffer *> _buffers;
+    std::list<AsyncWebSocketMessageBuffer> _buffers;
     void _cleanBuffers();
 
     AsyncWebSocketClientLinkedList getClients() const;
