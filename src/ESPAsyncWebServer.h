@@ -380,7 +380,7 @@ typedef enum {
 class AsyncWebServerResponse {
   protected:
     int _code;
-    LinkedList<AsyncWebHeader *> _headers;
+    std::list<AsyncWebHeader> _headers;
     String _contentType;
     size_t _contentLength;
     bool _sendContentLength;
@@ -463,17 +463,16 @@ class AsyncWebServer {
 };
 
 class DefaultHeaders {
-  using headers_t = LinkedList<AsyncWebHeader *>;
+  using headers_t = std::list<AsyncWebHeader>;
   headers_t _headers;
 
-  DefaultHeaders()
-  :_headers(headers_t([](AsyncWebHeader *h){ delete h; }))
-  {}
 public:
-  using ConstIterator = headers_t::ConstIterator;
+  DefaultHeaders() = default;
+
+  using ConstIterator = headers_t::const_iterator;
 
   void addHeader(const String& name, const String& value){
-    _headers.add(new AsyncWebHeader(name, value));
+    _headers.emplace_back(name, value);
   }
 
   ConstIterator begin() const { return _headers.begin(); }
@@ -481,6 +480,7 @@ public:
 
   DefaultHeaders(DefaultHeaders const &) = delete;
   DefaultHeaders &operator=(DefaultHeaders const &) = delete;
+
   static DefaultHeaders &Instance() {
     static DefaultHeaders instance;
     return instance;

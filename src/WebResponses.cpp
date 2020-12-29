@@ -88,7 +88,6 @@ const __FlashStringHelper *AsyncWebServerResponse::responseCodeToString(int code
 
 AsyncWebServerResponse::AsyncWebServerResponse()
   : _code(0)
-  , _headers(LinkedList<AsyncWebHeader *>([](AsyncWebHeader *h){ delete h; }))
   , _contentType()
   , _contentLength(0)
   , _sendContentLength(true)
@@ -99,14 +98,12 @@ AsyncWebServerResponse::AsyncWebServerResponse()
   , _writtenLength(0)
   , _state(RESPONSE_SETUP)
 {
-  for(auto header: DefaultHeaders::Instance()) {
-    _headers.add(new AsyncWebHeader(header->name(), header->value()));
+  for(const auto &header: DefaultHeaders::Instance()) {
+    _headers.emplace_back(header);
   }
 }
 
-AsyncWebServerResponse::~AsyncWebServerResponse(){
-  _headers.free();
-}
+AsyncWebServerResponse::~AsyncWebServerResponse() = default;
 
 void AsyncWebServerResponse::setCode(int code){
   if(_state == RESPONSE_SETUP)
@@ -124,7 +121,7 @@ void AsyncWebServerResponse::setContentType(const String& type){
 }
 
 void AsyncWebServerResponse::addHeader(const String& name, const String& value){
-  _headers.add(new AsyncWebHeader(name, value));
+  _headers.emplace_back(name, value);
 }
 
 String AsyncWebServerResponse::_assembleHead(uint8_t version){
@@ -150,10 +147,10 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version){
   }
 
   for(const auto& header: _headers){
-    snprintf_P(buf, bufSize, PSTR("%s: %s\r\n"), header->name().c_str(), header->value().c_str());
+    snprintf_P(buf, bufSize, PSTR("%s: %s\r\n"), header.name().c_str(), header.value().c_str());
     out.concat(buf);
   }
-  _headers.free();
+  _headers.clear();
 
   out.concat(F("\r\n"));
   _headLength = out.length();
