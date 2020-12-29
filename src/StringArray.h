@@ -171,23 +171,4 @@ class LinkedList {
     }
 };
 
-
-class StringArray : public LinkedList<String> {
-public:
-  
-  StringArray() : LinkedList(nullptr) {}
-  
-  bool containsIgnoreCase(const String& str){
-    for (const auto& s : *this) {
-      if (str.equalsIgnoreCase(s)) {
-        return true;
-      }
-    }
-    return false;
-  }
-};
-
-
-
-
 #endif /* STRINGARRAY_H_ */
