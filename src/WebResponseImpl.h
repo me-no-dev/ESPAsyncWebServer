@@ -27,6 +27,8 @@
 #undef max
 #endif
 #include <vector>
+#include <memory>
+
 // It is possible to restore these defines, but one can use _min and _max instead. Or std::min, std::max.
 
 class AsyncBasicResponse: public AsyncWebServerResponse {
@@ -122,7 +124,7 @@ class cbuf;
 
 class AsyncResponseStream: public AsyncAbstractResponse, public Print {
   private:
-    cbuf *_content;
+    std::unique_ptr<cbuf> _content;
   public:
     AsyncResponseStream(const String& contentType, size_t bufferSize);
     ~AsyncResponseStream();

@@ -675,16 +675,15 @@ size_t AsyncProgmemResponse::_fillBuffer(uint8_t *data, size_t len){
  * Response Stream (You can print/write/printf to it, up to the contentLen bytes)
  * */
 
-AsyncResponseStream::AsyncResponseStream(const String& contentType, size_t bufferSize){
+AsyncResponseStream::AsyncResponseStream(const String& contentType, size_t bufferSize)
+{
   _code = 200;
   _contentLength = 0;
   _contentType = contentType;
-  _content = new cbuf(bufferSize);
+  _content = std::unique_ptr<cbuf>(new cbuf(bufferSize)); //std::make_unique<cbuf>(bufferSize);
 }
 
-AsyncResponseStream::~AsyncResponseStream(){
-  delete _content;
-}
+AsyncResponseStream::~AsyncResponseStream() = default;
 
 size_t AsyncResponseStream::_fillBuffer(uint8_t *buf, size_t maxLen){
   return _content->read((char*)buf, maxLen);
