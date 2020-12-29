@@ -24,6 +24,7 @@
 #include "Arduino.h"
 
 #include <functional>
+#include <list>
 #include "FS.h"
 
 #include "StringArray.h"
@@ -154,7 +155,7 @@ class AsyncWebServerRequest {
     AsyncWebServer* _server;
     AsyncWebHandler* _handler;
     AsyncWebServerResponse* _response;
-    StringArray _interestingHeaders;
+    std::vector<String> _interestingHeaders;
     ArDisconnectHandler _onDisconnectfn;
 
     String _temp;
@@ -176,7 +177,7 @@ class AsyncWebServerRequest {
     size_t _contentLength;
     size_t _parsedLength;
 
-    LinkedList<AsyncWebHeader *> _headers;
+    std::list<AsyncWebHeader> _headers;
     LinkedList<AsyncWebParameter *> _params;
     LinkedList<String *> _pathParams;
 
@@ -270,9 +271,12 @@ class AsyncWebServerRequest {
     bool hasHeader(const String& name) const;   // check if header exists
     bool hasHeader(const __FlashStringHelper * data) const;   // check if header exists
 
-    AsyncWebHeader* getHeader(const String& name) const;
-    AsyncWebHeader* getHeader(const __FlashStringHelper * data) const;
-    AsyncWebHeader* getHeader(size_t num) const;
+    AsyncWebHeader* getHeader(const String& name);
+    const AsyncWebHeader* getHeader(const String& name) const;
+    AsyncWebHeader* getHeader(const __FlashStringHelper * data);
+    const AsyncWebHeader* getHeader(const __FlashStringHelper * data) const;
+    AsyncWebHeader* getHeader(size_t num);
+    const AsyncWebHeader* getHeader(size_t num) const;
 
     size_t params() const;                      // get arguments count
     bool hasParam(const String& name, bool post=false, bool file=false) const;
