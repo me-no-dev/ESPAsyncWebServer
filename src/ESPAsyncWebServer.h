@@ -122,6 +122,9 @@ class AsyncWebHeader {
     String _value;
 
   public:
+    AsyncWebHeader() = default;
+    AsyncWebHeader(const AsyncWebHeader &) = default;
+
     AsyncWebHeader(const String& name, const String& value): _name(name), _value(value){}
     AsyncWebHeader(const String& data): _name(), _value(){
       if(!data) return;
@@ -130,10 +133,12 @@ class AsyncWebHeader {
       _name = data.substring(0, index);
       _value = data.substring(index + 2);
     }
-    ~AsyncWebHeader(){}
+
+    AsyncWebHeader &operator=(const AsyncWebHeader &) = default;
+
     const String& name() const { return _name; }
     const String& value() const { return _value; }
-    String toString() const { return String(_name + F(": ") + _value + F("\r\n")); }
+    String toString() const { return _name + F(": ") + _value + F("\r\n"); }
 };
 
 /*
