@@ -184,7 +184,7 @@ class AsyncWebServerRequest {
 
     std::list<AsyncWebHeader> _headers;
     LinkedList<AsyncWebParameter *> _params;
-    LinkedList<String *> _pathParams;
+    std::vector<String> _pathParams;
 
     uint8_t _multiParseState;
     uint8_t _boundaryPosition;

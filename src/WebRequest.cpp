@@ -52,7 +52,6 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _contentLength(0)
   , _parsedLength(0)
   , _params(LinkedList<AsyncWebParameter *>([](AsyncWebParameter *p){ delete p; }))
-  , _pathParams(LinkedList<String *>([](String *p){ delete p; }))
   , _multiParseState(0)
   , _boundaryPosition(0)
   , _itemStartIndex(0)
@@ -78,7 +77,7 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
   _headers.clear();
 
   _params.free();
-  _pathParams.free();
+  _pathParams.clear();
 
   _interestingHeaders.clear();
 
@@ -254,7 +253,7 @@ void AsyncWebServerRequest::_addParam(AsyncWebParameter *p){
 }
 
 void AsyncWebServerRequest::_addPathParam(const char *p){
-  _pathParams.add(new String(p));
+  _pathParams.emplace_back(p);
 }
 
 void AsyncWebServerRequest::_addGetParams(const String& params){
@@ -915,8 +914,7 @@ const String& AsyncWebServerRequest::argName(size_t i) const {
 }
 
 const String& AsyncWebServerRequest::pathArg(size_t i) const {
-  auto param = _pathParams.nth(i);
-  return param ? **param : emptyString;
+  return i < _pathParams.size() ? _pathParams[i] : emptyString;
 }
 
 const String& AsyncWebServerRequest::header(const char* name) const {
