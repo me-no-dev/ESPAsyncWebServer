@@ -121,6 +121,13 @@ public:
       _lock->unlock();
     }
   }
+
+  void unlock() {
+    if (_lock) {
+      _lock->unlock();
+      _lock = NULL;
+    }
+  }
 };
 
 #endif // ASYNCWEBSYNCHRONIZATION_H_

@@ -148,13 +148,70 @@ class AsyncWebSocketMultiMessage: public AsyncWebSocketMessage {
     size_t _sent;
     size_t _ack;
     size_t _acked;
-    AsyncWebSocketMessageBuffer * _WSbuffer;
+    AsyncWebSocketMessageBuffer *_WSbuffer;
 public:
     AsyncWebSocketMultiMessage(AsyncWebSocketMessageBuffer * buffer, uint8_t opcode=WS_TEXT, bool mask=false);
     virtual ~AsyncWebSocketMultiMessage() override;
     virtual bool betweenFrames() const override { return _acked == _ack; }
     virtual void ack(size_t len, uint32_t time) override ;
     virtual size_t send(AsyncClient *client) override ;
+};
+
+class PolymorphMessageContainer
+{
+    union {
+        AsyncWebSocketBasicMessage basicMessage;
+        AsyncWebSocketMultiMessage multiMessage;
+    };
+
+    enum class Type : uint8_t { Basic, Multi };
+    const Type type;
+
+public:
+    PolymorphMessageContainer() = delete;
+    PolymorphMessageContainer(const PolymorphMessageContainer &) = delete;
+    PolymorphMessageContainer &operator=(const PolymorphMessageContainer &) = delete;
+
+    PolymorphMessageContainer(const char *data, size_t len, uint8_t opcode=WS_TEXT, bool mask=false) :
+        type{Type::Basic}
+    {
+        new (&basicMessage) AsyncWebSocketBasicMessage{data, len, opcode, mask};
+    }
+
+    PolymorphMessageContainer(AsyncWebSocketMessageBuffer *buffer, uint8_t opcode=WS_TEXT, bool mask=false) :
+        type{Type::Multi}
+    {
+        new (&multiMessage) AsyncWebSocketMultiMessage{buffer, opcode, mask};
+    }
+
+    ~PolymorphMessageContainer()
+    {
+        switch (type)
+        {
+        case Type::Basic: basicMessage.~AsyncWebSocketBasicMessage(); break;
+        case Type::Multi: multiMessage.~AsyncWebSocketMultiMessage(); break;
+        }
+    }
+
+    AsyncWebSocketMessage &get()
+    {
+        switch (type)
+        {
+        case Type::Basic: return basicMessage;
+        case Type::Multi: return multiMessage;
+        }
+        __builtin_unreachable();
+    }
+
+    const AsyncWebSocketMessage &get() const
+    {
+        switch (type)
+        {
+        case Type::Basic: return basicMessage;
+        case Type::Multi: return multiMessage;
+        }
+        __builtin_unreachable();
+    }
 };
 
 class AsyncWebSocketClient {
@@ -164,8 +221,10 @@ class AsyncWebSocketClient {
     uint32_t _clientId;
     AwsClientStatus _status;
 
+    AsyncWebLock _lock;
+
     std::deque<AsyncWebSocketControl> _controlQueue;
-    LinkedList<AsyncWebSocketMessage *> _messageQueue;
+    std::deque<PolymorphMessageContainer> _messageQueue;
 
     uint8_t _pstate;
     AwsFrameInfo _pinfo;
@@ -173,8 +232,9 @@ class AsyncWebSocketClient {
     uint32_t _lastMessageTime;
     uint32_t _keepAlivePeriod;
 
-    void _queueMessage(AsyncWebSocketMessage *dataMessage);
     void _queueControl(uint8_t opcode, uint8_t *data=NULL, size_t len=0, bool mask=false);
+    void _queueMessage(const char *data, size_t len, uint8_t opcode=WS_TEXT, bool mask=false);
+    void _queueMessage(AsyncWebSocketMessageBuffer *buffer, uint8_t opcode=WS_TEXT, bool mask=false);
     void _runQueue();
     void _clearQueue();
 
@@ -209,7 +269,8 @@ class AsyncWebSocketClient {
     }
 
     //data packets
-    void message(AsyncWebSocketMessage *message){ _queueMessage(message); }
+    void message(const char *data, size_t len, uint8_t opcode=WS_TEXT, bool mask=false) { _queueMessage(data, len, opcode, mask); }
+    void message(AsyncWebSocketMessageBuffer *buffer, uint8_t opcode=WS_TEXT, bool mask=false) { _queueMessage(buffer, opcode, mask); }
     bool queueIsFull() const;
     size_t queueLen() const;
 
@@ -233,7 +294,7 @@ class AsyncWebSocketClient {
     void binary(const __FlashStringHelper *data, size_t len);
     void binary(AsyncWebSocketMessageBuffer *buffer);
 
-    bool canSend() { return _messageQueue.length() < WS_MAX_QUEUED_MESSAGES; }
+    bool canSend() const;
 
     //system callbacks (do not call)
     void _onAck(size_t len, uint32_t time);
@@ -291,7 +352,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     void textAll(char * message);
     void textAll(const String &message);
     void textAll(const __FlashStringHelper *message); //  need to convert
-    void textAll(AsyncWebSocketMessageBuffer * buffer);
+    void textAll(AsyncWebSocketMessageBuffer *buffer);
 
     void binary(uint32_t id, const char * message, size_t len);
     void binary(uint32_t id, const char * message);
@@ -306,10 +367,11 @@ class AsyncWebSocket: public AsyncWebHandler {
     void binaryAll(char * message);
     void binaryAll(const String &message);
     void binaryAll(const __FlashStringHelper *message, size_t len);
-    void binaryAll(AsyncWebSocketMessageBuffer * buffer);
+    void binaryAll(AsyncWebSocketMessageBuffer *buffer);
 
-    void message(uint32_t id, AsyncWebSocketMessage *message);
-    void messageAll(AsyncWebSocketMultiMessage *message);
+    void message(uint32_t id, const char *data, size_t len, uint8_t opcode=WS_TEXT, bool mask=false);
+    void message(uint32_t id, AsyncWebSocketMessageBuffer *buffer, uint8_t opcode=WS_TEXT, bool mask=false);
+    void messageAll(AsyncWebSocketMessageBuffer *buffer, uint8_t opcode=WS_TEXT, bool mask=false);
 
     size_t printf(uint32_t id, const char *format, ...)  __attribute__ ((format (printf, 3, 4)));
     size_t printfAll(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
