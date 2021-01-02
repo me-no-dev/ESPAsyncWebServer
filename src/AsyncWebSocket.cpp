@@ -495,6 +495,7 @@ void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
                 if(_status == WS_DISCONNECTING && head.opcode() == WS_DISCONNECT){
                   _controlQueue.pop_front();
                   _status = WS_DISCONNECTED;
+                  l.unlock();
                   _client->close(true);
                   return;
                 }
