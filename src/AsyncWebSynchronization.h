@@ -44,7 +44,7 @@ class AsyncWebLock
 {
 private:
   SemaphoreHandle_t _lock;
-  mutable void *_lockedBy;
+  mutable TaskHandle_t _lockedBy{};
 
 public:
   AsyncWebLock() {
@@ -61,10 +61,10 @@ public:
   }
 
   bool lock() const {
-    extern void *pxCurrentTCB;
-    if (_lockedBy != pxCurrentTCB) {
+    const auto currentTask = xTaskGetCurrentTaskHandle();
+    if (_lockedBy != currentTask) {
       xSemaphoreTake(_lock, portMAX_DELAY);
-      _lockedBy = pxCurrentTCB;
+      _lockedBy = currentTask;
       return true;
     }
     return false;
