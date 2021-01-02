@@ -514,13 +514,16 @@ void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
     _runQueue();
 }
 
-void AsyncWebSocketClient::_onPoll(){
-    if(_client->canSend() && [this](){ AsyncWebLockGuard l(_lock); return !_controlQueue.empty() || !_messageQueue.empty(); }())
+void AsyncWebSocketClient::_onPoll()
+{
+    AsyncWebLockGuard l(_lock);
+    if(_client->canSend() && (!_controlQueue.empty() || !_messageQueue.empty()))
     {
+        l.unlock();
         _runQueue();
-    } else if(_keepAlivePeriod > 0 && (millis() - _lastMessageTime) >= _keepAlivePeriod &&
-        [this](){ AsyncWebLockGuard l(_lock); return _controlQueue.empty() && _messageQueue.empty(); }())
+    } else if(_keepAlivePeriod > 0 && (millis() - _lastMessageTime) >= _keepAlivePeriod && (_controlQueue.empty() && _messageQueue.empty()))
     {
+        l.unlock();
         ping((uint8_t *)AWSC_PING_PAYLOAD, AWSC_PING_PAYLOAD_LEN);
     }
 }
@@ -533,12 +536,12 @@ void AsyncWebSocketClient::_runQueue()
 
     if(!_controlQueue.empty() && (_messageQueue.empty() || _messageQueue.front().get().betweenFrames()) && webSocketSendFrameWindow(_client) > (size_t)(_controlQueue.front().len() - 1))
     {
-        l.unlock();
+        //l.unlock();
         _controlQueue.front().send(_client);
     }
     else if (!_messageQueue.empty() && _messageQueue.front().get().betweenFrames() && webSocketSendFrameWindow(_client))
     {
-        l.unlock();
+        //l.unlock();
         _messageQueue.front().get().send(_client);
     }
 }
