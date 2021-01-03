@@ -24,7 +24,7 @@
 #include <Arduino.h>
 #ifdef ESP32
 #include <AsyncTCP.h>
-#define WS_MAX_QUEUED_MESSAGES 32
+#define WS_MAX_QUEUED_MESSAGES 16
 #else
 #include <ESPAsyncTCP.h>
 #define WS_MAX_QUEUED_MESSAGES 8
@@ -145,6 +145,8 @@ class AsyncWebSocketClient {
 
     IPAddress remoteIP() const;
     uint16_t  remotePort() const;
+
+    bool shouldBeDeleted() const { return !_client; }
 
     //control frames
     void close(uint16_t code=0, const char * message=NULL);
@@ -273,7 +275,6 @@ class AsyncWebSocket: public AsyncWebHandler {
     //system callbacks (do not call)
     uint32_t _getNextId(){ return _cNextId++; }
     AsyncWebSocketClient *_newClient(AsyncWebServerRequest *request);
-    void _handleDisconnect(AsyncWebSocketClient * client);
     void _handleEvent(AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
     virtual bool canHandle(AsyncWebServerRequest *request) override final;
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
