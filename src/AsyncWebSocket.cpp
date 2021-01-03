@@ -307,30 +307,28 @@ void AsyncWebSocketClient::_clearQueue()
 void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
     _lastMessageTime = millis();
 
-    {
-        AsyncWebLockGuard l(_lock);
+    AsyncWebLockGuard l(_lock);
 
-        if (!_controlQueue.empty()) {
-            auto &head = _controlQueue.front();
-            if (head.finished()){
-                len -= head.len();
-                if (_status == WS_DISCONNECTING && head.opcode() == WS_DISCONNECT){
-                    _controlQueue.pop_front();
-                    _status = WS_DISCONNECTED;
-                    l.unlock();
-                    _client->close(true);
-                    return;
-                }
+    if (!_controlQueue.empty()) {
+        auto &head = _controlQueue.front();
+        if (head.finished()){
+            len -= head.len();
+            if (_status == WS_DISCONNECTING && head.opcode() == WS_DISCONNECT){
                 _controlQueue.pop_front();
+                _status = WS_DISCONNECTED;
+                l.unlock();
+                _client->close(true);
+                return;
             }
+            _controlQueue.pop_front();
         }
-
-        if(len && !_messageQueue.empty()){
-            _messageQueue.front().ack(len, time);
-        }
-
-        _clearQueue();
     }
+
+    if(len && !_messageQueue.empty()){
+        _messageQueue.front().ack(len, time);
+    }
+
+    _clearQueue();
 
     _runQueue();
 }
@@ -428,29 +426,34 @@ void AsyncWebSocketClient::_queueMessage(std::shared_ptr<std::vector<uint8_t>> b
         _runQueue();
 }
 
-void AsyncWebSocketClient::close(uint16_t code, const char * message){
-  if(_status != WS_CONNECTED)
-    return;
-  if(code){
-    uint8_t packetLen = 2;
-    if(message != NULL){
-      size_t mlen = strlen(message);
-      if(mlen > 123) mlen = 123;
-      packetLen += mlen;
+void AsyncWebSocketClient::close(uint16_t code, const char * message)
+{
+    if(_status != WS_CONNECTED)
+        return;
+
+    if(code)
+    {
+        uint8_t packetLen = 2;
+        if (message != NULL)
+        {
+            size_t mlen = strlen(message);
+            if(mlen > 123) mlen = 123;
+            packetLen += mlen;
+        }
+        char * buf = (char*)malloc(packetLen);
+        if (buf != NULL)
+        {
+            buf[0] = (uint8_t)(code >> 8);
+            buf[1] = (uint8_t)(code & 0xFF);
+            if(message != NULL){
+                memcpy(buf+2, message, packetLen -2);
+            }
+            _queueControl(WS_DISCONNECT, (uint8_t*)buf, packetLen);
+            free(buf);
+            return;
+        }
     }
-    char * buf = (char*)malloc(packetLen);
-    if(buf != NULL){
-      buf[0] = (uint8_t)(code >> 8);
-      buf[1] = (uint8_t)(code & 0xFF);
-      if(message != NULL){
-        memcpy(buf+2, message, packetLen -2);
-      }
-      _queueControl(WS_DISCONNECT, (uint8_t*)buf, packetLen);
-      free(buf);
-      return;
-    }
-  }
-  _queueControl(WS_DISCONNECT);
+    _queueControl(WS_DISCONNECT);
 }
 
 void AsyncWebSocketClient::ping(const uint8_t *data, size_t len)
