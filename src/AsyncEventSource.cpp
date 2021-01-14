@@ -298,38 +298,34 @@ void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
     client->write((const char *)temp, 2053);
     free(temp);
   }*/
-  _client_queue_lock.lock();
+  AsyncWebLockGuard l(_client_queue_lock);
   _clients.add(client);
   if(_connectcb)
     _connectcb(client);
-  _client_queue_lock.unlock();
 }
 
 void AsyncEventSource::_handleDisconnect(AsyncEventSourceClient * client){
-  _client_queue_lock.lock();
+  AsyncWebLockGuard l(_client_queue_lock);
   _clients.remove(client);
-  _client_queue_lock.unlock();
 }
 
 void AsyncEventSource::close(){
   // While the whole loop is not done, the linked list is locked and so the
   // iterator should remain valid even when AsyncEventSource::_handleDisconnect()
   // is called very early
-  _client_queue_lock.lock();
+  AsyncWebLockGuard l(_client_queue_lock);
   for(const auto &c: _clients){
     if(c->connected())
       c->close();
   }
-  _client_queue_lock.unlock();
 }
 
 // pmb fix
 size_t AsyncEventSource::avgPacketsWaiting() const {
   size_t aql = 0;
   uint32_t nConnectedClients = 0;
-  _client_queue_lock.lock();
+  AsyncWebLockGuard l(_client_queue_lock);
   if (_clients.isEmpty()) {
-    _client_queue_lock.unlock();
     return 0;
   }
   for(const auto &c: _clients){
@@ -338,29 +334,26 @@ size_t AsyncEventSource::avgPacketsWaiting() const {
       ++nConnectedClients;
     }
   }
-  _client_queue_lock.unlock();
   return ((aql) + (nConnectedClients/2)) / (nConnectedClients); // round up
 }
 
 void AsyncEventSource::send(
     const char *message, const char *event, uint32_t id, uint32_t reconnect){
   String ev = generateEventMessage(message, event, id, reconnect);
-  _client_queue_lock.lock();
+  AsyncWebLockGuard l(_client_queue_lock);
   for(const auto &c: _clients){
     if(c->connected()) {
       c->_write(ev.c_str(), ev.length());
     }
   }
-  _client_queue_lock.unlock();
 }
 
 size_t AsyncEventSource::count() const {
   size_t n_clients;
-  _client_queue_lock.lock();
+  AsyncWebLockGuard l(_client_queue_lock);
   n_clients = _clients.count_if([](AsyncEventSourceClient *c){
                                     return c->connected();
                                 });
-  _client_queue_lock.unlock();
   return n_clients;
 }
 
