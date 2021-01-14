@@ -103,7 +103,7 @@ class AsyncEventSource: public AsyncWebHandler {
     LinkedList<AsyncEventSourceClient *> _clients;
     // Same as for individual messages, protect mutations of _clients list
     // since simultaneous access from different tasks is possible
-    AsyncPlainLock _client_queue_lock;
+    AsyncWebLock _client_queue_lock;
     ArEventHandlerFunction _connectcb;
 
   public:
