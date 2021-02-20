@@ -1,10 +1,13 @@
 #!/bin/bash
 
 echo "Installing Python Wheel ..."
-pip install wheel > /dev/null 2>&1
+pip3 install wheel > /dev/null 2>&1
+
+echo "Installing Python Setuptools ..."
+pip3 install setuptools > /dev/null 2>&1
 
 echo "Installing PlatformIO ..."
-pip install -U platformio > /dev/null 2>&1
+pip3 install -U platformio > /dev/null 2>&1
 
 echo "PlatformIO has been installed"
 echo ""
@@ -23,7 +26,7 @@ function build_pio_sketch(){ # build_pio_sketch <board> <path-to-ino> <build-fla
 	local sketch_dir=$(dirname "$sketch")
 	echo ""
 	echo "Compiling '"$(basename "$sketch")"' ..."
-	python -m platformio ci -l '.' --board "$board" "$sketch_dir" --project-option="board_build.partitions = huge_app.csv" --project-option="build_flags=$buildFlags"
+	python3 -m platformio ci -l '.' --board "$board" "$sketch_dir" --project-option="board_build.partitions = huge_app.csv" --project-option="build_flags=$buildFlags"
 }
 
 function count_sketches() # count_sketches <examples-path>
