@@ -529,7 +529,11 @@ void SPIFFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fi
   if(!index){
     if(!_username.length() || request->authenticate(_username.c_str(),_password.c_str())){
       _authenticated = true;
-      request->_tempFile = _fs.open(filename, "w");
+      if (!filename.startsWith("/")){
+        request->_tempFile = _fs.open("/" + filename, "w");
+      } else {
+        request->_tempFile = _fs.open(filename, "w");
+      }
       _startTime = millis();
     }
   }
@@ -539,6 +543,7 @@ void SPIFFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fi
     }
     if(final){
       request->_tempFile.close();
+      request->send(200);
     }
   }
 }
