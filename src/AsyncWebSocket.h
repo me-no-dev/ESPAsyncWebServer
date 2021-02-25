@@ -46,6 +46,9 @@
 #define DEFAULT_MAX_WS_CLIENTS 4
 #endif
 
+extern int max_ws_clients;
+extern int max_ws_queued_messages;
+
 class AsyncWebSocket;
 class AsyncWebSocketResponse;
 class AsyncWebSocketClient;
@@ -84,16 +87,16 @@ class AsyncWebSocketMessageBuffer {
   private:
     uint8_t * _data;
     size_t _len;
-    bool _lock; 
-    uint32_t _count;  
+    bool _lock;
+    uint32_t _count;
 
   public:
     AsyncWebSocketMessageBuffer();
     AsyncWebSocketMessageBuffer(size_t size);
-    AsyncWebSocketMessageBuffer(uint8_t * data, size_t size); 
-    AsyncWebSocketMessageBuffer(const AsyncWebSocketMessageBuffer &); 
-    AsyncWebSocketMessageBuffer(AsyncWebSocketMessageBuffer &&); 
-    ~AsyncWebSocketMessageBuffer(); 
+    AsyncWebSocketMessageBuffer(uint8_t * data, size_t size);
+    AsyncWebSocketMessageBuffer(const AsyncWebSocketMessageBuffer &);
+    AsyncWebSocketMessageBuffer(AsyncWebSocketMessageBuffer &&);
+    ~AsyncWebSocketMessageBuffer();
     void operator ++(int i) { (void)i; _count++; }
     void operator --(int i) { (void)i; if (_count > 0) { _count--; } ;  }
     bool reserve(size_t size);
@@ -102,9 +105,9 @@ class AsyncWebSocketMessageBuffer {
     uint8_t * get() { return _data; }
     size_t length() { return _len; }
     uint32_t count() { return _count; }
-    bool canDelete() { return (!_count && !_lock); } 
+    bool canDelete() { return (!_count && !_lock); }
 
-    friend AsyncWebSocket; 
+    friend AsyncWebSocket;
 
 };
 
@@ -145,9 +148,9 @@ class AsyncWebSocketMultiMessage: public AsyncWebSocketMessage {
     size_t _sent;
     size_t _ack;
     size_t _acked;
-    AsyncWebSocketMessageBuffer * _WSbuffer; 
+    AsyncWebSocketMessageBuffer * _WSbuffer;
 public:
-    AsyncWebSocketMultiMessage(AsyncWebSocketMessageBuffer * buffer, uint8_t opcode=WS_TEXT, bool mask=false); 
+    AsyncWebSocketMultiMessage(AsyncWebSocketMessageBuffer * buffer, uint8_t opcode=WS_TEXT, bool mask=false);
     virtual ~AsyncWebSocketMultiMessage() override;
     virtual bool betweenFrames() const override { return _acked == _ack; }
     virtual void ack(size_t len, uint32_t time) override ;
@@ -216,7 +219,7 @@ class AsyncWebSocketClient {
     void text(char * message);
     void text(const String &message);
     void text(const __FlashStringHelper *data);
-    void text(AsyncWebSocketMessageBuffer *buffer); 
+    void text(AsyncWebSocketMessageBuffer *buffer);
 
     void binary(const char * message, size_t len);
     void binary(const char * message);
@@ -224,9 +227,9 @@ class AsyncWebSocketClient {
     void binary(char * message);
     void binary(const String &message);
     void binary(const __FlashStringHelper *data, size_t len);
-    void binary(AsyncWebSocketMessageBuffer *buffer); 
+    void binary(AsyncWebSocketMessageBuffer *buffer);
 
-    bool canSend() { return _messageQueue.length() < WS_MAX_QUEUED_MESSAGES; }
+    bool canSend() { return _messageQueue.length() < max_ws_queued_messages; }
 
     //system callbacks (do not call)
     void _onAck(size_t len, uint32_t time);
@@ -266,7 +269,7 @@ class AsyncWebSocket: public AsyncWebHandler {
 
     void close(uint32_t id, uint16_t code=0, const char * message=NULL);
     void closeAll(uint16_t code=0, const char * message=NULL);
-    void cleanupClients(uint16_t maxClients = DEFAULT_MAX_WS_CLIENTS);
+    void cleanupClients(uint16_t maxClients = max_ws_clients);
 
     void ping(uint32_t id, uint8_t *data=NULL, size_t len=0);
     void pingAll(uint8_t *data=NULL, size_t len=0); //  done
@@ -284,7 +287,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     void textAll(char * message);
     void textAll(const String &message);
     void textAll(const __FlashStringHelper *message); //  need to convert
-    void textAll(AsyncWebSocketMessageBuffer * buffer); 
+    void textAll(AsyncWebSocketMessageBuffer * buffer);
 
     void binary(uint32_t id, const char * message, size_t len);
     void binary(uint32_t id, const char * message);
@@ -299,7 +302,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     void binaryAll(char * message);
     void binaryAll(const String &message);
     void binaryAll(const __FlashStringHelper *message, size_t len);
-    void binaryAll(AsyncWebSocketMessageBuffer * buffer); 
+    void binaryAll(AsyncWebSocketMessageBuffer * buffer);
 
     void message(uint32_t id, AsyncWebSocketMessage *message);
     void messageAll(AsyncWebSocketMultiMessage *message);
@@ -325,11 +328,11 @@ class AsyncWebSocket: public AsyncWebHandler {
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
 
 
-    //  messagebuffer functions/objects. 
-    AsyncWebSocketMessageBuffer * makeBuffer(size_t size = 0); 
-    AsyncWebSocketMessageBuffer * makeBuffer(uint8_t * data, size_t size); 
+    //  messagebuffer functions/objects.
+    AsyncWebSocketMessageBuffer * makeBuffer(size_t size = 0);
+    AsyncWebSocketMessageBuffer * makeBuffer(uint8_t * data, size_t size);
     LinkedList<AsyncWebSocketMessageBuffer *> _buffers;
-    void _cleanBuffers(); 
+    void _cleanBuffers();
 
     AsyncWebSocketClientLinkedList getClients() const;
 };
