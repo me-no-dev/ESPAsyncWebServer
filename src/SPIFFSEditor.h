@@ -1,7 +1,9 @@
 #ifndef SPIFFSEditor_H_
 #define SPIFFSEditor_H_
 #include <ESPAsyncWebServer.h>
+#ifdef ESP8266
 #include <LittleFS.h>
+#endif
 
 //this indicates that this implementation will not serve the wsec.json file from FS
 #define SPIFFS_EDITOR_AIRCOOOKIE
