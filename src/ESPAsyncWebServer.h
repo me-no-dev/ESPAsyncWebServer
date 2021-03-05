@@ -203,6 +203,8 @@ class AsyncWebServerRequest {
   public:
     File _tempFile;
     void *_tempObject;
+    char varBegin = '%';
+    char varEnd = '%';
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
     ~AsyncWebServerRequest();
