@@ -189,9 +189,13 @@ void AsyncEventSourceClient::_queueMessage(AsyncEventSourceMessage *dataMessage)
       delete dataMessage;
   } else {
       _messageQueue.add(dataMessage);
-  }
-  if(_client->canSend())
-    _runQueue();
+      // runqueue trigger when new messages added
+      if(_client->canSend())
+        _runQueue();
+    }
+  // no runqueue by default, only with new message
+  // if(_client->canSend())
+  //   _runQueue();
 }
 
 void AsyncEventSourceClient::_onAck(size_t len, uint32_t time){
@@ -235,15 +239,27 @@ void AsyncEventSourceClient::send(const char *message, const char *event, uint32
 }
 
 void AsyncEventSourceClient::_runQueue(){
-  while(!_messageQueue.isEmpty() && _messageQueue.front()->finished()){
-    _messageQueue.remove(_messageQueue.front());
+
+  static bool inRunQueue = false;
+
+  // prevent reentrance
+  if (inRunQueue == false) {
+    while(!_messageQueue.isEmpty() && _messageQueue.front()->finished()){
+      _messageQueue.remove(_messageQueue.front());
+    }
+
+    for(auto i = _messageQueue.begin(); i != _messageQueue.end(); ++i)
+    {
+      if(!(*i)->sent())
+        (*i)->send(_client);
+    }
+    inRunQueue = false;
+
+  } // inRunQueue
+  else {
+    ets_printf("WARNING: runQueue called while already in runQueue\n");
   }
 
-  for(auto i = _messageQueue.begin(); i != _messageQueue.end(); ++i)
-  {
-    if(!(*i)->sent())
-      (*i)->send(_client);
-  }
 }
 
 
