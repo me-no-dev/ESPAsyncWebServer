@@ -214,6 +214,7 @@ lib_deps = https://github.com/me-no-dev/ESPAsyncWebServer.git
 - [ESPurna](https://bitbucket.org/xoseperez/espurna) - ESPurna ("spark" in Catalan) is a custom C firmware for ESP8266 based smart switches. It was originally developed with the ITead Sonoff in mind.
 - [fauxmoESP](https://bitbucket.org/xoseperez/fauxmoesp) - Belkin WeMo emulator library for ESP8266.
 - [ESP-RFID](https://github.com/omersiar/esp-rfid) - MFRC522 RFID Access Control Management project for ESP8266.
+- [ESPecial](https://github.com/RomeHein/ESPecial) - Home automation for ESP32 with dynamic web interface, telegram bot, mqtt and OTA.
 
 ## Request Variables
 
