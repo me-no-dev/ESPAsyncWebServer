@@ -46,6 +46,8 @@
 #define DEFAULT_MAX_WS_CLIENTS 4
 #endif
 
+#define WS_MAX_HEADER_LEN 16
+
 class AsyncWebSocket;
 class AsyncWebSocketResponse;
 class AsyncWebSocketClient;
@@ -166,6 +168,8 @@ class AsyncWebSocketClient {
 
     uint8_t _pstate;
     AwsFrameInfo _pinfo;
+    uint8_t *_partialHeader;
+    uint8_t _partialHeaderLen;
 
     uint32_t _lastMessageTime;
     uint32_t _keepAlivePeriod;

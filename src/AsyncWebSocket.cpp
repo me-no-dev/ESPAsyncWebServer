@@ -484,6 +484,8 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
   _clientId = _server->_getNextId();
   _status = WS_CONNECTED;
   _pstate = 0;
+  _partialHeader = nullptr;
+  _partialHeaderLen = 0;
   _lastMessageTime = millis();
   _keepAlivePeriod = 0;
   _client->setRxTimeout(0);
@@ -622,30 +624,96 @@ void AsyncWebSocketClient::_onData(void *pbuf, size_t plen){
   _lastMessageTime = millis();
   uint8_t *data = (uint8_t*)pbuf;
   while(plen > 0){
-    if(!_pstate){
-      const uint8_t *fdata = data;
+    if(!_pstate) {
+      ssize_t dataPayloadOffset = 0;
+      const uint8_t *headerBuf = data;
+      bool headerInHeap = false;
+      bool failPartialHeader = false;
+      size_t initialPlen = plen;
+      size_t partialHeaderLen = 0;
+
+      if (_partialHeader != nullptr) {
+        // Recover previously received partial header
+        headerInHeap = true;
+        memcpy(_partialHeader + _partialHeaderLen, data, std::min(plen, (size_t) WS_MAX_HEADER_LEN - _partialHeaderLen));
+        headerBuf = _partialHeader;
+        initialPlen += _partialHeaderLen;
+        plen += _partialHeaderLen;
+        dataPayloadOffset -= _partialHeaderLen;
+        partialHeaderLen = _partialHeaderLen;
+
+        _partialHeader = nullptr;
+        _partialHeaderLen = 0;
+      }
+
+      // The following series of gotos could be a try-catch but we may be building with -fno-exceptions
+      if (plen < 2) {
+        failPartialHeader = true;
+        goto _exceptionHandleFailPartialHeader;
+      }
       _pinfo.index = 0;
-      _pinfo.final = (fdata[0] & 0x80) != 0;
-      _pinfo.opcode = fdata[0] & 0x0F;
-      _pinfo.masked = (fdata[1] & 0x80) != 0;
-      _pinfo.len = fdata[1] & 0x7F;
-      data += 2;
+      _pinfo.final = (headerBuf[0] & 0x80) != 0;
+      _pinfo.opcode = headerBuf[0] & 0x0F;
+      _pinfo.masked = (headerBuf[1] & 0x80) != 0;
+      _pinfo.len = headerBuf[1] & 0x7F;
+      dataPayloadOffset += 2;
       plen -= 2;
-      if(_pinfo.len == 126){
-        _pinfo.len = fdata[3] | (uint16_t)(fdata[2]) << 8;
-        data += 2;
+
+      if (_pinfo.len == 126) {
+        if (plen < 2) {
+          failPartialHeader = true;
+          goto _exceptionHandleFailPartialHeader;
+        }
+        _pinfo.len = headerBuf[3] | (uint16_t)(headerBuf[2]) << 8;
+        dataPayloadOffset += 2;
         plen -= 2;
       } else if(_pinfo.len == 127){
-        _pinfo.len = fdata[9] | (uint16_t)(fdata[8]) << 8 | (uint32_t)(fdata[7]) << 16 | (uint32_t)(fdata[6]) << 24 | (uint64_t)(fdata[5]) << 32 | (uint64_t)(fdata[4]) << 40 | (uint64_t)(fdata[3]) << 48 | (uint64_t)(fdata[2]) << 56;
-        data += 8;
+        if (plen < 8) {
+          failPartialHeader = true;
+          goto _exceptionHandleFailPartialHeader;
+        }
+        _pinfo.len = headerBuf[9] | (uint16_t)(headerBuf[8]) << 8 | (uint32_t)(headerBuf[7]) << 16 | (uint32_t)(headerBuf[6]) << 24 | (uint64_t)(headerBuf[5]) << 32 | (uint64_t)(headerBuf[4]) << 40 | (uint64_t)(headerBuf[3]) << 48 | (uint64_t)(headerBuf[2]) << 56;
+        dataPayloadOffset += 8;
         plen -= 8;
       }
 
       if(_pinfo.masked){
-        memcpy(_pinfo.mask, data, 4);
-        data += 4;
+        if (plen < 4) {
+          failPartialHeader = true;
+          goto _exceptionHandleFailPartialHeader;
+        }
+        memcpy(_pinfo.mask, headerBuf + dataPayloadOffset + partialHeaderLen, 4);
+        dataPayloadOffset += 4;
         plen -= 4;
       }
+
+      _exceptionHandleFailPartialHeader:
+      if (failPartialHeader) {
+        // We did not receive the entirety of the header - store it temporarily and we will parse it once we receive
+        // more data
+        if (initialPlen <= WS_MAX_HEADER_LEN) {
+          // If initialPlen > WS_MAX_HEADER_LEN there must be something wrong with this code. It should never happen but
+          // but it's better safe than sorry
+
+          _partialHeader = static_cast<uint8_t *>(malloc(WS_MAX_HEADER_LEN * sizeof(uint8_t)));
+          memcpy(_partialHeader, headerBuf, initialPlen * sizeof(uint8_t));
+          _partialHeaderLen = initialPlen;
+
+        } else if (initialPlen > WS_MAX_HEADER_LEN) {
+          DEBUGF("[AsyncWebSocketClient::_onData] initialPlen (= %d) > WS_MAX_HEADER_LEN (= %d)\n", initialPlen,
+                 WS_MAX_HEADER_LEN);
+        }
+      }
+
+      if (headerInHeap) {
+        free((void *) headerBuf);
+      }
+
+      if (failPartialHeader) {
+        return;
+      }
+
+      data += dataPayloadOffset;
     }
 
     const size_t datalen = std::min((size_t)(_pinfo.len - _pinfo.index), plen);
