@@ -133,4 +133,16 @@ class AsyncResponseStream: public AsyncAbstractResponse, public Print {
     using Print::write;
 };
 
+
+class AsyncStatefulCallbackResponse : public AsyncAbstractResponse {
+private:
+  AwsResponseDataSource *_content;
+  size_t _filledLength;
+
+public:
+  AsyncStatefulCallbackResponse(const String &contentType, size_t len, AwsResponseDataSource *dataSource, AwsTemplateProcessor templateCallback = nullptr);
+  ~AsyncStatefulCallbackResponse();
+  bool _sourceValid() const { return true; }
+  virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
+};
 #endif /* ASYNCWEBSERVERRESPONSEIMPL_H_ */

@@ -697,3 +697,31 @@ size_t AsyncResponseStream::write(const uint8_t *data, size_t len){
 size_t AsyncResponseStream::write(uint8_t data){
   return write(&data, 1);
 }
+
+
+
+/*
+ * Stateful callback response
+ */
+
+AsyncStatefulCallbackResponse::AsyncStatefulCallbackResponse(const String &contentType, size_t len, AwsResponseDataSource *dataSource, AwsTemplateProcessor templateCallback): AsyncAbstractResponse(templateCallback) {
+  _code = 200;
+  _content=dataSource;
+  _contentLength = len;
+  if(!len)
+    _sendContentLength = false;
+  _contentType = contentType;
+  _filledLength = 0;
+}
+
+size_t AsyncStatefulCallbackResponse::_fillBuffer(uint8_t *data, size_t len){
+  size_t ret = _content->fillBuffer(data, len, _filledLength);
+  if(ret != RESPONSE_TRY_AGAIN){
+      _filledLength += ret;
+  }
+  return ret;
+}
+;
+AsyncStatefulCallbackResponse::~AsyncStatefulCallbackResponse() {
+  delete _content;
+}
