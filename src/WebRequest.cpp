@@ -750,6 +750,10 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(const String& cont
   return new AsyncCallbackResponse(contentType, len, callback, templateCallback);
 }
 
+AsyncWebServerResponse * AsyncWebServerRequest::beginStatefulResponse(const String& contentType, size_t len, AwsResponseDataSource* callback, AwsTemplateProcessor templateCallback){
+  return new AsyncStatefulCallbackResponse(contentType, len, callback, templateCallback);
+}
+
 AsyncWebServerResponse * AsyncWebServerRequest::beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback){
   if(_version)
     return new AsyncChunkedResponse(contentType, callback, templateCallback);
