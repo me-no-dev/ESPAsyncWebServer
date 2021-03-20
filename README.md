@@ -764,7 +764,7 @@ to the resulting json packets
 
 AsyncJsonResponse * response = new AsyncJsonResponse();
 response->addHeader("Server","ESP Async Web Server");
-JsonObject& root = response->getRoot();
+const JsonObject& root = response->getRoot();
 root["heap"] = ESP.getFreeHeap();
 root["ssid"] = WiFi.SSID();
 response->setLength();
