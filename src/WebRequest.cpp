@@ -26,6 +26,8 @@
 #define os_strlen strlen
 #endif
 
+using namespace stringarray;
+
 static const String SharedEmptyString = String();
 
 #define __is_param_char(c) ((c) && ((c) != '{') && ((c) != '[') && ((c) != '&') && ((c) != '='))

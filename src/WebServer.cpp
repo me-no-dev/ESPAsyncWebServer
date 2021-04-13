@@ -21,6 +21,8 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
+using namespace stringarray;
+
 bool ON_STA_FILTER(AsyncWebServerRequest *request) {
   return WiFi.localIP() == request->client()->localIP();
 }
