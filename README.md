@@ -1509,7 +1509,7 @@ For Arduino IDE create/update `platform.local.txt`:
 
 Add/Update the following line:
 ```
-  compiler.cpp.extra_flags=-DDASYNCWEBSERVER_REGEX
+  compiler.cpp.extra_flags=-DASYNCWEBSERVER_REGEX
 ```
 
 For platformio modify `platformio.ini`:
