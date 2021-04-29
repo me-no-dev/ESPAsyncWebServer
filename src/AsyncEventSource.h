@@ -72,6 +72,8 @@ class AsyncEventSourceClient {
     AsyncEventSource *_server;
     uint32_t _lastId;
     LinkedList<AsyncEventSourceMessage *> _messageQueue;
+    // ArFi 2020-08-27 for protecting/serializing _messageQueue
+    AsyncPlainLock _lockmq;
     void _queueMessage(AsyncEventSourceMessage *dataMessage);
     void _runQueue();
 
@@ -82,12 +84,12 @@ class AsyncEventSourceClient {
 
     AsyncClient* client(){ return _client; }
     void close();
-    void write(const char * message, size_t len);
     void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
     bool connected() const { return (_client != NULL) && _client->connected(); }
     uint32_t lastId() const { return _lastId; }
-    size_t  packetsWaiting() const { return _messageQueue.length(); }
+    size_t  packetsWaiting() const;
 
+    void _write(const char * message, size_t len);
     //system callbacks (do not call)
     void _onAck(size_t len, uint32_t time);
     void _onPoll(); 
@@ -99,7 +101,11 @@ class AsyncEventSource: public AsyncWebHandler {
   private:
     String _url;
     LinkedList<AsyncEventSourceClient *> _clients;
+    // Same as for individual messages, protect mutations of _clients list
+    // since simultaneous access from different tasks is possible
+    AsyncWebLock _client_queue_lock;
     ArEventHandlerFunction _connectcb;
+
   public:
     AsyncEventSource(const String& url);
     ~AsyncEventSource();
@@ -108,7 +114,7 @@ class AsyncEventSource: public AsyncWebHandler {
     void close();
     void onConnect(ArEventHandlerFunction cb);
     void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
-    size_t count() const; //number clinets connected
+    size_t count() const; //number clients connected
     size_t  avgPacketsWaiting() const;
 
     //system callbacks (do not call)
