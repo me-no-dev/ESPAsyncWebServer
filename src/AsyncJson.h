@@ -41,7 +41,9 @@
 #if ARDUINOJSON_VERSION_MAJOR == 5
   #define ARDUINOJSON_5_COMPATIBILITY
 #else
-  #define DYNAMIC_JSON_DOCUMENT_SIZE  1024
+  #ifndef DYNAMIC_JSON_DOCUMENT_SIZE
+    #define DYNAMIC_JSON_DOCUMENT_SIZE  1024
+  #endif
 #endif
 
 constexpr const char* JSON_MIMETYPE = "application/json";
