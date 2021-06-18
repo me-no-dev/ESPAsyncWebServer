@@ -25,6 +25,7 @@
 
 #include <functional>
 #include <list>
+#include <vector>
 #include "FS.h"
 
 #include "StringArray.h"
