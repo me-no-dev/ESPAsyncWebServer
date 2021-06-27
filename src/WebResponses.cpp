@@ -338,7 +338,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     }
 
     if(outLen){
-        _writtenLength += request->client()->write((const char*)buf, outLen);
+        _writtenLength += request->client()->add((const char*)buf, outLen);
     }
 
     if(_chunked){
