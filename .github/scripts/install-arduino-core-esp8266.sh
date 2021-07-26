@@ -6,11 +6,11 @@ mkdir -p "$ARDUINO_USR_PATH/hardware/esp8266com"
 cd "$ARDUINO_USR_PATH/hardware/esp8266com"
 
 echo "Installing Python Serial ..."
-pip install pyserial > /dev/null
+pip3 install pyserial > /dev/null
 
 if [ "$OS_IS_WINDOWS" == "1" ]; then
 	echo "Installing Python Requests ..."
-	pip install requests > /dev/null
+	pip3 install requests > /dev/null
 fi
 
 echo "Cloning Core Repository ..."
@@ -22,7 +22,7 @@ git submodule update --init --recursive > /dev/null 2>&1
 
 echo "Installing Platform Tools ..."
 cd tools
-python get.py > /dev/null
+python3 get.py > /dev/null
 cd $script_init_path
 
 echo "ESP8266 Arduino has been installed in '$ARDUINO_USR_PATH/hardware/esp8266com'"

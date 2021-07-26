@@ -31,7 +31,7 @@ if [ "$BUILD_PIO" -eq 0 ]; then
 	source ./.github/scripts/install-arduino-ide.sh
 
 	echo "Installing ESPAsyncWebServer ..."
-	cp -rf "$GITHUB_WORKSPACE" "$ARDUINO_USR_PATH/libraries/ESPAsyncWebServer"
+	cp -af "$GITHUB_WORKSPACE/src" "$ARDUINO_USR_PATH/libraries/ESPAsyncWebServer"
 	echo "Installing ArduinoJson ..."
 	git clone https://github.com/bblanchon/ArduinoJson "$ARDUINO_USR_PATH/libraries/ArduinoJson" > /dev/null 2>&1
 
@@ -53,18 +53,18 @@ else
 	# PlatformIO Test
 	source ./.github/scripts/install-platformio.sh
 
-	python -m platformio lib --storage-dir "$GITHUB_WORKSPACE" install
+	python3 -m platformio lib --storage-dir "$GITHUB_WORKSPACE" install
 	echo "Installing ArduinoJson ..."
-	python -m platformio lib -g install https://github.com/bblanchon/ArduinoJson.git > /dev/null 2>&1
+	python3 -m platformio lib -g install https://github.com/bblanchon/ArduinoJson.git > /dev/null 2>&1
 	if [[ "$TARGET_PLATFORM" == "esp32" ]]; then
 		BOARD="esp32dev"
 		echo "Installing AsyncTCP ..."
-		python -m platformio lib -g install https://github.com/me-no-dev/AsyncTCP.git > /dev/null 2>&1
+		python3 -m platformio lib -g install https://github.com/me-no-dev/AsyncTCP.git > /dev/null 2>&1
 		echo "BUILDING ESP32 EXAMPLES"
 	else
 		BOARD="esp12e"
 		echo "Installing ESPAsyncTCP ..."
-		python -m platformio lib -g install https://github.com/me-no-dev/ESPAsyncTCP.git > /dev/null 2>&1
+		python3 -m platformio lib -g install https://github.com/me-no-dev/ESPAsyncTCP.git > /dev/null 2>&1
 		echo "BUILDING ESP8266 EXAMPLES"
 	fi
 	build_pio_sketches "$BOARD" "$GITHUB_WORKSPACE/examples"
