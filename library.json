@@ -4,15 +4,15 @@
   "keywords":"http,async,websocket,webserver",
   "authors":
   {
-    "name": "Hristo Gochkov",
+    "name": "ESPHome Team",
     "maintainer": true
   },
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/OttoWinter/ESPAsyncWebServer.git"
+    "url": "https://github.com/esphome/ESPAsyncWebServer.git"
   },
-  "version": "1.2.7",
+  "version": "1.3.0",
   "license": "LGPL-3.0",
   "frameworks": "arduino",
   "platforms": ["espressif8266", "espressif32"],
