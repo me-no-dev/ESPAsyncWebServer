@@ -464,8 +464,8 @@ AsyncWebSocketMultiMessage::~AsyncWebSocketMultiMessage() {
  const size_t AWSC_PING_PAYLOAD_LEN = 22;
 
 AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server)
-  : _controlQueue(LinkedList<AsyncWebSocketControl *>([](AsyncWebSocketControl *c){ delete  c; }))
-  , _messageQueue(LinkedList<AsyncWebSocketMessage *>([](AsyncWebSocketMessage *m){ delete  m; }))
+  : _controlQueue(ESPAsyncWebServer::LinkedList<AsyncWebSocketControl *>([](AsyncWebSocketControl *c){ delete  c; }))
+  , _messageQueue(ESPAsyncWebServer::LinkedList<AsyncWebSocketMessage *>([](AsyncWebSocketMessage *m){ delete  m; }))
   , _tempObject(NULL)
 {
   _client = request->client();
@@ -849,10 +849,10 @@ uint16_t AsyncWebSocketClient::remotePort() {
 
 AsyncWebSocket::AsyncWebSocket(const String& url)
   :_url(url)
-  ,_clients(LinkedList<AsyncWebSocketClient *>([](AsyncWebSocketClient *c){ delete c; }))
+  ,_clients(ESPAsyncWebServer::LinkedList<AsyncWebSocketClient *>([](AsyncWebSocketClient *c){ delete c; }))
   ,_cNextId(1)
   ,_enabled(true)
-  ,_buffers(LinkedList<AsyncWebSocketMessageBuffer *>([](AsyncWebSocketMessageBuffer *b){ delete b; }))
+  ,_buffers(ESPAsyncWebServer::LinkedList<AsyncWebSocketMessageBuffer *>([](AsyncWebSocketMessageBuffer *b){ delete b; }))
 {
   _eventHandler = NULL;
 }
