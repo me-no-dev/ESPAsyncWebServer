@@ -21,6 +21,12 @@
 #ifndef ASYNCWEBSOCKET_H_
 #define ASYNCWEBSOCKET_H_
 
+#include "mbedtls/version.h"
+
+#if (MBEDTLS_VERSION_NUMBER >= 0x02070000)
+  #error Must use ESP32 core v1.0.6-, with MBEDTLS_VERSION_NUMBER < v2.7.0
+#endif
+
 #include <Arduino.h>
 #ifdef ESP32
 #include <AsyncTCP.h>
