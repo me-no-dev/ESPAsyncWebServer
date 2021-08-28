@@ -69,7 +69,7 @@ void notFound(AsyncWebServerRequest *request) {
   }
 
   if (LittleFS.exists(uri)) {
-    request->send(LittleFS, "/index.html", String(), false);
+    request->send(LittleFS, uri, String(), false);
   } else {
     notFound404(request);
   }
