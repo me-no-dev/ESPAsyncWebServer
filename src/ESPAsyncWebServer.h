@@ -391,6 +391,7 @@ class AsyncWebServer {
     AsyncCallbackWebHandler* _catchAllHandler;
 
   public:
+    AsyncWebServer(IPAddress addr, uint16_t port);
     AsyncWebServer(uint16_t port);
     ~AsyncWebServer();
 
