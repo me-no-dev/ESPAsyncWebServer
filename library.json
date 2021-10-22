@@ -30,6 +30,10 @@
     {
       "name": "Hash",
       "platforms": "espressif8266"
+    },
+    {
+      "name": "ESP8266WiFi",
+      "platforms": "espressif8266"
     }
   ]
 }
