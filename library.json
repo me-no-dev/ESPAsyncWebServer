@@ -18,10 +18,12 @@
   "platforms": ["espressif8266", "espressif32"],
   "dependencies": [
     {
+      "owner": "ottowinter",
       "name": "ESPAsyncTCP-esphome",
       "platforms": "espressif8266"
     },
     {
+      "owner": "esphome",
       "name": "AsyncTCP-esphome",
       "platforms": "espressif32"
     },
