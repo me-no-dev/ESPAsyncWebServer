@@ -526,56 +526,6 @@ response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
-### Respond with content coming from a File
-```cpp
-//Send index.htm with default content type
-request->send(SPIFFS, "/index.htm");
-
-//Send index.htm as text
-request->send(SPIFFS, "/index.htm", "text/plain");
-
-//Download index.htm
-request->send(SPIFFS, "/index.htm", String(), true);
-```
-
-### Respond with content coming from a File and extra headers
-```cpp
-//Send index.htm with default content type
-AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/index.htm");
-
-//Send index.htm as text
-AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/index.htm", "text/plain");
-
-//Download index.htm
-AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/index.htm", String(), true);
-
-response->addHeader("Server","ESP Async Web Server");
-request->send(response);
-```
-
-### Respond with content coming from a File containing templates
-Internally uses [Chunked Response](#chunked-response).
-
-Index.htm contents:
-```
-%HELLO_FROM_TEMPLATE%
-```
-
-Somewhere in source files:
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-//Send index.htm with template processor function
-request->send(SPIFFS, "/index.htm", String(), false, processor);
-```
-
 ### Respond with content using a callback
 ```cpp
 //send 128 bytes as plain text
@@ -773,41 +723,6 @@ response->setLength();
 request->send(response);
 ```
 
-## Serving static files
-In addition to serving files from SPIFFS as described above, the server provide a dedicated handler that optimize the
-performance of serving files from SPIFFS - ```AsyncStaticWebHandler```. Use ```server.serveStatic()``` function to
-initialize and add a new instance of ```AsyncStaticWebHandler``` to the server.
-The Handler will not handle the request if the file does not exists, e.g. the server will continue to look for another
-handler that can handle the request.
-Notice that you can chain setter functions to setup the handler, or keep a pointer to change it at a later time.
-
-### Serving specific file by name
-```cpp
-// Serve the file "/www/page.htm" when request url is "/page.htm"
-server.serveStatic("/page.htm", SPIFFS, "/www/page.htm");
-```
-
-### Serving files in directory
-To serve files in a directory, the path to the files should specify a directory in SPIFFS and ends with "/".
-```cpp
-// Serve files in directory "/www/" when request url starts with "/"
-// Request to the root or none existing files will try to server the defualt
-// file name "index.htm" if exists
-server.serveStatic("/", SPIFFS, "/www/");
-
-// Server with different default file
-server.serveStatic("/", SPIFFS, "/www/").setDefaultFile("default.html");
-```
-
-### Serving static files with authentication
-
-```cpp
-server
-    .serveStatic("/", SPIFFS, "/www/")
-    .setDefaultFile("default.html")
-    .setAuthentication("user", "pass");
-```
-
 ### Specifying Cache-Control header
 It is possible to specify Cache-Control header value to reduce the number of calls to the server once the client loaded
 the files. For more information on Cache-Control values see [Cache-Control](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9)
@@ -919,20 +834,6 @@ or `false` to exclude it.
 Two filter callback are provided for convince:
 * `ON_STA_FILTER` - return true when requests are made to the STA (station mode) interface.
 * `ON_AP_FILTER` - return true when requests are made to the AP (access point) interface.
-
-### Serve different site files in AP mode
-```cpp
-server.serveStatic("/", SPIFFS, "/www/").setFilter(ON_STA_FILTER);
-server.serveStatic("/", SPIFFS, "/ap/").setFilter(ON_AP_FILTER);
-```
-
-### Rewrite to different index on AP
-```cpp
-// Serve the file "/www/index-ap.htm" in AP, and the file "/www/index.htm" on STA
-server.rewrite("/", "index.htm");
-server.rewrite("/index.htm", "index-ap.htm").setFilter(ON_AP_FILTER);
-server.serveStatic("/", SPIFFS, "/www/");
-```
 
 ### Serving different hosts
 ```cpp
@@ -1360,9 +1261,6 @@ void setup(){
     }
   });
 
-  // attach filesystem root at URL /fs
-  server.serveStatic("/fs", SPIFFS, "/");
-
   // Catch-All Handlers
   // Any request that can not find a Handler that canHandle it
   // ends in the callbacks below.
@@ -1445,9 +1343,6 @@ Example of OTA code
 ```cpp
   // OTA callbacks
   ArduinoOTA.onStart([]() {
-    // Clean SPIFFS
-    SPIFFS.end();
-
     // Disable client connections    
     ws.enable(false);
 
