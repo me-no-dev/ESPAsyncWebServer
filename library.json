@@ -18,6 +18,14 @@
   "platforms": ["espressif8266", "espressif32"],
   "dependencies": [
     {
+      "name": "FS",
+      "platforms": "espressif32"
+    },
+    {
+      "name": "WiFi",
+      "platforms": "espressif32"
+    },
+    {
       "name": "ESPAsyncTCP",
       "platforms": "espressif8266"
     },
