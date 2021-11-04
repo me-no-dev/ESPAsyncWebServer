@@ -193,6 +193,19 @@ public:
   void setMaxContentLength(int maxContentLength){ _maxContentLength = maxContentLength; }
   void onRequest(ArJsonRequestHandlerFunction fn){ _onRequest = fn; }
 
+  bool startsWithIgnoreCase(const char *a, const char *b)
+  {
+    if (a == NULL || b == NULL) return false;
+    int i = 0;
+    while (b[i])
+    {
+      if (a[i] == 0) return false;
+      if (tolower(a[i]) != tolower(b[i])) return false;
+      ++i;
+    }
+    return true;
+  }
+
   virtual bool canHandle(AsyncWebServerRequest *request) override final{
     if(!_onRequest)
       return false;
@@ -203,7 +216,7 @@ public:
     if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
       return false;
 
-    if ( !request->contentType().equalsIgnoreCase(JSON_MIMETYPE) )
+    if ( !startsWithIgnoreCase(request->contentType().c_str(), JSON_MIMETYPE) )
       return false;
 
     request->addInterestingHeader("ANY");
