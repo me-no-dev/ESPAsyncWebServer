@@ -21,14 +21,14 @@ jobs:
     - name: Build Tests
       run: bash ./.github/scripts/on-push.sh ${{ matrix.board }} 0 1
 
-  build-pio:
-    name: PlatformIO for ${{ matrix.board }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-        board: [esp32, esp8266]
-    steps:
-    - uses: actions/checkout@v1
-    - name: Build Tests
-      run: bash ./.github/scripts/on-push.sh ${{ matrix.board }} 1 1
+#  build-pio:
+#    name: PlatformIO for ${{ matrix.board }} on ${{ matrix.os }}
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os: [ubuntu-latest, windows-latest, macOS-latest]
+#        board: [esp32, esp8266]
+#    steps:
+#    - uses: actions/checkout@v1
+#    - name: Build Tests
+#      run: bash ./.github/scripts/on-push.sh ${{ matrix.board }} 1 1
