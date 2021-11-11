@@ -32,8 +32,8 @@ bool ON_AP_FILTER(AsyncWebServerRequest *request) {
 
 AsyncWebServer::AsyncWebServer(uint16_t port)
   : _server(port)
-  , _rewrites(LinkedList<AsyncWebRewrite*>([](AsyncWebRewrite* r){ delete r; }))
-  , _handlers(LinkedList<AsyncWebHandler*>([](AsyncWebHandler* h){ delete h; }))
+  , _rewrites(LinkedList<AsyncWebRewrite*>(nullptr))
+  , _handlers(LinkedList<AsyncWebHandler*>(nullptr))
 {
   _catchAllHandler = new AsyncCallbackWebHandler();
   if(_catchAllHandler == NULL)
