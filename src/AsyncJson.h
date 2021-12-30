@@ -205,7 +205,7 @@ public:
     if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
       return false;
 
-    if ( !request->contentType().equalsIgnoreCase(JSON_MIMETYPE) )
+    if ( !request->contentType().substring(0, strlen(JSON_MIMETYPE)).equalsIgnoreCase(JSON_MIMETYPE) )
       return false;
 
     request->addInterestingHeader("ANY");
