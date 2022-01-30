@@ -829,6 +829,12 @@ with "If-Modified-Since" header with the same value, instead of responding with 
 // Update the date modified string every time files are updated
 server.serveStatic("/", SPIFFS, "/www/").setLastModified("Mon, 20 Jun 2016 14:00:00 GMT");
 
+or:
+
+AsyncStaticWebHandler& handler = server.serveStatic("/", LittleFS, "/", "public, max-age=604800");
+handler.setDefaultFile("index.html");
+handler.setLastModified((const char*)"Fri, 21 Jan 2022 14:00:00 GMT");  
+
 //*** Chage last modified value at a later stage ***
 
 // During setup - read last modified value from config or EEPROM
