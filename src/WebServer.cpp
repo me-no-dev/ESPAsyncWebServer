@@ -21,6 +21,10 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
+#define SERVER_FREE_HEAP_LEVEL_CRITICAL (5*1024)
+#define SERVER_FREE_HEAP_LEVEL_HIGH (7*1024)
+#define MAX_NUM_OF_HTTP_REQUESTS 3
+
 bool ON_STA_FILTER(AsyncWebServerRequest *request) {
   return WiFi.localIP() == request->client()->localIP();
 }
@@ -28,7 +32,6 @@ bool ON_STA_FILTER(AsyncWebServerRequest *request) {
 bool ON_AP_FILTER(AsyncWebServerRequest *request) {
   return WiFi.localIP() != request->client()->localIP();
 }
-
 
 AsyncWebServer::AsyncWebServer(uint16_t port)
   : _server(port)
@@ -41,13 +44,39 @@ AsyncWebServer::AsyncWebServer(uint16_t port)
   _server.onClient([](void *s, AsyncClient* c){
     if(c == NULL)
       return;
-    c->setRxTimeout(3);
-    AsyncWebServerRequest *r = new AsyncWebServerRequest((AsyncWebServer*)s, c);
-    if(r == NULL){
-      c->close(true);
-      c->free();
-      delete c;
+
+    AsyncWebServer* svr = (AsyncWebServer*)s;
+    int freeHeap = ESP.getFreeHeap();
+
+    if ( freeHeap < SERVER_FREE_HEAP_LEVEL_CRITICAL ){
+      svr->_freeClient(c);
+      return;
     }
+
+    c->setRxTimeout(3);
+
+    AsyncWebServerRequest *r = new AsyncWebServerRequest(svr, c);
+    if(r == NULL){
+      svr->_freeClient(c);
+      return;
+    }
+
+    if ( freeHeap < SERVER_FREE_HEAP_LEVEL_HIGH ){
+      r->send(500);
+      return;
+    }
+
+    if(svr->numOfRequests > MAX_NUM_OF_HTTP_REQUESTS){
+      AsyncWebServerResponse *response = r->beginResponse(429);
+
+      if(!response){
+        svr->_freeClient(c);
+        return;
+      } 
+
+      response->addHeader("Retry-After", "1");
+      r->send(response);
+    } 
   }, this);
 }
 
@@ -123,6 +152,11 @@ void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
   request->setHandler(_catchAllHandler);
 }
 
+void AsyncWebServer::_freeClient(AsyncClient* c){
+      c->close(true);
+      c->free();
+      delete c;
+}
 
 AsyncCallbackWebHandler& AsyncWebServer::on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody){
   AsyncCallbackWebHandler* handler = new AsyncCallbackWebHandler();
