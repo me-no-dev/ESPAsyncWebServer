@@ -147,7 +147,12 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
           _isPlainPost = true;
         } else if(_contentType == "text/plain" && __is_param_char(((char*)buf)[0])){
           size_t i = 0;
-          while (i<len && __is_param_char(((char*)buf)[i++]));
+          while (i<len)
+          {
+            auto data = ((char*)buf)[i++];
+            if( !__is_param_char(data) )
+              break;
+          }
           if(i < len && ((char*)buf)[i-1] == '='){
             _isPlainPost = true;
           }
