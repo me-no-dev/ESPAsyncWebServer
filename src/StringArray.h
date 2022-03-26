@@ -47,10 +47,19 @@ class LinkedList {
 
     class Iterator {
       ItemType* _node;
+      ItemType* _nextNode = nullptr;
     public:
-      Iterator(ItemType* current = nullptr) : _node(current) {}
-      Iterator(const Iterator& i) : _node(i._node) {}
-      Iterator& operator ++() { _node = _node->next; return *this; }
+      Iterator(ItemType* current = nullptr) : _node(current) {
+          _nextNode = _node != nullptr ? _node->next : nullptr;
+      }
+      Iterator(const Iterator& i) : _node(i._node) {
+          _nextNode = _node != nullptr ? _node->next : nullptr;
+      }
+      Iterator& operator ++() {
+          _node = _nextNode;
+          _nextNode = _node != nullptr ? _node->next : nullptr;
+          return *this;
+      }
       bool operator != (const Iterator& i) const { return _node != i._node; }
       const T& operator * () const { return _node->value(); }
       const T* operator -> () const { return &_node->value(); }
