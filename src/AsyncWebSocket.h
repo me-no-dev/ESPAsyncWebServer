@@ -322,7 +322,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     void _handleDisconnect(AsyncWebSocketClient * client);
     void _handleEvent(AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
     virtual bool canHandle(AsyncWebServerRequest *request) override final;
-    virtual void handleRequest(AsyncWebServerRequest *request) override final;
+    virtual void handleRequest(AsyncWebServerRequest *request);
 
 
     //  messagebuffer functions/objects. 
