@@ -233,13 +233,13 @@ request->multipart();     // bool:    True if the request has content type "mult
 //List all collected headers
 int headers = request->headers();
 int i;
-for(i=0;i<headers;i++){
+for (i = 0; i < headers; i += 1) {
   AsyncWebHeader* h = request->getHeader(i);
   Serial.printf("HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
 }
 
 //get specific header by name
-if(request->hasHeader("MyHeader")){
+if (request->hasHeader("MyHeader")) {
   AsyncWebHeader* h = request->getHeader("MyHeader");
   Serial.printf("MyHeader: %s\n", h->value().c_str());
 }
@@ -247,12 +247,12 @@ if(request->hasHeader("MyHeader")){
 //List all collected headers (Compatibility)
 int headers = request->headers();
 int i;
-for(i=0;i<headers;i++){
+for (i = 0; i < headers; i += 1) {
   Serial.printf("HEADER[%s]: %s\n", request->headerName(i).c_str(), request->header(i).c_str());
 }
 
 //get specific header by name (Compatibility)
-if(request->hasHeader("MyHeader")){
+if (request->hasHeader("MyHeader")) {
   Serial.printf("MyHeader: %s\n", request->header("MyHeader").c_str());
 }
 ```
@@ -261,11 +261,11 @@ if(request->hasHeader("MyHeader")){
 ```cpp
 //List all parameters
 int params = request->params();
-for(int i=0;i<params;i++){
+for (int i = 0;i < params; i += 1) {
   AsyncWebParameter* p = request->getParam(i);
-  if(p->isFile()){ //p->isPost() is also true
+  if (p->isFile()) { //p->isPost() is also true
     Serial.printf("FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
-  } else if(p->isPost()){
+  } else if (p->isPost()) {
     Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
   } else {
     Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
@@ -273,53 +273,53 @@ for(int i=0;i<params;i++){
 }
 
 //Check if GET parameter exists
-if(request->hasParam("download"))
+if (request->hasParam("download"))
   AsyncWebParameter* p = request->getParam("download");
 
 //Check if POST (but not File) parameter exists
-if(request->hasParam("download", true))
+if (request->hasParam("download", true))
   AsyncWebParameter* p = request->getParam("download", true);
 
 //Check if FILE was uploaded
-if(request->hasParam("download", true, true))
+if (request->hasParam("download", true, true))
   AsyncWebParameter* p = request->getParam("download", true, true);
 
 //List all parameters (Compatibility)
 int args = request->args();
-for(int i=0;i<args;i++){
+for (size_t i = 0; i < args; i += 1) {
   Serial.printf("ARG[%s]: %s\n", request->argName(i).c_str(), request->arg(i).c_str());
 }
 
 //Check if parameter exists (Compatibility)
-if(request->hasArg("download"))
+if (request->hasArg("download"))
   String arg = request->arg("download");
 ```
 
 ### FILE Upload handling
 ```cpp
-void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-  if(!index){
+void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+  if (!index) {
     Serial.printf("UploadStart: %s\n", filename.c_str());
   }
-  for(size_t i=0; i<len; i++){
+  for (size_t i = 0; i < len; i += 1) {
     Serial.write(data[i]);
   }
-  if(final){
-    Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index+len);
+  if (final) {
+    Serial.printf("UploadEnd: %s, %u B\n", filename.c_str(), index + len);
   }
 }
 ```
 
 ### Body data handling
 ```cpp
-void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
-  if(!index){
+void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+  if (!index) {
     Serial.printf("BodyStart: %u B\n", total);
   }
-  for(size_t i=0; i<len; i++){
+  for (size_t i = 0; i < len; i += 1) {
     Serial.write(data[i]);
   }
-  if(index + len == total){
+  if ((index + len) == total) {
     Serial.printf("BodyEnd: %u B\n", total);
   }
 }
@@ -391,7 +391,7 @@ request->send(response);
 ```cpp
 String processor(const String& var)
 {
-  if(var == "HELLO_FROM_TEMPLATE")
+  if (var == "HELLO_FROM_TEMPLATE")
     return F("Hello world!");
   return String();
 }
@@ -406,7 +406,7 @@ request->send_P(200, "text/html", index_html, processor);
 ```cpp
 String processor(const String& var)
 {
-  if(var == "HELLO_FROM_TEMPLATE")
+  if (var == "HELLO_FROM_TEMPLATE")
     return F("Hello world!");
   return String();
 }
@@ -496,7 +496,7 @@ request->send(response);
 ```cpp
 String processor(const String& var)
 {
-  if(var == "HELLO_FROM_TEMPLATE")
+  if (var == "HELLO_FROM_TEMPLATE")
     return F("Hello world!");
   return String();
 }
@@ -511,7 +511,7 @@ request->send(Serial, "text/plain", 12, processor);
 ```cpp
 String processor(const String& var)
 {
-  if(var == "HELLO_FROM_TEMPLATE")
+  if (var == "HELLO_FROM_TEMPLATE")
     return F("Hello world!");
   return String();
 }
@@ -563,7 +563,7 @@ Somewhere in source files:
 ```cpp
 String processor(const String& var)
 {
-  if(var == "HELLO_FROM_TEMPLATE")
+  if (var == "HELLO_FROM_TEMPLATE")
     return F("Hello world!");
   return String();
 }
@@ -606,7 +606,7 @@ request->send(response);
 ```cpp
 String processor(const String& var)
 {
-  if(var == "HELLO_FROM_TEMPLATE")
+  if (var == "HELLO_FROM_TEMPLATE")
     return F("Hello world!");
   return String();
 }
@@ -628,7 +628,7 @@ request->send("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index
 ```cpp
 String processor(const String& var)
 {
-  if(var == "HELLO_FROM_TEMPLATE")
+  if (var == "HELLO_FROM_TEMPLATE")
     return F("Hello world!");
   return String();
 }
@@ -667,7 +667,7 @@ Used when content length is unknown. Works best if the client supports HTTP/1.1
 ```cpp
 String processor(const String& var)
 {
-  if(var == "HELLO_FROM_TEMPLATE")
+  if (var == "HELLO_FROM_TEMPLATE")
     return F("Hello world!");
   return String();
 }
@@ -703,13 +703,13 @@ response->printf("<li>URL: %s</li>", request->url().c_str());
 response->printf("<li>Host: %s</li>", request->host().c_str());
 response->printf("<li>ContentType: %s</li>", request->contentType().c_str());
 response->printf("<li>ContentLength: %u</li>", request->contentLength());
-response->printf("<li>Multipart: %s</li>", request->multipart()?"true":"false");
+response->printf("<li>Multipart: %s</li>", request->multipart() ? "true":"false");
 response->print("</ul>");
 
 response->print("<h3>Headers</h3>");
 response->print("<ul>");
 int headers = request->headers();
-for(int i=0;i<headers;i++){
+for (int i = 0; i < headers; i += 1) {
   AsyncWebHeader* h = request->getHeader(i);
   response->printf("<li>%s: %s</li>", h->name().c_str(), h->value().c_str());
 }
@@ -718,11 +718,11 @@ response->print("</ul>");
 response->print("<h3>Parameters</h3>");
 response->print("<ul>");
 int params = request->params();
-for(int i=0;i<params;i++){
+for (int i = 0; i < params; i += 1) {
   AsyncWebParameter* p = request->getParam(i);
-  if(p->isFile()){
+  if (p->isFile()) {
     response->printf("<li>FILE[%s]: %s, size: %u</li>", p->name().c_str(), p->value().c_str(), p->size());
-  } else if(p->isPost()){
+  } else if (p->isPost()) {
     response->printf("<li>POST[%s]: %s</li>", p->name().c_str(), p->value().c_str());
   } else {
     response->printf("<li>GET[%s]: %s</li>", p->name().c_str(), p->value().c_str());
@@ -848,7 +848,7 @@ It is possible to specify template processor for static files. For information o
 ```cpp
 String processor(const String& var)
 {
-  if(var == "HELLO_FROM_TEMPLATE")
+  if (var == "HELLO_FROM_TEMPLATE")
     return F("Hello world!");
   return String();
 }
@@ -876,10 +876,10 @@ class OneParamRewrite : public AsyncWebRewrite
 
       _paramIndex = _from.indexOf('{');
 
-      if( _paramIndex >=0 && _from.endsWith("}")) {
+      if ( _paramIndex >=0 && _from.endsWith("}")) {
         _urlPrefix = _from.substring(0, _paramIndex);
         int index = _params.indexOf('{');
-        if(index >= 0) {
+        if (index >= 0) {
           _params = _params.substring(0, index);
         }
       } else {
@@ -889,8 +889,8 @@ class OneParamRewrite : public AsyncWebRewrite
   }
 
   bool match(AsyncWebServerRequest *request) override {
-    if(request->url().startsWith(_urlPrefix)) {
-      if(_paramIndex >= 0) {
+    if (request->url().startsWith(_urlPrefix)) {
+      if (_paramIndex >= 0) {
         _params = _paramsBackup + request->url().substring(_paramIndex);
       } else {
         _params = _paramsBackup;
@@ -977,64 +977,64 @@ without starting another listening service or using different port
 ### Async WebSocket Event
 ```cpp
 
-void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
-  if(type == WS_EVT_CONNECT){
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+  if (type == WS_EVT_CONNECT) {
     //client connected
     os_printf("ws[%s][%u] connect\n", server->url(), client->id());
     client->printf("Hello Client %u :)", client->id());
     client->ping();
-  } else if(type == WS_EVT_DISCONNECT){
+  } else if (type == WS_EVT_DISCONNECT) {
     //client disconnected
     os_printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
-  } else if(type == WS_EVT_ERROR){
+  } else if (type == WS_EVT_ERROR) {
     //error was received from the other end
     os_printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
-  } else if(type == WS_EVT_PONG){
+  } else if (type == WS_EVT_PONG) {
     //pong message was received (in response to a ping request maybe)
-    os_printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, (len)?(char*)data:"");
-  } else if(type == WS_EVT_DATA){
+    os_printf("ws[%s][%u] pong[%u]: %s\n", server->url(), client->id(), len, len ? ((char*)data) : "");
+  } else if (type == WS_EVT_DATA) {
     //data packet
     AwsFrameInfo * info = (AwsFrameInfo*)arg;
-    if(info->final && info->index == 0 && info->len == len){
+    if (info->final && info->index == 0 && info->len == len) {
       //the whole message is in a single frame and we got all of it's data
-      os_printf("ws[%s][%u] %s-message[%llu]: ", server->url(), client->id(), (info->opcode == WS_TEXT)?"text":"binary", info->len);
-      if(info->opcode == WS_TEXT){
+      os_printf("ws[%s][%u] %s-message[%llu]: ", server->url(), client->id(), (info->opcode == WS_TEXT) ? "text":"binary", info->len);
+      if (info->opcode == WS_TEXT) {
         data[len] = 0;
         os_printf("%s\n", (char*)data);
       } else {
-        for(size_t i=0; i < info->len; i++){
+        for (size_t i = 0; i < info->len; i += 1) {
           os_printf("%02x ", data[i]);
         }
         os_printf("\n");
       }
-      if(info->opcode == WS_TEXT)
+      if (info->opcode == WS_TEXT)
         client->text("I got your text message");
       else
         client->binary("I got your binary message");
     } else {
       //message is comprised of multiple frames or the frame is split into multiple packets
-      if(info->index == 0){
-        if(info->num == 0)
-          os_printf("ws[%s][%u] %s-message start\n", server->url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
+      if (info->index == 0) {
+        if (info->num == 0)
+          os_printf("ws[%s][%u] %s-message start\n", server->url(), client->id(), (info->message_opcode == WS_TEXT) ? "text"  :  "binary");
         os_printf("ws[%s][%u] frame[%u] start[%llu]\n", server->url(), client->id(), info->num, info->len);
       }
 
-      os_printf("ws[%s][%u] frame[%u] %s[%llu - %llu]: ", server->url(), client->id(), info->num, (info->message_opcode == WS_TEXT)?"text":"binary", info->index, info->index + len);
-      if(info->message_opcode == WS_TEXT){
+      os_printf("ws[%s][%u] frame[%u] %s[%llu - %llu]: ", server->url(), client->id(), info->num, (info->message_opcode == WS_TEXT) ? "text" : "binary", info->index, info->index + len);
+      if (info->message_opcode == WS_TEXT) {
         data[len] = 0;
         os_printf("%s\n", (char*)data);
       } else {
-        for(size_t i=0; i < len; i++){
+        for (size_t i = 0; i < len; i += 1) {
           os_printf("%02x ", data[i]);
         }
         os_printf("\n");
       }
 
-      if((info->index + len) == info->len){
+      if ((info->index + len) == info->len) {
         os_printf("ws[%s][%u] frame[%u] end[%llu]\n", server->url(), client->id(), info->num, info->len);
-        if(info->final){
-          os_printf("ws[%s][%u] %s-message end\n", server->url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
-          if(info->message_opcode == WS_TEXT)
+        if (info->final) {
+          os_printf("ws[%s][%u] %s-message end\n", server->url(), client->id(), (info->message_opcode == WS_TEXT) ? "text" : "binary");
+          if (info->message_opcode == WS_TEXT)
             client->text("I got your text message");
           else
             client->binary("I got your binary message");
@@ -1133,7 +1133,7 @@ void sendDataWs(AsyncWebSocketClient * client)
 Browsers sometimes do not correctly close the websocket connection, even when the close() function is called in javascript.  This will eventually exhaust the web server's resources and will cause the server to crash.  Periodically calling the cleanClients() function from the main loop() function limits the number of clients by closing the oldest client when the maximum number of clients has been exceeded.  This can called be every cycle, however, if you wish to use less power, then calling as infrequently as once per second is sufficient.
 
 ```cpp
-void loop(){
+void loop() {
   ws.cleanupClients();
 }
 ```
@@ -1148,10 +1148,10 @@ Difference between EventSource and WebSockets is that EventSource is single dire
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
 
-void setup(){
+void setup() {
   // setup ......
-  events.onConnect([](AsyncEventSourceClient *client){
-    if(client->lastId()){
+  events.onConnect([](AsyncEventSourceClient *client) {
+    if (client->lastId()) {
       Serial.printf("Client reconnected! Last message ID that it gat is: %u\n", client->lastId());
     }
     //send event with message "hello!", id current millis
@@ -1164,8 +1164,8 @@ void setup(){
   // setup ......
 }
 
-void loop(){
-  if(eventTriggered){ // your logic here
+void loop() {
+  if (eventTriggered) { // your logic here
     //send event "myevent"
     events.send("my event content","myevent",millis());
   }
@@ -1201,25 +1201,25 @@ if (!!window.EventSource) {
 ```cpp
 //First request will return 0 results unless you start scan from somewhere else (loop/setup)
 //Do not request more often than 3-5 seconds
-server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request){
+server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request) {
   String json = "[";
   int n = WiFi.scanComplete();
-  if(n == -2){
+  if (n == -2) {
     WiFi.scanNetworks(true);
-  } else if(n){
-    for (int i = 0; i < n; ++i){
-      if(i) json += ",";
+  } else if (n) {
+    for (int i = 0; i < n; i + = 1) {
+      if (i) json += ",";
       json += "{";
-      json += "\"rssi\":"+String(WiFi.RSSI(i));
-      json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
-      json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
-      json += ",\"channel\":"+String(WiFi.channel(i));
-      json += ",\"secure\":"+String(WiFi.encryptionType(i));
-      json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
+      json += "\"rssi\":" + String(WiFi.RSSI(i));
+      json += ",\"ssid\":\"" + WiFi.SSID(i) + "\"";
+      json += ",\"bssid\":\"" + WiFi.BSSIDstr(i) + "\"";
+      json += ",\"channel\":" + String(WiFi.channel(i));
+      json += ",\"secure\":" + String(WiFi.encryptionType(i));
+      json += ",\"hidden\":" + String(WiFi.isHidden(i) ? "true" : "false");
       json += "}";
     }
     WiFi.scanDelete();
-    if(WiFi.scanComplete() == -2){
+    if (WiFi.scanComplete() == -2) {
       WiFi.scanNetworks(true);
     }
   }
@@ -1235,7 +1235,7 @@ Server goes through handlers in same order as they were added. You can't simple 
 To remove handler:
 ```arduino
 // save callback for particular URL path
-auto handler = server.on("/some/path", [](AsyncWebServerRequest *request){
+auto handler = server.on("/some/path", [](AsyncWebServerRequest *request) {
   //do something useful
 });
 // when you don't need handler anymore remove it
@@ -1244,7 +1244,7 @@ server.removeHandler(&handler);
 // same with rewrites
 server.removeRewrite(&someRewrite);
 
-server.onNotFound([](AsyncWebServerRequest *request){
+server.onNotFound([](AsyncWebServerRequest *request) {
   request->send(404);
 });
 
@@ -1272,24 +1272,24 @@ const char* http_password = "admin";
 //flag to use from web update to reboot the ESP
 bool shouldReboot = false;
 
-void onRequest(AsyncWebServerRequest *request){
+void onRequest(AsyncWebServerRequest *request) {
   //Handle Unknown Request
   request->send(404);
 }
 
-void onBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+void onBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
   //Handle body
 }
 
-void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+void onUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
   //Handle upload
 }
 
-void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
+void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len) {
   //Handle WebSocket event
 }
 
-void setup(){
+void setup() {
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -1306,52 +1306,52 @@ void setup(){
   server.addHandler(&events);
 
   // respond to GET requests on URL /heap
-  server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
 
   // upload a file to /upload
-  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request) {
     request->send(200);
   }, onUpload);
 
   // send a file when /index is requested
-  server.on("/index", HTTP_ANY, [](AsyncWebServerRequest *request){
+  server.on("/index", HTTP_ANY, [](AsyncWebServerRequest *request) {
     request->send(SPIFFS, "/index.htm");
   });
 
   // HTTP basic authentication
-  server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
-    if(!request->authenticate(http_username, http_password))
+  server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (!request->authenticate(http_username, http_password))
         return request->requestAuthentication();
     request->send(200, "text/plain", "Login Success!");
   });
 
   // Simple Firmware Update Form
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
   });
-  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request) {
     shouldReboot = !Update.hasError();
-    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot?"OK":"FAIL");
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", shouldReboot ? "OK" : "FAIL");
     response->addHeader("Connection", "close");
     request->send(response);
-  },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-    if(!index){
+  },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+    if (!index) {
       Serial.printf("Update Start: %s\n", filename.c_str());
       Update.runAsync(true);
-      if(!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)){
+      if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)) {
         Update.printError(Serial);
       }
     }
-    if(!Update.hasError()){
-      if(Update.write(data, len) != len){
+    if (!Update.hasError()) {
+      if (Update.write(data, len) != len) {
         Update.printError(Serial);
       }
     }
-    if(final){
-      if(Update.end(true)){
-        Serial.printf("Update Success: %uB\n", index+len);
+    if (final) {
+      if (Update.end(true)) {
+        Serial.printf("Update Success: %uB\n", index + len);
       } else {
         Update.printError(Serial);
       }
@@ -1371,8 +1371,8 @@ void setup(){
   server.begin();
 }
 
-void loop(){
-  if(shouldReboot){
+void loop() {
+  if (shouldReboot) {
     Serial.println("Rebooting...");
     delay(100);
     ESP.restart();
@@ -1391,17 +1391,17 @@ void loop(){
 #include <Hash.h>
 #include <functional>
 
-void handleRequest(AsyncWebServerRequest *request){}
+void handleRequest(AsyncWebServerRequest *request) {}
 
 class WebClass {
 public :
   AsyncWebServer classWebServer = AsyncWebServer(81);
 
-  WebClass(){};
+  WebClass() {};
 
-  void classRequest (AsyncWebServerRequest *request){}
+  void classRequest (AsyncWebServerRequest *request) {}
 
-  void begin(){
+  void begin() {
     // attach global request handler
     classWebServer.on("/example", HTTP_ANY, handleRequest);
 
