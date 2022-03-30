@@ -1469,6 +1469,8 @@ Example:
 
 ```cpp
 DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+// if need to respond at POST application/json then Content-Type headers requires to be allowed
+DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type");
 webServer.begin();
 ```
 
