@@ -146,7 +146,7 @@ void setup(){
   server.addHandler(new SPIFFSEditor(http_username,http_password));
 #endif
   
-  server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/heap", AsyncWebServerMethods::HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
   });
 
@@ -154,19 +154,19 @@ void setup(){
 
   server.onNotFound([](AsyncWebServerRequest *request){
     Serial.printf("NOT_FOUND: ");
-    if(request->method() == HTTP_GET)
+    if(request->method() == AsyncWebServerMethods::HTTP_GET)
       Serial.printf("GET");
-    else if(request->method() == HTTP_POST)
+    else if(request->method() == AsyncWebServerMethods::HTTP_POST)
       Serial.printf("POST");
-    else if(request->method() == HTTP_DELETE)
+    else if(request->method() == AsyncWebServerMethods::HTTP_DELETE)
       Serial.printf("DELETE");
-    else if(request->method() == HTTP_PUT)
+    else if(request->method() == AsyncWebServerMethods::HTTP_PUT)
       Serial.printf("PUT");
-    else if(request->method() == HTTP_PATCH)
+    else if(request->method() == AsyncWebServerMethods::HTTP_PATCH)
       Serial.printf("PATCH");
-    else if(request->method() == HTTP_HEAD)
+    else if(request->method() == AsyncWebServerMethods::HTTP_HEAD)
       Serial.printf("HEAD");
-    else if(request->method() == HTTP_OPTIONS)
+    else if(request->method() == AsyncWebServerMethods::HTTP_OPTIONS)
       Serial.printf("OPTIONS");
     else
       Serial.printf("UNKNOWN");
