@@ -1148,6 +1148,7 @@ void AsyncWebSocket::binaryAll(const __FlashStringHelper *message, size_t len){
 const char * WS_STR_CONNECTION = "Connection";
 const char * WS_STR_UPGRADE = "Upgrade";
 const char * WS_STR_ORIGIN = "Origin";
+const char * WS_STR_COOKIE = "Cookie";
 const char * WS_STR_VERSION = "Sec-WebSocket-Version";
 const char * WS_STR_KEY = "Sec-WebSocket-Key";
 const char * WS_STR_PROTOCOL = "Sec-WebSocket-Protocol";
@@ -1164,6 +1165,7 @@ bool AsyncWebSocket::canHandle(AsyncWebServerRequest *request){
   request->addInterestingHeader(WS_STR_CONNECTION);
   request->addInterestingHeader(WS_STR_UPGRADE);
   request->addInterestingHeader(WS_STR_ORIGIN);
+  request->addInterestingHeader(WS_STR_COOKIE);
   request->addInterestingHeader(WS_STR_VERSION);
   request->addInterestingHeader(WS_STR_KEY);
   request->addInterestingHeader(WS_STR_PROTOCOL);
