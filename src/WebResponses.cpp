@@ -104,6 +104,10 @@ AsyncWebServerResponse::~AsyncWebServerResponse(){
   _headers.free();
 }
 
+int AsyncWebServerResponse::code() const {
+  return _code;
+}
+
 void AsyncWebServerResponse::setCode(int code){
   if(_state == RESPONSE_SETUP)
     _code = code;
