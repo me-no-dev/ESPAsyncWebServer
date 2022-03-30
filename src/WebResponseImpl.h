@@ -29,6 +29,12 @@
 #include <vector>
 // It is possible to restore these defines, but one can use _min and _max instead. Or std::min, std::max.
 
+#ifndef TEMPLATE_PLACEHOLDER
+#define TEMPLATE_PLACEHOLDER '%'
+#endif
+
+#define TEMPLATE_PARAM_NAME_LENGTH 32
+
 class AsyncBasicResponse: public AsyncWebServerResponse {
   private:
     String _content;
@@ -48,7 +54,8 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
     // so by gaining performance in one place, we'll lose it in another.
     std::vector<uint8_t> _cache;
     size_t _readDataFromCacheOrContent(uint8_t* data, const size_t len);
-    size_t _fillBufferAndProcessTemplates(uint8_t* buf, size_t maxLen);
+    size_t _validVarName (uint8_t* posStart, uint8_t* posEnd);
+    size_t _fillBufferAndProcessTemplates(uint8_t* buf, size_t maxLen, char varBegin = TEMPLATE_PLACEHOLDER, char varEnd = TEMPLATE_PLACEHOLDER);
   protected:
     AwsTemplateProcessor _callback;
   public:
@@ -59,11 +66,6 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
     virtual size_t _fillBuffer(uint8_t *buf __attribute__((unused)), size_t maxLen __attribute__((unused))) { return 0; }
 };
 
-#ifndef TEMPLATE_PLACEHOLDER
-#define TEMPLATE_PLACEHOLDER '%'
-#endif
-
-#define TEMPLATE_PARAM_NAME_LENGTH 32
 class AsyncFileResponse: public AsyncAbstractResponse {
   using File = fs::File;
   using FS = fs::FS;
