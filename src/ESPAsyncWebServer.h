@@ -130,6 +130,36 @@ typedef enum { RCT_NOT_USED = -1, RCT_DEFAULT = 0, RCT_HTTP, RCT_WS, RCT_EVENT, 
 
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
 typedef std::function<String(const String&)> AwsTemplateProcessor;
+/**
+ * Interface of a stateful data source providing response data for an AsyncWebServerResponse.
+ */
+class AwsResponseDataSource
+{
+public:
+  
+  /**
+   * Provide next chunk of data to write to the response.
+   * If no more data is available, return 0.
+   * You will be asked for more data till method returns 0.
+   * 
+   * If you need another request, return RESPONSE_TRY_AGAIN but better try to avoid that.
+   * 
+   * @param buf buffer to fill with data, at most maxLen bytes
+   * @param maxLen maximum number of bytes to write at *buf
+   * @param index number of bytes (of this data source instance aka response, excluding header) already written
+   * @return number of bytes written to *buf
+   */
+  virtual size_t fillBuffer(uint8_t *buf, size_t maxLen, size_t index)=0;
+
+  /**
+   * Destructor, called when response is closed.
+   * 
+   * Ensure to close any allocated resources here.
+   * Hint: closed response does not imply that all data available has been read.
+   */
+  virtual ~AwsResponseDataSource() {}
+};
+
 
 class AsyncWebServerRequest {
   using File = fs::File;
@@ -248,6 +278,7 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse *beginResponse(File content, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
     AsyncWebServerResponse *beginResponse(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback=nullptr);
     AsyncWebServerResponse *beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
+    AsyncWebServerResponse *beginStatefulResponse(const String& contentType, size_t len, AwsResponseDataSource* callback, AwsTemplateProcessor templateCallback=nullptr);
     AsyncWebServerResponse *beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
     AsyncResponseStream *beginResponseStream(const String& contentType, size_t bufferSize=1460);
     AsyncWebServerResponse *beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback=nullptr);
