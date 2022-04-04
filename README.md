@@ -333,7 +333,7 @@ Endpoints which consume JSON can use a special handler to get ready to use JSON 
 #include "ArduinoJson.h"
 
 AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/rest/endpoint", [](AsyncWebServerRequest *request, JsonVariant &json) {
-  JsonObject& jsonObj = json.as<JsonObject>();
+  JsonObject& jsonObj = json.as<JsonObject>();    //For ArduinoJson 6 use "JsonObject jsonObj ="
   // ...
 });
 server.addHandler(handler);
@@ -735,20 +735,36 @@ response->print("</body></html>");
 request->send(response);
 ```
 
-### ArduinoJson Basic Response
+### ArduinoJson 5 Basic Response
 This way of sending Json is great for when the result is below 4KB
 ```cpp
 #include "AsyncJson.h"
 #include "ArduinoJson.h"
 
-
 AsyncResponseStream *response = request->beginResponseStream("application/json");
-DynamicJsonBuffer jsonBuffer;
+DynamicJsonBuffer jsonBuffer; //Note this buffer automatically expands
 JsonObject &root = jsonBuffer.createObject();
+
 root["heap"] = ESP.getFreeHeap();
 root["ssid"] = WiFi.SSID();
 root.printTo(*response);
 request->send(response);
+```
+
+### ArduinoJson 6 Basic Response
+This way of sending Json is great for when the result is below 4KB
+```cpp
+#include "AsyncJson.h"
+#include "ArduinoJson.h"
+
+DynamicJsonDocument jDoc(4096);  //Note this buffer is a fixed size and cannot expand.
+String response;
+
+jDoc["heap"] = ESP.getFreeHeap();
+jDoc["ssid"] = WiFi.SSID();
+serializeJson(jdoc, response);
+request->send(response);
+request->send(200, "application/json", response);
 ```
 
 ### ArduinoJson Advanced Response
@@ -761,10 +777,9 @@ to the resulting json packets
 #include "AsyncJson.h"
 #include "ArduinoJson.h"
 
-
 AsyncJsonResponse * response = new AsyncJsonResponse();
 response->addHeader("Server","ESP Async Web Server");
-JsonObject& root = response->getRoot();
+JsonObject& root = response->getRoot();   //For ArduinoJson 6 use "JsonObject root ="
 root["heap"] = ESP.getFreeHeap();
 root["ssid"] = WiFi.SSID();
 response->setLength();
@@ -1109,7 +1124,7 @@ When sending a web socket message using the above methods a buffer is created.  
 ```cpp
 void sendDataWs(AsyncWebSocketClient * client)
 {
-    DynamicJsonBuffer jsonBuffer;
+    DynamicJsonBuffer jsonBuffer;                   //For ArduinoJson 6 use DynamicJsonBuffer and skip createObject() below.
     JsonObject& root = jsonBuffer.createObject();
     root["a"] = "abc";
     root["b"] = "abcd";
