@@ -602,7 +602,7 @@ function onBodyLoad(){
   var editor = createEditor("editor", vars.file, vars.lang, vars.theme);
   var tree = createTree("tree", editor);
   createFileUploader("uploader", tree, editor);
-  if(typeof vars.file === "undefined") vars.file = "/index.htm";
+  if(typeof vars.file === "undefined") vars.file = "/index.html";
   editor.loadUrl(vars.file);
 };
 </script>
