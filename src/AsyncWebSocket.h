@@ -22,7 +22,7 @@
 #define ASYNCWEBSOCKET_H_
 
 #include <Arduino.h>
-#ifdef ESP32
+#if defined(ESP32) || defined(LIBRETUYA)
 #include <AsyncTCP.h>
 #define WS_MAX_QUEUED_MESSAGES 32
 #else
@@ -40,7 +40,7 @@
 #endif
 #endif
 
-#ifdef ESP32
+#if defined(ESP32) || defined(LIBRETUYA)
 #define DEFAULT_MAX_WS_CLIENTS 8
 #else
 #define DEFAULT_MAX_WS_CLIENTS 4

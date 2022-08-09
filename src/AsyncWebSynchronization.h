@@ -5,7 +5,7 @@
 
 #include <ESPAsyncWebServer.h>
 
-#ifdef ESP32
+#if defined(ESP32) || (defined(LIBRETUYA) && LT_HAS_FREERTOS)
 
 // This is the ESP32 version of the Sync Lock, using the FreeRTOS Semaphore
 class AsyncWebLock

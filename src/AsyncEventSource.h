@@ -22,7 +22,7 @@
 
 #include <Arduino.h>
 #include <Arduino.h>
-#ifdef ESP32
+#if defined(ESP32) || defined(LIBRETUYA)
 #include <AsyncTCP.h>
 #else
 #include <ESPAsyncTCP.h>
@@ -43,7 +43,7 @@
 #endif
 #endif
 
-#ifdef ESP32
+#if defined(ESP32) || defined(LIBRETUYA)
 #define DEFAULT_MAX_SSE_CLIENTS 8
 #else
 #define DEFAULT_MAX_SSE_CLIENTS 4
