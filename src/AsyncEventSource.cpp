@@ -56,7 +56,7 @@ static String generateEventMessage(const char *message, const char *event, uint3
           ldata[llen] = 0;
           ev += "data: ";
           ev += ldata;
-          ev += "\r\n\r\n";
+          ev += "\r\n";
           free(ldata);
         }
         lineStart = (char *)message + messageLen;
@@ -101,6 +101,7 @@ static String generateEventMessage(const char *message, const char *event, uint3
     } while(lineStart < ((char *)message + messageLen));
   }
 
+  ev += "\r\n";
   return ev;
 }
 
