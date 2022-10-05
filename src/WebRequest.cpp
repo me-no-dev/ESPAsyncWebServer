@@ -227,7 +227,7 @@ void AsyncWebServerRequest::onDisconnect (ArDisconnectHandler fn){
 void AsyncWebServerRequest::_onDisconnect(){
   //os_printf("d\n");
   if(_onDisconnectfn) {
-      _onDisconnectfn();
+      _onDisconnectfn(this);
     }
   _server->_handleDisconnect(this);
 }
