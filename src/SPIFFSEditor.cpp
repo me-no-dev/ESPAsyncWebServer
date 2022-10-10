@@ -463,7 +463,11 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
         output += "{\"type\":\"";
         output += "file";
         output += "\",\"name\":\"";
+#ifdef ESP32
+        output += String(entry.path());
+#else
         output += String(entry.name());
+#endif
         output += "\",\"size\":";
         output += String(entry.size());
         output += "}";
