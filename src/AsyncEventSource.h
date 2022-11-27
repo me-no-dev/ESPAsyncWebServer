@@ -49,14 +49,15 @@ class AsyncEventSource;
 class AsyncEventSourceResponse;
 class AsyncEventSourceClient;
 typedef std::function<void(AsyncEventSourceClient *client)> ArEventHandlerFunction;
+typedef std::function<void(AsyncEventSourceResponse *)> ArOnResponseFunction;
 
 class AsyncEventSourceMessage {
   private:
-    uint8_t * _data; 
+    uint8_t * _data;
     size_t _len;
     size_t _sent;
     //size_t _ack;
-    size_t _acked; 
+    size_t _acked;
   public:
     AsyncEventSourceMessage(const char * data, size_t len);
     ~AsyncEventSourceMessage();
@@ -90,7 +91,7 @@ class AsyncEventSourceClient {
 
     //system callbacks (do not call)
     void _onAck(size_t len, uint32_t time);
-    void _onPoll(); 
+    void _onPoll();
     void _onTimeout(uint32_t time);
     void _onDisconnect();
 };
@@ -100,6 +101,7 @@ class AsyncEventSource: public AsyncWebHandler {
     String _url;
     LinkedList<AsyncEventSourceClient *> _clients;
     ArEventHandlerFunction _connectcb;
+    ArOnResponseFunction _responsecb;
   public:
     AsyncEventSource(const String& url);
     ~AsyncEventSource();
@@ -107,6 +109,7 @@ class AsyncEventSource: public AsyncWebHandler {
     const char * url() const { return _url.c_str(); }
     void close();
     void onConnect(ArEventHandlerFunction cb);
+    void onResponse(ArOnResponseFunction cb);
     void send(const char *message, const char *event=NULL, uint32_t id=0, uint32_t reconnect=0);
     size_t count() const; //number clinets connected
     size_t  avgPacketsWaiting() const;
@@ -123,7 +126,7 @@ class AsyncEventSourceResponse: public AsyncWebServerResponse {
     String _content;
     AsyncEventSource *_server;
   public:
-    AsyncEventSourceResponse(AsyncEventSource *server);
+    AsyncEventSourceResponse(AsyncEventSource *server, ArOnResponseFunction);
     void _respond(AsyncWebServerRequest *request);
     size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
     bool _sourceValid() const { return true; }
