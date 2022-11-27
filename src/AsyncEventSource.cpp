@@ -146,7 +146,7 @@ size_t AsyncEventSourceMessage::send(AsyncClient *client) {
   if(client->canSend())
     client->send();
   _sent += sent;
-  return sent; 
+  return sent;
 }
 
 // Client
@@ -159,7 +159,7 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, A
   _lastId = 0;
   if(request->hasHeader("Last-Event-ID"))
     _lastId = atoi(request->getHeader("Last-Event-ID")->value().c_str());
-    
+
   _client->setRxTimeout(0);
   _client->onError(NULL, NULL);
   _client->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ (void)c; ((AsyncEventSourceClient*)(r))->_onAck(len, time); }, this);
@@ -276,7 +276,7 @@ void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
     client->write((const char *)temp, 2053);
     free(temp);
   }*/
-  
+
   _clients.add(client);
   if(_connectcb)
     _connectcb(client);
@@ -297,10 +297,10 @@ void AsyncEventSource::close(){
 size_t AsyncEventSource::avgPacketsWaiting() const {
   if(_clients.isEmpty())
     return 0;
-  
+
   size_t    aql=0;
   uint32_t  nConnectedClients=0;
-  
+
   for(const auto &c: _clients){
     if(c->connected()) {
       aql+=c->packetsWaiting();
