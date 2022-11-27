@@ -253,6 +253,7 @@ AsyncEventSource::AsyncEventSource(const String& url)
   : _url(url)
   , _clients(LinkedList<AsyncEventSourceClient *>([](AsyncEventSourceClient *c){ delete c; }))
   , _connectcb(NULL)
+  , _responsecb(NULL)
 {}
 
 AsyncEventSource::~AsyncEventSource(){
@@ -261,6 +262,9 @@ AsyncEventSource::~AsyncEventSource(){
 
 void AsyncEventSource::onConnect(ArEventHandlerFunction cb){
   _connectcb = cb;
+}
+void AsyncEventSource::onResponse(ArOnResponseFunction cb){
+  _responsecb = cb;
 }
 
 void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
@@ -339,18 +343,20 @@ bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
 void AsyncEventSource::handleRequest(AsyncWebServerRequest *request){
   if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
     return request->requestAuthentication();
-  request->send(new AsyncEventSourceResponse(this));
+  request->send(new AsyncEventSourceResponse(this, _responsecb));
 }
 
 // Response
 
-AsyncEventSourceResponse::AsyncEventSourceResponse(AsyncEventSource *server){
+AsyncEventSourceResponse::AsyncEventSourceResponse(AsyncEventSource *server, ArOnResponseFunction responsecb){
   _server = server;
   _code = 200;
   _contentType = "text/event-stream";
   _sendContentLength = false;
   addHeader("Cache-Control", "no-cache");
   addHeader("Connection","keep-alive");
+  if (responsecb)
+    responsecb(this);
 }
 
 void AsyncEventSourceResponse::_respond(AsyncWebServerRequest *request){
