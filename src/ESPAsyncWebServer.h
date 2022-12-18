@@ -214,6 +214,7 @@ class AsyncWebServerRequest {
     const String& host() const { return _host; }
     const String& contentType() const { return _contentType; }
     size_t contentLength() const { return _contentLength; }
+    const String& itemName() const { return _itemName; }
     bool multipart() const { return _isMultipart; }
     const char * methodToString() const;
     const char * requestedConnTypeToString() const;
