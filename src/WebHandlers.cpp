@@ -138,26 +138,38 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
 {
   bool fileFound = false;
   bool gzipFound = false;
+  bool brotliFound = false;
 
-  String gzip = path + ".gz";
+  String gzip(path);
+  gzip += c_gz;
+  String brotli(path);
+  brotli += c_br;
 
   if (_gzipFirst) {
-    request->_tempFile = _fs.open(gzip, "r");
-    gzipFound = FILE_IS_REAL(request->_tempFile);
-    if (!gzipFound){
-      request->_tempFile = _fs.open(path, "r");
-      fileFound = FILE_IS_REAL(request->_tempFile);
+    request->_tempFile = _fs.open(brotli, "r");
+    brotliFound = FILE_IS_REAL(request->_tempFile);
+    if (!brotliFound){
+      request->_tempFile = _fs.open(gzip, "r");
+      gzipFound = FILE_IS_REAL(request->_tempFile);
+      if (!gzipFound){
+        request->_tempFile = _fs.open(path, "r");
+        fileFound = FILE_IS_REAL(request->_tempFile);
+      }
     }
   } else {
     request->_tempFile = _fs.open(path, "r");
     fileFound = FILE_IS_REAL(request->_tempFile);
     if (!fileFound){
-      request->_tempFile = _fs.open(gzip, "r");
-      gzipFound = FILE_IS_REAL(request->_tempFile);
+      request->_tempFile = _fs.open(brotli, "r");
+      brotliFound = FILE_IS_REAL(request->_tempFile);
+      if (!brotliFound){
+        request->_tempFile = _fs.open(gzip, "r");
+        gzipFound = FILE_IS_REAL(request->_tempFile);
+      }
     }
   }
 
-  bool found = fileFound || gzipFound;
+  bool found = fileFound || gzipFound || brotliFound;
 
   if (found) {
     // Extract the file name from the path and keep it in _tempObject

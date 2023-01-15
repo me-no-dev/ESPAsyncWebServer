@@ -46,6 +46,14 @@
 
 #define DEBUGF(...) //Serial.printf(__VA_ARGS__)
 
+// const strings
+static const char c_gzip[] = "gzip";
+static const char c_brotli[] = "br";
+static const char c_gz[] = ".gz";
+static const char c_br[] = ".br";
+static const char c_cencoding[] = "Content-Encoding";
+static const char c_cdisposition[] = "Content-Disposition";
+
 class AsyncWebServer;
 class AsyncWebServerRequest;
 class AsyncWebServerResponse;
