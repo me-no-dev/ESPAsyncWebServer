@@ -823,8 +823,11 @@ handler->setCacheControl("max-age=30");
 ```
 
 ### Specifying Date-Modified header
-It is possible to specify Date-Modified header to enable the server to return Not-Modified (304) response for requests
-with "If-Modified-Since" header with the same value, instead of responding with the actual file content.
+Sever sets "Last-Modified" header automatically if FS driver supports file modification timestamps (LittleFS does).
+Server returns "Not-Modified" (304) response for requests with "If-Modified-Since" header with _the same_ value as file's mod date, instead of responding with the actual file content. It does not perform date calculations checking if File's mod date is newer or later than in "If-Modified-Since" header.
+
+For FS not supporting file timestamps (like deprecated SPIFFS) it is possible to specify Date-Modified header manually.
+
 ```cpp
 // Update the date modified string every time files are updated
 server.serveStatic("/", SPIFFS, "/www/").setLastModified("Mon, 20 Jun 2016 14:00:00 GMT");
