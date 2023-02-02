@@ -105,6 +105,13 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
         }
       } else 
 #endif
+      if (_uri.length() && _uri.startsWith("/*.")) {
+         String uriTemplate = String (_uri);
+         uriTemplate = uriTemplate.substring(uriTemplate.lastIndexOf("."));
+         if (!request->url().endsWith(uriTemplate))
+           return false;
+      }
+      else
       if (_uri.length() && _uri.endsWith("*")) {
         String uriTemplate = String(_uri);
 	uriTemplate = uriTemplate.substring(0, uriTemplate.length() - 1);
@@ -119,16 +126,22 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     }
   
     virtual void handleRequest(AsyncWebServerRequest *request) override final {
+      if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
+        return request->requestAuthentication();
       if(_onRequest)
         _onRequest(request);
       else
         request->send(500);
     }
     virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final {
+      if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
+        return request->requestAuthentication();
       if(_onUpload)
         _onUpload(request, filename, index, data, len, final);
     }
     virtual void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) override final {
+      if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
+        return request->requestAuthentication();
       if(_onBody)
         _onBody(request, data, len, index, total);
     }
