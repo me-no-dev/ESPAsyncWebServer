@@ -24,10 +24,14 @@
 #include <Arduino.h>
 #if defined(ESP32) || defined(LIBRETUYA)
 #include <AsyncTCP.h>
+#ifndef WS_MAX_QUEUED_MESSAGES
 #define WS_MAX_QUEUED_MESSAGES 32
+#endif
 #else
 #include <ESPAsyncTCP.h>
+#ifndef WS_MAX_QUEUED_MESSAGES
 #define WS_MAX_QUEUED_MESSAGES 8
+#endif
 #endif
 #include <ESPAsyncWebServer.h>
 
