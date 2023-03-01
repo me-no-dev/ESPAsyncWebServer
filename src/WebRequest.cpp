@@ -535,7 +535,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
     } else {
       _multiParseState = WAIT_FOR_RETURN1;
       itemWriteByte('\r'); itemWriteByte('\n'); itemWriteByte('-');  itemWriteByte('-');
-      uint16_t i; for(i=0; i<_boundary.length(); i++) itemWriteByte(_boundary.c_str()[i]);
+      uint32_t i; for(i=0; i<_boundary.length(); i++) itemWriteByte(_boundary.c_str()[i]);
       _parseMultipartPostByte(data, last);
     }
   } else if(_multiParseState == EXPECT_FEED2){
