@@ -130,6 +130,7 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version){
       addHeader("Transfer-Encoding","chunked");
   }
   String out = String();
+  out.reserve(200); 
   int bufSize = 300;
   char buf[bufSize];
 
