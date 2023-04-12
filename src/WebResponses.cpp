@@ -310,15 +310,14 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     size_t readLen = 0;
 
     if(_chunked){
-      // HTTP 1.1 allows leading zeros in chunk length. Or spaces may be added.
+      // HTTP 1.1 allows leading zeros in chunk length.
       // See RFC2616 sections 2, 3.6.1.
       readLen = _fillBufferAndProcessTemplates(buf+headLen+6, outLen - 8);
       if(readLen == RESPONSE_TRY_AGAIN){
           free(buf);
           return 0;
       }
-      outLen = sprintf((char*)buf+headLen, "%x", readLen) + headLen;
-      while(outLen < headLen + 4) buf[outLen++] = ' ';
+      outLen = sprintf((char*)buf+headLen, "%04x", readLen) + headLen;
       buf[outLen++] = '\r';
       buf[outLen++] = '\n';
       outLen += readLen;
