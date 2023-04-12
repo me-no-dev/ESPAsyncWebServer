@@ -492,9 +492,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest* request, size_t len, u
         free(buf);
         return 0;
       }
-      outLen = sprintf_P((char*)buf + headLen, PSTR("%x"), readLen) + headLen;
-      while (outLen < headLen + 4)
-        buf[outLen++] = ' ';
+      outLen = sprintf((char*)buf+headLen, "%04x", readLen) + headLen;
       buf[outLen++] = '\r';
       buf[outLen++] = '\n';
       outLen += readLen;
