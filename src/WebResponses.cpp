@@ -535,7 +535,7 @@ AsyncFileResponse::AsyncFileResponse(FS &fs, const String& path, const String& c
     // set filename and force rendering
     snprintf(buf, sizeof (buf), "inline; filename=\"%s\"", filename);
   }
-  addHeader("Content-Disposition", buf);
+  // addHeader("Content-Disposition", buf);  
 }
 
 AsyncFileResponse::AsyncFileResponse(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback): AsyncAbstractResponse(callback){
@@ -566,7 +566,7 @@ AsyncFileResponse::AsyncFileResponse(File content, const String& path, const Str
   } else {
     snprintf(buf, sizeof (buf), "inline; filename=\"%s\"", filename);
   }
-  addHeader("Content-Disposition", buf);
+  //addHeader("Content-Disposition", buf);
 }
 
 size_t AsyncFileResponse::_fillBuffer(uint8_t *data, size_t len){
