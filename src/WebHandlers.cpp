@@ -120,6 +120,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest *request)
   if (_default_file.length() == 0)
     return false;
 
+  path = _path;
   // Try to add default file, ensure there is a trailing '/' ot the path.
   if (path.length() == 0 || path[path.length()-1] != '/')
     path += "/";
