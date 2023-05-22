@@ -208,7 +208,7 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
       _last_modified.concat(" GMT");
       _last_modified.setCharAt(29, 0);    // null terminate
     }
-    String etag(request->_tempFile.size());
+    String etag(lw ? lw : request->_tempFile.size());   // set etag to lastmod timestamp if available, otherwise to size
     if (_last_modified.length() && _last_modified == request->header("If-Modified-Since")) {
       request->_tempFile.close();
       request->send(304); // Not modified
