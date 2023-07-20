@@ -41,7 +41,6 @@ class AsyncBasicResponse: public AsyncWebServerResponse {
 
 class AsyncAbstractResponse: public AsyncWebServerResponse {
   private:
-    String _head;
     // Data is inserted into cache at begin(). 
     // This is inefficient with vector, but if we use some other container, 
     // we won't be able to access it as contiguous array of bytes when reading from it,
@@ -50,6 +49,7 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
     size_t _readDataFromCacheOrContent(uint8_t* data, const size_t len);
     size_t _fillBufferAndProcessTemplates(uint8_t* buf, size_t maxLen);
   protected:
+    String _head;
     AwsTemplateProcessor _callback;
   public:
     AsyncAbstractResponse(AwsTemplateProcessor callback=nullptr);
