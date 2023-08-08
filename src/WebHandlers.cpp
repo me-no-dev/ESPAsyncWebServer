@@ -58,14 +58,15 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setCacheControl(const char* cache_
 }
 
 AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(const char* last_modified){
-  _last_modified = String(last_modified);
+  _last_modified = last_modified;
   return *this;
 }
 
-AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(struct tm* last_modified){
-  char result[30];
-  strftime (result,30,"%a, %d %b %Y %H:%M:%S %Z", last_modified);
-  return setLastModified((const char *)result);
+AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified(const std::tm* last_modified){
+  constexpr size_t buffsize = sizeof("Fri, 27 Jan 2023 15:50:27 GMT");    // a format for LM header
+  char result[buffsize];
+  std::strftime(result, buffsize, "%a, %d %b %Y %H:%M:%S GMT", last_modified);
+  return setLastModified(static_cast<const char *>(result));
 }
 
 #ifdef ESP8266
@@ -195,19 +196,7 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
 
   if (request->_tempFile == true) {
     time_t lw = request->_tempFile.getLastWrite();    // get last file mod time (if supported by FS)
-    if (lw) {
-      _last_modified.clear();
-      _last_modified.reserve(30);         // need 'Fri, 27 Jan 2023 15:50:27 GMT'
-      char *t = ctime(&lw);               // ctime 'Thu Jan 26 17:42:48 2023'
-      _last_modified.concat(t, 3);        // day of week
-      _last_modified.concat((char)0x2c);  // comma
-      _last_modified.concat(t+7, 3);      // day
-      _last_modified.concat(t+3, 4);      // month
-      _last_modified.concat(t+19, 5);     // year
-      _last_modified.concat(t+10, 9);     // time
-      _last_modified.concat(" GMT");
-      _last_modified.setCharAt(29, 0);    // null terminate
-    }
+    if (lw) setLastModified(std::gmtime(&lw));
     String etag(lw ? lw : request->_tempFile.size());   // set etag to lastmod timestamp if available, otherwise to size
     if (_last_modified.length() && _last_modified == request->header("If-Modified-Since")) {
       request->_tempFile.close();
