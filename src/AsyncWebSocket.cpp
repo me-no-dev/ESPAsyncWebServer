@@ -102,7 +102,7 @@ size_t webSocketSendFrame(AsyncClient *client, bool final, uint8_t opcode, bool 
       return 0;
     }
   }
-  if (!client->send();) return 0;
+  if (!client->send()) return 0;
   return len;
 }
 
