@@ -28,7 +28,7 @@
 
 #include "StringArray.h"
 
-#if defined(ESP32) || defined(LIBRETUYA)
+#if defined(ESP32) || defined(LIBRETINY)
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #elif defined(ESP8266)
