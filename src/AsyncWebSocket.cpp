@@ -23,8 +23,9 @@
 
 #include <libb64/cencode.h>
 
-#ifndef ESP8266
+#ifdef ESP32
 #include "mbedtls/sha1.h"
+#include "rom/ets_sys.h"
 #else
 #include <Hash.h>
 #endif
@@ -829,7 +830,7 @@ void AsyncWebSocketClient::binary(AsyncWebSocketMessageBuffer * buffer)
 
 IPAddress AsyncWebSocketClient::remoteIP() {
     if(!_client) {
-        return IPAddress(0U);
+        return IPAddress(uint32_t(0));
     }
     return _client->remoteIP();
 }
@@ -1259,9 +1260,9 @@ AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket
   (String&)key += WS_STR_UUID;
   mbedtls_sha1_context ctx;
   mbedtls_sha1_init(&ctx);
-  mbedtls_sha1_starts_ret(&ctx);
-  mbedtls_sha1_update_ret(&ctx, (const unsigned char*)key.c_str(), key.length());
-  mbedtls_sha1_finish_ret(&ctx, hash);
+  mbedtls_sha1_starts(&ctx);
+  mbedtls_sha1_update(&ctx, (const unsigned char*)key.c_str(), key.length());
+  mbedtls_sha1_finish(&ctx, hash);
   mbedtls_sha1_free(&ctx);
 #endif
   base64_encodestate _state;

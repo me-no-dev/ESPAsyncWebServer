@@ -20,6 +20,10 @@
 #include "Arduino.h"
 #include "AsyncEventSource.h"
 
+#ifdef ESP32
+#include "rom/ets_sys.h"
+#endif
+
 static String generateEventMessage(const char *message, const char *event, uint32_t id, uint32_t reconnect){
   String ev = "";
 
