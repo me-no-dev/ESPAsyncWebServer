@@ -25,169 +25,218 @@
 #include "WString.h"
 
 template <typename T>
-class LinkedListNode {
-    T _value;
-  public:
-    LinkedListNode<T>* next;
-    LinkedListNode(const T val): _value(val), next(nullptr) {}
-    ~LinkedListNode(){}
-    const T& value() const { return _value; };
-    T& value(){ return _value; }
+class LinkedListNode
+{
+  T _value;
+
+public:
+  LinkedListNode<T> *next;
+  LinkedListNode(const T val) : _value(val), next(nullptr) {}
+  ~LinkedListNode() {}
+  const T &value() const { return _value; };
+  T &value() { return _value; }
 };
 
-template <typename T, template<typename> class Item = LinkedListNode>
-class LinkedList {
-  public:
-    typedef Item<T> ItemType;
-    typedef std::function<void(const T&)> OnRemove;
-    typedef std::function<bool(const T&)> Predicate;
-  private:
-    ItemType* _root;
-    OnRemove _onRemove;
+template <typename T, template <typename> class Item = LinkedListNode>
+class LinkedList
+{
+public:
+  typedef Item<T> ItemType;
+  typedef std::function<void(const T &)> OnRemove;
+  typedef std::function<bool(const T &)> Predicate;
 
-    class Iterator {
-      ItemType* _node;
-    public:
-      Iterator(ItemType* current = nullptr) : _node(current) {}
-      Iterator(const Iterator& i) : _node(i._node) {}
-      Iterator& operator ++() { _node = _node->next; return *this; }
-      bool operator != (const Iterator& i) const { return _node != i._node; }
-      const T& operator * () const { return _node->value(); }
-      const T* operator -> () const { return &_node->value(); }
-    };
-    
-  public:
-    typedef const Iterator ConstIterator;
-    ConstIterator begin() const { return ConstIterator(_root); }
-    ConstIterator end() const { return ConstIterator(nullptr); }
+private:
+  ItemType *_root;
+  OnRemove _onRemove;
 
-    LinkedList(OnRemove onRemove) : _root(nullptr), _onRemove(onRemove) {}
-    ~LinkedList(){}
-    void add(const T& t){
-      auto it = new ItemType(t);
-      if(!_root){
-        _root = it;
-      } else {
-        auto i = _root;
-        while(i->next) i = i->next;
-        i->next = it;
-      }
+  class Iterator
+  {
+    ItemType *_node;
+    ItemType *_nextNode = nullptr;
+
+  public:
+    Iterator(ItemType *current = nullptr) : _node(current)
+    {
+      _nextNode = _node != nullptr ? _node->next : nullptr;
     }
-    T& front() const {
-      return _root->value();
+    Iterator(const Iterator &i) : _node(i._node)
+    {
+      _nextNode = _node != nullptr ? _node->next : nullptr;
     }
-    
-    bool isEmpty() const {
-      return _root == nullptr;
+    Iterator &operator++()
+    {
+      _node = _nextNode;
+      _nextNode = _node != nullptr ? _node->next : nullptr;
+      return *this;
     }
-    size_t length() const {
-      size_t i = 0;
-      auto it = _root;
-      while(it){
+    bool operator!=(const Iterator &i) const { return _node != i._node; }
+    const T &operator*() const { return _node->value(); }
+    const T *operator->() const { return &_node->value(); }
+  };
+
+public:
+  typedef const Iterator ConstIterator;
+  ConstIterator begin() const { return ConstIterator(_root); }
+  ConstIterator end() const { return ConstIterator(nullptr); }
+
+  LinkedList(OnRemove onRemove) : _root(nullptr), _onRemove(onRemove) {}
+  ~LinkedList() {}
+  void add(const T &t)
+  {
+    auto it = new ItemType(t);
+    if (!_root)
+    {
+      _root = it;
+    }
+    else
+    {
+      auto i = _root;
+      while (i->next)
+        i = i->next;
+      i->next = it;
+    }
+  }
+  T &front() const
+  {
+    return _root->value();
+  }
+
+  bool isEmpty() const
+  {
+    return _root == nullptr;
+  }
+  size_t length() const
+  {
+    size_t i = 0;
+    auto it = _root;
+    while (it)
+    {
+      i++;
+      it = it->next;
+    }
+    return i;
+  }
+  size_t count_if(Predicate predicate) const
+  {
+    size_t i = 0;
+    auto it = _root;
+    while (it)
+    {
+      if (!predicate)
+      {
         i++;
-        it = it->next;
       }
-      return i;
+      else if (predicate(it->value()))
+      {
+        i++;
+      }
+      it = it->next;
     }
-    size_t count_if(Predicate predicate) const {
-      size_t i = 0;
-      auto it = _root;
-      while(it){
-        if (!predicate){
-          i++;
+    return i;
+  }
+  const T *nth(size_t N) const
+  {
+    size_t i = 0;
+    auto it = _root;
+    while (it)
+    {
+      if (i++ == N)
+        return &(it->value());
+      it = it->next;
+    }
+    return nullptr;
+  }
+  bool remove(const T &t)
+  {
+    auto it = _root;
+    auto pit = _root;
+    while (it)
+    {
+      if (it->value() == t)
+      {
+        if (it == _root)
+        {
+          _root = _root->next;
         }
-        else if (predicate(it->value())) {
-          i++;
+        else
+        {
+          pit->next = it->next;
         }
-        it = it->next;
-      }
-      return i;
-    }
-    const T* nth(size_t N) const {
-      size_t i = 0;
-      auto it = _root;
-      while(it){
-        if(i++ == N)
-          return &(it->value());
-        it = it->next;
-      }
-      return nullptr;
-    }
-    bool remove(const T& t){
-      auto it = _root;
-      auto pit = _root;
-      while(it){
-        if(it->value() == t){
-          if(it == _root){
-            _root = _root->next;
-          } else {
-            pit->next = it->next;
-          }
-          
-          if (_onRemove) {
-            _onRemove(it->value());
-          }
-          
-          delete it;
-          return true;
+
+        if (_onRemove)
+        {
+          _onRemove(it->value());
         }
-        pit = it;
-        it = it->next;
+
+        delete it;
+        return true;
       }
-      return false;
+      pit = it;
+      it = it->next;
     }
-    bool remove_first(Predicate predicate){
-      auto it = _root;
-      auto pit = _root;
-      while(it){
-        if(predicate(it->value())){
-          if(it == _root){
-            _root = _root->next;
-          } else {
-            pit->next = it->next;
-          }
-          if (_onRemove) {
-            _onRemove(it->value());
-          }
-          delete it;
-          return true;
+    return false;
+  }
+  bool remove_first(Predicate predicate)
+  {
+    auto it = _root;
+    auto pit = _root;
+    while (it)
+    {
+      if (predicate(it->value()))
+      {
+        if (it == _root)
+        {
+          _root = _root->next;
         }
-        pit = it;
-        it = it->next;
-      }
-      return false;
-    }
-    
-    void free(){
-      while(_root != nullptr){
-        auto it = _root;
-        _root = _root->next;
-        if (_onRemove) {
+        else
+        {
+          pit->next = it->next;
+        }
+        if (_onRemove)
+        {
           _onRemove(it->value());
         }
         delete it;
+        return true;
       }
-      _root = nullptr;
+      pit = it;
+      it = it->next;
     }
+    return false;
+  }
+
+  void free()
+  {
+    while (_root != nullptr)
+    {
+      auto it = _root;
+      _root = _root->next;
+      if (_onRemove)
+      {
+        _onRemove(it->value());
+      }
+      delete it;
+    }
+    _root = nullptr;
+  }
 };
 
-
-class StringArray : public LinkedList<String> {
+class StringArray : public LinkedList<String>
+{
 public:
-  
   StringArray() : LinkedList(nullptr) {}
-  
-  bool containsIgnoreCase(const String& str){
-    for (const auto& s : *this) {
-      if (str.equalsIgnoreCase(s)) {
+
+  bool containsIgnoreCase(const String &str)
+  {
+    for (const auto &s : *this)
+    {
+      if (str.equalsIgnoreCase(s))
+      {
         return true;
       }
     }
     return false;
   }
 };
-
-
-
 
 #endif /* STRINGARRAY_H_ */
