@@ -744,7 +744,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last)
       itemWriteByte('\n');
       itemWriteByte('-');
       itemWriteByte('-');
-      uint8_t i;
+      uint32_t i;
       for (i = 0; i < _boundary.length(); i++)
         itemWriteByte(_boundary.c_str()[i]);
       _parseMultipartPostByte(data, last);
@@ -764,7 +764,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last)
       itemWriteByte('\n');
       itemWriteByte('-');
       itemWriteByte('-');
-      uint8_t i;
+      uint32_t i;
       for (i = 0; i < _boundary.length(); i++)
         itemWriteByte(_boundary.c_str()[i]);
       itemWriteByte('\r');
