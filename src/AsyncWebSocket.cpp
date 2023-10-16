@@ -726,143 +726,142 @@ void AsyncWebSocketClient::_onData(void *pbuf, size_t plen)
         dataPayloadOffset += 2;
         plen -= 2;
       }
-    }
-    else if (_pinfo.len == 127)
-    {
-      if (plen < 8)
-        goto _exceptionHandleFailPartialHeader;
+      else if (_pinfo.len == 127)
+      {
+        if (plen < 8)
+          goto _exceptionHandleFailPartialHeader;
 
-      _pinfo.len = headerBuf[9] | (uint16_t)(headerBuf[8]) << 8 | (uint32_t)(headerBuf[7]) << 16 |
-                   (uint32_t)(headerBuf[6]) << 24 | (uint64_t)(headerBuf[5]) << 32 | (uint64_t)(headerBuf[4]) << 40 |
-                   (uint64_t)(headerBuf[3]) << 48 | (uint64_t)(headerBuf[2]) << 56;
-      dataPayloadOffset += 8;
-      plen -= 8;
+        _pinfo.len = headerBuf[9] | (uint16_t)(headerBuf[8]) << 8 | (uint32_t)(headerBuf[7]) << 16 |
+                     (uint32_t)(headerBuf[6]) << 24 | (uint64_t)(headerBuf[5]) << 32 | (uint64_t)(headerBuf[4]) << 40 |
+                     (uint64_t)(headerBuf[3]) << 48 | (uint64_t)(headerBuf[2]) << 56;
+        dataPayloadOffset += 8;
+        plen -= 8;
+      }
+
+      if (_pinfo.masked)
+      {
+        if (plen < 4)
+          goto _exceptionHandleFailPartialHeader;
+
+        memcpy(_pinfo.mask, headerBuf + dataPayloadOffset + partialHeaderLen, 4);
+        dataPayloadOffset += 4;
+        plen -= 4;
+      }
+
+      // Yes I know the control flow here isn't 100% legible but we must support -fno-exceptions.
+      // If we got to this point it means we did NOT receive a truncated header, therefore we can skip the exception
+      // handling.
+      // Control flow resumes after the following block.
+      goto _headerParsingSuccessful;
+
+    // We DID receive a truncated header:
+    // - We copy it to our buffer and set the _partialHeaderLen
+    // - We return early
+    // This will trigger the partial recovery at the next call of this method, once more data is received and we have
+    // a full header.
+    _exceptionHandleFailPartialHeader:
+    {
+      if (initialPlen <= WS_MAX_HEADER_LEN)
+      {
+        // If initialPlen > WS_MAX_HEADER_LEN there must be something wrong with this code. It should never happen but
+        // but it's better safe than sorry.
+        memcpy(_partialHeader, headerBuf, initialPlen * sizeof(uint8_t));
+        _partialHeaderLen = initialPlen;
+      }
+      else
+      {
+        DEBUGF("[AsyncWebSocketClient::_onData] initialPlen (= %d) > WS_MAX_HEADER_LEN (= %d)\n", initialPlen,
+               WS_MAX_HEADER_LEN);
+      }
+      return;
     }
+
+    _headerParsingSuccessful:
+
+      data += dataPayloadOffset;
+    }
+
+    const size_t datalen = std::min((size_t)(_pinfo.len - _pinfo.index), plen);
+    const auto datalast = data[datalen];
 
     if (_pinfo.masked)
     {
-      if (plen < 4)
-        goto _exceptionHandleFailPartialHeader;
-
-      memcpy(_pinfo.mask, headerBuf + dataPayloadOffset + partialHeaderLen, 4);
-      dataPayloadOffset += 4;
-      plen -= 4;
+      for (size_t i = 0; i < datalen; i++)
+        data[i] ^= _pinfo.mask[(_pinfo.index + i) % 4];
     }
 
-    // Yes I know the control flow here isn't 100% legible but we must support -fno-exceptions.
-    // If we got to this point it means we did NOT receive a truncated header, therefore we can skip the exception
-    // handling.
-    // Control flow resumes after the following block.
-    goto _headerParsingSuccessful;
-
-  // We DID receive a truncated header:
-  // - We copy it to our buffer and set the _partialHeaderLen
-  // - We return early
-  // This will trigger the partial recovery at the next call of this method, once more data is received and we have
-  // a full header.
-  _exceptionHandleFailPartialHeader:
-  {
-    if (initialPlen <= WS_MAX_HEADER_LEN)
+    if ((datalen + _pinfo.index) < _pinfo.len)
     {
-      // If initialPlen > WS_MAX_HEADER_LEN there must be something wrong with this code. It should never happen but
-      // but it's better safe than sorry.
-      memcpy(_partialHeader, headerBuf, initialPlen * sizeof(uint8_t));
-      _partialHeaderLen = initialPlen;
+      _pstate = 1;
+
+      if (_pinfo.index == 0)
+      {
+        if (_pinfo.opcode)
+        {
+          _pinfo.message_opcode = _pinfo.opcode;
+          _pinfo.num = 0;
+        }
+        else
+          _pinfo.num += 1;
+      }
+      _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, (uint8_t *)data, datalen);
+
+      _pinfo.index += datalen;
+    }
+    else if ((datalen + _pinfo.index) == _pinfo.len)
+    {
+      _pstate = 0;
+      if (_pinfo.opcode == WS_DISCONNECT)
+      {
+        if (datalen)
+        {
+          uint16_t reasonCode = (uint16_t)(data[0] << 8) + data[1];
+          char *reasonString = (char *)(data + 2);
+          if (reasonCode > 1001)
+          {
+            _server->_handleEvent(this, WS_EVT_ERROR, (void *)&reasonCode, (uint8_t *)reasonString, strlen(reasonString));
+          }
+        }
+        if (_status == WS_DISCONNECTING)
+        {
+          _status = WS_DISCONNECTED;
+          _client->close(true);
+        }
+        else
+        {
+          _status = WS_DISCONNECTING;
+          _client->ackLater();
+          _queueControl(new AsyncWebSocketControl(WS_DISCONNECT, data, datalen));
+        }
+      }
+      else if (_pinfo.opcode == WS_PING)
+      {
+        _queueControl(new AsyncWebSocketControl(WS_PONG, data, datalen));
+      }
+      else if (_pinfo.opcode == WS_PONG)
+      {
+        if (datalen != AWSC_PING_PAYLOAD_LEN || memcmp(AWSC_PING_PAYLOAD, data, AWSC_PING_PAYLOAD_LEN) != 0)
+          _server->_handleEvent(this, WS_EVT_PONG, NULL, data, datalen);
+      }
+      else if (_pinfo.opcode < 8)
+      { // continuation or text/binary frame
+        _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, data, datalen);
+      }
     }
     else
     {
-      DEBUGF("[AsyncWebSocketClient::_onData] initialPlen (= %d) > WS_MAX_HEADER_LEN (= %d)\n", initialPlen,
-             WS_MAX_HEADER_LEN);
+      // os_printf("frame error: len: %u, index: %llu, total: %llu\n", datalen, _pinfo.index, _pinfo.len);
+      // what should we do?
+      break;
     }
-    return;
+
+    // restore byte as _handleEvent may have added a null terminator i.e., data[len] = 0;
+    if (datalen > 0)
+      data[datalen] = datalast;
+
+    data += datalen;
+    plen -= datalen;
   }
-
-  _headerParsingSuccessful:
-
-    data += dataPayloadOffset;
-  }
-
-  const size_t datalen = std::min((size_t)(_pinfo.len - _pinfo.index), plen);
-  const auto datalast = data[datalen];
-
-  if (_pinfo.masked)
-  {
-    for (size_t i = 0; i < datalen; i++)
-      data[i] ^= _pinfo.mask[(_pinfo.index + i) % 4];
-  }
-
-  if ((datalen + _pinfo.index) < _pinfo.len)
-  {
-    _pstate = 1;
-
-    if (_pinfo.index == 0)
-    {
-      if (_pinfo.opcode)
-      {
-        _pinfo.message_opcode = _pinfo.opcode;
-        _pinfo.num = 0;
-      }
-      else
-        _pinfo.num += 1;
-    }
-    _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, (uint8_t *)data, datalen);
-
-    _pinfo.index += datalen;
-  }
-  else if ((datalen + _pinfo.index) == _pinfo.len)
-  {
-    _pstate = 0;
-    if (_pinfo.opcode == WS_DISCONNECT)
-    {
-      if (datalen)
-      {
-        uint16_t reasonCode = (uint16_t)(data[0] << 8) + data[1];
-        char *reasonString = (char *)(data + 2);
-        if (reasonCode > 1001)
-        {
-          _server->_handleEvent(this, WS_EVT_ERROR, (void *)&reasonCode, (uint8_t *)reasonString, strlen(reasonString));
-        }
-      }
-      if (_status == WS_DISCONNECTING)
-      {
-        _status = WS_DISCONNECTED;
-        _client->close(true);
-      }
-      else
-      {
-        _status = WS_DISCONNECTING;
-        _client->ackLater();
-        _queueControl(new AsyncWebSocketControl(WS_DISCONNECT, data, datalen));
-      }
-    }
-    else if (_pinfo.opcode == WS_PING)
-    {
-      _queueControl(new AsyncWebSocketControl(WS_PONG, data, datalen));
-    }
-    else if (_pinfo.opcode == WS_PONG)
-    {
-      if (datalen != AWSC_PING_PAYLOAD_LEN || memcmp(AWSC_PING_PAYLOAD, data, AWSC_PING_PAYLOAD_LEN) != 0)
-        _server->_handleEvent(this, WS_EVT_PONG, NULL, data, datalen);
-    }
-    else if (_pinfo.opcode < 8)
-    { // continuation or text/binary frame
-      _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, data, datalen);
-    }
-  }
-  else
-  {
-    // os_printf("frame error: len: %u, index: %llu, total: %llu\n", datalen, _pinfo.index, _pinfo.len);
-    // what should we do?
-    break;
-  }
-
-  // restore byte as _handleEvent may have added a null terminator i.e., data[len] = 0;
-  if (datalen > 0)
-    data[datalen] = datalast;
-
-  data += datalen;
-  plen -= datalen;
-}
 }
 
 size_t AsyncWebSocketClient::printf(const char *format, ...)
