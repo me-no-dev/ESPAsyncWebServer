@@ -83,8 +83,6 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
   _params.free();
   _pathParams.free();
 
-  _interestingHeaders.free();
-
   if(_response != NULL){
     delete _response;
   }
@@ -175,15 +173,6 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
     }
   }
   break;
-  }
-}
-
-void AsyncWebServerRequest::_removeNotInterestingHeaders(){
-  if (_interestingHeaders.containsIgnoreCase("ANY")) return; // nothing to do
-  for(const auto& header: _headers){
-      if(!_interestingHeaders.containsIgnoreCase(header->name().c_str())){
-        _headers.remove(header);
-      }
   }
 }
 
@@ -579,7 +568,6 @@ void AsyncWebServerRequest::_parseLine(){
       //end of headers
       _server->_rewriteRequest(this);
       _server->_attachHandler(this);
-      _removeNotInterestingHeaders();
       if(_expectingContinue){
         const char * response = "HTTP/1.1 100 Continue\r\n\r\n";
         _client->write(response, os_strlen(response));
@@ -712,11 +700,6 @@ AsyncWebParameter* AsyncWebServerRequest::getParam(const __FlashStringHelper * d
 AsyncWebParameter* AsyncWebServerRequest::getParam(size_t num) const {
   auto param = _params.nth(num);
   return param ? *param : nullptr;
-}
-
-void AsyncWebServerRequest::addInterestingHeader(const String& name){
-  if(!_interestingHeaders.containsIgnoreCase(name))
-    _interestingHeaders.add(name);
 }
 
 void AsyncWebServerRequest::send(AsyncWebServerResponse *response){

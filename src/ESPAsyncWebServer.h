@@ -141,7 +141,6 @@ class AsyncWebServerRequest {
     AsyncWebServer* _server;
     AsyncWebHandler* _handler;
     AsyncWebServerResponse* _response;
-    StringArray _interestingHeaders;
     ArDisconnectHandler _onDisconnectfn;
 
     String _temp;
@@ -155,7 +154,6 @@ class AsyncWebServerRequest {
     String _boundary;
     String _authorization;
     RequestedConnectionType _reqconntype;
-    void _removeNotInterestingHeaders();
     bool _isDigest;
     bool _isMultipart;
     bool _isPlainPost;
