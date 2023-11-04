@@ -332,13 +332,10 @@ bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
   if(request->method() != HTTP_GET || !request->url().equals(_url)) {
     return false;
   }
-  request->addInterestingHeader("Last-Event-ID");
   return true;
 }
 
 void AsyncEventSource::handleRequest(AsyncWebServerRequest *request){
-  if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
-    return request->requestAuthentication();
   request->send(new AsyncEventSourceResponse(this));
 }
 

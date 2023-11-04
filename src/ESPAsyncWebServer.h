@@ -53,7 +53,6 @@ class AsyncWebHeader;
 class AsyncWebParameter;
 class AsyncWebRewrite;
 class AsyncWebHandler;
-class AsyncStaticWebHandler;
 class AsyncCallbackWebHandler;
 class AsyncResponseStream;
 
@@ -128,9 +127,6 @@ class AsyncWebHeader {
 
 typedef enum { RCT_NOT_USED = -1, RCT_DEFAULT = 0, RCT_HTTP, RCT_WS, RCT_EVENT, RCT_MAX } RequestedConnectionType;
 
-typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
-typedef std::function<String(const String&)> AwsTemplateProcessor;
-
 class AsyncWebServerRequest {
   using File = fs::File;
   using FS = fs::FS;
@@ -141,7 +137,6 @@ class AsyncWebServerRequest {
     AsyncWebServer* _server;
     AsyncWebHandler* _handler;
     AsyncWebServerResponse* _response;
-    StringArray _interestingHeaders;
     ArDisconnectHandler _onDisconnectfn;
 
     String _temp;
@@ -153,9 +148,7 @@ class AsyncWebServerRequest {
     String _host;
     String _contentType;
     String _boundary;
-    String _authorization;
     RequestedConnectionType _reqconntype;
-    void _removeNotInterestingHeaders();
     bool _isDigest;
     bool _isMultipart;
     bool _isPlainPost;
@@ -202,7 +195,7 @@ class AsyncWebServerRequest {
 
   public:
     File _tempFile;
-    void *_tempObject;
+    String _filePath;
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
     ~AsyncWebServerRequest();
@@ -221,37 +214,21 @@ class AsyncWebServerRequest {
     bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED);
     void onDisconnect (ArDisconnectHandler fn);
 
-    //hash is the string representation of:
-    // base64(user:pass) for basic or
-    // user:realm:md5(user:realm:pass) for digest
-    bool authenticate(const char * hash);
-    bool authenticate(const char * username, const char * password, const char * realm = NULL, bool passwordIsHash = false);
-    void requestAuthentication(const char * realm = NULL, bool isDigest = true);
-
     void setHandler(AsyncWebHandler *handler){ _handler = handler; }
-    void addInterestingHeader(const String& name);
 
     void redirect(const String& url);
 
     void send(AsyncWebServerResponse *response);
     void send(int code, const String& contentType=String(), const String& content=String());
-    void send(FS &fs, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
-    void send(File content, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
-    void send(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback=nullptr);
-    void send(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
-    void sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
-    void send_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback=nullptr);
-    void send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback=nullptr);
+    void send(Stream &stream, const String& contentType, size_t len);
+    void send(const String& contentType, size_t len);
+    void sendChunked(const String& contentType);
 
     AsyncWebServerResponse *beginResponse(int code, const String& contentType=String(), const String& content=String());
-    AsyncWebServerResponse *beginResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
-    AsyncWebServerResponse *beginResponse(File content, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
-    AsyncWebServerResponse *beginResponse(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback=nullptr);
-    AsyncWebServerResponse *beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
-    AsyncWebServerResponse *beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
+    AsyncWebServerResponse *beginResponse(Stream &stream, const String& contentType, size_t len);
+    AsyncWebServerResponse *beginResponse(const String& contentType, size_t len);
+    AsyncWebServerResponse *beginChunkedResponse(const String& contentType);
     AsyncResponseStream *beginResponseStream(const String& contentType, size_t bufferSize=1460);
-    AsyncWebServerResponse *beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback=nullptr);
-    AsyncWebServerResponse *beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback=nullptr);
 
     size_t headers() const;                     // get header count
     bool hasHeader(const String& name) const;   // check if header exists
@@ -330,12 +307,9 @@ class AsyncWebRewrite {
 class AsyncWebHandler {
   protected:
     ArRequestFilterFunction _filter;
-    String _username;
-    String _password;
   public:
-    AsyncWebHandler():_username(""), _password(""){}
+    AsyncWebHandler(){}
     AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
-    AsyncWebHandler& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password); return *this; };
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
     virtual bool canHandle(AsyncWebServerRequest *request __attribute__((unused))){
@@ -425,11 +399,9 @@ class AsyncWebServer {
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
 
-    AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
-
     void onNotFound(ArRequestHandlerFunction fn);  //called when handler is not assigned
     void onFileUpload(ArUploadHandlerFunction fn); //handle file uploads
-    void onRequestBody(ArBodyHandlerFunction fn); //handle posts with plain body content (JSON often transmitted this way as a request)
+    void onRequestBody(ArBodyHandlerFunction fn); //handle posts with plain body content
 
     void reset(); //remove all writers and handlers, with onNotFound/onFileUpload/onRequestBody 
   

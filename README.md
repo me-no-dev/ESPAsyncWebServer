@@ -1,17 +1,15 @@
-# ESPAsyncWebServer 
-[![Build Status](https://travis-ci.org/me-no-dev/ESPAsyncWebServer.svg?branch=master)](https://travis-ci.org/me-no-dev/ESPAsyncWebServer) ![](https://github.com/me-no-dev/ESPAsyncWebServer/workflows/ESP%20Async%20Web%20Server%20CI/badge.svg) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/395dd42cfc674e6ca2e326af3af80ffc)](https://www.codacy.com/manual/me-no-dev/ESPAsyncWebServer?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=me-no-dev/ESPAsyncWebServer&amp;utm_campaign=Badge_Grade)
-
-For help and support [![Join the chat at https://gitter.im/me-no-dev/ESPAsyncWebServer](https://badges.gitter.im/me-no-dev/ESPAsyncWebServer.svg)](https://gitter.im/me-no-dev/ESPAsyncWebServer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# ESPAsyncWebServer
 
 Async HTTP and WebSocket Server for ESP8266 Arduino
 
-For ESP8266 it requires [ESPAsyncTCP](https://github.com/me-no-dev/ESPAsyncTCP)
+For ESP8266 it requires [ESPAsyncTCP](https://github.com/OpenShock/ESPAsyncTCP)
 To use this library you might need to have the latest git versions of [ESP8266](https://github.com/esp8266/Arduino) Arduino Core
 
-For ESP32 it requires [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) to work
+For ESP32 it requires [AsyncTCP](https://github.com/OpenShock/AsyncTCP) to work
 To use this library you might need to have the latest git versions of [ESP32](https://github.com/espressif/arduino-esp32) Arduino Core
 
 ## Table of contents
+
 - [ESPAsyncWebServer](#espasyncwebserver)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
@@ -24,7 +22,6 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Rewrites and how do they work](#rewrites-and-how-do-they-work)
     - [Handlers and how do they work](#handlers-and-how-do-they-work)
     - [Responses and how do they work](#responses-and-how-do-they-work)
-    - [Template processing](#template-processing)
   - [Libraries and projects that use AsyncWebServer](#libraries-and-projects-that-use-asyncwebserver)
   - [Request Variables](#request-variables)
     - [Common Variables](#common-variables)
@@ -32,7 +29,6 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [GET, POST and FILE parameters](#get-post-and-file-parameters)
     - [FILE Upload handling](#file-upload-handling)
     - [Body data handling](#body-data-handling)
-    - [JSON body handling with ArduinoJson](#json-body-handling-with-arduinojson)
   - [Responses](#responses)
     - [Redirect to another URL](#redirect-to-another-url)
     - [Basic response with HTTP Code](#basic-response-with-http-code)
@@ -41,32 +37,20 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Basic response with string content and extra headers](#basic-response-with-string-content-and-extra-headers)
     - [Send large webpage from PROGMEM](#send-large-webpage-from-progmem)
     - [Send large webpage from PROGMEM and extra headers](#send-large-webpage-from-progmem-and-extra-headers)
-    - [Send large webpage from PROGMEM containing templates](#send-large-webpage-from-progmem-containing-templates)
-    - [Send large webpage from PROGMEM containing templates and extra headers](#send-large-webpage-from-progmem-containing-templates-and-extra-headers)
     - [Send binary content from PROGMEM](#send-binary-content-from-progmem)
     - [Respond with content coming from a Stream](#respond-with-content-coming-from-a-stream)
     - [Respond with content coming from a Stream and extra headers](#respond-with-content-coming-from-a-stream-and-extra-headers)
-    - [Respond with content coming from a Stream containing templates](#respond-with-content-coming-from-a-stream-containing-templates)
-    - [Respond with content coming from a Stream containing templates and extra headers](#respond-with-content-coming-from-a-stream-containing-templates-and-extra-headers)
     - [Respond with content coming from a File](#respond-with-content-coming-from-a-file)
     - [Respond with content coming from a File and extra headers](#respond-with-content-coming-from-a-file-and-extra-headers)
-    - [Respond with content coming from a File containing templates](#respond-with-content-coming-from-a-file-containing-templates)
     - [Respond with content using a callback](#respond-with-content-using-a-callback)
     - [Respond with content using a callback and extra headers](#respond-with-content-using-a-callback-and-extra-headers)
-    - [Respond with content using a callback containing templates](#respond-with-content-using-a-callback-containing-templates)
-    - [Respond with content using a callback containing templates and extra headers](#respond-with-content-using-a-callback-containing-templates-and-extra-headers)
     - [Chunked Response](#chunked-response)
-    - [Chunked Response containing templates](#chunked-response-containing-templates)
     - [Print to response](#print-to-response)
-    - [ArduinoJson Basic Response](#arduinojson-basic-response)
-    - [ArduinoJson Advanced Response](#arduinojson-advanced-response)
   - [Serving static files](#serving-static-files)
     - [Serving specific file by name](#serving-specific-file-by-name)
     - [Serving files in directory](#serving-files-in-directory)
-    - [Serving static files with authentication](#serving-static-files-with-authentication)
     - [Specifying Cache-Control header](#specifying-cache-control-header)
     - [Specifying Date-Modified header](#specifying-date-modified-header)
-    - [Specifying Template Processor callback](#specifying-template-processor-callback)
   - [Param Rewrite With Matching](#param-rewrite-with-matching)
   - [Using filters](#using-filters)
     - [Serve different site files in AP mode](#serve-different-site-files-in-ap-mode)
@@ -102,7 +86,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
 3. Update dev/platform to staging version:
    - [Instruction for Espressif 8266](http://docs.platformio.org/en/latest/platforms/espressif8266.html#using-arduino-framework-with-staging-version)
    - [Instruction for Espressif 32](http://docs.platformio.org/en/latest/platforms/espressif32.html#using-arduino-framework-with-staging-version)
- 4. Add "ESP Async WebServer" to project using [Project Configuration File `platformio.ini`](http://docs.platformio.org/page/projectconf.html) and [lib_deps](http://docs.platformio.org/page/projectconf/section_env_library.html#lib-deps) option:
+4. Add "ESP Async WebServer" to project using [Project Configuration File `platformio.ini`](http://docs.platformio.org/page/projectconf.html) and [lib_deps](http://docs.platformio.org/page/projectconf/section_env_library.html#lib-deps) option:
 
 ```ini
 [env:myboard]
@@ -114,26 +98,27 @@ framework = arduino
 lib_deps = ESP Async WebServer
 
 # or using GIT Url (the latest development version)
-lib_deps = https://github.com/me-no-dev/ESPAsyncWebServer.git
+lib_deps = https://github.com/OpenShock/ESPAsyncWebServer.git
 ```
- 5. Happy coding with PlatformIO!
+
+5.  Happy coding with PlatformIO!
 
 ## Why should you care
+
 - Using asynchronous network means that you can handle more than one connection at the same time
 - You are called once the request is ready and parsed
 - When you send the response, you are immediately ready to handle other connections
   while the server is taking care of sending the response in the background
 - Speed is OMG
-- Easy to use API, HTTP Basic and Digest MD5 Authentication (default), ChunkedResponse
 - Easily extendible to handle any type of content
 - Supports Continue 100
 - Async WebSocket plugin offering different locations without extra servers or ports
 - Async EventSource (Server-Sent Events) plugin to send events to the browser
 - URL Rewrite plugin for conditional and permanent url rewrites
 - ServeStatic plugin that supports cache, Last-Modified, default index and more
-- Simple template processing engine to handle templates
 
 ## Important things to remember
+
 - This is fully asynchronous server and as such does not run on the loop thread.
 - You can not use yield or delay or any function that uses them inside the callbacks
 - The server is smart enough to know when to close the connection and free resources
@@ -142,71 +127,68 @@ lib_deps = https://github.com/me-no-dev/ESPAsyncWebServer.git
 ## Principles of operation
 
 ### The Async Web server
+
 - Listens for connections
-- Wraps the new clients into ```Request```
+- Wraps the new clients into `Request`
 - Keeps track of clients and cleans memory
-- Manages ```Rewrites``` and apply them on the request url
-- Manages ```Handlers``` and attaches them to Requests
+- Manages `Rewrites` and apply them on the request url
+- Manages `Handlers` and attaches them to Requests
 
 ### Request Life Cycle
+
 - TCP connection is received by the server
-- The connection is wrapped inside ```Request``` object
+- The connection is wrapped inside `Request` object
 - When the request head is received (type, url, get params, http version and host),
-  the server goes through all ```Rewrites``` (in the order they were added) to rewrite the url and inject query parameters,
-  next, it goes through all attached ```Handlers```(in the order they were added) trying to find one
-  that ```canHandle``` the given request. If none are found, the default(catch-all) handler is attached.
-- The rest of the request is received, calling the ```handleUpload``` or ```handleBody``` methods of the ```Handler``` if they are needed (POST+File/Body)
-- When the whole request is parsed, the result is given to the ```handleRequest``` method of the ```Handler``` and is ready to be responded to
-- In the ```handleRequest``` method, to the ```Request``` is attached a ```Response``` object (see below) that will serve the response data back to the client
-- When the ```Response``` is sent, the client is closed and freed from the memory
+  the server goes through all `Rewrites` (in the order they were added) to rewrite the url and inject query parameters,
+  next, it goes through all attached `Handlers`(in the order they were added) trying to find one
+  that `canHandle` the given request. If none are found, the default(catch-all) handler is attached.
+- The rest of the request is received, calling the `handleUpload` or `handleBody` methods of the `Handler` if they are needed (POST+File/Body)
+- When the whole request is parsed, the result is given to the `handleRequest` method of the `Handler` and is ready to be responded to
+- In the `handleRequest` method, to the `Request` is attached a `Response` object (see below) that will serve the response data back to the client
+- When the `Response` is sent, the client is closed and freed from the memory
 
 ### Rewrites and how do they work
-- The ```Rewrites``` are used to rewrite the request url and/or inject get parameters for a specific request url path.
-- All ```Rewrites``` are evaluated on the request in the order they have been added to the server.
-- The ```Rewrite``` will change the request url only if the request url (excluding get parameters) is fully match
-  the rewrite url, and when the optional ```Filter``` callback return true.
-- Setting a ```Filter``` to the ```Rewrite``` enables to control when to apply the rewrite, decision can be based on
+
+- The `Rewrites` are used to rewrite the request url and/or inject get parameters for a specific request url path.
+- All `Rewrites` are evaluated on the request in the order they have been added to the server.
+- The `Rewrite` will change the request url only if the request url (excluding get parameters) is fully match
+  the rewrite url, and when the optional `Filter` callback return true.
+- Setting a `Filter` to the `Rewrite` enables to control when to apply the rewrite, decision can be based on
   request url, http version, request host/port/target host, get parameters or the request client's localIP or remoteIP.
-- Two filter callbacks are provided: ```ON_AP_FILTER``` to execute the rewrite when request is made to the AP interface,
-  ```ON_STA_FILTER``` to execute the rewrite when request is made to the STA interface.
-- The ```Rewrite``` can specify a target url with optional get parameters, e.g. ```/to-url?with=params```
+- Two filter callbacks are provided: `ON_AP_FILTER` to execute the rewrite when request is made to the AP interface,
+  `ON_STA_FILTER` to execute the rewrite when request is made to the STA interface.
+- The `Rewrite` can specify a target url with optional get parameters, e.g. `/to-url?with=params`
 
 ### Handlers and how do they work
-- The ```Handlers``` are used for executing specific actions to particular requests
-- One ```Handler``` instance can be attached to any request and lives together with the server
-- Setting a ```Filter``` to the ```Handler``` enables to control when to apply the handler, decision can be based on
+
+- The `Handlers` are used for executing specific actions to particular requests
+- One `Handler` instance can be attached to any request and lives together with the server
+- Setting a `Filter` to the `Handler` enables to control when to apply the handler, decision can be based on
   request url, http version, request host/port/target host, get parameters or the request client's localIP or remoteIP.
-- Two filter callbacks are provided: ```ON_AP_FILTER``` to execute the rewrite when request is made to the AP interface,
-  ```ON_STA_FILTER``` to execute the rewrite when request is made to the STA interface.
-- The ```canHandle``` method is used for handler specific control on whether the requests can be handled
-  and for declaring any interesting headers that the ```Request``` should parse. Decision can be based on request
+- Two filter callbacks are provided: `ON_AP_FILTER` to execute the rewrite when request is made to the AP interface,
+  `ON_STA_FILTER` to execute the rewrite when request is made to the STA interface.
+- The `canHandle` method is used for handler specific control on whether the requests can be handled
+  and for declaring any interesting headers that the `Request` should parse. Decision can be based on request
   method, request url, http version, request host/port/target host and get parameters
-- Once a ```Handler``` is attached to given ```Request``` (```canHandle``` returned true)
-  that ```Handler``` takes care to receive any file/data upload and attach a ```Response```
-  once the ```Request``` has been fully parsed
-- ```Handlers``` are evaluated in the order they are attached to the server. The ```canHandle``` is called only
-  if the ```Filter``` that was set to the ```Handler``` return true.
-- The first ```Handler``` that can handle the request is selected, not further ```Filter``` and ```canHandle``` are called.
+- Once a `Handler` is attached to given `Request` (`canHandle` returned true)
+  that `Handler` takes care to receive any file/data upload and attach a `Response`
+  once the `Request` has been fully parsed
+- `Handlers` are evaluated in the order they are attached to the server. The `canHandle` is called only
+  if the `Filter` that was set to the `Handler` return true.
+- The first `Handler` that can handle the request is selected, not further `Filter` and `canHandle` are called.
 
 ### Responses and how do they work
-- The ```Response``` objects are used to send the response data back to the client
-- The ```Response``` object lives with the ```Request``` and is freed on end or disconnect
+
+- The `Response` objects are used to send the response data back to the client
+- The `Response` object lives with the `Request` and is freed on end or disconnect
 - Different techniques are used depending on the response type to send the data in packets
   returning back almost immediately and sending the next packet when this one is received.
   Any time in between is spent to run the user loop and handle other network packets
 - Responding asynchronously is probably the most difficult thing for most to understand
 - Many different options exist for the user to make responding a background task
 
-### Template processing
-- ESPAsyncWebserver contains simple template processing engine.
-- Template processing can be added to most response types.
-- Currently it supports only replacing template placeholders with actual values. No conditional processing, cycles, etc.
-- Placeholders are delimited with ```%``` symbols. Like this: ```%TEMPLATE_PLACEHOLDER%```.
-- It works by extracting placeholder name from response text and passing it to user provided function which should return actual value to be used instead of placeholder.
-- Since it's user provided function, it is possible for library users to implement conditional processing and cycles themselves.
-- Since it's impossible to know the actual response size after template processing step in advance (and, therefore, to include it in response headers), the response becomes [chunked](#chunked-response).
-
 ## Libraries and projects that use AsyncWebServer
+
 - [WebSocketToSerial](https://github.com/hallard/WebSocketToSerial) - Debug serial devices through the web browser
 - [Sattrack](https://github.com/Hopperpop/Sattrack) - Track the ISS with ESP8266
 - [ESP Radio](https://github.com/Edzelf/Esp-radio) - Icecast radio based on ESP8266 and VS1053
@@ -218,6 +200,7 @@ lib_deps = https://github.com/me-no-dev/ESPAsyncWebServer.git
 ## Request Variables
 
 ### Common Variables
+
 ```cpp
 request->version();       // uint8_t: 0 = HTTP/1.0, 1 = HTTP/1.1
 request->method();        // enum:    HTTP_GET, HTTP_POST, HTTP_DELETE, HTTP_PUT, HTTP_PATCH, HTTP_HEAD, HTTP_OPTIONS
@@ -229,6 +212,7 @@ request->multipart();     // bool:    True if the request has content type "mult
 ```
 
 ### Headers
+
 ```cpp
 //List all collected headers
 int headers = request->headers();
@@ -258,6 +242,7 @@ if(request->hasHeader("MyHeader")){
 ```
 
 ### GET, POST and FILE parameters
+
 ```cpp
 //List all parameters
 int params = request->params();
@@ -296,6 +281,7 @@ if(request->hasArg("download"))
 ```
 
 ### FILE Upload handling
+
 ```cpp
 void handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
   if(!index){
@@ -311,6 +297,7 @@ void handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
 ```
 
 ### Body data handling
+
 ```cpp
 void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
   if(!index){
@@ -324,23 +311,11 @@ void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_
   }
 }
 ```
-If needed, the `_tempObject` field on the request can be used to store a pointer to temporary data (e.g. from the body) associated with the request. If assigned, the pointer will automatically be freed along with the request.
-
-### JSON body handling with ArduinoJson
-Endpoints which consume JSON can use a special handler to get ready to use JSON data in the request callback:
-```cpp
-#include "AsyncJson.h"
-#include "ArduinoJson.h"
-
-AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/rest/endpoint", [](AsyncWebServerRequest *request, JsonVariant &json) {
-  JsonObject& jsonObj = json.as<JsonObject>();
-  // ...
-});
-server.addHandler(handler);
-```
 
 ## Responses
+
 ### Redirect to another URL
+
 ```cpp
 //to local url
 request->redirect("/login");
@@ -350,11 +325,13 @@ request->redirect("http://esp8266.com");
 ```
 
 ### Basic response with HTTP Code
+
 ```cpp
 request->send(404); //Sends 404 File Not Found
 ```
 
 ### Basic response with HTTP Code and extra headers
+
 ```cpp
 AsyncWebServerResponse *response = request->beginResponse(404); //Sends 404 File Not Found
 response->addHeader("Server","ESP Async Web Server");
@@ -362,11 +339,13 @@ request->send(response);
 ```
 
 ### Basic response with string content
+
 ```cpp
 request->send(200, "text/plain", "Hello World!");
 ```
 
 ### Basic response with string content and extra headers
+
 ```cpp
 AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Hello World!");
 response->addHeader("Server","ESP Async Web Server");
@@ -374,117 +353,21 @@ request->send(response);
 ```
 
 ### Send large webpage from PROGMEM
+
 ```cpp
 const char index_html[] PROGMEM = "..."; // large char array, tested with 14k
 request->send_P(200, "text/html", index_html);
 ```
 
-### Send large webpage from PROGMEM and extra headers
-```cpp
-const char index_html[] PROGMEM = "..."; // large char array, tested with 14k
-AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html);
-response->addHeader("Server","ESP Async Web Server");
-request->send(response);
-```
-
-### Send large webpage from PROGMEM containing templates
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-const char index_html[] PROGMEM = "..."; // large char array, tested with 14k
-request->send_P(200, "text/html", index_html, processor);
-```
-
-### Send large webpage from PROGMEM containing templates and extra headers
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-const char index_html[] PROGMEM = "..."; // large char array, tested with 14k
-AsyncWebServerResponse *response = request->beginResponse_P(200, "text/html", index_html, processor);
-response->addHeader("Server","ESP Async Web Server");
-request->send(response);
-```
-
-### Send binary content from PROGMEM
-```cpp
-
-//File: favicon.ico.gz, Size: 726
-#define favicon_ico_gz_len 726
-const uint8_t favicon_ico_gz[] PROGMEM = {
- 0x1F, 0x8B, 0x08, 0x08, 0x0B, 0x87, 0x90, 0x57, 0x00, 0x03, 0x66, 0x61, 0x76, 0x69, 0x63, 0x6F,
- 0x6E, 0x2E, 0x69, 0x63, 0x6F, 0x00, 0xCD, 0x53, 0x5F, 0x48, 0x9A, 0x51, 0x14, 0xBF, 0x62, 0x6D,
- 0x86, 0x96, 0xA9, 0x64, 0xD3, 0xFE, 0xA8, 0x99, 0x65, 0x1A, 0xB4, 0x8A, 0xA8, 0x51, 0x54, 0x23,
- 0xA8, 0x11, 0x49, 0x51, 0x8A, 0x34, 0x62, 0x93, 0x85, 0x31, 0x58, 0x44, 0x12, 0x45, 0x2D, 0x58,
- 0xF5, 0x52, 0x41, 0x10, 0x23, 0x82, 0xA0, 0x20, 0x98, 0x2F, 0xC1, 0x26, 0xED, 0xA1, 0x20, 0x89,
- 0x04, 0xD7, 0x83, 0x58, 0x20, 0x28, 0x04, 0xAB, 0xD1, 0x9B, 0x8C, 0xE5, 0xC3, 0x60, 0x32, 0x64,
- 0x0E, 0x56, 0xBF, 0x9D, 0xEF, 0xF6, 0x30, 0x82, 0xED, 0xAD, 0x87, 0xDD, 0x8F, 0xF3, 0xDD, 0x8F,
- 0x73, 0xCF, 0xEF, 0x9C, 0xDF, 0x39, 0xBF, 0xFB, 0x31, 0x26, 0xA2, 0x27, 0x37, 0x97, 0xD1, 0x5B,
- 0xCF, 0x9E, 0x67, 0x30, 0xA6, 0x66, 0x8C, 0x99, 0xC9, 0xC8, 0x45, 0x9E, 0x6B, 0x3F, 0x5F, 0x74,
- 0xA6, 0x94, 0x5E, 0xDB, 0xFF, 0xB2, 0xE6, 0xE7, 0xE7, 0xF9, 0xDE, 0xD6, 0xD6, 0x96, 0xDB, 0xD8,
- 0xD8, 0x78, 0xBF, 0xA1, 0xA1, 0xC1, 0xDA, 0xDC, 0xDC, 0x2C, 0xEB, 0xED, 0xED, 0x15, 0x9B, 0xCD,
- 0xE6, 0x4A, 0x83, 0xC1, 0xE0, 0x2E, 0x29, 0x29, 0x99, 0xD6, 0x6A, 0xB5, 0x4F, 0x75, 0x3A, 0x9D,
- 0x61, 0x75, 0x75, 0x95, 0xB5, 0xB7, 0xB7, 0xDF, 0xC8, 0xD1, 0xD4, 0xD4, 0xF4, 0xB0, 0xBA, 0xBA,
- 0xFA, 0x83, 0xD5, 0x6A, 0xFD, 0x5A, 0x5E, 0x5E, 0x9E, 0x28, 0x2D, 0x2D, 0x0D, 0x10, 0xC6, 0x4B,
- 0x98, 0x78, 0x5E, 0x5E, 0xDE, 0x95, 0x42, 0xA1, 0x40, 0x4E, 0x4E, 0xCE, 0x65, 0x76, 0x76, 0xF6,
- 0x47, 0xB5, 0x5A, 0x6D, 0x4F, 0x26, 0x93, 0xA2, 0xD6, 0xD6, 0x56, 0x8E, 0x6D, 0x69, 0x69, 0xD1,
- 0x11, 0x36, 0x62, 0xB1, 0x58, 0x60, 0x32, 0x99, 0xA0, 0xD7, 0xEB, 0x51, 0x58, 0x58, 0x88, 0xFC,
- 0xFC, 0x7C, 0x10, 0x16, 0x02, 0x56, 0x2E, 0x97, 0x43, 0x2A, 0x95, 0x42, 0x2C, 0x16, 0x23, 0x33,
- 0x33, 0x33, 0xAE, 0x52, 0xA9, 0x1E, 0x64, 0x65, 0x65, 0x71, 0x7C, 0x7D, 0x7D, 0xBD, 0x93, 0xEA,
- 0xFE, 0x30, 0x1A, 0x8D, 0xE8, 0xEC, 0xEC, 0xC4, 0xE2, 0xE2, 0x22, 0x6A, 0x6A, 0x6A, 0x40, 0x39,
- 0x41, 0xB5, 0x38, 0x4E, 0xC8, 0x33, 0x3C, 0x3C, 0x0C, 0x87, 0xC3, 0xC1, 0x6B, 0x54, 0x54, 0x54,
- 0xBC, 0xE9, 0xEB, 0xEB, 0x93, 0x5F, 0x5C, 0x5C, 0x30, 0x8A, 0x9D, 0x2E, 0x2B, 0x2B, 0xBB, 0xA2,
- 0x3E, 0x41, 0xBD, 0x21, 0x1E, 0x8F, 0x63, 0x6A, 0x6A, 0x0A, 0x81, 0x40, 0x00, 0x94, 0x1B, 0x3D,
- 0x3D, 0x3D, 0x42, 0x3C, 0x96, 0x96, 0x96, 0x70, 0x7E, 0x7E, 0x8E, 0xE3, 0xE3, 0x63, 0xF8, 0xFD,
- 0xFE, 0xB4, 0xD7, 0xEB, 0xF5, 0x8F, 0x8F, 0x8F, 0x5B, 0x68, 0x5E, 0x6F, 0x05, 0xCE, 0xB4, 0xE3,
- 0xE8, 0xE8, 0x08, 0x27, 0x27, 0x27, 0xD8, 0xDF, 0xDF, 0xC7, 0xD9, 0xD9, 0x19, 0x6C, 0x36, 0x1B,
- 0x36, 0x36, 0x36, 0x38, 0x9F, 0x85, 0x85, 0x05, 0xAC, 0xAF, 0xAF, 0x23, 0x1A, 0x8D, 0x22, 0x91,
- 0x48, 0x20, 0x16, 0x8B, 0xFD, 0xDA, 0xDA, 0xDA, 0x7A, 0x41, 0x33, 0x7E, 0x57, 0x50, 0x50, 0x80,
- 0x89, 0x89, 0x09, 0x84, 0xC3, 0x61, 0x6C, 0x6F, 0x6F, 0x23, 0x12, 0x89, 0xE0, 0xE0, 0xE0, 0x00,
- 0x43, 0x43, 0x43, 0x58, 0x5E, 0x5E, 0xE6, 0x9C, 0x7D, 0x3E, 0x1F, 0x46, 0x47, 0x47, 0x79, 0xBE,
- 0xBD, 0xBD, 0x3D, 0xE1, 0x3C, 0x1D, 0x0C, 0x06, 0x9F, 0x10, 0xB7, 0xC7, 0x84, 0x4F, 0xF6, 0xF7,
- 0xF7, 0x63, 0x60, 0x60, 0x00, 0x83, 0x83, 0x83, 0x18, 0x19, 0x19, 0xC1, 0xDC, 0xDC, 0x1C, 0x8F,
- 0x17, 0x7C, 0xA4, 0x27, 0xE7, 0x34, 0x39, 0x39, 0x89, 0x9D, 0x9D, 0x1D, 0x6E, 0x54, 0xE3, 0x13,
- 0xE5, 0x34, 0x11, 0x37, 0x49, 0x51, 0x51, 0xD1, 0x4B, 0xA5, 0x52, 0xF9, 0x45, 0x26, 0x93, 0x5D,
- 0x0A, 0xF3, 0x92, 0x48, 0x24, 0xA0, 0x6F, 0x14, 0x17, 0x17, 0xA3, 0xB6, 0xB6, 0x16, 0x5D, 0x5D,
- 0x5D, 0x7C, 0x1E, 0xBB, 0xBB, 0xBB, 0x9C, 0xD7, 0xE1, 0xE1, 0x21, 0x42, 0xA1, 0xD0, 0x6B, 0xD2,
- 0x45, 0x4C, 0x33, 0x12, 0x34, 0xCC, 0xA0, 0x19, 0x54, 0x92, 0x56, 0x0E, 0xD2, 0xD9, 0x43, 0xF8,
- 0xCF, 0x82, 0x56, 0xC2, 0xDC, 0xEB, 0xEA, 0xEA, 0x38, 0x7E, 0x6C, 0x6C, 0x4C, 0xE0, 0xFE, 0x9D,
- 0xB8, 0xBF, 0xA7, 0xFA, 0xAF, 0x56, 0x56, 0x56, 0xEE, 0x6D, 0x6E, 0x6E, 0xDE, 0xB8, 0x47, 0x55,
- 0x55, 0x55, 0x6C, 0x66, 0x66, 0x46, 0x44, 0xDA, 0x3B, 0x34, 0x1A, 0x4D, 0x94, 0xB0, 0x3F, 0x09,
- 0x7B, 0x45, 0xBD, 0xA5, 0x5D, 0x2E, 0x57, 0x8C, 0x7A, 0x73, 0xD9, 0xED, 0xF6, 0x3B, 0x84, 0xFF,
- 0xE7, 0x7D, 0xA6, 0x3A, 0x2C, 0x95, 0x4A, 0xB1, 0x8E, 0x8E, 0x0E, 0x6D, 0x77, 0x77, 0xB7, 0xCD,
- 0xE9, 0x74, 0x3E, 0x73, 0xBB, 0xDD, 0x8F, 0x3C, 0x1E, 0x8F, 0xE6, 0xF4, 0xF4, 0x94, 0xAD, 0xAD,
- 0xAD, 0xDD, 0xDE, 0xCF, 0x73, 0x0B, 0x0B, 0xB8, 0xB6, 0xE0, 0x5D, 0xC6, 0x66, 0xC5, 0xE4, 0x10,
- 0x4C, 0xF4, 0xF7, 0xD8, 0x59, 0xF2, 0x7F, 0xA3, 0xB8, 0xB4, 0xFC, 0x0F, 0xEE, 0x37, 0x70, 0xEC,
- 0x16, 0x4A, 0x7E, 0x04, 0x00, 0x00
-};
-
-AsyncWebServerResponse *response = request->beginResponse_P(200, "image/x-icon", favicon_ico_gz, favicon_ico_gz_len);
-response->addHeader("Content-Encoding", "gzip");
-request->send(response);
-```
-
 ### Respond with content coming from a Stream
+
 ```cpp
 //read 12 bytes from Serial and send them as Content Type text/plain
 request->send(Serial, "text/plain", 12);
 ```
 
 ### Respond with content coming from a Stream and extra headers
+
 ```cpp
 //read 12 bytes from Serial and send them as Content Type text/plain
 AsyncWebServerResponse *response = request->beginResponse(Serial, "text/plain", 12);
@@ -492,39 +375,8 @@ response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
-### Respond with content coming from a Stream containing templates
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-//read 12 bytes from Serial and send them as Content Type text/plain
-request->send(Serial, "text/plain", 12, processor);
-```
-
-### Respond with content coming from a Stream containing templates and extra headers
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-//read 12 bytes from Serial and send them as Content Type text/plain
-AsyncWebServerResponse *response = request->beginResponse(Serial, "text/plain", 12, processor);
-response->addHeader("Server","ESP Async Web Server");
-request->send(response);
-```
-
 ### Respond with content coming from a File
+
 ```cpp
 //Send index.htm with default content type
 request->send(SPIFFS, "/index.htm");
@@ -536,45 +388,8 @@ request->send(SPIFFS, "/index.htm", "text/plain");
 request->send(SPIFFS, "/index.htm", String(), true);
 ```
 
-### Respond with content coming from a File and extra headers
-```cpp
-//Send index.htm with default content type
-AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/index.htm");
-
-//Send index.htm as text
-AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/index.htm", "text/plain");
-
-//Download index.htm
-AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/index.htm", String(), true);
-
-response->addHeader("Server","ESP Async Web Server");
-request->send(response);
-```
-
-### Respond with content coming from a File containing templates
-Internally uses [Chunked Response](#chunked-response).
-
-Index.htm contents:
-```
-%HELLO_FROM_TEMPLATE%
-```
-
-Somewhere in source files:
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-//Send index.htm with template processor function
-request->send(SPIFFS, "/index.htm", String(), false, processor);
-```
-
 ### Respond with content using a callback
+
 ```cpp
 //send 128 bytes as plain text
 request->send("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
@@ -588,6 +403,7 @@ request->send("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index
 ```
 
 ### Respond with content using a callback and extra headers
+
 ```cpp
 //send 128 bytes as plain text
 AsyncWebServerResponse *response = request->beginResponse("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
@@ -598,58 +414,14 @@ AsyncWebServerResponse *response = request->beginResponse("text/plain", 128, [](
   //Send what you currently have and you will be asked for more again
   return mySource.read(buffer, maxLen);
 });
-response->addHeader("Server","ESP Async Web Server");
-request->send(response);
-```
-
-### Respond with content using a callback containing templates
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-//send 128 bytes as plain text
-request->send("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
-  //Write up to "maxLen" bytes into "buffer" and return the amount written.
-  //index equals the amount of bytes that have been already sent
-  //You will not be asked for more bytes once the content length has been reached.
-  //Keep in mind that you can not delay or yield waiting for more data!
-  //Send what you currently have and you will be asked for more again
-  return mySource.read(buffer, maxLen);
-}, processor);
-```
-
-### Respond with content using a callback containing templates and extra headers
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-//send 128 bytes as plain text
-AsyncWebServerResponse *response = request->beginResponse("text/plain", 128, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
-  //Write up to "maxLen" bytes into "buffer" and return the amount written.
-  //index equals the amount of bytes that have been already sent
-  //You will not be asked for more bytes once the content length has been reached.
-  //Keep in mind that you can not delay or yield waiting for more data!
-  //Send what you currently have and you will be asked for more again
-  return mySource.read(buffer, maxLen);
-}, processor);
 response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
 ### Chunked Response
+
 Used when content length is unknown. Works best if the client supports HTTP/1.1
+
 ```cpp
 AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
@@ -662,30 +434,8 @@ response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
 
-### Chunked Response containing templates
-Used when content length is unknown. Works best if the client supports HTTP/1.1
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-AsyncWebServerResponse *response = request->beginChunkedResponse("text/plain", [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
-  //Write up to "maxLen" bytes into "buffer" and return the amount written.
-  //index equals the amount of bytes that have been already sent
-  //You will be asked for more data until 0 is returned
-  //Keep in mind that you can not delay or yield waiting for more data!
-  return mySource.read(buffer, maxLen);
-}, processor);
-response->addHeader("Server","ESP Async Web Server");
-request->send(response);
-```
-
 ### Print to response
+
 ```cpp
 AsyncResponseStream *response = request->beginResponseStream("text/html");
 response->addHeader("Server","ESP Async Web Server");
@@ -735,130 +485,8 @@ response->print("</body></html>");
 request->send(response);
 ```
 
-### ArduinoJson Basic Response
-This way of sending Json is great for when the result is below 4KB
-```cpp
-#include "AsyncJson.h"
-#include "ArduinoJson.h"
-
-
-AsyncResponseStream *response = request->beginResponseStream("application/json");
-DynamicJsonBuffer jsonBuffer;
-JsonObject &root = jsonBuffer.createObject();
-root["heap"] = ESP.getFreeHeap();
-root["ssid"] = WiFi.SSID();
-root.printTo(*response);
-request->send(response);
-```
-
-### ArduinoJson Advanced Response
-This response can handle really large Json objects (tested to 40KB)
-There isn't any noticeable speed decrease for small results with the method above
-Since ArduinoJson does not allow reading parts of the string, the whole Json has to
-be passed every time a chunks needs to be sent, which shows speed decrease proportional
-to the resulting json packets
-```cpp
-#include "AsyncJson.h"
-#include "ArduinoJson.h"
-
-
-AsyncJsonResponse * response = new AsyncJsonResponse();
-response->addHeader("Server","ESP Async Web Server");
-JsonObject& root = response->getRoot();
-root["heap"] = ESP.getFreeHeap();
-root["ssid"] = WiFi.SSID();
-response->setLength();
-request->send(response);
-```
-
-## Serving static files
-In addition to serving files from SPIFFS as described above, the server provide a dedicated handler that optimize the
-performance of serving files from SPIFFS - ```AsyncStaticWebHandler```. Use ```server.serveStatic()``` function to
-initialize and add a new instance of ```AsyncStaticWebHandler``` to the server.
-The Handler will not handle the request if the file does not exists, e.g. the server will continue to look for another
-handler that can handle the request.
-Notice that you can chain setter functions to setup the handler, or keep a pointer to change it at a later time.
-
-### Serving specific file by name
-```cpp
-// Serve the file "/www/page.htm" when request url is "/page.htm"
-server.serveStatic("/page.htm", SPIFFS, "/www/page.htm");
-```
-
-### Serving files in directory
-To serve files in a directory, the path to the files should specify a directory in SPIFFS and ends with "/".
-```cpp
-// Serve files in directory "/www/" when request url starts with "/"
-// Request to the root or none existing files will try to server the defualt
-// file name "index.htm" if exists
-server.serveStatic("/", SPIFFS, "/www/");
-
-// Server with different default file
-server.serveStatic("/", SPIFFS, "/www/").setDefaultFile("default.html");
-```
-
-### Serving static files with authentication
-
-```cpp
-server
-    .serveStatic("/", SPIFFS, "/www/")
-    .setDefaultFile("default.html")
-    .setAuthentication("user", "pass");
-```
-
-### Specifying Cache-Control header
-It is possible to specify Cache-Control header value to reduce the number of calls to the server once the client loaded
-the files. For more information on Cache-Control values see [Cache-Control](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9)
-```cpp
-// Cache responses for 10 minutes (600 seconds)
-server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age=600");
-
-//*** Change Cache-Control after server setup ***
-
-// During setup - keep a pointer to the handler
-AsyncStaticWebHandler* handler = &server.serveStatic("/", SPIFFS, "/www/").setCacheControl("max-age=600");
-
-// At a later event - change Cache-Control
-handler->setCacheControl("max-age=30");
-```
-
-### Specifying Date-Modified header
-It is possible to specify Date-Modified header to enable the server to return Not-Modified (304) response for requests
-with "If-Modified-Since" header with the same value, instead of responding with the actual file content.
-```cpp
-// Update the date modified string every time files are updated
-server.serveStatic("/", SPIFFS, "/www/").setLastModified("Mon, 20 Jun 2016 14:00:00 GMT");
-
-//*** Chage last modified value at a later stage ***
-
-// During setup - read last modified value from config or EEPROM
-String date_modified = loadDateModified();
-AsyncStaticWebHandler* handler = &server.serveStatic("/", SPIFFS, "/www/");
-handler->setLastModified(date_modified);
-
-// At a later event when files are updated
-String date_modified = getNewDateModfied();
-saveDateModified(date_modified); // Save for next reset
-handler->setLastModified(date_modified);
-```
-
-### Specifying Template Processor callback
-It is possible to specify template processor for static files. For information on template processor see
-[Respond with content coming from a File containing templates](#respond-with-content-coming-from-a-file-containing-templates).
-```cpp
-String processor(const String& var)
-{
-  if(var == "HELLO_FROM_TEMPLATE")
-    return F("Hello world!");
-  return String();
-}
-
-// ...
-
-server.serveStatic("/", SPIFFS, "/www/").setTemplateProcessor(processor);
-```
-
 ## Param Rewrite With Matching
+
 It is possible to rewrite the request url with parameter matchg. Here is an example with one parameter:
 Rewrite for example "/radio/{frequence}" -> "/radio?f={frequence}"
 
@@ -911,20 +539,24 @@ Usage:
 ```
 
 ## Using filters
+
 Filters can be set to `Rewrite` or `Handler` in order to control when to apply the rewrite and consider the handler.
 A filter is a callback function that evaluates the request and return a boolean `true` to include the item
 or `false` to exclude it.
 Two filter callback are provided for convince:
-* `ON_STA_FILTER` - return true when requests are made to the STA (station mode) interface.
-* `ON_AP_FILTER` - return true when requests are made to the AP (access point) interface.
+
+- `ON_STA_FILTER` - return true when requests are made to the STA (station mode) interface.
+- `ON_AP_FILTER` - return true when requests are made to the AP (access point) interface.
 
 ### Serve different site files in AP mode
+
 ```cpp
 server.serveStatic("/", SPIFFS, "/www/").setFilter(ON_STA_FILTER);
 server.serveStatic("/", SPIFFS, "/ap/").setFilter(ON_AP_FILTER);
 ```
 
 ### Rewrite to different index on AP
+
 ```cpp
 // Serve the file "/www/index-ap.htm" in AP, and the file "/www/index.htm" on STA
 server.rewrite("/", "index.htm");
@@ -933,6 +565,7 @@ server.serveStatic("/", SPIFFS, "/www/");
 ```
 
 ### Serving different hosts
+
 ```cpp
 // Filter callback using request host
 bool filterOnHost1(AsyncWebServerRequest *request) { return request->host() == "host1"; }
@@ -943,6 +576,7 @@ server.serveStatic("/", SPIFFS, "/www/");
 ```
 
 ### Determine interface inside callbacks
+
 ```cpp
   String RedirectUrl = "http://";
   if (ON_STA_FILTER(request)) {
@@ -955,11 +589,13 @@ server.serveStatic("/", SPIFFS, "/www/");
 ```
 
 ## Bad Responses
+
 Some responses are implemented, but you should not use them, because they do not conform to HTTP.
 The following example will lead to unclean close of the connection and more time wasted
 than providing the length of the content
 
 ### Respond with content using a callback without content length to HTTP/1.0 clients
+
 ```cpp
 //This is used as fallback for chunked responses to HTTP/1.0 Clients
 request->send("text/plain", 0, [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
@@ -971,10 +607,12 @@ request->send("text/plain", 0, [](uint8_t *buffer, size_t maxLen, size_t index) 
 ```
 
 ## Async WebSocket Plugin
+
 The server includes a web socket plugin which lets you define different WebSocket locations to connect to
 without starting another listening service or using different port
 
 ### Async WebSocket Event
+
 ```cpp
 
 void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
@@ -1046,6 +684,7 @@ void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventTyp
 ```
 
 ### Methods for sending data to a socket client
+
 ```cpp
 
 
@@ -1079,8 +718,6 @@ ws.binary((uint32_t)client_id, flash_binary, 4);
 //send binary to all clients
 ws.binaryAll((char*)binary);
 ws.binaryAll((uint8_t*)binary, (size_t)len);
-//HTTP Authenticate before switch to Websocket protocol
-ws.setAuthentication("user", "pass");
 
 //client methods
 AsyncWebSocketClient * client;
@@ -1104,7 +741,8 @@ client->binary(flash_binary, 4);
 ```
 
 ### Direct access to web socket message buffer
-When sending a web socket message using the above methods a buffer is created.  Under certain circumstances you might want to manipulate or populate this buffer directly from your application, for example to prevent unnecessary duplications of the data.  This example below shows how to create a buffer and print data to it from an ArduinoJson object then send it.   
+
+When sending a web socket message using the above methods a buffer is created. Under certain circumstances you might want to manipulate or populate this buffer directly from your application, for example to prevent unnecessary duplications of the data. This example below shows how to create a buffer and print data to it from an ArduinoJson object then send it.
 
 ```cpp
 void sendDataWs(AsyncWebSocketClient * client)
@@ -1130,7 +768,8 @@ void sendDataWs(AsyncWebSocketClient * client)
 ```
 
 ### Limiting the number of web socket clients
-Browsers sometimes do not correctly close the websocket connection, even when the close() function is called in javascript.  This will eventually exhaust the web server's resources and will cause the server to crash.  Periodically calling the cleanClients() function from the main loop() function limits the number of clients by closing the oldest client when the maximum number of clients has been exceeded.  This can called be every cycle, however, if you wish to use less power, then calling as infrequently as once per second is sufficient.
+
+Browsers sometimes do not correctly close the websocket connection, even when the close() function is called in javascript. This will eventually exhaust the web server's resources and will cause the server to crash. Periodically calling the cleanClients() function from the main loop() function limits the number of clients by closing the oldest client when the maximum number of clients has been exceeded. This can called be every cycle, however, if you wish to use less power, then calling as infrequently as once per second is sufficient.
 
 ```cpp
 void loop(){
@@ -1138,12 +777,13 @@ void loop(){
 }
 ```
 
-
 ## Async Event Source Plugin
+
 The server includes EventSource (Server-Sent Events) plugin which can be used to send short text events to the browser.
 Difference between EventSource and WebSockets is that EventSource is single direction, text-only protocol.
 
 ### Setup Event Source on the server
+
 ```cpp
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
@@ -1158,8 +798,6 @@ void setup(){
     // and set reconnect delay to 1 second
     client->send("hello!",NULL,millis(),1000);
   });
-  //HTTP Basic authentication
-  events.setAuthentication("user", "pass");
   server.addHandler(&events);
   // setup ......
 }
@@ -1173,66 +811,52 @@ void loop(){
 ```
 
 ### Setup Event Source in the browser
+
 ```javascript
 if (!!window.EventSource) {
   var source = new EventSource('/events');
 
-  source.addEventListener('open', function(e) {
-    console.log("Events Connected");
-  }, false);
+  source.addEventListener(
+    'open',
+    function (e) {
+      console.log('Events Connected');
+    },
+    false
+  );
 
-  source.addEventListener('error', function(e) {
-    if (e.target.readyState != EventSource.OPEN) {
-      console.log("Events Disconnected");
-    }
-  }, false);
+  source.addEventListener(
+    'error',
+    function (e) {
+      if (e.target.readyState != EventSource.OPEN) {
+        console.log('Events Disconnected');
+      }
+    },
+    false
+  );
 
-  source.addEventListener('message', function(e) {
-    console.log("message", e.data);
-  }, false);
+  source.addEventListener(
+    'message',
+    function (e) {
+      console.log('message', e.data);
+    },
+    false
+  );
 
-  source.addEventListener('myevent', function(e) {
-    console.log("myevent", e.data);
-  }, false);
+  source.addEventListener(
+    'myevent',
+    function (e) {
+      console.log('myevent', e.data);
+    },
+    false
+  );
 }
-```
-
-## Scanning for available WiFi Networks
-```cpp
-//First request will return 0 results unless you start scan from somewhere else (loop/setup)
-//Do not request more often than 3-5 seconds
-server.on("/scan", HTTP_GET, [](AsyncWebServerRequest *request){
-  String json = "[";
-  int n = WiFi.scanComplete();
-  if(n == -2){
-    WiFi.scanNetworks(true);
-  } else if(n){
-    for (int i = 0; i < n; ++i){
-      if(i) json += ",";
-      json += "{";
-      json += "\"rssi\":"+String(WiFi.RSSI(i));
-      json += ",\"ssid\":\""+WiFi.SSID(i)+"\"";
-      json += ",\"bssid\":\""+WiFi.BSSIDstr(i)+"\"";
-      json += ",\"channel\":"+String(WiFi.channel(i));
-      json += ",\"secure\":"+String(WiFi.encryptionType(i));
-      json += ",\"hidden\":"+String(WiFi.isHidden(i)?"true":"false");
-      json += "}";
-    }
-    WiFi.scanDelete();
-    if(WiFi.scanComplete() == -2){
-      WiFi.scanNetworks(true);
-    }
-  }
-  json += "]";
-  request->send(200, "application/json", json);
-  json = String();
-});
 ```
 
 ## Remove handlers and rewrites
 
 Server goes through handlers in same order as they were added. You can't simple add handler with same path to override them.
 To remove handler:
+
 ```arduino
 // save callback for particular URL path
 auto handler = server.on("/some/path", [](AsyncWebServerRequest *request){
@@ -1256,6 +880,7 @@ server.reset();
 ```
 
 ## Setting up the server
+
 ```cpp
 #include "ESPAsyncTCP.h"
 #include "ESPAsyncWebServer.h"
@@ -1266,8 +891,6 @@ AsyncEventSource events("/events"); // event source (Server-Sent events)
 
 const char* ssid = "your-ssid";
 const char* password = "your-pass";
-const char* http_username = "admin";
-const char* http_password = "admin";
 
 //flag to use from web update to reboot the ESP
 bool shouldReboot = false;
@@ -1318,13 +941,6 @@ void setup(){
   // send a file when /index is requested
   server.on("/index", HTTP_ANY, [](AsyncWebServerRequest *request){
     request->send(SPIFFS, "/index.htm");
-  });
-
-  // HTTP basic authentication
-  server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
-    if(!request->authenticate(http_username, http_password))
-        return request->requestAuthentication();
-    request->send(200, "text/plain", "Login Success!");
   });
 
   // Simple Firmware Update Form
@@ -1446,7 +1062,7 @@ Example of OTA code
     // Clean SPIFFS
     SPIFFS.end();
 
-    // Disable client connections    
+    // Disable client connections
     ws.enable(false);
 
     // Advertise connected clients what's going on
@@ -1461,7 +1077,7 @@ Example of OTA code
 
 ### Adding Default Headers
 
-In some cases, such as when working with CORS, or with some sort of custom authentication system, 
+In some cases, such as when working with CORS
 you might need to define a header that should get added to all responses (including static, websocket and EventSource).
 The DefaultHeaders singleton allows you to do this.
 
@@ -1472,7 +1088,7 @@ DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 webServer.begin();
 ```
 
-*NOTE*: You will still need to respond to the OPTIONS method for CORS pre-flight in most cases. (unless you are only using GET)
+_NOTE_: You will still need to respond to the OPTIONS method for CORS pre-flight in most cases. (unless you are only using GET)
 
 This is one option:
 
@@ -1488,7 +1104,7 @@ webServer.onNotFound([](AsyncWebServerRequest *request) {
 
 ### Path variable
 
-With path variable you can create a custom regex rule for a specific parameter in a route. 
+With path variable you can create a custom regex rule for a specific parameter in a route.
 For example we want a `sensorId` parameter in a route rule to match only a integer.
 
 ```cpp
@@ -1496,10 +1112,10 @@ For example we want a `sensorId` parameter in a route rule to match only a integ
       String sensorId = request->pathArg(0);
   });
 ```
-*NOTE*: All regex patterns starts with `^` and ends with `$`
+
+_NOTE_: All regex patterns starts with `^` and ends with `$`
 
 To enable the `Path variable` support, you have to define the buildflag `-DASYNCWEBSERVER_REGEX`.
-
 
 For Arduino IDE create/update `platform.local.txt`:
 
@@ -1508,14 +1124,17 @@ For Arduino IDE create/update `platform.local.txt`:
 `Linux`: ~/.arduino15/packages/`{espxxxx}`/hardware/`{espxxxx}`/`{version}`/platform.local.txt
 
 Add/Update the following line:
+
 ```
   compiler.cpp.extra_flags=-DDASYNCWEBSERVER_REGEX
 ```
 
 For platformio modify `platformio.ini`:
+
 ```ini
 [env:myboard]
-build_flags = 
+build_flags =
   -DASYNCWEBSERVER_REGEX
 ```
-*NOTE*: By enabling `ASYNCWEBSERVER_REGEX`, `<regex>` will be included. This will add an 100k to your binary.
+
+_NOTE_: By enabling `ASYNCWEBSERVER_REGEX`, `<regex>` will be included. This will add an 100k to your binary.

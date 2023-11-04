@@ -1415,12 +1415,6 @@ bool AsyncWebSocket::canHandle(AsyncWebServerRequest *request)
   if (request->method() != HTTP_GET || !request->url().equals(_url) || !request->isExpectedRequestedConnType(RCT_WS))
     return false;
 
-  request->addInterestingHeader(WS_STR_CONNECTION);
-  request->addInterestingHeader(WS_STR_UPGRADE);
-  request->addInterestingHeader(WS_STR_ORIGIN);
-  request->addInterestingHeader(WS_STR_VERSION);
-  request->addInterestingHeader(WS_STR_KEY);
-  request->addInterestingHeader(WS_STR_PROTOCOL);
   return true;
 }
 
@@ -1430,10 +1424,6 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request)
   {
     request->send(400);
     return;
-  }
-  if ((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
-  {
-    return request->requestAuthentication();
   }
   AsyncWebHeader *version = request->getHeader(WS_STR_VERSION);
   if (version->value().toInt() != 13)

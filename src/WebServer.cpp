@@ -119,7 +119,6 @@ void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
     }
   }
   
-  request->addInterestingHeader("ANY");
   request->setHandler(_catchAllHandler);
 }
 
@@ -158,12 +157,6 @@ AsyncCallbackWebHandler& AsyncWebServer::on(const char* uri, ArRequestHandlerFun
   AsyncCallbackWebHandler* handler = new AsyncCallbackWebHandler();
   handler->setUri(uri);
   handler->onRequest(onRequest);
-  addHandler(handler);
-  return *handler;
-}
-
-AsyncStaticWebHandler& AsyncWebServer::serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control){
-  AsyncStaticWebHandler* handler = new AsyncStaticWebHandler(uri, fs, path, cache_control);
   addHandler(handler);
   return *handler;
 }
