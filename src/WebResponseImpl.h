@@ -56,37 +56,12 @@ class AsyncAbstractResponse: public AsyncWebServerResponse {
     virtual size_t _fillBuffer(uint8_t *buf __attribute__((unused)), size_t maxLen __attribute__((unused))) { return 0; }
 };
 
-class AsyncFileResponse: public AsyncAbstractResponse {
-  using File = fs::File;
-  using FS = fs::FS;
-  private:
-    File _content;
-    String _path;
-    void _setContentType(const String& path);
-  public:
-    AsyncFileResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    AsyncFileResponse(File content, const String& path, const String& contentType=String(), bool download=false);
-    ~AsyncFileResponse();
-    bool _sourceValid() const { return !!(_content); }
-    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
-};
-
 class AsyncStreamResponse: public AsyncAbstractResponse {
   private:
     Stream *_content;
   public:
     AsyncStreamResponse(Stream &stream, const String& contentType, size_t len);
     bool _sourceValid() const { return !!(_content); }
-    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
-};
-
-class AsyncProgmemResponse: public AsyncAbstractResponse {
-  private:
-    const uint8_t * _content;
-    size_t _readLength;
-  public:
-    AsyncProgmemResponse(int code, const String& contentType, const uint8_t * content, size_t len);
-    bool _sourceValid() const { return true; }
     virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
 };
 

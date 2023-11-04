@@ -374,104 +374,6 @@ size_t AsyncAbstractResponse::_readDataFromCacheOrContent(uint8_t* data, const s
 
 
 /*
- * File Response
- * */
-
-AsyncFileResponse::~AsyncFileResponse(){
-  if(_content)
-    _content.close();
-}
-
-void AsyncFileResponse::_setContentType(const String& path){
-  if (path.endsWith(".html")) _contentType = "text/html";
-  else if (path.endsWith(".htm")) _contentType = "text/html";
-  else if (path.endsWith(".css")) _contentType = "text/css";
-  else if (path.endsWith(".json")) _contentType = "application/json";
-  else if (path.endsWith(".js")) _contentType = "application/javascript";
-  else if (path.endsWith(".png")) _contentType = "image/png";
-  else if (path.endsWith(".gif")) _contentType = "image/gif";
-  else if (path.endsWith(".jpg")) _contentType = "image/jpeg";
-  else if (path.endsWith(".ico")) _contentType = "image/x-icon";
-  else if (path.endsWith(".svg")) _contentType = "image/svg+xml";
-  else if (path.endsWith(".eot")) _contentType = "font/eot";
-  else if (path.endsWith(".woff")) _contentType = "font/woff";
-  else if (path.endsWith(".woff2")) _contentType = "font/woff2";
-  else if (path.endsWith(".ttf")) _contentType = "font/ttf";
-  else if (path.endsWith(".xml")) _contentType = "text/xml";
-  else if (path.endsWith(".pdf")) _contentType = "application/pdf";
-  else if (path.endsWith(".zip")) _contentType = "application/zip";
-  else if(path.endsWith(".gz")) _contentType = "application/x-gzip";
-  else _contentType = "text/plain";
-}
-
-AsyncFileResponse::AsyncFileResponse(FS &fs, const String& path, const String& contentType, bool download): AsyncAbstractResponse(){
-  _code = 200;
-  _path = path;
-
-  if(!download && !fs.exists(_path) && fs.exists(_path+".gz")){
-    _path = _path+".gz";
-    addHeader("Content-Encoding", "gzip");
-    _sendContentLength = true;
-    _chunked = false;
-  }
-
-  _content = fs.open(_path, "r");
-  _contentLength = _content.size();
-
-  if(contentType == "")
-    _setContentType(path);
-  else
-    _contentType = contentType;
-
-  int filenameStart = path.lastIndexOf('/') + 1;
-  char buf[26+path.length()-filenameStart];
-  char* filename = (char*)path.c_str() + filenameStart;
-
-  if(download) {
-    // set filename and force download
-    snprintf(buf, sizeof (buf), "attachment; filename=\"%s\"", filename);
-  } else {
-    // set filename and force rendering
-    snprintf(buf, sizeof (buf), "inline; filename=\"%s\"", filename);
-  }
-  addHeader("Content-Disposition", buf);
-}
-
-AsyncFileResponse::AsyncFileResponse(File content, const String& path, const String& contentType, bool download): AsyncAbstractResponse(){
-  _code = 200;
-  _path = path;
-
-  if(!download && String(content.name()).endsWith(".gz") && !path.endsWith(".gz")){
-    addHeader("Content-Encoding", "gzip");
-    _sendContentLength = true;
-    _chunked = false;
-  }
-
-  _content = content;
-  _contentLength = _content.size();
-
-  if(contentType == "")
-    _setContentType(path);
-  else
-    _contentType = contentType;
-
-  int filenameStart = path.lastIndexOf('/') + 1;
-  char buf[26+path.length()-filenameStart];
-  char* filename = (char*)path.c_str() + filenameStart;
-
-  if(download) {
-    snprintf(buf, sizeof (buf), "attachment; filename=\"%s\"", filename);
-  } else {
-    snprintf(buf, sizeof (buf), "inline; filename=\"%s\"", filename);
-  }
-  addHeader("Content-Disposition", buf);
-}
-
-size_t AsyncFileResponse::_fillBuffer(uint8_t *data, size_t len){
-  return _content.read(data, len);
-}
-
-/*
  * Stream Response
  * */
 
@@ -489,30 +391,6 @@ size_t AsyncStreamResponse::_fillBuffer(uint8_t *data, size_t len){
   for(i=0;i<outLen;i++)
     data[i] = _content->read();
   return outLen;
-}
-
-/*
- * Progmem Response
- * */
-
-AsyncProgmemResponse::AsyncProgmemResponse(int code, const String& contentType, const uint8_t * content, size_t len): AsyncAbstractResponse() {
-  _code = code;
-  _content = content;
-  _contentType = contentType;
-  _contentLength = len;
-  _readLength = 0;
-}
-
-size_t AsyncProgmemResponse::_fillBuffer(uint8_t *data, size_t len){
-  size_t left = _contentLength - _readLength;
-  if (left > len) {
-    memcpy_P(data, _content + _readLength, len);
-    _readLength += len;
-    return len;
-  }
-  memcpy_P(data, _content + _readLength, left);
-  _readLength += left;
-  return left;
 }
 
 

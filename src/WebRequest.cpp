@@ -711,18 +711,6 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(int code, const St
   return new AsyncBasicResponse(code, contentType, content);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, const String& path, const String& contentType, bool download){
-  if(fs.exists(path) || (!download && fs.exists(path+".gz")))
-    return new AsyncFileResponse(fs, path, contentType, download);
-  return NULL;
-}
-
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, const String& path, const String& contentType, bool download){
-  if(content == true)
-    return new AsyncFileResponse(content, path, contentType, download);
-  return NULL;
-}
-
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, const String& contentType, size_t len){
   return new AsyncStreamResponse(stream, contentType, len);
 }
@@ -731,28 +719,8 @@ AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(const String& c
   return new AsyncResponseStream(contentType, bufferSize);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len){
-  return new AsyncProgmemResponse(code, contentType, content, len);
-}
-
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, PGM_P content){
-  return beginResponse_P(code, contentType, (const uint8_t *)content, strlen_P(content));
-}
-
 void AsyncWebServerRequest::send(int code, const String& contentType, const String& content){
   send(beginResponse(code, contentType, content));
-}
-
-void AsyncWebServerRequest::send(FS &fs, const String& path, const String& contentType, bool download){
-  if(fs.exists(path) || (!download && fs.exists(path+".gz"))){
-    send(beginResponse(fs, path, contentType, download));
-  } else send(404);
-}
-
-void AsyncWebServerRequest::send(File content, const String& path, const String& contentType, bool download){
-  if(content == true){
-    send(beginResponse(content, path, contentType, download));
-  } else send(404);
 }
 
 void AsyncWebServerRequest::send(Stream &stream, const String& contentType, size_t len){
@@ -765,14 +733,6 @@ void AsyncWebServerRequest::send(const String& contentType, size_t len){
 
 void AsyncWebServerRequest::sendChunked(const String& contentType){
   send(beginChunkedResponse(contentType));
-}
-
-void AsyncWebServerRequest::send_P(int code, const String& contentType, const uint8_t * content, size_t len){
-  send(beginResponse_P(code, contentType, content, len));
-}
-
-void AsyncWebServerRequest::send_P(int code, const String& contentType, PGM_P content){
-  send(beginResponse_P(code, contentType, content));
 }
 
 void AsyncWebServerRequest::redirect(const String& url){

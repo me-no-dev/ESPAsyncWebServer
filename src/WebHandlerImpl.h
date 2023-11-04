@@ -29,38 +29,6 @@
 #include "stddef.h"
 #include <time.h>
 
-class AsyncStaticWebHandler: public AsyncWebHandler {
-   using File = fs::File;
-   using FS = fs::FS;
-  private:
-    bool _getFile(AsyncWebServerRequest *request);
-    bool _fileExists(AsyncWebServerRequest *request, const String& path);
-    uint8_t _countBits(const uint8_t value) const;
-  protected:
-    FS _fs;
-    String _uri;
-    String _path;
-    String _default_file;
-    String _cache_control;
-    String _last_modified;
-    bool _isDir;
-    bool _gzipFirst;
-    uint8_t _gzipStats;
-  public:
-    AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
-    virtual bool canHandle(AsyncWebServerRequest *request) override final;
-    virtual void handleRequest(AsyncWebServerRequest *request) override final;
-    AsyncStaticWebHandler& setIsDir(bool isDir);
-    AsyncStaticWebHandler& setDefaultFile(const char* filename);
-    AsyncStaticWebHandler& setCacheControl(const char* cache_control);
-    AsyncStaticWebHandler& setLastModified(const char* last_modified);
-    AsyncStaticWebHandler& setLastModified(struct tm* last_modified);
-  #ifdef ESP8266
-    AsyncStaticWebHandler& setLastModified(time_t last_modified);
-    AsyncStaticWebHandler& setLastModified(); //sets to current time. Make sure sntp is runing and time is updated
-  #endif
-};
-
 class AsyncCallbackWebHandler: public AsyncWebHandler {
   private:
   protected:

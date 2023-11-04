@@ -53,7 +53,6 @@ class AsyncWebHeader;
 class AsyncWebParameter;
 class AsyncWebRewrite;
 class AsyncWebHandler;
-class AsyncStaticWebHandler;
 class AsyncCallbackWebHandler;
 class AsyncResponseStream;
 
@@ -221,23 +220,15 @@ class AsyncWebServerRequest {
 
     void send(AsyncWebServerResponse *response);
     void send(int code, const String& contentType=String(), const String& content=String());
-    void send(FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    void send(File content, const String& path, const String& contentType=String(), bool download=false);
     void send(Stream &stream, const String& contentType, size_t len);
     void send(const String& contentType, size_t len);
     void sendChunked(const String& contentType);
-    void send_P(int code, const String& contentType, const uint8_t * content, size_t len);
-    void send_P(int code, const String& contentType, PGM_P content);
 
     AsyncWebServerResponse *beginResponse(int code, const String& contentType=String(), const String& content=String());
-    AsyncWebServerResponse *beginResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false);
-    AsyncWebServerResponse *beginResponse(File content, const String& path, const String& contentType=String(), bool download=false);
     AsyncWebServerResponse *beginResponse(Stream &stream, const String& contentType, size_t len);
     AsyncWebServerResponse *beginResponse(const String& contentType, size_t len);
     AsyncWebServerResponse *beginChunkedResponse(const String& contentType);
     AsyncResponseStream *beginResponseStream(const String& contentType, size_t bufferSize=1460);
-    AsyncWebServerResponse *beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len);
-    AsyncWebServerResponse *beginResponse_P(int code, const String& contentType, PGM_P content);
 
     size_t headers() const;                     // get header count
     bool hasHeader(const String& name) const;   // check if header exists
@@ -407,8 +398,6 @@ class AsyncWebServer {
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest);
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
-
-    AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
 
     void onNotFound(ArRequestHandlerFunction fn);  //called when handler is not assigned
     void onFileUpload(ArUploadHandlerFunction fn); //handle file uploads
