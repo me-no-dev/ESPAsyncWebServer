@@ -127,6 +127,8 @@ class AsyncWebHeader {
 
 typedef enum { RCT_NOT_USED = -1, RCT_DEFAULT = 0, RCT_HTTP, RCT_WS, RCT_EVENT, RCT_MAX } RequestedConnectionType;
 
+typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
+
 class AsyncWebServerRequest {
   using File = fs::File;
   using FS = fs::FS;
@@ -195,7 +197,6 @@ class AsyncWebServerRequest {
 
   public:
     File _tempFile;
-    String _filePath;
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
     ~AsyncWebServerRequest();
@@ -221,13 +222,13 @@ class AsyncWebServerRequest {
     void send(AsyncWebServerResponse *response);
     void send(int code, const String& contentType=String(), const String& content=String());
     void send(Stream &stream, const String& contentType, size_t len);
-    void send(const String& contentType, size_t len);
-    void sendChunked(const String& contentType);
+    void send(const String& contentType, size_t len, AwsResponseFiller callback);
+    void sendChunked(const String& contentType, AwsResponseFiller callback);
 
     AsyncWebServerResponse *beginResponse(int code, const String& contentType=String(), const String& content=String());
     AsyncWebServerResponse *beginResponse(Stream &stream, const String& contentType, size_t len);
-    AsyncWebServerResponse *beginResponse(const String& contentType, size_t len);
-    AsyncWebServerResponse *beginChunkedResponse(const String& contentType);
+    AsyncWebServerResponse *beginResponse(const String& contentType, size_t len, AwsResponseFiller callback);
+    AsyncWebServerResponse *beginChunkedResponse(const String& contentType, AwsResponseFiller callback);
     AsyncResponseStream *beginResponseStream(const String& contentType, size_t bufferSize=1460);
 
     size_t headers() const;                     // get header count

@@ -65,6 +65,26 @@ class AsyncStreamResponse: public AsyncAbstractResponse {
     virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
 };
 
+class AsyncCallbackResponse: public AsyncAbstractResponse {
+  private:
+    AwsResponseFiller _content;
+    size_t _filledLength;
+  public:
+    AsyncCallbackResponse(const String& contentType, size_t len, AwsResponseFiller callback);
+    bool _sourceValid() const { return !!(_content); }
+    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
+};
+
+class AsyncChunkedResponse: public AsyncAbstractResponse {
+  private:
+    AwsResponseFiller _content;
+    size_t _filledLength;
+  public:
+    AsyncChunkedResponse(const String& contentType, AwsResponseFiller callback);
+    bool _sourceValid() const { return !!(_content); }
+    virtual size_t _fillBuffer(uint8_t *buf, size_t maxLen) override;
+};
+
 class cbuf;
 
 class AsyncResponseStream: public AsyncAbstractResponse, public Print {

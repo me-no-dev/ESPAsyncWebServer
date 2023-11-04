@@ -1,2 +1,0 @@
-add	KEYWORD1
-createArray	KEYWORD1
