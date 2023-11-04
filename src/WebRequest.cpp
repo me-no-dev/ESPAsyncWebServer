@@ -189,8 +189,16 @@ void AsyncWebServerRequest::_removeNotInterestingHeaders(){
 
 void AsyncWebServerRequest::_onPoll(){
   //os_printf("p\n");
-  if(_response != NULL && _client != NULL && _client->canSend() && !_response->_finished()){
-    _response->_ack(this, 0, 0);
+  if(_response != NULL && _client != NULL && _client->canSend()){
+    if(!_response->_finished()){
+      _response->_ack(this, 0, 0);
+    } else {
+      AsyncWebServerResponse* r = _response;
+      _response = NULL;
+      delete r;
+
+      _client->close();
+    }
   }
 }
 
@@ -199,10 +207,13 @@ void AsyncWebServerRequest::_onAck(size_t len, uint32_t time){
   if(_response != NULL){
     if(!_response->_finished()){
       _response->_ack(this, len, time);
-    } else {
+    }
+    if(_response->_finished()){
       AsyncWebServerResponse* r = _response;
       _response = NULL;
       delete r;
+
+      _client->close();
     }
   }
 }
