@@ -312,7 +312,6 @@ void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_
 }
 ```
 
-If needed, the `_tempObject` field on the request can be used to store a pointer to temporary data (e.g. from the body) associated with the request. If assigned, the pointer will automatically be freed along with the request.
 ## Responses
 
 ### Redirect to another URL

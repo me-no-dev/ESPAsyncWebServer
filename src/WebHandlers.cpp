@@ -153,11 +153,8 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest *request, const St
   bool found = fileFound || gzipFound;
 
   if (found) {
-    // Extract the file name from the path and keep it in _tempObject
-    size_t pathLen = path.length();
-    char * _tempPath = (char*)malloc(pathLen+1);
-    snprintf(_tempPath, pathLen+1, "%s", path.c_str());
-    request->_tempObject = (void*)_tempPath;
+    // Save the file path
+    request->_filePath = path;
 
     // Calculate gzip statistic
     _gzipStats = (_gzipStats << 1) + (gzipFound ? 1 : 0);
@@ -179,11 +176,6 @@ uint8_t AsyncStaticWebHandler::_countBits(const uint8_t value) const
 
 void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
 {
-  // Get the filename from request->_tempObject and free it
-  String filename = String((char*)request->_tempObject);
-  free(request->_tempObject);
-  request->_tempObject = NULL;
-
   if (request->_tempFile == true) {
     String etag = String(request->_tempFile.size());
     if (_last_modified.length() && _last_modified == request->header("If-Modified-Since")) {
@@ -196,7 +188,7 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
       response->addHeader("ETag", etag);
       request->send(response);
     } else {
-      AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, filename, String(), false);
+      AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, request->_filePath, String(), false);
       if (_last_modified.length())
         response->addHeader("Last-Modified", _last_modified);
       if (_cache_control.length()){

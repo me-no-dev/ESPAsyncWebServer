@@ -196,7 +196,7 @@ class AsyncWebServerRequest {
 
   public:
     File _tempFile;
-    void *_tempObject;
+    String _filePath;
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
     ~AsyncWebServerRequest();

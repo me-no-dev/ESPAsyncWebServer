@@ -466,7 +466,6 @@ AsyncWebSocketMultiMessage::~AsyncWebSocketMultiMessage() {
 AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, AsyncWebSocket *server)
   : _controlQueue(LinkedList<AsyncWebSocketControl *>([](AsyncWebSocketControl *c){ delete  c; }))
   , _messageQueue(LinkedList<AsyncWebSocketMessage *>([](AsyncWebSocketMessage *m){ delete  m; }))
-  , _tempObject(NULL)
 {
   _client = request->client();
   _server = server;

@@ -65,7 +65,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _itemBuffer(0)
   , _itemBufferIndex(0)
   , _itemIsFile(false)
-  , _tempObject(NULL)
+  , _filePath()
 {
   c->onError([](void *r, AsyncClient* c, int8_t error){ (void)c; AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
   c->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ (void)c; AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onAck(len, time); }, this);
@@ -83,10 +83,6 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
 
   if(_response != NULL){
     delete _response;
-  }
-
-  if(_tempObject != NULL){
-    free(_tempObject);
   }
 
   if(_tempFile){
