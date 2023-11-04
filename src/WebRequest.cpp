@@ -20,7 +20,6 @@
 */
 #include "ESPAsyncWebServer.h"
 #include "WebResponseImpl.h"
-#include "WebAuthentication.h"
 
 #ifndef ESP8266
 #define os_strlen strlen
@@ -45,7 +44,6 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _host()
   , _contentType()
   , _boundary()
-  , _authorization()
   , _reqconntype(RCT_HTTP)
   , _isDigest(false)
   , _isMultipart(false)
@@ -327,13 +325,6 @@ bool AsyncWebServerRequest::_parseReqHeader(){
       _contentLength = atoi(value.c_str());
     } else if(name.equalsIgnoreCase("Expect") && value == "100-continue"){
       _expectingContinue = true;
-    } else if(name.equalsIgnoreCase("Authorization")){
-      if(value.length() > 5 && value.substring(0,5).equalsIgnoreCase("Basic")){
-        _authorization = value.substring(6);
-      } else if(value.length() > 6 && value.substring(0,6).equalsIgnoreCase("Digest")){
-        _isDigest = true;
-        _authorization = value.substring(7);
-      }
     } else {
       if(name.equalsIgnoreCase("Upgrade") && value.equalsIgnoreCase("websocket")){
         // WebSocket request can be uniquely identified by header: [Upgrade: websocket]
@@ -724,135 +715,74 @@ AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(int code, const St
   return new AsyncBasicResponse(code, contentType, content);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback){
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(FS &fs, const String& path, const String& contentType, bool download){
   if(fs.exists(path) || (!download && fs.exists(path+".gz")))
-    return new AsyncFileResponse(fs, path, contentType, download, callback);
+    return new AsyncFileResponse(fs, path, contentType, download);
   return NULL;
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback){
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(File content, const String& path, const String& contentType, bool download){
   if(content == true)
-    return new AsyncFileResponse(content, path, contentType, download, callback);
+    return new AsyncFileResponse(content, path, contentType, download);
   return NULL;
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback){
-  return new AsyncStreamResponse(stream, contentType, len, callback);
-}
-
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback){
-  return new AsyncCallbackResponse(contentType, len, callback, templateCallback);
-}
-
-AsyncWebServerResponse * AsyncWebServerRequest::beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback){
-  if(_version)
-    return new AsyncChunkedResponse(contentType, callback, templateCallback);
-  return new AsyncCallbackResponse(contentType, 0, callback, templateCallback);
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(Stream &stream, const String& contentType, size_t len){
+  return new AsyncStreamResponse(stream, contentType, len);
 }
 
 AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(const String& contentType, size_t bufferSize){
   return new AsyncResponseStream(contentType, bufferSize);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback){
-  return new AsyncProgmemResponse(code, contentType, content, len, callback);
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len){
+  return new AsyncProgmemResponse(code, contentType, content, len);
 }
 
-AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback){
-  return beginResponse_P(code, contentType, (const uint8_t *)content, strlen_P(content), callback);
+AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, PGM_P content){
+  return beginResponse_P(code, contentType, (const uint8_t *)content, strlen_P(content));
 }
 
 void AsyncWebServerRequest::send(int code, const String& contentType, const String& content){
   send(beginResponse(code, contentType, content));
 }
 
-void AsyncWebServerRequest::send(FS &fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback){
+void AsyncWebServerRequest::send(FS &fs, const String& path, const String& contentType, bool download){
   if(fs.exists(path) || (!download && fs.exists(path+".gz"))){
-    send(beginResponse(fs, path, contentType, download, callback));
+    send(beginResponse(fs, path, contentType, download));
   } else send(404);
 }
 
-void AsyncWebServerRequest::send(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback){
+void AsyncWebServerRequest::send(File content, const String& path, const String& contentType, bool download){
   if(content == true){
-    send(beginResponse(content, path, contentType, download, callback));
+    send(beginResponse(content, path, contentType, download));
   } else send(404);
 }
 
-void AsyncWebServerRequest::send(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback){
-  send(beginResponse(stream, contentType, len, callback));
+void AsyncWebServerRequest::send(Stream &stream, const String& contentType, size_t len){
+  send(beginResponse(stream, contentType, len));
 }
 
-void AsyncWebServerRequest::send(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback){
-  send(beginResponse(contentType, len, callback, templateCallback));
+void AsyncWebServerRequest::send(const String& contentType, size_t len){
+  send(beginResponse(contentType, len));
 }
 
-void AsyncWebServerRequest::sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback){
-  send(beginChunkedResponse(contentType, callback, templateCallback));
+void AsyncWebServerRequest::sendChunked(const String& contentType){
+  send(beginChunkedResponse(contentType));
 }
 
-void AsyncWebServerRequest::send_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback){
-  send(beginResponse_P(code, contentType, content, len, callback));
+void AsyncWebServerRequest::send_P(int code, const String& contentType, const uint8_t * content, size_t len){
+  send(beginResponse_P(code, contentType, content, len));
 }
 
-void AsyncWebServerRequest::send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback){
-  send(beginResponse_P(code, contentType, content, callback));
+void AsyncWebServerRequest::send_P(int code, const String& contentType, PGM_P content){
+  send(beginResponse_P(code, contentType, content));
 }
 
 void AsyncWebServerRequest::redirect(const String& url){
   AsyncWebServerResponse * response = beginResponse(302);
   response->addHeader("Location",url);
   send(response);
-}
-
-bool AsyncWebServerRequest::authenticate(const char * username, const char * password, const char * realm, bool passwordIsHash){
-  if(_authorization.length()){
-    if(_isDigest)
-      return checkDigestAuthentication(_authorization.c_str(), methodToString(), username, password, realm, passwordIsHash, NULL, NULL, NULL);
-    else if(!passwordIsHash)
-      return checkBasicAuthentication(_authorization.c_str(), username, password);
-    else
-      return _authorization.equals(password);
-  }
-  return false;
-}
-
-bool AsyncWebServerRequest::authenticate(const char * hash){
-  if(!_authorization.length() || hash == NULL)
-    return false;
-
-  if(_isDigest){
-    String hStr = String(hash);
-    int separator = hStr.indexOf(":");
-    if(separator <= 0)
-      return false;
-    String username = hStr.substring(0, separator);
-    hStr = hStr.substring(separator + 1);
-    separator = hStr.indexOf(":");
-    if(separator <= 0)
-      return false;
-    String realm = hStr.substring(0, separator);
-    hStr = hStr.substring(separator + 1);
-    return checkDigestAuthentication(_authorization.c_str(), methodToString(), username.c_str(), hStr.c_str(), realm.c_str(), true, NULL, NULL, NULL);
-  }
-
-  return (_authorization.equals(hash));
-}
-
-void AsyncWebServerRequest::requestAuthentication(const char * realm, bool isDigest){
-  AsyncWebServerResponse * r = beginResponse(401);
-  if(!isDigest && realm == NULL){
-    r->addHeader("WWW-Authenticate", "Basic realm=\"Login Required\"");
-  } else if(!isDigest){
-    String header = "Basic realm=\"";
-    header.concat(realm);
-    header.concat("\"");
-    r->addHeader("WWW-Authenticate", header);
-  } else {
-    String header = "Digest ";
-    header.concat(requestDigestAuthentication(realm));
-    r->addHeader("WWW-Authenticate", header);
-  }
-  send(r);
 }
 
 bool AsyncWebServerRequest::hasArg(const char* name) const {

@@ -22,7 +22,7 @@
 #include "WebHandlerImpl.h"
 
 AsyncStaticWebHandler::AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control)
-  : _fs(fs), _uri(uri), _path(path), _default_file("index.htm"), _cache_control(cache_control), _last_modified(""), _callback(nullptr)
+  : _fs(fs), _uri(uri), _path(path), _default_file("index.htm"), _cache_control(cache_control), _last_modified("")
 {
   // Ensure leading '/'
   if (_uri.length() == 0 || _uri[0] != '/') _uri = "/" + _uri;
@@ -88,13 +88,6 @@ bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest *request){
     return false;
   }
   if (_getFile(request)) {
-    // We interested in "If-Modified-Since" header to check if file was modified
-    if (_last_modified.length())
-      request->addInterestingHeader("If-Modified-Since");
-
-    if(_cache_control.length())
-      request->addInterestingHeader("If-None-Match");
-
     DEBUGF("[AsyncStaticWebHandler::canHandle] TRUE\n");
     return true;
   }
@@ -190,8 +183,6 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
   String filename = String((char*)request->_tempObject);
   free(request->_tempObject);
   request->_tempObject = NULL;
-  if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
-      return request->requestAuthentication();
 
   if (request->_tempFile == true) {
     String etag = String(request->_tempFile.size());
@@ -205,7 +196,7 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
       response->addHeader("ETag", etag);
       request->send(response);
     } else {
-      AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, filename, String(), false, _callback);
+      AsyncWebServerResponse * response = new AsyncFileResponse(request->_tempFile, filename, String(), false);
       if (_last_modified.length())
         response->addHeader("Last-Modified", _last_modified);
       if (_cache_control.length()){

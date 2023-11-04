@@ -119,7 +119,6 @@ void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
     }
   }
   
-  request->addInterestingHeader("ANY");
   request->setHandler(_catchAllHandler);
 }
 
