@@ -829,7 +829,7 @@ void AsyncWebSocketClient::binary(AsyncWebSocketMessageBuffer * buffer)
 
 IPAddress AsyncWebSocketClient::remoteIP() {
     if(!_client) {
-        return IPAddress(0U);
+        return IPAddress(static_cast<uint32_t>(0U));
     }
     return _client->remoteIP();
 }
