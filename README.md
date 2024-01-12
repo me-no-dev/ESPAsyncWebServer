@@ -1,7 +1,7 @@
 # In this fork
 - SPIFFSEditor modifications
-- Added [extras](https://github.com/lorol/ESPAsyncWebServer/tree/master/extras) folder with (Win) tools for re-packing, editing, updating and compressing html to binary arrays embedded to source
-- Added a [SmartSwitch](https://github.com/lorol/ESPAsyncWebServer/tree/master/examples/SmartSwitch) example to test code features
+- Added [extras](https://github.com/mathieucarbou/ESPAsyncWebServer/tree/master/extras) folder with (Win) tools for re-packing, editing, updating and compressing html to binary arrays embedded to source
+- Added a [SmartSwitch](https://github.com/mathieucarbou/ESPAsyncWebServer/tree/master/examples/SmartSwitch) example to test code features
 - Applied the memory optimizations from [sascha432](https://github.com/sascha432/ESPAsyncWebServer) fork
 - Cookie Authentication including on Websocket part, based on [ayushsharma82](https://github.com/me-no-dev/ESPAsyncWebServer/pull/684) PR, new functions added:
   - For Websocket: ```void handleHandshake(AwsHandshakeHandler handler) ```
