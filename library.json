@@ -21,13 +21,13 @@
     {
       "owner": "esphome",
       "name": "ESPAsyncTCP-esphome",
-      "version": "2.0.0",
+      "version": ">=2.0.0",
       "platforms": "espressif8266"
     },
     {
       "owner": "esphome",
       "name": "AsyncTCP-esphome",
-      "version": "2.0.1",
+      "version": ">=2.0.1",
       "platforms": "espressif32"
     },
     {
