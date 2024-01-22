@@ -1,0 +1,10 @@
+{
+  "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: LLVM, UseTab: Never, IndentWidth: 2, TabWidth: 2, AllowShortIfStatementsOnASingleLine: false, IndentCaseLabels: true, ColumnLimit: 0, AccessModifierOffset: -2, NamespaceIndentation: All, FixNamespaceComments: false, IndentAccessModifiers: true, PointerAlignment: Left, ReferenceAlignment: Left, ContinuationIndentWidth: 2}",
+  "files.exclude": {
+    "**/.lh": true
+  },
+  "cSpell.words": [
+    "YASOLR"
+  ],
+  "cmake.configureOnOpen": false
+}

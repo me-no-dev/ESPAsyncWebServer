@@ -1,2 +1,6 @@
-.vscode
 .DS_Store
+.lh
+/.pio
+/.vscode/*
+!/.vscode/settings.json
+/logs

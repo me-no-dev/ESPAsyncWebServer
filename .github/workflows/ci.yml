@@ -1,0 +1,92 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+
+name: Continuous Integration
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  arduino:
+    name: Arduino
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - core: esp32:esp32
+            board: esp32:esp32:esp32
+            eeprom: true
+            softwareserial: false
+            index_url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install arduino-cli
+        run: curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
+
+      - name: Update core index
+        run: arduino-cli core update-index --additional-urls "${{ matrix.index_url }}"
+
+      - name: Install core
+        run: arduino-cli core install --additional-urls "${{ matrix.index_url }}" ${{ matrix.core }}
+
+      - name: Install ArduinoJson
+        run: arduino-cli lib install ArduinoJson@7.0.2
+
+      - name: Install AsyncTCP-esphome
+        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/esphome-AsyncTCP#v2.1.1
+
+      - name: Build CaptivePortal
+        run: arduino-cli compile --library . --warnings all -b ${{ matrix.board }} "examples/CaptivePortal/CaptivePortal.ino"
+
+      - name: Build SimpleServer
+        run: arduino-cli compile --library . --warnings all -b ${{ matrix.board }} "examples/SimpleServer/SimpleServer.ino"
+
+  platformio:
+    name: PlatformIO
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: espressif32
+            board: esp32dev
+            eeprom: true
+            softwareserial: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: ${{ runner.os }}-platformio
+
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Install platform "${{ matrix.platform }}"
+        run: platformio platform install ${{ matrix.platform }}
+
+      - name: Build CaptivePortal
+        run: platformio ci "examples/CaptivePortal/CaptivePortal.ino" -l '.' -b ${{ matrix.board }}
+
+      - name: Build SimpleServer
+        run: platformio ci "examples/SimpleServer/SimpleServer.ino" -l '.' -b ${{ matrix.board }}
