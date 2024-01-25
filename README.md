@@ -15,6 +15,7 @@ This fork is based on https://github.com/yubox-node-org/ESPAsyncWebServer and in
 - Deployed in PlatformIO registry and Arduino IDE library manager
 - CI
 - Only supports ESP32
+- Resurrected `AsyncWebSocketMessageBuffer` and `makeBuffer()` in order to make the fork API-compatible with the original library from me-no-dev regarding WebSocket.
 
 ## Documentation
 
@@ -23,13 +24,29 @@ Please look at the original libraries for more examples and documentation.
 
 [https://github.com/yubox-node-org/ESPAsyncWebServer](https://github.com/yubox-node-org/ESPAsyncWebServer)
 
-## Pitfalls
+## `AsyncWebSocketMessageBuffer` and `makeBuffer()`
 
-The fork from yubox introduces some breaking API changes compared to the original library, especially regarding the use of `std::shared_ptr<std::vector<uint8_t>>` for WebSocket.
-Thanks to this fork, you can handle them by using `ASYNCWEBSERVER_FORK_mathieucarbou`.
+The fork from `yubox-node-org` introduces some breaking API changes compared to the original library, especially regarding the use of `std::shared_ptr<std::vector<uint8_t>>` for WebSocket.
 
-Here is an example for serializing a Json document in a websocket message buffer directly.
-This code is compatible with both forks.
+This fork is compatible with the original library from `me-no-dev` regarding WebSocket, and wraps the optimizations done by `yubox-node-org` in the `AsyncWebSocketMessageBuffer` class.
+So you have the choice of which API to use.
+I strongly suggest to use the optimized API from `yubox-node-org` as it is much more efficient.
+
+Here is an example for serializing a Json document in a websocket message buffer. This code is compatible with any forks, but not optimized:
+
+```cpp
+void send(JsonDocument& doc) {
+  const size_t len = measureJson(doc);
+  
+  // original API from me-no-dev
+  AsyncWebSocketMessageBuffer* buffer = _ws->makeBuffer(len);
+  assert(buffer); // up to you to keep or remove this
+  serializeJson(doc, buffer->get(), len);
+  _ws->textAll(buffer);
+}
+```
+
+Here is an example for serializing a Json document in a more optimized way, and compatible with both forks:
 
 ```cpp
 void send(JsonDocument& doc) {

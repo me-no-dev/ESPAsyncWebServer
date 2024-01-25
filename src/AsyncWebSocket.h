@@ -88,6 +88,23 @@ typedef enum { WS_CONTINUATION, WS_TEXT, WS_BINARY, WS_DISCONNECT = 0x08, WS_PIN
 typedef enum { WS_MSG_SENDING, WS_MSG_SENT, WS_MSG_ERROR } AwsMessageStatus;
 typedef enum { WS_EVT_CONNECT, WS_EVT_DISCONNECT, WS_EVT_PONG, WS_EVT_ERROR, WS_EVT_DATA } AwsEventType;
 
+class AsyncWebSocketMessageBuffer {
+  friend AsyncWebSocket;
+  friend AsyncWebSocketClient;
+
+  private:
+    std::shared_ptr<std::vector<uint8_t>> _buffer;
+
+  public:
+    AsyncWebSocketMessageBuffer();
+    AsyncWebSocketMessageBuffer(size_t size);
+    AsyncWebSocketMessageBuffer(uint8_t* data, size_t size);
+    ~AsyncWebSocketMessageBuffer();
+    bool reserve(size_t size);
+    uint8_t* get() { return _buffer->data(); }
+    size_t length() const { return _buffer->size(); }
+};
+
 class AsyncWebSocketMessage
 {
 private:
@@ -180,6 +197,7 @@ class AsyncWebSocketClient {
     void text(const char *message);
     void text(const String &message);
     void text(const __FlashStringHelper *message);
+    void text(AsyncWebSocketMessageBuffer *buffer); 
 
     void binary(std::shared_ptr<std::vector<uint8_t>> buffer);
     void binary(const uint8_t *message, size_t len);
@@ -187,6 +205,7 @@ class AsyncWebSocketClient {
     void binary(const char * message);
     void binary(const String &message);
     void binary(const __FlashStringHelper *message, size_t len);
+    void binary(AsyncWebSocketMessageBuffer *buffer); 
 
     bool canSend() const;
 
@@ -245,6 +264,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     void textAll(const char * message);
     void textAll(const String &message);
     void textAll(const __FlashStringHelper *message); //  need to convert
+    void textAll(AsyncWebSocketMessageBuffer *buffer);
 
     void binary(uint32_t id, const uint8_t *message, size_t len);
     void binary(uint32_t id, const char *message, size_t len);
@@ -258,6 +278,7 @@ class AsyncWebSocket: public AsyncWebHandler {
     void binaryAll(const char *message);
     void binaryAll(const String &message);
     void binaryAll(const __FlashStringHelper *message, size_t len);
+    void binaryAll(AsyncWebSocketMessageBuffer *buffer);
 
     size_t printf(uint32_t id, const char *format, ...)  __attribute__ ((format (printf, 3, 4)));
     size_t printfAll(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
@@ -282,6 +303,11 @@ class AsyncWebSocket: public AsyncWebHandler {
     void _handleEvent(AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
     virtual bool canHandle(AsyncWebServerRequest *request) override final;
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
+
+
+    //  messagebuffer functions/objects. 
+    AsyncWebSocketMessageBuffer * makeBuffer(size_t size = 0); 
+    AsyncWebSocketMessageBuffer * makeBuffer(uint8_t * data, size_t size); 
 
     const std::list<AsyncWebSocketClient> &getClients() const { return _clients; }
 };
