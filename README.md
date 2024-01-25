@@ -16,5 +16,41 @@ This fork is based on https://github.com/yubox-node-org/ESPAsyncWebServer and in
 - CI
 - Only supports ESP32
 
-Usage and API stays the same as the original library. 
+## Documentation
+
+Usage and API stays the same as the original library.
 Please look at the original libraries for more examples and documentation.
+
+[https://github.com/yubox-node-org/ESPAsyncWebServer](https://github.com/yubox-node-org/ESPAsyncWebServer)
+
+## Pitfalls
+
+The fork from yubox introduces some breaking API changes compared to the original library, especially regarding the use of `std::shared_ptr<std::vector<uint8_t>>` for WebSocket.
+Thanks to this fork, you can handle them by using `ASYNCWEBSERVER_FORK_mathieucarbou`.
+
+Here is an example for serializing a Json document in a websocket message buffer directly.
+This code is compatible with both forks.
+
+```cpp
+void send(JsonDocument& doc) {
+  const size_t len = measureJson(doc);
+
+#if defined(ASYNCWEBSERVER_FORK_mathieucarbou)
+
+  // this fork (originally from yubox-node-org), uses another API with shared pointer that better support concurrent use cases then the original project
+  auto buffer = std::make_shared<std::vector<uint8_t>>(len);
+  assert(buffer); // up to you to keep or remove this
+  serializeJson(doc, buffer->data(), len);
+  _ws->textAll(std::move(buffer));
+
+#else
+
+  // original API from me-no-dev
+  AsyncWebSocketMessageBuffer* buffer = _ws->makeBuffer(len);
+  assert(buffer); // up to you to keep or remove this
+  serializeJson(doc, buffer->get(), len);
+  _ws->textAll(buffer);
+
+#endif
+}
+```
