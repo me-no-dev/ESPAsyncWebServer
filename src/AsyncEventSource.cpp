@@ -236,7 +236,7 @@ void AsyncEventSourceClient::close(){
     _client->close();
 }
 
-void AsyncEventSourceClient::_write(const char * message, size_t len){
+void AsyncEventSourceClient::write(const char * message, size_t len){
   _queueMessage(new AsyncEventSourceMessage(message, len));
 }
 
@@ -344,7 +344,7 @@ void AsyncEventSource::send(
   AsyncWebLockGuard l(_client_queue_lock);
   for(const auto &c: _clients){
     if(c->connected()) {
-      c->_write(ev.c_str(), ev.length());
+      c->write(ev.c_str(), ev.length());
     }
   }
 }
