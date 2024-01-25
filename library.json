@@ -37,5 +37,15 @@
         "espressif32"
       ]
     }
-  ]
+  ],
+  "export": {
+    "include": [
+      "examples",
+      "src",
+      "library.json",
+      "library.properties",
+      "LICENSE",
+      "README.md"
+    ]
+  }
 }
