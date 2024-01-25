@@ -43,9 +43,6 @@ jobs:
       - name: Install core
         run: arduino-cli core install --additional-urls "${{ matrix.index_url }}" ${{ matrix.core }}
 
-      - name: Install ArduinoJson
-        run: arduino-cli lib install ArduinoJson@7.0.2
-
       - name: Install AsyncTCP-esphome
         run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/esphome-AsyncTCP#v2.1.1
 

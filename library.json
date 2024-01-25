@@ -28,14 +28,6 @@
       "name": "AsyncTCP-esphome",
       "version": "^2.1.1",
       "platforms": "espressif32"
-    },
-    {
-      "owner": "bblanchon",
-      "name": "ArduinoJson",
-      "version": "^7.0.2",
-      "platforms": [
-        "espressif32"
-      ]
     }
   ],
   "export": {
