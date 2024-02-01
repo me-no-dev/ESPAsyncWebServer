@@ -798,7 +798,7 @@ void AsyncWebSocketClient::binary(const __FlashStringHelper *data, size_t len)
 IPAddress AsyncWebSocketClient::remoteIP() const
 {
     if (!_client)
-        return IPAddress(0U);
+        return IPAddress((uint32_t)0U);
 
     return _client->remoteIP();
 }
