@@ -8,14 +8,18 @@ Async Web Server for ESP31B
 
 This fork is based on https://github.com/yubox-node-org/ESPAsyncWebServer and includes all the concurrency fixes.
 
-## Changes
+## Changes in this fork
 
-- SPIFFSEditor is removed
-- Arduino Json 7 compatibility
+- Removed SPIFFSEditor
 - Deployed in PlatformIO registry and Arduino IDE library manager
 - CI
-- Only supports ESP32
+- Some code cleanup
+- `SSE_MAX_QUEUED_MESSAGES` to control the maximum number of messages that can be queued for a SSE client
+- `write()` function public in `AsyncEventSource.h`
+- Arduino Json 7 compatibility and by default, still compatible with 6 (`AsyncJson.h`)
+- `WS_MAX_QUEUED_MESSAGES`: control the maximum number of messages that can be queued for a Websocket client
 - Resurrected `AsyncWebSocketMessageBuffer` and `makeBuffer()` in order to make the fork API-compatible with the original library from me-no-dev regarding WebSocket.
+- [#5](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/5): set real "Last-Modified" header based on file's LastWrite time ([@vortigont](https://github.com/vortigont))
 
 ## Documentation
 
@@ -37,7 +41,7 @@ Here is an example for serializing a Json document in a websocket message buffer
 ```cpp
 void send(JsonDocument& doc) {
   const size_t len = measureJson(doc);
-  
+
   // original API from me-no-dev
   AsyncWebSocketMessageBuffer* buffer = _ws->makeBuffer(len);
   assert(buffer); // up to you to keep or remove this
