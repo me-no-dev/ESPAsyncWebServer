@@ -1,41 +1,74 @@
-#include "ESPAsyncWebServer.h"
-#include <AsyncTCP.h>
-#include <DNSServer.h>
-#include <WiFi.h>
+//
+// A simple server implementation showing how to:
+//  * serve static messages
+//  * read GET and POST parameters
+//  * handle missing pages / 404s
+//
 
-DNSServer dnsServer;
+#include <Arduino.h>
+#ifdef ESP32
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#elif defined(ESP8266)
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
+#endif
+#include <ESPAsyncWebServer.h>
+
 AsyncWebServer server(80);
 
-class CaptiveRequestHandler : public AsyncWebHandler {
-  public:
-    CaptiveRequestHandler() {}
-    virtual ~CaptiveRequestHandler() {}
+const char* ssid = "YOUR_SSID";
+const char* password = "YOUR_PASSWORD";
 
-    bool canHandle(AsyncWebServerRequest* request) {
-      // request->addInterestingHeader("ANY");
-      return true;
-    }
+const char* PARAM_MESSAGE = "message";
 
-    void handleRequest(AsyncWebServerRequest* request) {
-      AsyncResponseStream* response = request->beginResponseStream("text/html");
-      response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
-      response->print("<p>This is out captive portal front page.</p>");
-      response->printf("<p>You were trying to reach: http://%s%s</p>", request->host().c_str(), request->url().c_str());
-      response->printf("<p>Try opening <a href='http://%s'>this link</a> instead</p>", WiFi.softAPIP().toString().c_str());
-      response->print("</body></html>");
-      request->send(response);
-    }
-};
+void notFound(AsyncWebServerRequest *request) {
+    request->send(404, "text/plain", "Not found");
+}
 
 void setup() {
-  // your other setup stuff...
-  WiFi.softAP("esp-captive");
-  dnsServer.start(53, "*", WiFi.softAPIP());
-  server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
-  // more handlers...
-  server.begin();
+
+    Serial.begin(115200);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+        Serial.printf("WiFi Failed!\n");
+        return;
+    }
+
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(200, "text/plain", "Hello, world");
+    });
+
+    // Send a GET request to <IP>/get?message=<message>
+    server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
+        String message;
+        if (request->hasParam(PARAM_MESSAGE)) {
+            message = request->getParam(PARAM_MESSAGE)->value();
+        } else {
+            message = "No message sent";
+        }
+        request->send(200, "text/plain", "Hello, GET: " + message);
+    });
+
+    // Send a POST request to <IP>/post with a form field message set to <message>
+    server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
+        String message;
+        if (request->hasParam(PARAM_MESSAGE, true)) {
+            message = request->getParam(PARAM_MESSAGE, true)->value();
+        } else {
+            message = "No message sent";
+        }
+        request->send(200, "text/plain", "Hello, POST: " + message);
+    });
+
+    server.onNotFound(notFound);
+
+    server.begin();
 }
 
 void loop() {
-  dnsServer.processNextRequest();
 }

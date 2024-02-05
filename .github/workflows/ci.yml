@@ -24,6 +24,11 @@ jobs:
             eeprom: true
             softwareserial: false
             index_url: https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          - core: esp8266:esp8266
+            board: esp8266:esp8266:huzzah
+            eeprom: true
+            softwareserial: true
+            index_url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
 
     steps:
       - name: Checkout
@@ -46,6 +51,9 @@ jobs:
       - name: Install AsyncTCP-esphome
         run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/esphome-AsyncTCP#v2.1.1
 
+      - name: Install ESPAsyncTCP-esphome
+        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-urlhttps://github.com/mathieucarbou/ESPAsyncTCP-esphome#v2.0.0
+
       - name: Build CaptivePortal
         run: arduino-cli compile --library . --warnings all -b ${{ matrix.board }} "examples/CaptivePortal/CaptivePortal.ino"
 
@@ -61,6 +69,10 @@ jobs:
         include:
           - platform: espressif32
             board: esp32dev
+            eeprom: true
+            softwareserial: false
+          - platform: espressif8266
+            board: huzzah
             eeprom: true
             softwareserial: false
 
