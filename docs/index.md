@@ -6,7 +6,7 @@
 
 Async Web Server for ESP31B
 
-This fork is based on https://github.com/yubox-node-org/ESPAsyncWebServer and includes all the concurrency fixes.
+This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubox-node-org/ESPAsyncWebServer) and includes all the concurrency fixes.
 
 ## Changes in this fork
 
