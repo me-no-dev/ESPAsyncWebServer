@@ -52,7 +52,7 @@ jobs:
         run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/esphome-AsyncTCP#v2.1.1
 
       - name: Install ESPAsyncTCP-esphome
-        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-urlhttps://github.com/mathieucarbou/ESPAsyncTCP-esphome#v2.0.0
+        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/ESPAsyncTCP-esphome#v2.0.0
 
       - name: Build CaptivePortal
         run: arduino-cli compile --library . --warnings all -b ${{ matrix.board }} "examples/CaptivePortal/CaptivePortal.ino"
