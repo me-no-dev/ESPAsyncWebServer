@@ -185,10 +185,10 @@ protected:
 public:
 #ifdef ARDUINOJSON_5_COMPATIBILITY      
   AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest) 
-  : _uri(uri), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(onRequest), _maxContentLength(16384) {}
+  : _uri(uri), _method(HTTP_GET|HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(onRequest), _maxContentLength(16384) {}
 #else
   AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest, size_t maxJsonBufferSize=DYNAMIC_JSON_DOCUMENT_SIZE) 
-  : _uri(uri), _method(HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(onRequest), maxJsonBufferSize(maxJsonBufferSize), _maxContentLength(16384) {}
+  : _uri(uri), _method(HTTP_GET|HTTP_POST|HTTP_PUT|HTTP_PATCH), _onRequest(onRequest), maxJsonBufferSize(maxJsonBufferSize), _maxContentLength(16384) {}
 #endif
   
   void setMethod(WebRequestMethodComposite method){ _method = method; }
@@ -199,13 +199,15 @@ public:
     if(!_onRequest)
       return false;
 
-    if(!(_method & request->method()))
+    WebRequestMethodComposite request_method = request->method();
+
+    if(!(_method & request_method))
       return false;
 
     if(_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri+"/")))
       return false;
 
-    if ( !request->contentType().equalsIgnoreCase(JSON_MIMETYPE) )
+    if (request_method != HTTP_GET && !request->contentType().equalsIgnoreCase(JSON_MIMETYPE) )
       return false;
 
     request->addInterestingHeader("ANY");
@@ -214,7 +216,12 @@ public:
 
   virtual void handleRequest(AsyncWebServerRequest *request) override final {
     if(_onRequest) {
-      if (request->_tempObject != NULL) {
+
+      if (request->method() == HTTP_GET) {
+          JsonVariant json;
+          _onRequest(request, json);
+          return;
+      } else if (request->_tempObject != NULL) {
 
 #ifdef ARDUINOJSON_5_COMPATIBILITY    
         DynamicJsonBuffer jsonBuffer;
