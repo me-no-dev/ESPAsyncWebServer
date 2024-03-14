@@ -17,7 +17,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - Some code cleanup
 - `SSE_MAX_QUEUED_MESSAGES` to control the maximum number of messages that can be queued for a SSE client
 - `write()` function public in `AsyncEventSource.h`
-- Arduino Json 7 compatibility and by default, still compatible with 6 (`AsyncJson.h`)
+- Arduino Json 7 compatibility and backward compatible with 6 and 6 (changes in `AsyncJson.h`). The API to use Json has not changed. These are only internal changes.
 - `WS_MAX_QUEUED_MESSAGES`: control the maximum number of messages that can be queued for a Websocket client
 - Resurrected `AsyncWebSocketMessageBuffer` and `makeBuffer()` in order to make the fork API-compatible with the original library from me-no-dev regarding WebSocket.
 - [#5](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/5): set real "Last-Modified" header based on file's LastWrite time ([@vortigont](https://github.com/vortigont))
