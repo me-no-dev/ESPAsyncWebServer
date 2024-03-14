@@ -55,10 +55,10 @@ jobs:
         run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/ESPAsyncTCP-esphome#v2.0.0
 
       - name: Build CaptivePortal
-        run: arduino-cli compile --library . --warnings all -b ${{ matrix.board }} "examples/CaptivePortal/CaptivePortal.ino"
+        run: arduino-cli compile --library . --warnings none -b ${{ matrix.board }} "examples/CaptivePortal/CaptivePortal.ino"
 
       - name: Build SimpleServer
-        run: arduino-cli compile --library . --warnings all -b ${{ matrix.board }} "examples/SimpleServer/SimpleServer.ino"
+        run: arduino-cli compile --library . --warnings none -b ${{ matrix.board }} "examples/SimpleServer/SimpleServer.ino"
 
   platformio:
     name: PlatformIO
