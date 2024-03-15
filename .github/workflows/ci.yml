@@ -69,12 +69,16 @@ jobs:
         include:
           - platform: espressif32
             board: esp32dev
-            eeprom: true
-            softwareserial: false
+            opts: 
           - platform: espressif8266
             board: huzzah
-            eeprom: true
-            softwareserial: false
+            opts: 
+          - platform: espressif32
+            board: esp32dev
+            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-alpha3, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
+          - platform: espressif8266
+            board: huzzah
+            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-alpha3, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
 
     steps:
       - name: Checkout
@@ -100,7 +104,7 @@ jobs:
         run: platformio platform install ${{ matrix.platform }}
 
       - name: Build CaptivePortal
-        run: platformio ci "examples/CaptivePortal/CaptivePortal.ino" -l '.' -b ${{ matrix.board }}
+        run: platformio ci "examples/CaptivePortal/CaptivePortal.ino" -l '.' -b ${{ matrix.board }} ${{ matrix.opts }}
 
       - name: Build SimpleServer
-        run: platformio ci "examples/SimpleServer/SimpleServer.ino" -l '.' -b ${{ matrix.board }}
+        run: platformio ci "examples/SimpleServer/SimpleServer.ino" -l '.' -b ${{ matrix.board }} ${{ matrix.opts }}
