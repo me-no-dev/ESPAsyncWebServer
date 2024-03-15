@@ -69,10 +69,10 @@ jobs:
         include:
           - platform: espressif32
             board: esp32dev
-            opts: 
+            opts:
           - platform: espressif8266
             board: huzzah
-            opts: 
+            opts:
           - platform: espressif32
             board: esp32dev
             opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-alpha3, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
@@ -95,7 +95,7 @@ jobs:
       - name: Set up Python 3.x
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: "3.x"
 
       - name: Install PlatformIO
         run: pip install platformio
