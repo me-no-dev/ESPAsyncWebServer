@@ -236,6 +236,17 @@ void AsyncEventSourceClient::send(const char *message, const char *event, uint32
 }
 
 void AsyncEventSourceClient::_runQueue(){
+#if defined(ESP32)
+  if(!this->_messageQueue_mutex.try_lock()) {
+    return;
+  }
+#else
+  if(this->_messageQueue_processing){
+    return;
+  }
+  this->_messageQueue_processing = true;
+#endif // ESP32
+
   while(!_messageQueue.isEmpty() && _messageQueue.front()->finished()){
     _messageQueue.remove(_messageQueue.front());
   }
@@ -245,6 +256,12 @@ void AsyncEventSourceClient::_runQueue(){
     if(!(*i)->sent())
       (*i)->send(_client);
   }
+
+#if defined(ESP32)
+  this->_messageQueue_mutex.unlock();
+#else
+  this->_messageQueue_processing = false;
+#endif // ESP32
 }
 
 
