@@ -137,7 +137,11 @@ class AsyncJsonResponse : public AsyncAbstractResponse {
       return _contentLength;
     }
 
-    size_t getSize() { return _jsonBuffer.size(); }
+    size_t getSize() const { return _jsonBuffer.size(); }
+
+#if ARDUINOJSON_VERSION_MAJOR >= 6
+    bool overflowed() const { return _jsonBuffer.overflowed(); }
+#endif
 
     size_t _fillBuffer(uint8_t* data, size_t len) {
       ChunkPrint dest(data, _sentLength, len);
