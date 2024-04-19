@@ -6,5 +6,10 @@
   "cSpell.words": [
     "YASOLR"
   ],
-  "cmake.configureOnOpen": false
+  "cmake.configureOnOpen": false,
+  "files.associations": {
+    "*.cps": "javascript",
+    "*.config": "cpp",
+    "compare": "cpp"
+  }
 }

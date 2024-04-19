@@ -34,8 +34,15 @@ public:
 
 
 void setup(){
-  //your other setup stuff...
-  WiFi.softAP("esp-captive");
+  Serial.begin(115200);
+  Serial.println();
+  Serial.println("Configuring access point...");
+
+  if (!WiFi.softAP("esp-captive")) {
+    Serial.println("Soft AP creation failed.");
+    while (1);
+  }
+
   dnsServer.start(53, "*", WiFi.softAPIP());
   server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);//only when requested from AP
   //more handlers...

@@ -25,9 +25,9 @@
   ],
   "dependencies": [
     {
-      "owner": "esphome",
-      "name": "AsyncTCP-esphome",
-      "version": "^2.1.3",
+      "owner": "mathieucarbou",
+      "name": "Async TCP",
+      "version": "^3.0.0",
       "platforms": "espressif32"
     },
     {
