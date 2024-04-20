@@ -48,7 +48,7 @@ jobs:
         run: arduino-cli core install --additional-urls "${{ matrix.index_url }}" ${{ matrix.core }}
 
       - name: Install AsyncTCP-esphome
-        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/AsyncTCP#v3.0.0
+        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/AsyncTCP#v3.0.2
 
       - name: Install ESPAsyncTCP-esphome
         run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0
@@ -60,50 +60,67 @@ jobs:
         run: arduino-cli compile --library . --warnings none -b ${{ matrix.board }} "examples/SimpleServer/SimpleServer.ino"
 
   platformio:
-    name: PlatformIO
+    name: pio ${{ matrix.name }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: espressif32
+          - name: esp32dev|espressif32
             board: esp32dev
+            platform: espressif32
             opts:
-          - platform: espressif8266
-            board: huzzah
-            opts:
-          - platform: espressif32
+          - name: esp32dev|espressif32@6.6.0
             board: esp32dev
+            platform: espressif32@6.6.0
+            opts:
+          - name: esp32dev|arduino@3.0.0-rc1
+            board: esp32dev
+            platform: espressif32
             opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-rc1, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
-          - platform: espressif8266
+          - name: esp32dev|arduino@master
+            board: esp32dev
+            platform: espressif32
+            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#master, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
+          - name: esp32-s3-devkitc-1|espressif32
+            board: esp32-s3-devkitc-1
+            platform: espressif32
+            opts:
+          - name: esp32-s3-devkitc-1|espressif32@6.6.0
+            board: esp32-s3-devkitc-1
+            platform: espressif32@6.6.0
+            opts:
+          - name: esp32-s3-devkitc-1|arduino@3.0.0-rc1
+            board: esp32-s3-devkitc-1
+            platform: espressif32
+            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-rc1, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
+          - name: esp32-s3-devkitc-1|arduino@master
+            board: esp32-s3-devkitc-1
+            platform: espressif32
+            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#master, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
+          - name: huzzah|espressif8266
             board: huzzah
+            platform: espressif8266
+            opts:
+          - name: huzzah|arduino@3.0.0-rc1
+            board: huzzah
+            platform: espressif8266
             opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-rc1, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Set up cache
         uses: actions/cache@v4
         with:
           path: |
             ~/.platformio
             ~/.cache/pip
-          key: ${{ runner.os }}-platformio
-
-      - name: Set up Python 3.x
-        uses: actions/setup-python@v5
+          key: ${{ matrix.name }}
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-
-      - name: Install PlatformIO
-        run: pip install platformio
-
-      - name: Install platform "${{ matrix.platform }}"
-        run: platformio platform install ${{ matrix.platform }}
-
+      - run: pip install platformio
+      - run: platformio platform install ${{ matrix.platform }}
       - name: Build CaptivePortal
         run: platformio ci "examples/CaptivePortal/CaptivePortal.ino" -l '.' -b ${{ matrix.board }} ${{ matrix.opts }}
-
       - name: Build SimpleServer
         run: platformio ci "examples/SimpleServer/SimpleServer.ino" -l '.' -b ${{ matrix.board }} ${{ matrix.opts }}
