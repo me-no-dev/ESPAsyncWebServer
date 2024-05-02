@@ -539,7 +539,7 @@ AsyncFileResponse::AsyncFileResponse(FS &fs, const String& path, const String& c
     snprintf_P(buf, sizeof (buf), PSTR("attachment; filename=\"%s\""), filename);
   } else {
     // set filename and force rendering
-    snprintf_P(buf, sizeof (buf), PSTR("inline; filename=\"%s\""), filename);
+    snprintf_P(buf, sizeof (buf), PSTR("inline"));
   }
   addHeader(F("Content-Disposition"), buf);
 }
@@ -570,7 +570,7 @@ AsyncFileResponse::AsyncFileResponse(File content, const String& path, const Str
   if(download) {
     snprintf_P(buf, sizeof (buf), PSTR("attachment; filename=\"%s\""), filename);
   } else {
-    snprintf_P(buf, sizeof (buf), PSTR("inline; filename=\"%s\""), filename);
+    snprintf_P(buf, sizeof (buf), PSTR("inline"));
   }
   addHeader(F("Content-Disposition"), buf);
 }
