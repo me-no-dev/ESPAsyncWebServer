@@ -18,7 +18,7 @@
   "platforms": ["espressif8266", "espressif32", "libretiny"],
   "dependencies": [
     {
-      "owner": "ottowinter",
+      "owner": "esphome",
       "name": "ESPAsyncTCP-esphome",
       "platforms": "espressif8266"
     },
