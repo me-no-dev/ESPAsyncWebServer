@@ -193,7 +193,11 @@ void AsyncEventSourceClient::_queueMessage(AsyncEventSourceMessage *dataMessage)
   //length() is not thread-safe, thus acquiring the lock before this call..
   _lockmq.lock();
   if(_messageQueue.length() >= SSE_MAX_QUEUED_MESSAGES){
-      ets_printf(String(F("ERROR: Too many messages queued\n")).c_str());
+#ifdef ESP8266
+    ets_printf(String(F("ERROR: Too many messages queued\n")).c_str());
+#else
+    log_e("Too many messages queued: deleting message");
+#endif
       delete dataMessage;
   } else {
     _messageQueue.add(dataMessage);
