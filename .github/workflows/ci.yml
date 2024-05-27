@@ -66,46 +66,34 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: esp32dev|espressif32
+          - name: esp32dev|arduino
             board: esp32dev
             platform: espressif32
             opts:
-          - name: esp32dev|espressif32@6.7.0
+          - name: esp32dev|arduino-2
             board: esp32dev
             platform: espressif32@6.7.0
             opts:
-          - name: esp32dev|arduino@3
+          - name: esp32dev|arduino-3
             board: esp32dev
             platform: espressif32
-            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-rc3, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
-          - name: esp32dev|arduino@master
-            board: esp32dev
-            platform: espressif32
-            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#master, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
-          - name: esp32-s3-devkitc-1|espressif32
+            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-rc3, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#951ade74d7886e1ce931ea46614c4ac47ae3a6c0'"
+          - name: esp32-s3-devkitc-1|arduino
             board: esp32-s3-devkitc-1
             platform: espressif32
             opts:
-          - name: esp32-s3-devkitc-1|espressif32@6.7.0
+          - name: esp32-s3-devkitc-1|arduino-2
             board: esp32-s3-devkitc-1
             platform: espressif32@6.7.0
             opts:
-          - name: esp32-s3-devkitc-1|arduino@3
+          - name: esp32-s3-devkitc-1|arduino-3
             board: esp32-s3-devkitc-1
             platform: espressif32
-            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-rc3, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
-          - name: esp32-s3-devkitc-1|arduino@master
-            board: esp32-s3-devkitc-1
-            platform: espressif32
-            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#master, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
+            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-rc3, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#951ade74d7886e1ce931ea46614c4ac47ae3a6c0'"
           - name: huzzah|espressif8266
             board: huzzah
             platform: espressif8266
             opts:
-          - name: huzzah|arduino@3
-            board: huzzah
-            platform: espressif8266
-            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0-rc3, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/esp32-arduino-libs.git#idf-release/v5.1'"
     steps:
       - uses: actions/checkout@v4
       - name: Set up cache
