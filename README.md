@@ -23,6 +23,9 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [#5](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/5) ([@vortigont](https://github.com/vortigont)): set real "Last-Modified" header based on file's LastWrite time
 - [#13](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/13) ([@tueddy](https://github.com/tueddy)): Compile with Arduino 3 (ESP-IDF 5.1)
 - [#14](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/14) ([@nilo85](https://github.com/nilo85)): Add support for Auth & GET requests in AsyncCallbackJsonWebHandler
+- Added `setAuthentication(const String& username, const String& password)`
+- Added `StreamConcat` example to shoiw how to stream multiple files in one response
+- Remove filename after inline in Content-Disposition header according to RFC2183
 - Depends on `mathieucarbou/Async TCP @ ^3.1.2`
 - Arduino 3 / ESP-IDF 5.1 compatibility
 
