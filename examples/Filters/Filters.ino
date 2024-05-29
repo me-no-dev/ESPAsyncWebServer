@@ -1,6 +1,4 @@
 // Reproduced issue https://github.com/mathieucarbou/ESPAsyncWebServer/issues/26
-// The issue is present when using mathieucarbou/Async TCP @ ^3.1.2 (which is based on ESPHome fork)
-// The issue is not present when directly using https://github.com/me-no-dev/AsyncTCP
 
 #include <DNSServer.h>
 #ifdef ESP32
@@ -76,20 +74,20 @@ void setup() {
     })
     .setFilter(ON_STA_FILTER);
 
-  assert(WiFi.softAP("esp-captive-portal"));
-  dnsServer.start(53, "*", WiFi.softAPIP());
-  server.begin();
-  Serial.println("Captive portal started!");
+  // assert(WiFi.softAP("esp-captive-portal"));
+  // dnsServer.start(53, "*", WiFi.softAPIP());
+  // server.begin();
+  // Serial.println("Captive portal started!");
 
-  while (!hit1) {
-    dnsServer.processNextRequest();
-    yield();
-  }
-  delay(1000); // Wait for the client to process the response
+  // while (!hit1) {
+  //   dnsServer.processNextRequest();
+  //   yield();
+  // }
+  // delay(1000); // Wait for the client to process the response
 
-  Serial.println("Captive portal opened, stopping it and connecting to WiFi...");
-  dnsServer.stop();
-  WiFi.softAPdisconnect();
+  // Serial.println("Captive portal opened, stopping it and connecting to WiFi...");
+  // dnsServer.stop();
+  // WiFi.softAPdisconnect();
 
   WiFi.persistent(false);
   WiFi.begin("IoT");
@@ -97,13 +95,13 @@ void setup() {
     delay(500);
   }
   Serial.println("Connected to WiFi with IP address: " + WiFi.localIP().toString());
+  server.begin();
 
-  while (!hit2) {
-    delay(10);
-  }
-  delay(1000); // Wait for the client to process the response
-
-  ESP.restart();
+  // while (!hit2) {
+  //   delay(10);
+  // }
+  // delay(1000); // Wait for the client to process the response
+  // ESP.restart();
 }
 
 void loop() {

@@ -26,7 +26,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - Added `setAuthentication(const String& username, const String& password)`
 - Added `StreamConcat` example to shoiw how to stream multiple files in one response
 - Remove filename after inline in Content-Disposition header according to RFC2183
-- Depends on `mathieucarbou/Async TCP @ ^3.1.2`
+- Depends on `mathieucarbou/Async TCP @ ^3.1.3`
 - Arduino 3 / ESP-IDF 5.1 compatibility
 
 ## Documentation
