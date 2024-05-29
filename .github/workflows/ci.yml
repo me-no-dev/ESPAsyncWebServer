@@ -59,6 +59,9 @@ jobs:
       - name: Build SimpleServer
         run: arduino-cli compile --library . --warnings none -b ${{ matrix.board }} "examples/SimpleServer/SimpleServer.ino"
 
+      - name: Build Filters
+        run: arduino-cli compile --library . --warnings none -b ${{ matrix.board }} "examples/Filters/Filters.ino"
+
   platformio:
     name: pio ${{ matrix.name }}
     runs-on: ubuntu-latest
@@ -112,3 +115,5 @@ jobs:
         run: platformio ci "examples/CaptivePortal/CaptivePortal.ino" -l '.' -b ${{ matrix.board }} ${{ matrix.opts }}
       - name: Build SimpleServer
         run: platformio ci "examples/SimpleServer/SimpleServer.ino" -l '.' -b ${{ matrix.board }} ${{ matrix.opts }}
+      - name: Build Filters
+        run: platformio ci "examples/Filters/Filters.ino" -l '.' -b ${{ matrix.board }} ${{ matrix.opts }}
