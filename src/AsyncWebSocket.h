@@ -257,28 +257,32 @@ class AsyncWebSocket: public AsyncWebHandler {
     void text(uint32_t id, const char *message);
     void text(uint32_t id, const String &message);
     void text(uint32_t id, const __FlashStringHelper *message);
+    void text(uint32_t id, AsyncWebSocketMessageBuffer *buffer);
+    void text(uint32_t id, std::shared_ptr<std::vector<uint8_t>> buffer);
 
-    void textAll(std::shared_ptr<std::vector<uint8_t>> buffer);
     void textAll(const uint8_t *message, size_t len);
     void textAll(const char * message, size_t len);
     void textAll(const char * message);
     void textAll(const String &message);
-    void textAll(const __FlashStringHelper *message); //  need to convert
+    void textAll(const __FlashStringHelper *message);
     void textAll(AsyncWebSocketMessageBuffer *buffer);
+    void textAll(std::shared_ptr<std::vector<uint8_t>> buffer);
 
     void binary(uint32_t id, const uint8_t *message, size_t len);
     void binary(uint32_t id, const char *message, size_t len);
     void binary(uint32_t id, const char *message);
     void binary(uint32_t id, const String &message);
     void binary(uint32_t id, const __FlashStringHelper *message, size_t len);
+    void binary(uint32_t id, AsyncWebSocketMessageBuffer *buffer);
+    void binary(uint32_t id, std::shared_ptr<std::vector<uint8_t>> buffer);
 
-    void binaryAll(std::shared_ptr<std::vector<uint8_t>> buffer);
     void binaryAll(const uint8_t *message, size_t len);
     void binaryAll(const char *message, size_t len);
     void binaryAll(const char *message);
     void binaryAll(const String &message);
     void binaryAll(const __FlashStringHelper *message, size_t len);
     void binaryAll(AsyncWebSocketMessageBuffer *buffer);
+    void binaryAll(std::shared_ptr<std::vector<uint8_t>> buffer);
 
     size_t printf(uint32_t id, const char *format, ...)  __attribute__ ((format (printf, 3, 4)));
     size_t printfAll(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
