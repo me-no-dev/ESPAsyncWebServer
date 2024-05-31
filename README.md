@@ -28,6 +28,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - Remove filename after inline in Content-Disposition header according to RFC2183
 - Depends on `mathieucarbou/Async TCP @ ^3.1.4`
 - Arduino 3 / ESP-IDF 5.1 compatibility
+- Added all flavors of `binary()`, `text()`, `binaryAll()` and `textAll()` in `AsyncWebSocket`
 
 ## Documentation
 
