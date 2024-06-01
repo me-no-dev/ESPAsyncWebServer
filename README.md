@@ -29,6 +29,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - Depends on `mathieucarbou/Async TCP @ ^3.1.4`
 - Arduino 3 / ESP-IDF 5.1 compatibility
 - Added all flavors of `binary()`, `text()`, `binaryAll()` and `textAll()` in `AsyncWebSocket`
+- Added `setCloseClientOnQueueFull(bool)` which can be set on a client to either close the connection or discard messages but not close the connection when the queue is full
 
 ## Documentation
 

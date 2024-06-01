@@ -137,6 +137,7 @@ class AsyncWebSocketClient {
 
     std::deque<AsyncWebSocketControl> _controlQueue;
     std::deque<AsyncWebSocketMessage> _messageQueue;
+    bool closeWhenFull = true;
 
     uint8_t _pstate;
     AwsFrameInfo _pinfo;
@@ -163,6 +164,27 @@ class AsyncWebSocketClient {
     AsyncWebSocket *server(){ return _server; }
     const AsyncWebSocket *server() const { return _server; }
     AwsFrameInfo const &pinfo() const { return _pinfo; }
+
+    //  - If "true" (default), the connection will be closed if the message queue is full.
+    // This is the default behavior in yubox-node-org, which is not silently discarding messages but instead closes the connection.
+    // The big issue with this behavior is  that is can cause the UI to automatically re-create a new WS connection, which can be filled again, 
+    // and so on, causing a resource exhaustion.
+    // 
+    // - If "false", the incoming message will be discarded if the queue is full.
+    // This is the default behavior in the original ESPAsyncWebServer library from me-no-dev.
+    // This behavior allows the best performance at the expense of unreliable message delivery in case the queue is full (some messages may be lost).
+    // 
+    // - In any case, when the queue is full, a message is logged.
+    // - IT is recommended to use the methods queueIsFull(), availableForWriteAll(), availableForWrite(clientId) to check if the queue is full before sending a message.
+    // 
+    // Usage:
+    //  - can be set in the onEvent listener when connecting (event type is: WS_EVT_CONNECT)
+    // 
+    // Use cases:, 
+    // - if using websocket to send logging messages, maybe some loss is acceptable.
+    // - But if using websocket to send UI update messages, maybe the connection should be closed and the UI redrawn.
+    void setCloseClientOnQueueFull(bool close) { closeWhenFull = close; }
+    bool willCloseClientOnQueueFull() const { return closeWhenFull; }
 
     IPAddress remoteIP() const;
     uint16_t  remotePort() const;

@@ -461,13 +461,22 @@ void AsyncWebSocketClient::_queueMessage(std::shared_ptr<std::vector<uint8_t>> b
         if (_messageQueue.size() >= WS_MAX_QUEUED_MESSAGES)
         {
             l.unlock();
+            if(closeWhenFull)
+            {
 #ifdef ESP8266
-            ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued, closing connection\n");
+                ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: closing connection\n");
 #else
-            log_e("Too many messages queued: closing connection");
+                log_e("Too many messages queued: closing connection");
 #endif
-            _status = WS_DISCONNECTED;
-            if (_client) _client->close(true);
+                _status = WS_DISCONNECTED;
+                if (_client) _client->close(true);
+            } else {
+#ifdef ESP8266
+                ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: discarding new message\n");
+#else
+                log_e("Too many messages queued: discarding new message");
+#endif
+            }
             return;
         }
         else
