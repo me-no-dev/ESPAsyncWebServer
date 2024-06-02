@@ -6,8 +6,8 @@ class StreamConcat : public Stream {
   public:
     StreamConcat(Stream* s1, Stream* s2) : _s1(s1), _s2(s2) {}
 
-    size_t write(const uint8_t* p, size_t n) override { return 0; }
-    size_t write(uint8_t c) override { return 0; }
+    size_t write(__unused const uint8_t* p, __unused size_t n) override { return 0; }
+    size_t write(__unused uint8_t c) override { return 0; }
     void flush() override {}
 
     int available() override { return _s1->available() + _s2->available(); }

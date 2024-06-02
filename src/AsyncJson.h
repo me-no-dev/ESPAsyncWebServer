@@ -264,7 +264,7 @@ class AsyncCallbackJsonWebHandler : public AsyncWebHandler {
         request->send(500);
       }
     }
-    virtual void handleUpload(AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final) override final {
+    virtual void handleUpload(__unused AsyncWebServerRequest* request, __unused const String& filename, __unused size_t index, __unused uint8_t* data, __unused size_t len, __unused bool final) override final {
     }
     virtual void handleBody(AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) override final {
       if (_onRequest) {

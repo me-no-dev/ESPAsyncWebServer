@@ -16,7 +16,7 @@ public:
   CaptiveRequestHandler() {}
   virtual ~CaptiveRequestHandler() {}
 
-  bool canHandle(AsyncWebServerRequest *request){
+  bool canHandle(__unused AsyncWebServerRequest *request){
     //request->addInterestingHeader("ANY");
     return true;
   }
