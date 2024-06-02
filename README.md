@@ -36,7 +36,8 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 Usage and API stays the same as the original library.
 Please look at the original libraries for more examples and documentation.
 
-[https://github.com/yubox-node-org/ESPAsyncWebServer](https://github.com/yubox-node-org/ESPAsyncWebServer)
+- [https://github.com/me-no-dev/ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) (original library)
+- [https://github.com/yubox-node-org/ESPAsyncWebServer](https://github.com/yubox-node-org/ESPAsyncWebServer) (fork of the original library)
 
 ## `AsyncWebSocketMessageBuffer` and `makeBuffer()`
 
@@ -44,9 +45,8 @@ The fork from `yubox-node-org` introduces some breaking API changes compared to 
 
 This fork is compatible with the original library from `me-no-dev` regarding WebSocket, and wraps the optimizations done by `yubox-node-org` in the `AsyncWebSocketMessageBuffer` class.
 So you have the choice of which API to use.
-I strongly suggest to use the optimized API from `yubox-node-org` as it is much more efficient.
 
-Here is an example for serializing a Json document in a websocket message buffer. This code is compatible with any forks, but not optimized:
+Here are examples for serializing a Json document in a websocket message buffer:
 
 ```cpp
 void send(JsonDocument& doc) {
@@ -60,28 +60,16 @@ void send(JsonDocument& doc) {
 }
 ```
 
-Here is an example for serializing a Json document in a more optimized way, and compatible with both forks:
-
 ```cpp
 void send(JsonDocument& doc) {
   const size_t len = measureJson(doc);
 
-#if defined(ASYNCWEBSERVER_FORK_mathieucarbou)
-
-  // this fork (originally from yubox-node-org), uses another API with shared pointer that better support concurrent use cases then the original project
+  // this fork (originally from yubox-node-org), uses another API with shared pointer
   auto buffer = std::make_shared<std::vector<uint8_t>>(len);
   assert(buffer); // up to you to keep or remove this
   serializeJson(doc, buffer->data(), len);
   _ws->textAll(std::move(buffer));
-
-#else
-
-  // original API from me-no-dev
-  AsyncWebSocketMessageBuffer* buffer = _ws->makeBuffer(len);
-  assert(buffer); // up to you to keep or remove this
-  serializeJson(doc, buffer->get(), len);
-  _ws->textAll(buffer);
-
-#endif
 }
 ```
+
+I recommend to use the official API `AsyncWebSocketMessageBuffer` to retain further compatibility.
