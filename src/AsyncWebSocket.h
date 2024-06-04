@@ -24,10 +24,16 @@
 #include <Arduino.h>
 #ifdef ESP32
 #include <AsyncTCP.h>
+#if !defined(WS_MAX_QUEUED_MESSAGES) || WS_MAX_QUEUED_MESSAGES < 1
+#undef WS_MAX_QUEUED_MESSAGES
 #define WS_MAX_QUEUED_MESSAGES 32
+#endif // !defined(WS_MAX_QUEUED_MESSAGES) || WS_MAX_QUEUED_MESSAGES < 1
 #else
 #include <ESPAsyncTCP.h>
+#if !defined(WS_MAX_QUEUED_MESSAGES) || WS_MAX_QUEUED_MESSAGES < 1
+#undef WS_MAX_QUEUED_MESSAGES
 #define WS_MAX_QUEUED_MESSAGES 8
+#endif // !defined(WS_MAX_QUEUED_MESSAGES) || WS_MAX_QUEUED_MESSAGES < 1
 #endif
 #include <ESPAsyncWebServer.h>
 
