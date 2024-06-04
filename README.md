@@ -73,3 +73,18 @@ void send(JsonDocument& doc) {
 ```
 
 I recommend to use the official API `AsyncWebSocketMessageBuffer` to retain further compatibility.
+
+## Stack size and queues
+
+Here are some important flags to tweak depending on your needs:
+
+```cpp
+  // Async TCP queue size
+  -D CONFIG_ASYNC_TCP_QUEUE_SIZE=128
+  // Async TCP async task core
+  -D CONFIG_ASYNC_TCP_RUNNING_CORE=1
+  // Async TCP async stac ksize
+  -D CONFIG_ASYNC_TCP_STACK_SIZE=8096
+  // WebSocket queue size
+  -D WS_MAX_QUEUED_MESSAGES=64
+```
