@@ -28,6 +28,11 @@
 #else
 #include <Hash.h>
 #endif
+#ifdef ESP32
+#if ESP_IDF_VERSION_MAJOR >= 5
+#include "rom/ets_sys.h"
+#endif
+#endif
 
 #define MAX_PRINTF_LEN 64
 
