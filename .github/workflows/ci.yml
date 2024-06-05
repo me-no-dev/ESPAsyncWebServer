@@ -80,7 +80,7 @@ jobs:
           - name: esp32dev|arduino-3
             board: esp32dev
             platform: espressif32
-            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/arduino-esp32/releases/download/3.0.0/esp32-arduino-libs-3.0.0.zip'"
+            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.1, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/arduino-esp32/releases/download/3.0.1/esp32-arduino-libs-3.0.1.zip'"
           - name: esp32-s3-devkitc-1|arduino
             board: esp32-s3-devkitc-1
             platform: espressif32
@@ -92,7 +92,7 @@ jobs:
           - name: esp32-s3-devkitc-1|arduino-3
             board: esp32-s3-devkitc-1
             platform: espressif32
-            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.0, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/arduino-esp32/releases/download/3.0.0/esp32-arduino-libs-3.0.0.zip'"
+            opts: "--project-option 'platform_packages=platformio/framework-arduinoespressif32 @ https://github.com/espressif/arduino-esp32.git#3.0.1, platform_packages=platformio/framework-arduinoespressif32-libs @ https://github.com/espressif/arduino-esp32/releases/download/3.0.1/esp32-arduino-libs-3.0.1.zip'"
           - name: huzzah|espressif8266
             board: huzzah
             platform: espressif8266
