@@ -26,7 +26,11 @@
 #include <libb64/cencode.h>
 
 #ifndef ESP8266
-#include "mbedtls/sha1.h"
+#if ESP_IDF_VERSION_MAJOR < 5
+#include "./port/SHA1Builder.h"
+#else
+#include <SHA1Builder.h>
+#endif
 #include <rom/ets_sys.h>
 #else
 #include <Hash.h>
@@ -1305,19 +1309,12 @@ AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket
 #ifdef ESP8266
     sha1(key + WS_STR_UUID, hash);
 #else
-    (String&)key += WS_STR_UUID;
-    mbedtls_sha1_context ctx;
-    mbedtls_sha1_init(&ctx);
-#if ESP_IDF_VERSION_MAJOR == 5
-    mbedtls_sha1_starts(&ctx);
-    mbedtls_sha1_update(&ctx, (const unsigned char*)key.c_str(), key.length());
-    mbedtls_sha1_finish(&ctx, hash);
-#else
-    mbedtls_sha1_starts_ret(&ctx);
-    mbedtls_sha1_update_ret(&ctx, (const unsigned char*)key.c_str(), key.length());
-    mbedtls_sha1_finish_ret(&ctx, hash);
-#endif
-    mbedtls_sha1_free(&ctx);
+    String k = key + WS_STR_UUID;
+    SHA1Builder sha1;
+    sha1.begin();
+    sha1.add((const uint8_t*)k.c_str(), k.length());
+    sha1.calculate();
+    sha1.getBytes(hash);
 #endif
     base64_encodestate _state;
     base64_init_encodestate(&_state);
