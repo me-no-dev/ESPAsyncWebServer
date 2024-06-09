@@ -1292,8 +1292,8 @@ AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket
 #else
     String k;
     k.reserve(key.length() + WS_STR_UUID_LEN);
-    k += key;
-    k += WS_STR_UUID;
+    k.concat(key);
+    k.concat(WS_STR_UUID);
     SHA1Builder sha1;
     sha1.begin();
     sha1.add((const uint8_t*)k.c_str(), k.length());
