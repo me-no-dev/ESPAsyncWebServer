@@ -132,17 +132,11 @@ size_t webSocketSendFrame(AsyncClient *client, bool final, uint8_t opcode, bool 
  *    AsyncWebSocketMessageBuffer
  */
 
-AsyncWebSocketMessageBuffer::AsyncWebSocketMessageBuffer()
-    : _buffer(std::make_shared<std::vector<uint8_t>>(0)) 
-{
-}
-
-AsyncWebSocketMessageBuffer::AsyncWebSocketMessageBuffer(uint8_t* data, size_t size)
+AsyncWebSocketMessageBuffer::AsyncWebSocketMessageBuffer(const uint8_t* data, size_t size)
     : _buffer(std::make_shared<std::vector<uint8_t>>(size)) 
 {
     if (_buffer->capacity() < size) {
-        _buffer.reset();
-        _buffer = std::make_shared<std::vector<uint8_t>>(0);
+        _buffer->reserve(size);
     } else {
         std::memcpy(_buffer->data(), data, size);
     }
@@ -152,14 +146,8 @@ AsyncWebSocketMessageBuffer::AsyncWebSocketMessageBuffer(size_t size)
     : _buffer(std::make_shared<std::vector<uint8_t>>(size)) 
 {
     if (_buffer->capacity() < size) {
-        _buffer.reset();
-        _buffer = std::make_shared<std::vector<uint8_t>>(0);
+        _buffer->reserve(size);
     }
-}
-
-AsyncWebSocketMessageBuffer::~AsyncWebSocketMessageBuffer() 
-{
-    _buffer.reset();
 }
 
 bool AsyncWebSocketMessageBuffer::reserve(size_t size) 
@@ -228,7 +216,7 @@ public:
  */
 
 
-AsyncWebSocketMessage::AsyncWebSocketMessage(std::shared_ptr<std::vector<uint8_t>> buffer, uint8_t opcode, bool mask) :
+AsyncWebSocketMessage::AsyncWebSocketMessage(AsyncWebSocketSharedBuffer buffer, uint8_t opcode, bool mask) :
     _WSbuffer{buffer},
     _opcode(opcode & 0x07),
     _mask{mask},
@@ -449,7 +437,7 @@ void AsyncWebSocketClient::_queueControl(uint8_t opcode, const uint8_t *data, si
         _runQueue();
 }
 
-void AsyncWebSocketClient::_queueMessage(std::shared_ptr<std::vector<uint8_t>> buffer, uint8_t opcode, bool mask)
+void AsyncWebSocketClient::_queueMessage(AsyncWebSocketSharedBuffer buffer, uint8_t opcode, bool mask)
 {
     if(_status != WS_CONNECTED)
         return;
@@ -707,7 +695,7 @@ size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...)
 #endif
 
 namespace {
-std::shared_ptr<std::vector<uint8_t>> makeSharedBuffer(const uint8_t *message, size_t len)
+AsyncWebSocketSharedBuffer makeSharedBuffer(const uint8_t *message, size_t len)
 {
     auto buffer = std::make_shared<std::vector<uint8_t>>(len);
     std::memcpy(buffer->data(), message, len);
@@ -723,7 +711,7 @@ void AsyncWebSocketClient::text(AsyncWebSocketMessageBuffer * buffer)
     }
 }
 
-void AsyncWebSocketClient::text(std::shared_ptr<std::vector<uint8_t>> buffer)
+void AsyncWebSocketClient::text(AsyncWebSocketSharedBuffer buffer)
 {
     _queueMessage(buffer);
 }
@@ -748,6 +736,7 @@ void AsyncWebSocketClient::text(const String &message)
     text(message.c_str(), message.length());
 }
 
+#ifndef ESP32
 void AsyncWebSocketClient::text(const __FlashStringHelper *data)
 {
     PGM_P p = reinterpret_cast<PGM_P>(data);
@@ -768,6 +757,7 @@ void AsyncWebSocketClient::text(const __FlashStringHelper *data)
         free(message);
     }
 }
+#endif  // ESP32
 
 void AsyncWebSocketClient::binary(AsyncWebSocketMessageBuffer * buffer)
 {
@@ -777,7 +767,7 @@ void AsyncWebSocketClient::binary(AsyncWebSocketMessageBuffer * buffer)
     }
 }
 
-void AsyncWebSocketClient::binary(std::shared_ptr<std::vector<uint8_t>> buffer)
+void AsyncWebSocketClient::binary(AsyncWebSocketSharedBuffer buffer)
 {
     _queueMessage(buffer, WS_BINARY);
 }
@@ -802,6 +792,7 @@ void AsyncWebSocketClient::binary(const String &message)
     binary(message.c_str(), message.length());
 }
 
+#ifndef ESP32
 void AsyncWebSocketClient::binary(const __FlashStringHelper *data, size_t len)
 {
     PGM_P p = reinterpret_cast<PGM_P>(data);
@@ -812,7 +803,7 @@ void AsyncWebSocketClient::binary(const __FlashStringHelper *data, size_t len)
         free(message);
     }
 }
-
+#endif
 IPAddress AsyncWebSocketClient::remoteIP() const
 {
     if (!_client)
@@ -834,16 +825,6 @@ uint16_t AsyncWebSocketClient::remotePort() const
 /*
  * Async Web Socket - Each separate socket location
  */
-
-AsyncWebSocket::AsyncWebSocket(const String& url)
-  :_url(url)
-  ,_cNextId(1)
-  ,_enabled(true)
-{
-  _eventHandler = NULL;
-}
-
-AsyncWebSocket::~AsyncWebSocket(){}
 
 void AsyncWebSocket::_handleEvent(AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
   if(_eventHandler != NULL){
@@ -880,7 +861,7 @@ size_t AsyncWebSocket::count() const
 
 AsyncWebSocketClient * AsyncWebSocket::client(uint32_t id)
 {
-    const auto iter = std::find_if(std::begin(_clients), std::end(_clients),
+    const auto iter = std::find_if(_clients.begin(), _clients.end(),
                                     [id](const AsyncWebSocketClient &c){ return c.id() == id && c.status() == WS_CONNECTED; });
     if (iter == std::end(_clients))
         return nullptr;
@@ -946,6 +927,7 @@ void AsyncWebSocket::text(uint32_t id, const String &message)
 {
     text(id, message.c_str(), message.length());
 }
+#ifndef ESP32
 void AsyncWebSocket::text(uint32_t id, const __FlashStringHelper *data)
 {
     PGM_P p = reinterpret_cast<PGM_P>(data);
@@ -967,6 +949,7 @@ void AsyncWebSocket::text(uint32_t id, const __FlashStringHelper *data)
         free(message);
     }
 }
+#endif  // ESP32
 void AsyncWebSocket::text(uint32_t id, AsyncWebSocketMessageBuffer *buffer) 
 {
     if (buffer) {
@@ -974,7 +957,7 @@ void AsyncWebSocket::text(uint32_t id, AsyncWebSocketMessageBuffer *buffer)
         delete buffer;
     }
 }
-void AsyncWebSocket::text(uint32_t id, std::shared_ptr<std::vector<uint8_t>> buffer) 
+void AsyncWebSocket::text(uint32_t id, AsyncWebSocketSharedBuffer buffer) 
 {
     if (AsyncWebSocketClient *c = client(id))
         c->text(buffer);
@@ -996,6 +979,7 @@ void AsyncWebSocket::textAll(const String &message)
 {
     textAll(message.c_str(), message.length());
 }
+#ifndef ESP32
 void AsyncWebSocket::textAll(const __FlashStringHelper *data)
 {
     PGM_P p = reinterpret_cast<PGM_P>(data);
@@ -1016,6 +1000,7 @@ void AsyncWebSocket::textAll(const __FlashStringHelper *data)
         free(message);
     }
 }
+#endif  // ESP32
 void AsyncWebSocket::textAll(AsyncWebSocketMessageBuffer * buffer)
 {
     if (buffer) {
@@ -1024,7 +1009,7 @@ void AsyncWebSocket::textAll(AsyncWebSocketMessageBuffer * buffer)
     }
 }
 
-void AsyncWebSocket::textAll(std::shared_ptr<std::vector<uint8_t>> buffer)
+void AsyncWebSocket::textAll(AsyncWebSocketSharedBuffer buffer)
 {
     for (auto &c : _clients)
         if (c.status() == WS_CONNECTED)
@@ -1048,6 +1033,7 @@ void AsyncWebSocket::binary(uint32_t id, const String &message)
 {
     binary(id, message.c_str(), message.length());
 }
+#ifndef ESP32
 void AsyncWebSocket::binary(uint32_t id, const __FlashStringHelper *data, size_t len)
 {
     PGM_P p = reinterpret_cast<PGM_P>(data);
@@ -1059,6 +1045,7 @@ void AsyncWebSocket::binary(uint32_t id, const __FlashStringHelper *data, size_t
         free(message);
     }
 }
+#endif  // ESP32
 void AsyncWebSocket::binary(uint32_t id, AsyncWebSocketMessageBuffer *buffer)
 {
     if (buffer) {
@@ -1066,7 +1053,7 @@ void AsyncWebSocket::binary(uint32_t id, AsyncWebSocketMessageBuffer *buffer)
         delete buffer;
     }
 }
-void AsyncWebSocket::binary(uint32_t id, std::shared_ptr<std::vector<uint8_t>> buffer)
+void AsyncWebSocket::binary(uint32_t id, AsyncWebSocketSharedBuffer buffer)
 {
     if (AsyncWebSocketClient *c = client(id))
         c->binary(buffer);
@@ -1089,6 +1076,7 @@ void AsyncWebSocket::binaryAll(const String &message)
 {
     binaryAll(message.c_str(), message.length());
 }
+#ifndef ESP32
 void AsyncWebSocket::binaryAll(const __FlashStringHelper *data, size_t len)
 {
     PGM_P p = reinterpret_cast<PGM_P>(data);
@@ -1100,6 +1088,7 @@ void AsyncWebSocket::binaryAll(const __FlashStringHelper *data, size_t len)
         free(message);
     }
 }
+#endif  // ESP32
 void AsyncWebSocket::binaryAll(AsyncWebSocketMessageBuffer * buffer)
 {
     if (buffer) {
@@ -1107,7 +1096,7 @@ void AsyncWebSocket::binaryAll(AsyncWebSocketMessageBuffer * buffer)
         delete buffer;
     }
 }
-void AsyncWebSocket::binaryAll(std::shared_ptr<std::vector<uint8_t>> buffer)
+void AsyncWebSocket::binaryAll(AsyncWebSocketSharedBuffer buffer)
 {
     for (auto &c : _clients)
         if (c.status() == WS_CONNECTED)
@@ -1139,7 +1128,7 @@ size_t AsyncWebSocket::printfAll(const char *format, ...)
     va_end(arg);
     delete[] temp;
 
-    std::shared_ptr<std::vector<uint8_t>> buffer = std::make_shared<std::vector<uint8_t>>(len);
+    AsyncWebSocketSharedBuffer buffer = std::make_shared<std::vector<uint8_t>>(len);
 
     va_start(arg, format);
     vsnprintf( (char *)buffer->data(), len + 1, format, arg);
@@ -1175,7 +1164,7 @@ size_t AsyncWebSocket::printfAll_P(PGM_P formatP, ...)
     va_end(arg);
     delete[] temp;
 
-    std::shared_ptr<std::vector<uint8_t>> buffer = std::make_shared<std::vector<uint8_t>>(len + 1);
+    AsyncWebSocketSharedBuffer buffer = std::make_shared<std::vector<uint8_t>>(len + 1);
 
     va_start(arg, formatP);
     vsnprintf_P((char *)buffer->data(), len + 1, formatP, arg);
@@ -1194,6 +1183,8 @@ const char __WS_STR_KEY[] PROGMEM = { "Sec-WebSocket-Key" };
 const char __WS_STR_PROTOCOL[] PROGMEM = { "Sec-WebSocket-Protocol" };
 const char __WS_STR_ACCEPT[] PROGMEM = { "Sec-WebSocket-Accept" };
 const char __WS_STR_UUID[] PROGMEM = { "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" };
+
+#define WS_STR_UUID_LEN 36
 
 #define WS_STR_CONNECTION FPSTR(__WS_STR_CONNECTION)
 #define WS_STR_UPGRADE FPSTR(__WS_STR_UPGRADE)
@@ -1270,7 +1261,7 @@ AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(size_t size)
     }
 }
 
-AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(uint8_t * data, size_t size)
+AsyncWebSocketMessageBuffer * AsyncWebSocket::makeBuffer(const uint8_t * data, size_t size)
 {
     AsyncWebSocketMessageBuffer * buffer = new AsyncWebSocketMessageBuffer(data, size);
     if (buffer->length() != size)
@@ -1293,23 +1284,16 @@ AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket
     _code = 101;
     _sendContentLength = false;
 
-    uint8_t * hash = (uint8_t*)malloc(20);
-    if(hash == NULL)
-    {
-        _state = RESPONSE_FAILED;
-        return;
-    }
-    char * buffer = (char *) malloc(33);
-    if(buffer == NULL)
-    {
-        free(hash);
-        _state = RESPONSE_FAILED;
-        return;
-    }
+    uint8_t hash[20];
+    char buffer[33];
+
 #ifdef ESP8266
     sha1(key + WS_STR_UUID, hash);
 #else
-    String k = key + WS_STR_UUID;
+    String k;
+    k.reserve(key.length() + WS_STR_UUID_LEN);
+    k += key;
+    k += WS_STR_UUID;
     SHA1Builder sha1;
     sha1.begin();
     sha1.add((const uint8_t*)k.c_str(), k.length());
@@ -1323,8 +1307,6 @@ AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket
     addHeader(WS_STR_CONNECTION, WS_STR_UPGRADE);
     addHeader(WS_STR_UPGRADE, F("websocket"));
     addHeader(WS_STR_ACCEPT,buffer);
-    free(buffer);
-    free(hash);
 }
 
 void AsyncWebSocketResponse::_respond(AsyncWebServerRequest *request)
@@ -1334,7 +1316,7 @@ void AsyncWebSocketResponse::_respond(AsyncWebServerRequest *request)
         request->client()->close(true);
         return;
     }
-    String out = _assembleHead(request->version());
+    String out(_assembleHead(request->version()));
     request->client()->write(out.c_str(), _headLength);
     _state = RESPONSE_WAIT_ACK;
 }

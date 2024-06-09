@@ -54,6 +54,8 @@
 #define DEFAULT_MAX_WS_CLIENTS 4
 #endif
 
+using AsyncWebSocketSharedBuffer = std::shared_ptr<std::vector<uint8_t>>;
+
 class AsyncWebSocket;
 class AsyncWebSocketResponse;
 class AsyncWebSocketClient;
@@ -93,13 +95,13 @@ class AsyncWebSocketMessageBuffer {
   friend AsyncWebSocketClient;
 
   private:
-    std::shared_ptr<std::vector<uint8_t>> _buffer;
+    AsyncWebSocketSharedBuffer _buffer;
 
   public:
-    AsyncWebSocketMessageBuffer();
-    AsyncWebSocketMessageBuffer(size_t size);
-    AsyncWebSocketMessageBuffer(uint8_t* data, size_t size);
-    ~AsyncWebSocketMessageBuffer();
+    AsyncWebSocketMessageBuffer(){}
+    explicit AsyncWebSocketMessageBuffer(size_t size);
+    AsyncWebSocketMessageBuffer(const uint8_t* data, size_t size);
+    //~AsyncWebSocketMessageBuffer();
     bool reserve(size_t size);
     uint8_t* get() { return _buffer->data(); }
     size_t length() const { return _buffer->size(); }
@@ -108,7 +110,7 @@ class AsyncWebSocketMessageBuffer {
 class AsyncWebSocketMessage
 {
 private:
-    std::shared_ptr<std::vector<uint8_t>> _WSbuffer;
+    AsyncWebSocketSharedBuffer _WSbuffer;
     uint8_t _opcode{WS_TEXT};
     bool _mask{false};
     AwsMessageStatus _status{WS_MSG_ERROR};
@@ -117,7 +119,7 @@ private:
     size_t _acked{};
 
 public:
-    AsyncWebSocketMessage(std::shared_ptr<std::vector<uint8_t>> buffer, uint8_t opcode=WS_TEXT, bool mask=false);
+    AsyncWebSocketMessage(AsyncWebSocketSharedBuffer buffer, uint8_t opcode=WS_TEXT, bool mask=false);
 
     bool finished() const { return _status != WS_MSG_SENDING; }
     bool betweenFrames() const { return _acked == _ack; }
@@ -146,7 +148,7 @@ class AsyncWebSocketClient {
     uint32_t _keepAlivePeriod;
 
     void _queueControl(uint8_t opcode, const uint8_t *data=NULL, size_t len=0, bool mask=false);
-    void _queueMessage(std::shared_ptr<std::vector<uint8_t>> buffer, uint8_t opcode=WS_TEXT, bool mask=false);
+    void _queueMessage(AsyncWebSocketSharedBuffer buffer, uint8_t opcode=WS_TEXT, bool mask=false);
     void _runQueue();
     void _clearQueue();
 
@@ -204,7 +206,7 @@ class AsyncWebSocketClient {
     }
 
     //data packets
-    void message(std::shared_ptr<std::vector<uint8_t>> buffer, uint8_t opcode=WS_TEXT, bool mask=false) { _queueMessage(buffer, opcode, mask); }
+    void message(AsyncWebSocketSharedBuffer buffer, uint8_t opcode=WS_TEXT, bool mask=false) { _queueMessage(buffer, opcode, mask); }
     bool queueIsFull() const;
     size_t queueLen() const;
 
@@ -213,20 +215,24 @@ class AsyncWebSocketClient {
     size_t printf_P(PGM_P formatP, ...)  __attribute__ ((format (printf, 2, 3)));
 #endif
 
-    void text(std::shared_ptr<std::vector<uint8_t>> buffer);
+    void text(AsyncWebSocketSharedBuffer buffer);
     void text(const uint8_t *message, size_t len);
     void text(const char *message, size_t len);
     void text(const char *message);
     void text(const String &message);
+#ifndef ESP32
     void text(const __FlashStringHelper *message);
+#endif  // ESP32
     void text(AsyncWebSocketMessageBuffer *buffer); 
 
-    void binary(std::shared_ptr<std::vector<uint8_t>> buffer);
+    void binary(AsyncWebSocketSharedBuffer buffer);
     void binary(const uint8_t *message, size_t len);
     void binary(const char * message, size_t len);
     void binary(const char * message);
     void binary(const String &message);
+#ifndef ESP32
     void binary(const __FlashStringHelper *message, size_t len);
+#endif  // ESP32
     void binary(AsyncWebSocketMessageBuffer *buffer); 
 
     bool canSend() const;
@@ -240,8 +246,8 @@ class AsyncWebSocketClient {
     void _onData(void *pbuf, size_t plen);
 };
 
-typedef std::function<bool(AsyncWebServerRequest *request)> AwsHandshakeHandler;
-typedef std::function<void(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)> AwsEventHandler;
+using AwsHandshakeHandler = std::function<bool(AsyncWebServerRequest *request)>;
+using AwsEventHandler = std::function<void(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)>;
 
 //WebServer Handler implementation that plays the role of a socket server
 class AsyncWebSocket: public AsyncWebHandler {
@@ -249,14 +255,15 @@ class AsyncWebSocket: public AsyncWebHandler {
     String _url;
     std::list<AsyncWebSocketClient> _clients;
     uint32_t _cNextId;
-    AwsEventHandler _eventHandler;
-	AwsHandshakeHandler _handshakeHandler;
+    AwsEventHandler _eventHandler{nullptr};
+	  AwsHandshakeHandler _handshakeHandler;
     bool _enabled;
     AsyncWebLock _lock;
 
   public:
-    AsyncWebSocket(const String& url);
-    ~AsyncWebSocket();
+    explicit AsyncWebSocket(const char* url) : _url(url) ,_cNextId(1), _enabled(true) {}
+    AsyncWebSocket(const String& url) :_url(url) ,_cNextId(1),_enabled(true) {}
+    ~AsyncWebSocket(){};
     const char * url() const { return _url.c_str(); }
     void enable(bool e){ _enabled = e; }
     bool enabled() const { return _enabled; }
@@ -265,7 +272,7 @@ class AsyncWebSocket: public AsyncWebHandler {
 
     size_t count() const;
     AsyncWebSocketClient * client(uint32_t id);
-    bool hasClient(uint32_t id){ return client(id) != NULL; }
+    bool hasClient(uint32_t id){ return client(id) != nullptr; }
 
     void close(uint32_t id, uint16_t code=0, const char * message=NULL);
     void closeAll(uint16_t code=0, const char * message=NULL);
@@ -278,33 +285,41 @@ class AsyncWebSocket: public AsyncWebHandler {
     void text(uint32_t id, const char *message, size_t len);
     void text(uint32_t id, const char *message);
     void text(uint32_t id, const String &message);
+#ifndef ESP32
     void text(uint32_t id, const __FlashStringHelper *message);
+#endif  // ESP32
     void text(uint32_t id, AsyncWebSocketMessageBuffer *buffer);
-    void text(uint32_t id, std::shared_ptr<std::vector<uint8_t>> buffer);
+    void text(uint32_t id, AsyncWebSocketSharedBuffer buffer);
 
     void textAll(const uint8_t *message, size_t len);
     void textAll(const char * message, size_t len);
     void textAll(const char * message);
     void textAll(const String &message);
+#ifndef ESP32
     void textAll(const __FlashStringHelper *message);
+#endif  // ESP32
     void textAll(AsyncWebSocketMessageBuffer *buffer);
-    void textAll(std::shared_ptr<std::vector<uint8_t>> buffer);
+    void textAll(AsyncWebSocketSharedBuffer buffer);
 
     void binary(uint32_t id, const uint8_t *message, size_t len);
     void binary(uint32_t id, const char *message, size_t len);
     void binary(uint32_t id, const char *message);
     void binary(uint32_t id, const String &message);
+#ifndef ESP32
     void binary(uint32_t id, const __FlashStringHelper *message, size_t len);
+#endif  // ESP32
     void binary(uint32_t id, AsyncWebSocketMessageBuffer *buffer);
-    void binary(uint32_t id, std::shared_ptr<std::vector<uint8_t>> buffer);
+    void binary(uint32_t id, AsyncWebSocketSharedBuffer buffer);
 
     void binaryAll(const uint8_t *message, size_t len);
     void binaryAll(const char *message, size_t len);
     void binaryAll(const char *message);
     void binaryAll(const String &message);
+#ifndef ESP32
     void binaryAll(const __FlashStringHelper *message, size_t len);
+#endif  // ESP32
     void binaryAll(AsyncWebSocketMessageBuffer *buffer);
-    void binaryAll(std::shared_ptr<std::vector<uint8_t>> buffer);
+    void binaryAll(AsyncWebSocketSharedBuffer buffer);
 
     size_t printf(uint32_t id, const char *format, ...)  __attribute__ ((format (printf, 3, 4)));
     size_t printfAll(const char *format, ...)  __attribute__ ((format (printf, 2, 3)));
@@ -333,7 +348,7 @@ class AsyncWebSocket: public AsyncWebHandler {
 
     //  messagebuffer functions/objects. 
     AsyncWebSocketMessageBuffer * makeBuffer(size_t size = 0); 
-    AsyncWebSocketMessageBuffer * makeBuffer(uint8_t * data, size_t size); 
+    AsyncWebSocketMessageBuffer * makeBuffer(const uint8_t * data, size_t size); 
 
     const std::list<AsyncWebSocketClient> &getClients() const { return _clients; }
 };
