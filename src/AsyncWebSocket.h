@@ -48,10 +48,12 @@
 #endif
 #endif
 
+#ifndef DEFAULT_MAX_WS_CLIENTS
 #ifdef ESP32
 #define DEFAULT_MAX_WS_CLIENTS 8
 #else
 #define DEFAULT_MAX_WS_CLIENTS 4
+#endif
 #endif
 
 using AsyncWebSocketSharedBuffer = std::shared_ptr<std::vector<uint8_t>>;
