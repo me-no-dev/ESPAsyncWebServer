@@ -17,7 +17,11 @@ class StreamConcat : public Stream {
       return c != -1 ? c : _s2->read();
     }
 
+#if defined(TARGET_RP2040)
+    size_t readBytes(char* buffer, size_t length) {
+#else
     size_t readBytes(char* buffer, size_t length) override {
+#endif
       size_t count = _s1->readBytes(buffer, length);
       return count > 0 ? count : _s2->readBytes(buffer, length);
     }

@@ -18,7 +18,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "Arduino.h"
-#ifndef ESP8266
+#if defined(ESP32)
   #include <rom/ets_sys.h>
 #endif
 #include "AsyncEventSource.h"
@@ -190,7 +190,7 @@ void AsyncEventSourceClient::_queueMessage(const char* message, size_t len) {
   if (_messageQueue.size() >= SSE_MAX_QUEUED_MESSAGES) {
 #ifdef ESP8266
     ets_printf(String(F("ERROR: Too many messages queued\n")).c_str());
-#else
+#elif defined(ESP32)
     log_e("Too many messages queued: deleting message");
 #endif
     return;

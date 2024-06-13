@@ -210,7 +210,15 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest* request) {
     String etag;
     if (lw) {
       setLastModified(gmtime(&lw));
+#if defined(TARGET_RP2040)
+      // time_t == long long int
+      const size_t len = 1 + 8 * sizeof(time_t);
+      char buf[len];
+      char* ret = lltoa(lw, buf, len, 10);
+      etag = ret ? String(ret) : String(request->_tempFile.size());
+#else
       etag = String(lw);
+#endif
     } else {
       etag = String(request->_tempFile.size());
     }

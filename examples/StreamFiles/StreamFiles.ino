@@ -6,6 +6,9 @@
 #elif defined(ESP8266)
   #include <ESP8266WiFi.h>
   #include <ESPAsyncTCP.h>
+#elif defined(TARGET_RP2040)
+  #include <WebServer.h>
+  #include <WiFi.h>
 #endif
 #include "StreamConcat.h"
 #include "StreamString.h"
@@ -42,7 +45,11 @@ void setup() {
     StreamConcat stream1(&header, &body);
 
     StreamString content;
+#if defined(TARGET_RP2040)
+    content.printf("FreeHeap: %d", rp2040.getFreeHeap());
+#else
     content.printf("FreeHeap: %" PRIu32, ESP.getFreeHeap());
+#endif
     StreamConcat stream2 = StreamConcat(&stream1, &content);
 
     File footer = LittleFS.open("/footer.html", "r");
@@ -67,7 +74,11 @@ void loop() {
   // dnsServer.processNextRequest();
 
   if (millis() - last > 2000) {
+#if defined(TARGET_RP2040)
+    Serial.printf("FreeHeap: %d", rp2040.getFreeHeap());
+#else
     Serial.printf("FreeHeap: %" PRIu32, ESP.getFreeHeap());
+#endif
     last = millis();
   }
 }

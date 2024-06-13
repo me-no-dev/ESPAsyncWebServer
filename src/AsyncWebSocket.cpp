@@ -25,14 +25,14 @@
 
 #include <libb64/cencode.h>
 
-#ifndef ESP8266
+#if defined(ESP32)
   #if ESP_IDF_VERSION_MAJOR < 5
     #include "./port/SHA1Builder.h"
   #else
     #include <SHA1Builder.h>
   #endif
   #include <rom/ets_sys.h>
-#else
+#elif defined(TARGET_RP2040) || defined(ESP8266)
   #include <Hash.h>
 #endif
 
@@ -417,7 +417,7 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketSharedBuffer buffer, uint
     if (closeWhenFull) {
 #ifdef ESP8266
       ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: closing connection\n");
-#else
+#elif defined(ESP32)
       log_e("Too many messages queued: closing connection");
 #endif
       _status = WS_DISCONNECTED;
@@ -426,7 +426,7 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketSharedBuffer buffer, uint
     } else {
 #ifdef ESP8266
       ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: discarding new message\n");
-#else
+#elif defined(ESP32)
       log_e("Too many messages queued: discarding new message");
 #endif
     }
@@ -1155,7 +1155,7 @@ AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket
   uint8_t hash[20];
   char buffer[33];
 
-#ifdef ESP8266
+#if defined(ESP8266) || defined(TARGET_RP2040)
   sha1(key + WS_STR_UUID, hash);
 #else
   String k;

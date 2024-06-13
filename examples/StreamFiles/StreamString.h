@@ -18,7 +18,11 @@ class StreamString : public Stream {
       return c;
     }
 
+#if defined(TARGET_RP2040)
+    size_t readBytes(char* buffer, size_t length) {
+#else
     size_t readBytes(char* buffer, size_t length) override {
+#endif
       if (length > _buffer.length())
         length = _buffer.length();
       // Don't use _str.ToCharArray() because it inserts a terminator

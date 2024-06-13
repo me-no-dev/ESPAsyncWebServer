@@ -4,13 +4,14 @@
 [![Continuous Integration](https://github.com/mathieucarbou/ESPAsyncWebServer/actions/workflows/ci.yml/badge.svg)](https://github.com/mathieucarbou/ESPAsyncWebServer/actions/workflows/ci.yml)
 [![PlatformIO Registry](https://badges.registry.platformio.org/packages/mathieucarbou/library/ESP%20Async%20WebServer.svg)](https://registry.platformio.org/libraries/mathieucarbou/ESP%20Async%20WebServer)
 
-Asynchronous HTTP and WebSocket Server Library for ESP32, ESP8266
+Asynchronous HTTP and WebSocket Server Library for ESP32, ESP8266 and RP2040
 Supports: WebSocket, SSE, Authentication, Arduino Json 7, File Upload, Static File serving, URL Rewrite, URL Redirect, etc.
 
 This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubox-node-org/ESPAsyncWebServer) and includes all the concurrency fixes.
 
 ## Changes in this fork
 
+- [@ayushsharma82](https://github.com/ayushsharma82) and [@mathieucarbou](https://github.com/mathieucarbou): Add RP2040 support ([#31](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/31))
 - [@mathieucarbou](https://github.com/mathieucarbou): `SSE_MAX_QUEUED_MESSAGES` to control the maximum number of messages that can be queued for a SSE client
 - [@mathieucarbou](https://github.com/mathieucarbou): `write()` function public in `AsyncEventSource.h`
 - [@mathieucarbou](https://github.com/mathieucarbou): `WS_MAX_QUEUED_MESSAGES`: control the maximum number of messages that can be queued for a Websocket client

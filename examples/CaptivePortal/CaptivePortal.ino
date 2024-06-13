@@ -5,6 +5,9 @@
 #elif defined(ESP8266)
   #include <ESP8266WiFi.h>
   #include <ESPAsyncTCP.h>
+#elif defined(TARGET_RP2040)
+  #include <WebServer.h>
+  #include <WiFi.h>
 #endif
 #include "ESPAsyncWebServer.h"
 

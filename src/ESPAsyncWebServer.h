@@ -34,6 +34,11 @@
 #elif defined(ESP8266)
   #include <ESP8266WiFi.h>
   #include <ESPAsyncTCP.h>
+#elif defined(TARGET_RP2040)
+  #include <WiFi.h>
+  #include <AsyncTCP_RP2040W.h>
+  #include <http_parser.h>
+  #include <HTTP_Method.h>
 #else
   #error Platform not supported
 #endif
@@ -61,17 +66,21 @@ class AsyncStaticWebHandler;
 class AsyncCallbackWebHandler;
 class AsyncResponseStream;
 
-#ifndef WEBSERVER_H
-typedef enum {
-  HTTP_GET = 0b00000001,
-  HTTP_POST = 0b00000010,
-  HTTP_DELETE = 0b00000100,
-  HTTP_PUT = 0b00001000,
-  HTTP_PATCH = 0b00010000,
-  HTTP_HEAD = 0b00100000,
-  HTTP_OPTIONS = 0b01000000,
-  HTTP_ANY = 0b01111111,
-} WebRequestMethod;
+#if defined (TARGET_RP2040)
+  typedef enum http_method WebRequestMethod;
+#else
+  #ifndef WEBSERVER_H
+  typedef enum {
+    HTTP_GET = 0b00000001,
+    HTTP_POST = 0b00000010,
+    HTTP_DELETE = 0b00000100,
+    HTTP_PUT = 0b00001000,
+    HTTP_PATCH = 0b00010000,
+    HTTP_HEAD = 0b00100000,
+    HTTP_OPTIONS = 0b01000000,
+    HTTP_ANY = 0b01111111,
+  } WebRequestMethod;
+  #endif
 #endif
 
 #ifndef HAVE_FS_FILE_OPEN_MODE

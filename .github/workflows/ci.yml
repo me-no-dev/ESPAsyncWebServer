@@ -28,7 +28,10 @@ jobs:
           - core: esp8266:esp8266
             board: esp8266:esp8266:huzzah
             index_url: https://arduino.esp8266.com/stable/package_esp8266com_index.json
-
+          - name: package_rp2040_index.json
+            core: rp2040:rp2040
+            board: rp2040:rp2040:rpipicow
+            index_url: https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,6 +57,10 @@ jobs:
       - name: Install ESPAsyncTCP (ESP8266)
         if: ${{ matrix.core == 'esp8266:esp8266' }}
         run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0
+
+      - name: Install AsyncTCP (RP2040)
+        if: ${{ matrix.core == 'rp2040:rp2040' }}
+        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0
 
       - name: Build CaptivePortal
         run: arduino-cli compile --library . --warnings none -b ${{ matrix.board }} "examples/CaptivePortal/CaptivePortal.ino"

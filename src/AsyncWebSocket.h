@@ -28,12 +28,18 @@
   #ifndef WS_MAX_QUEUED_MESSAGES
     #define WS_MAX_QUEUED_MESSAGES 32
   #endif
-#else
+#elif defined(ESP8266)
   #include <ESPAsyncTCP.h>
   #ifndef WS_MAX_QUEUED_MESSAGES
     #define WS_MAX_QUEUED_MESSAGES 8
   #endif
+#elif defined(TARGET_RP2040)
+  #include <AsyncTCP_RP2040W.h>
+  #ifndef WS_MAX_QUEUED_MESSAGES
+    #define WS_MAX_QUEUED_MESSAGES 32
+  #endif
 #endif
+
 #include <ESPAsyncWebServer.h>
 
 #include <deque>
