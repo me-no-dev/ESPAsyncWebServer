@@ -206,8 +206,14 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest *request)
 
   if (request->_tempFile == true) {
     time_t lw = request->_tempFile.getLastWrite();    // get last file mod time (if supported by FS)
-    if (lw) setLastModified(gmtime(&lw));
-    String etag(lw ? lw : request->_tempFile.size());   // set etag to lastmod timestamp if available, otherwise to size
+    // set etag to lastmod timestamp if available, otherwise to size
+    String etag;
+    if (lw) {
+      setLastModified(gmtime(&lw));
+      etag = String(lw);
+    } else {
+      etag = String(request->_tempFile.size());
+    }
     if (_last_modified.length() && _last_modified == request->header(F("If-Modified-Since"))) {
       request->_tempFile.close();
       request->send(304); // Not modified

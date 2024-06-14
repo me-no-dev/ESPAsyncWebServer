@@ -47,10 +47,12 @@ jobs:
       - name: Install core
         run: arduino-cli core install --additional-urls "${{ matrix.index_url }}" ${{ matrix.core }}
 
-      - name: Install AsyncTCP-esphome
+      - name: Install AsyncTCP (ESP32)
+        if: ${{ matrix.core == 'esp32:esp32' }}
         run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/AsyncTCP#v3.1.4
 
-      - name: Install ESPAsyncTCP-esphome
+      - name: Install ESPAsyncTCP (ESP8266)
+        if: ${{ matrix.core == 'esp8266:esp8266' }}
         run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0
 
       - name: Build CaptivePortal
