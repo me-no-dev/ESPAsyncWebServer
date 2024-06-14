@@ -64,6 +64,9 @@ jobs:
       - name: Build Filters
         run: arduino-cli compile --library . --warnings none -b ${{ matrix.board }} "examples/Filters/Filters.ino"
 
+      - name: Build StreamFiles
+        run: arduino-cli compile --library . --warnings none -b ${{ matrix.board }} "examples/StreamFiles/StreamFiles.ino"
+
   pio_envs:
     name: Get PlatformIO Envs
     runs-on: ubuntu-latest
@@ -118,3 +121,4 @@ jobs:
       - run: PLATFORMIO_SRC_DIR=examples/CaptivePortal pio run -e ${{ matrix.environment }}
       - run: PLATFORMIO_SRC_DIR=examples/SimpleServer pio run -e ${{ matrix.environment }}
       - run: PLATFORMIO_SRC_DIR=examples/Filters pio run -e ${{ matrix.environment }}
+      - run: PLATFORMIO_SRC_DIR=examples/StreamFiles pio run -e ${{ matrix.environment }}
