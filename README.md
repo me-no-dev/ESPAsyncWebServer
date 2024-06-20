@@ -23,7 +23,9 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [@mathieucarbou](https://github.com/mathieucarbou): CI
 - [@mathieucarbou](https://github.com/mathieucarbou): Depends on `mathieucarbou/Async TCP @ ^3.1.4`
 - [@mathieucarbou](https://github.com/mathieucarbou): Deployed in PlatformIO registry and Arduino IDE library manager
-- [@mathieucarbou](https://github.com/mathieucarbou): Remove filename after inline in Content-Disposition header according to RFC2183
+- [@mathieucarbou](https://github.com/mathieucarbou): Firmware size optimization: remove mbedtls dependency (accounts for 33KB in firmware)
+- [@mathieucarbou](https://github.com/mathieucarbou): Made DEFAULT_MAX_SSE_CLIENTS customizable
+- [@mathieucarbou](https://github.com/mathieucarbou): Made DEFAULT_MAX_WS_CLIENTS customizable
 - [@mathieucarbou](https://github.com/mathieucarbou): Remove filename after inline in Content-Disposition header according to RFC2183
 - [@mathieucarbou](https://github.com/mathieucarbou): Removed SPIFFSEditor
 - [@mathieucarbou](https://github.com/mathieucarbou): Resurrected `AsyncWebSocketMessageBuffer` and `makeBuffer()` in order to make the fork API-compatible with the original library from me-no-dev regarding WebSocket.
