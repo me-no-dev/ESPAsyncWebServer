@@ -312,7 +312,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
     if(_chunked){
       // HTTP 1.1 allows leading zeros in chunk length. Or spaces may be added.
       // See RFC2616 sections 2, 3.6.1.
-      readLen = _fillBufferAndProcessTemplates(buf+headLen+6, outLen - 8);
+      readLen = _fillBufferAndProcessTemplates(buf+headLen+6, outLen - 8, request->varBegin, request->varEnd);
       if(readLen == RESPONSE_TRY_AGAIN){
           free(buf);
           return 0;
@@ -325,7 +325,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest *request, size_t len, u
       buf[outLen++] = '\r';
       buf[outLen++] = '\n';
     } else {
-      readLen = _fillBufferAndProcessTemplates(buf+headLen, outLen);
+      readLen = _fillBufferAndProcessTemplates(buf+headLen, outLen, request->varBegin, request->varEnd);
       if(readLen == RESPONSE_TRY_AGAIN){
           free(buf);
           return 0;
@@ -378,7 +378,28 @@ size_t AsyncAbstractResponse::_readDataFromCacheOrContent(uint8_t* data, const s
     return readFromCache + readFromContent;
 }
 
-size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size_t len)
+// Verify only valid characters within the template string
+// Returns 0 if invalid character in variable name
+// Valid variable name characters:
+//     0123456789-.@_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+size_t AsyncAbstractResponse::_validVarName (uint8_t* posStart, uint8_t* posEnd) {
+	const char validChars[] = "0123456789-.@_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	unsigned int validLen = strlen(validChars);
+    size_t varLen = (posEnd - posStart - 1);
+	size_t res = (varLen < TEMPLATE_PARAM_NAME_LENGTH ? 1 : 0);
+	if (res) {
+		uint8_t* pos = posStart;
+		while (++pos < posEnd) {
+			if (*pos == *posStart || !memchr(validChars, *pos, validLen)) {
+				res = 0;
+				break;
+			}
+		}
+	}
+    return res;
+}
+
+size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size_t len, char varBegin, char varEnd)
 {
   if(!_callback)
     return _fillBuffer(data, len);
@@ -388,42 +409,50 @@ size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size
   // Now we've read 'len' bytes, either from cache or from file
   // Search for template placeholders
   uint8_t* pTemplateStart = data;
-  while((pTemplateStart < &data[len]) && (pTemplateStart = (uint8_t*)memchr(pTemplateStart, TEMPLATE_PLACEHOLDER, &data[len - 1] - pTemplateStart + 1))) { // data[0] ... data[len - 1]
-    uint8_t* pTemplateEnd = (pTemplateStart < &data[len - 1]) ? (uint8_t*)memchr(pTemplateStart + 1, TEMPLATE_PLACEHOLDER, &data[len - 1] - pTemplateStart) : nullptr;
+  while((pTemplateStart < &data[len]) && (pTemplateStart = (uint8_t*)memchr(pTemplateStart, varBegin, &data[len - 1] - pTemplateStart + 1))) { // data[0] ... data[len - 1]
+    uint8_t* pTemplateEnd = (pTemplateStart < &data[len - 1]) ? (uint8_t*)memchr(pTemplateStart + 1, varEnd, &data[len - 1] - pTemplateStart) : nullptr;
     // temporary buffer to hold parameter name
     uint8_t buf[TEMPLATE_PARAM_NAME_LENGTH + 1];
     String paramName;
     // If closing placeholder is found:
     if(pTemplateEnd) {
-      // prepare argument to callback
-      const size_t paramNameLength = std::min(sizeof(buf) - 1, (unsigned int)(pTemplateEnd - pTemplateStart - 1));
-      if(paramNameLength) {
-        memcpy(buf, pTemplateStart + 1, paramNameLength);
-        buf[paramNameLength] = 0;
+   	  if (_validVarName(pTemplateStart, pTemplateEnd)) {
+        // prepare argument to callback
+        const size_t paramNameLength = std::min(sizeof(buf) - 1, (unsigned int)(pTemplateEnd - pTemplateStart - 1));
+        if(paramNameLength) {
+          memcpy(buf, pTemplateStart + 1, paramNameLength);
+          buf[paramNameLength] = 0;
         paramName = String(reinterpret_cast<char*>(buf));
-      } else { // double percent sign encountered, this is single percent sign escaped.
-        // remove the 2nd percent sign
-        memmove(pTemplateEnd, pTemplateEnd + 1, &data[len] - pTemplateEnd - 1);
-        len += _readDataFromCacheOrContent(&data[len - 1], 1) - 1;
-        ++pTemplateStart;
-      }
+        } else { // double percent sign encountered, this is single percent sign escaped.
+          // remove the 2nd percent sign
+          memmove(pTemplateEnd, pTemplateEnd + 1, &data[len] - pTemplateEnd - 1);
+          len += _readDataFromCacheOrContent(&data[len - 1], 1) - 1;
+          ++pTemplateStart;
+        }
+   	  } else {
+	    ++pTemplateStart;
+   	  }
     } else if(&data[len - 1] - pTemplateStart + 1 < TEMPLATE_PARAM_NAME_LENGTH + 2) { // closing placeholder not found, check if it's in the remaining file data
       memcpy(buf, pTemplateStart + 1, &data[len - 1] - pTemplateStart);
       const size_t readFromCacheOrContent = _readDataFromCacheOrContent(buf + (&data[len - 1] - pTemplateStart), TEMPLATE_PARAM_NAME_LENGTH + 2 - (&data[len - 1] - pTemplateStart + 1));
       if(readFromCacheOrContent) {
-        pTemplateEnd = (uint8_t*)memchr(buf + (&data[len - 1] - pTemplateStart), TEMPLATE_PLACEHOLDER, readFromCacheOrContent);
+        pTemplateEnd = (uint8_t*)memchr(buf + (&data[len - 1] - pTemplateStart), varEnd, readFromCacheOrContent);
         if(pTemplateEnd) {
-          // prepare argument to callback
-          *pTemplateEnd = 0;
-          paramName = String(reinterpret_cast<char*>(buf));
-          // Copy remaining read-ahead data into cache
-          _cache.insert(_cache.begin(), pTemplateEnd + 1, buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
-          pTemplateEnd = &data[len - 1];
-        }
-        else // closing placeholder not found in file data, store found percent symbol as is and advance to the next position
-        {
-          // but first, store read file data in cache
-          _cache.insert(_cache.begin(), buf + (&data[len - 1] - pTemplateStart), buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
+       	  if (_validVarName(pTemplateStart, pTemplateEnd)) {
+            // prepare argument to callback
+            *pTemplateEnd = 0;
+            paramName = String(reinterpret_cast<char*>(buf));
+            // Copy remaining read-ahead data into cache
+            _cache.insert(_cache.begin(), pTemplateEnd + 1, buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
+            pTemplateEnd = &data[len - 1];
+          }
+          else // closing placeholder not found in file data, store found percent symbol as is and advance to the next position
+          {
+            // but first, store read file data in cache
+            _cache.insert(_cache.begin(), buf + (&data[len - 1] - pTemplateStart), buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
+            ++pTemplateStart;
+          }
+        } else {
           ++pTemplateStart;
         }
       }
