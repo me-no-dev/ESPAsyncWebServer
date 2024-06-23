@@ -86,17 +86,30 @@ void send(JsonDocument& doc) {
 
 I recommend to use the official API `AsyncWebSocketMessageBuffer` to retain further compatibility.
 
-## Stack size and queues
+## Important recommendations
 
-Here are some important flags to tweak depending on your needs:
+Most of the crashes are caused by improper configuration of the library for the project.
+Here are some recommendations to avoid them.
 
-```cpp
-  // Async TCP queue size
+1. Set the running core to be on the same core of your application (usually core 1) `-D CONFIG_ASYNC_TCP_RUNNING_CORE=1`
+2. Set the stack size appropriately with `-D CONFIG_ASYNC_TCP_STACK_SIZE=16384`.
+   The default value of `16384` might be too much for your project.
+   You can look at the [MycilaTaskMonitor](https://oss.carbou.me/MycilaTaskMonitor) project to monitor the stack usage.
+3. You can change **if you know what you are doing** the task priority with `-D CONFIG_ASYNC_TCP_PRIORITY=10`.
+   Default is `10`.
+4. You can increase the queue size with `-D CONFIG_ASYNC_TCP_QUEUE_SIZE=128`.
+   Default is `64`.
+5. You can decrease the maximum ack time `-D CONFIG_ASYNC_TCP_MAX_ACK_TIME=3000`.
+   Default is `5000`.
+
+I personally use the following configuration in my projects because my WS messages can be big (up to 4k).
+If you have smaller messages, you can increase `WS_MAX_QUEUED_MESSAGES` to 128.
+
+```c++
+  -D CONFIG_ASYNC_TCP_MAX_ACK_TIME=3000
+  -D CONFIG_ASYNC_TCP_PRIORITY=10
   -D CONFIG_ASYNC_TCP_QUEUE_SIZE=128
-  // Async TCP async task core
   -D CONFIG_ASYNC_TCP_RUNNING_CORE=1
-  // Async TCP async stac ksize
-  -D CONFIG_ASYNC_TCP_STACK_SIZE=8096
-  // WebSocket queue size
+  -D CONFIG_ASYNC_TCP_STACK_SIZE=4096
   -D WS_MAX_QUEUED_MESSAGES=64
 ```
