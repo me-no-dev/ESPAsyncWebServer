@@ -19,7 +19,7 @@ A clear and concise description of what the bug is.
 
 esp32dev, esp32s3, etc
 
-**Ethernet adpater used ?**
+**Ethernet adapter used ?**
 
 If yes, please specify which one
 
