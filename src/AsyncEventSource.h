@@ -110,17 +110,17 @@ class AsyncEventSourceClient {
 class AsyncEventSource: public AsyncWebHandler {
   private:
     String _url;
-    LinkedList<AsyncEventSourceClient *> _clients;
+    std::list< std::unique_ptr<AsyncEventSourceClient> > _clients;
 #ifdef ESP32
     // Same as for individual messages, protect mutations of _clients list
     // since simultaneous access from different tasks is possible
     mutable std::mutex _client_queue_lock;
 #endif
-    ArEventHandlerFunction _connectcb;
+    ArEventHandlerFunction _connectcb{nullptr};
 	  ArAuthorizeConnectHandler _authorizeConnectHandler;
   public:
-    AsyncEventSource(const String& url);
-    ~AsyncEventSource();
+    AsyncEventSource(const String& url) : _url(url){};
+    ~AsyncEventSource(){ close(); };
 
     const char * url() const { return _url.c_str(); }
     void close();

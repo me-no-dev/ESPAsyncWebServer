@@ -274,17 +274,6 @@ void AsyncEventSourceClient::_runQueue() {
 
 
 // Handler
-
-AsyncEventSource::AsyncEventSource(const String& url)
-  : _url(url)
-  , _clients(LinkedList<AsyncEventSourceClient *>([](AsyncEventSourceClient *c){ delete c; }))
-  , _connectcb(NULL)
-{}
-
-AsyncEventSource::~AsyncEventSource(){
-  close();
-}
-
 void AsyncEventSource::onConnect(ArEventHandlerFunction cb){
   _connectcb = cb;
 }
@@ -294,22 +283,12 @@ void AsyncEventSource::authorizeConnect(ArAuthorizeConnectHandler cb){
 }
 
 void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
-  /*char * temp = (char *)malloc(2054);
-  if(temp != NULL){
-    memset(temp+1,' ',2048);
-    temp[0] = ':';
-    temp[2049] = '\r';
-    temp[2050] = '\n';
-    temp[2051] = '\r';
-    temp[2052] = '\n';
-    temp[2053] = 0;
-    client->write((const char *)temp, 2053);
-    free(temp);
-  }*/
+  if (!client)
+    return;
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_client_queue_lock);
 #endif
-  _clients.add(client);
+  _clients.emplace_back(client);
   if(_connectcb)
     _connectcb(client);
 }
@@ -318,7 +297,10 @@ void AsyncEventSource::_handleDisconnect(AsyncEventSourceClient * client){
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_client_queue_lock);
 #endif
-  _clients.remove(client);
+  for (auto i = _clients.begin(); i != _clients.end(); ++i){
+    if (i->get() == client)
+      _clients.erase(i);
+  }
 }
 
 void AsyncEventSource::close(){
@@ -341,9 +323,8 @@ size_t AsyncEventSource::avgPacketsWaiting() const {
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_client_queue_lock);
 #endif
-  if (_clients.isEmpty()) {
-    return 0;
-  }
+  if (!_clients.size()) return 0;
+
   for(const auto &c: _clients){
     if(c->connected()) {
       aql += c->packetsWaiting();
@@ -367,13 +348,14 @@ void AsyncEventSource::send(
 }
 
 size_t AsyncEventSource::count() const {
-  size_t n_clients;
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_client_queue_lock);
 #endif
-  n_clients = _clients.count_if([](AsyncEventSourceClient *c){
-                                    return c->connected();
-                                });
+  size_t n_clients{0};
+  for (const auto &i : _clients)
+    if (i->connected())
+      ++n_clients;
+
   return n_clients;
 }
 
