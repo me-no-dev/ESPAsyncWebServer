@@ -28,8 +28,6 @@
 #include <vector>
 #include "FS.h"
 
-#include "StringArray.h"
-
 #ifdef ESP32
 #include <WiFi.h>
 #include <AsyncTCP.h>
