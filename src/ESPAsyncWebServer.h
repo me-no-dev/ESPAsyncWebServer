@@ -358,11 +358,11 @@ class AsyncWebRewrite {
 
 class AsyncWebHandler {
   protected:
-    ArRequestFilterFunction _filter;
+    ArRequestFilterFunction _filter{nullptr};
     String _username;
     String _password;
   public:
-    AsyncWebHandler():_username(""), _password(""){}
+    AsyncWebHandler(){}
     AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
     AsyncWebHandler& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password); return *this; };
     AsyncWebHandler& setAuthentication(const String& username, const String& password){  _username = username;_password = password; return *this; };
@@ -430,7 +430,7 @@ class AsyncWebServer {
   protected:
     AsyncServer _server;
     std::list<std::shared_ptr<AsyncWebRewrite> > _rewrites;
-    LinkedList<AsyncWebHandler*> _handlers;
+    std::list<std::unique_ptr<AsyncWebHandler> > _handlers;
     AsyncCallbackWebHandler* _catchAllHandler;
 
   public:

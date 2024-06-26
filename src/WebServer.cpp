@@ -37,7 +37,6 @@ const char *fs::FileOpenMode::append = "a";
 
 AsyncWebServer::AsyncWebServer(uint16_t port)
   : _server(port)
-  , _handlers(LinkedList<AsyncWebHandler*>([](AsyncWebHandler* h){ delete h; }))
 {
   _catchAllHandler = new AsyncCallbackWebHandler();
   if(_catchAllHandler == NULL)
@@ -92,12 +91,18 @@ AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
 }
 
 AsyncWebHandler& AsyncWebServer::addHandler(AsyncWebHandler* handler){
-  _handlers.add(handler);
-  return *handler;
+  _handlers.emplace_back(handler);
+  return *(_handlers.back().get());
 }
 
 bool AsyncWebServer::removeHandler(AsyncWebHandler *handler){
-  return _handlers.remove(handler);
+  for (auto i = _handlers.begin(); i != _handlers.end(); ++i){
+    if (i->get() == handler ){
+      _handlers.erase(i);
+      return true;
+    }
+  }
+  return false;
 }
 
 void AsyncWebServer::begin(){
@@ -133,9 +138,9 @@ void AsyncWebServer::_rewriteRequest(AsyncWebServerRequest *request){
 }
 
 void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
-  for(const auto& h: _handlers){
+  for(auto& h: _handlers){
     if (h->filter(request) && h->canHandle(request)){
-      request->setHandler(h);
+      request->setHandler(h.get());
       return;
     }
   }
@@ -203,7 +208,7 @@ void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
 
 void AsyncWebServer::reset(){
   _rewrites.clear();
-  _handlers.free();
+  _handlers.clear();
 
   if (_catchAllHandler != NULL){
     _catchAllHandler->onRequest(NULL);
