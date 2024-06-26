@@ -705,8 +705,8 @@ const AsyncWebParameter* AsyncWebServerRequest::getParam(const String& name, boo
 }
 
 #ifdef ESP8266
-AsyncWebParameter* AsyncWebServerRequest::getParam(const __FlashStringHelper * data, bool post, bool file) const {
-  return getParam(String(data).c_str(), post, file);
+const AsyncWebParameter* AsyncWebServerRequest::getParam(const __FlashStringHelper * data, bool post, bool file) const {
+  return getParam(String(data), post, file);
 }
 #endif
 

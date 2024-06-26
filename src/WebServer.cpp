@@ -37,7 +37,6 @@ const char *fs::FileOpenMode::append = "a";
 
 AsyncWebServer::AsyncWebServer(uint16_t port)
   : _server(port)
-  , _rewrites(LinkedList<AsyncWebRewrite*>([](AsyncWebRewrite* r){ delete r; }))
   , _handlers(LinkedList<AsyncWebHandler*>([](AsyncWebHandler* h){ delete h; }))
 {
   _catchAllHandler = new AsyncCallbackWebHandler();
@@ -62,17 +61,34 @@ AsyncWebServer::~AsyncWebServer(){
   if(_catchAllHandler) delete _catchAllHandler;
 }
 
+AsyncWebRewrite& AsyncWebServer::addRewrite(std::shared_ptr<AsyncWebRewrite> rewrite){
+  _rewrites.emplace_back(rewrite);
+  return *_rewrites.back().get();
+}
+
+
 AsyncWebRewrite& AsyncWebServer::addRewrite(AsyncWebRewrite* rewrite){
-  _rewrites.add(rewrite);
-  return *rewrite;
+  _rewrites.emplace_back(rewrite);
+  return *_rewrites.back().get();
 }
 
 bool AsyncWebServer::removeRewrite(AsyncWebRewrite *rewrite){
-  return _rewrites.remove(rewrite);
+  return removeRewrite(rewrite->from().c_str(), rewrite->toUrl().c_str());
+}
+
+bool AsyncWebServer::removeRewrite(const char* from, const char* to){
+  for(auto r = _rewrites.begin(); r != _rewrites.end(); ++r ){
+    if (r->get()->from() == from && r->get()->toUrl() == to){
+      _rewrites.erase(r);
+      return true;
+    }
+  }
+  return false;
 }
 
 AsyncWebRewrite& AsyncWebServer::rewrite(const char* from, const char* to){
-  return addRewrite(new AsyncWebRewrite(from, to));
+  _rewrites.emplace_back(std::make_shared<AsyncWebRewrite>(from, to));
+  return *_rewrites.back().get();
 }
 
 AsyncWebHandler& AsyncWebServer::addHandler(AsyncWebHandler* handler){
@@ -186,7 +202,7 @@ void AsyncWebServer::onRequestBody(ArBodyHandlerFunction fn){
 }
 
 void AsyncWebServer::reset(){
-  _rewrites.free();
+  _rewrites.clear();
   _handlers.free();
 
   if (_catchAllHandler != NULL){

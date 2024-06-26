@@ -292,9 +292,11 @@ class AsyncWebServerRequest {
     bool hasParam(const String& name, bool post=false, bool file=false) const;
     bool hasParam(const __FlashStringHelper * data, bool post=false, bool file=false) const;
 
-    AsyncWebParameter* getParam(const String& name, bool post=false, bool file=false) const;
-    AsyncWebParameter* getParam(const __FlashStringHelper * data, bool post, bool file) const;
-    AsyncWebParameter* getParam(size_t num) const;
+    const AsyncWebParameter* getParam(const String& name, bool post=false, bool file=false) const;
+#ifdef ESP8266
+    const AsyncWebParameter* getParam(const __FlashStringHelper * data, bool post, bool file) const;
+#endif
+    const AsyncWebParameter* getParam(size_t num) const;
 
     size_t args() const { return params(); }     // get arguments count
     const String& arg(const String& name) const; // get request argument value by name
@@ -317,7 +319,7 @@ class AsyncWebServerRequest {
  * FILTER :: Callback to filter AsyncWebRewrite and AsyncWebHandler (done by the Server)
  * */
 
-typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestFilterFunction;
+using ArRequestFilterFunction = std::function<bool(AsyncWebServerRequest *request)>;
 
 bool ON_STA_FILTER(AsyncWebServerRequest *request);
 
@@ -332,9 +334,9 @@ class AsyncWebRewrite {
     String _from;
     String _toUrl;
     String _params;
-    ArRequestFilterFunction _filter;
+    ArRequestFilterFunction _filter{nullptr};
   public:
-    AsyncWebRewrite(const char* from, const char* to): _from(from), _toUrl(to), _params(String()), _filter(NULL){
+    AsyncWebRewrite(const char* from, const char* to) : _from(from), _toUrl(to){
       int index = _toUrl.indexOf('?');
       if (index > 0) {
         _params = _toUrl.substring(index +1);
@@ -427,7 +429,7 @@ typedef std::function<void(AsyncWebServerRequest *request, uint8_t *data, size_t
 class AsyncWebServer {
   protected:
     AsyncServer _server;
-    LinkedList<AsyncWebRewrite*> _rewrites;
+    std::list<std::shared_ptr<AsyncWebRewrite> > _rewrites;
     LinkedList<AsyncWebHandler*> _handlers;
     AsyncCallbackWebHandler* _catchAllHandler;
 
@@ -444,8 +446,45 @@ class AsyncWebServer {
 #endif
 
     AsyncWebRewrite& addRewrite(AsyncWebRewrite* rewrite);
-    bool removeRewrite(AsyncWebRewrite* rewrite);
+
+    /**
+     * @brief (compat) Add url rewrite rule by pointer
+     * a deep copy of the pounter object will be created,
+     * it is up to user to manage further lifetime of the object in argument
+     * 
+     * @param rewrite pointer to rewrite object to copy setting from
+     * @return AsyncWebRewrite& reference to a newly created rewrite rule
+     */
+    AsyncWebRewrite& addRewrite(std::shared_ptr<AsyncWebRewrite> rewrite);
+
+    /**
+     * @brief add url rewrite rule
+     * 
+     * @param from 
+     * @param to 
+     * @return AsyncWebRewrite& 
+     */
     AsyncWebRewrite& rewrite(const char* from, const char* to);
+
+    /**
+     * @brief (compat) remove rewrite rule via referenced object
+     * this will NOT deallocate pointed object itself, internal rule with same from/to urls will be removed if any
+     * it's a compat method, better use `removeRewrite(const char* from, const char* to)`
+     * @param rewrite 
+     * @return true 
+     * @return false 
+     */
+    bool removeRewrite(AsyncWebRewrite* rewrite);
+
+    /**
+     * @brief remove rewrite rule
+     * 
+     * @param from 
+     * @param to 
+     * @return true 
+     * @return false 
+     */
+    bool removeRewrite(const char* from, const char* to);
 
     AsyncWebHandler& addHandler(AsyncWebHandler* handler);
     bool removeHandler(AsyncWebHandler* handler);
