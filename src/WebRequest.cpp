@@ -51,7 +51,6 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   , _expectingContinue(false)
   , _contentLength(0)
   , _parsedLength(0)
-  , _params(LinkedList<AsyncWebParameter *>([](AsyncWebParameter *p){ delete p; }))
   , _multiParseState(0)
   , _boundaryPosition(0)
   , _itemStartIndex(0)
@@ -76,7 +75,6 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
 AsyncWebServerRequest::~AsyncWebServerRequest(){
   _headers.clear();
 
-  _params.free();
   _pathParams.clear();
 
   _interestingHeaders.clear();
@@ -248,10 +246,6 @@ void AsyncWebServerRequest::_onDisconnect(){
   _server->_handleDisconnect(this);
 }
 
-void AsyncWebServerRequest::_addParam(AsyncWebParameter *p){
-  _params.add(p);
-}
-
 void AsyncWebServerRequest::_addPathParam(const char *p){
   _pathParams.emplace_back(p);
 }
@@ -263,9 +257,9 @@ void AsyncWebServerRequest::_addGetParams(const String& params){
     if (end < 0) end = params.length();
     int equal = params.indexOf('=', start);
     if (equal < 0 || equal > end) equal = end;
-    String name = params.substring(start, equal);
-    String value = equal + 1 < end ? params.substring(equal + 1, end) : String();
-    _addParam(new AsyncWebParameter(urlDecode(name), urlDecode(value)));
+    String name( params.substring(start, equal) );
+    String value( equal + 1 < end ? params.substring(equal + 1, end) : String() );
+    _params.emplace_back(urlDecode(name), urlDecode(value));
     start = end + 1;
   }
 }
@@ -383,7 +377,7 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data){
       name = _temp.substring(0, _temp.indexOf('='));
       value = _temp.substring(_temp.indexOf('=') + 1);
     }
-    _addParam(new AsyncWebParameter(urlDecode(name), urlDecode(value), true));
+    _params.emplace_back(urlDecode(name), urlDecode(value), true);
     _temp = String();
   }
 }
@@ -530,13 +524,13 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last){
     } else if(_boundaryPosition == _boundary.length() - 1){
       _multiParseState = DASH3_OR_RETURN2;
       if(!_itemIsFile){
-        _addParam(new AsyncWebParameter(_itemName, _itemValue, true));
+        _params.emplace_back(_itemName, _itemValue, true);
       } else {
         if(_itemSize){
           //check if authenticated before calling the upload
           if(_handler) _handler->handleUpload(this, _itemFilename, _itemSize - _itemBufferIndex, _itemBuffer, _itemBufferIndex, true);
           _itemBufferIndex = 0;
-          _addParam(new AsyncWebParameter(_itemName, _itemFilename, true, true, _itemSize));
+          _params.emplace_back(_itemName, _itemFilename, true, true, _itemSize);
         }
         free(_itemBuffer);
         _itemBuffer = NULL;
@@ -685,12 +679,12 @@ const AsyncWebHeader* AsyncWebServerRequest::getHeader(size_t num) const {
 }
 
 size_t AsyncWebServerRequest::params() const {
-  return _params.length();
+  return _params.size();
 }
 
 bool AsyncWebServerRequest::hasParam(const String& name, bool post, bool file) const {
   for(const auto& p: _params){
-    if(p->name() == name && p->isPost() == post && p->isFile() == file){
+    if(p.name() == name && p.isPost() == post && p.isFile() == file){
       return true;
     }
   }
@@ -701,22 +695,26 @@ bool AsyncWebServerRequest::hasParam(const __FlashStringHelper * data, bool post
   return hasParam(String(data).c_str(), post, file);
 }
 
-AsyncWebParameter* AsyncWebServerRequest::getParam(const String& name, bool post, bool file) const {
-  for(const auto& p: _params){
-    if(p->name() == name && p->isPost() == post && p->isFile() == file){
-      return p;
+const AsyncWebParameter* AsyncWebServerRequest::getParam(const String& name, bool post, bool file) const {
+  for(const auto &p: _params){
+    if(p.name() == name && p.isPost() == post && p.isFile() == file){
+      return &p;
     }
   }
   return nullptr;
 }
 
+#ifdef ESP8266
 AsyncWebParameter* AsyncWebServerRequest::getParam(const __FlashStringHelper * data, bool post, bool file) const {
   return getParam(String(data).c_str(), post, file);
 }
+#endif
 
-AsyncWebParameter* AsyncWebServerRequest::getParam(size_t num) const {
-  auto param = _params.nth(num);
-  return param ? *param : nullptr;
+const AsyncWebParameter* AsyncWebServerRequest::getParam(size_t num) const {
+  if (num >= _params.size()) return nullptr;
+  auto iter = _params.cbegin();
+  std::advance(iter, num);
+  return &(*iter);
 }
 
 void AsyncWebServerRequest::addInterestingHeader(const String& name){
@@ -880,7 +878,7 @@ void AsyncWebServerRequest::requestAuthentication(const char * realm, bool isDig
 
 bool AsyncWebServerRequest::hasArg(const char* name) const {
   for(const auto& arg: _params){
-    if(arg->name() == name){
+    if(arg.name() == name){
       return true;
     }
   }
@@ -894,8 +892,8 @@ bool AsyncWebServerRequest::hasArg(const __FlashStringHelper * data) const {
 
 const String& AsyncWebServerRequest::arg(const String& name) const {
   for(const auto& arg: _params){
-    if(arg->name() == name){
-      return arg->value();
+    if(arg.name() == name){
+      return arg.value();
     }
   }
   return emptyString;

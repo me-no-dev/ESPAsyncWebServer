@@ -188,7 +188,7 @@ class AsyncWebServerRequest {
     size_t _parsedLength;
 
     std::list<AsyncWebHeader> _headers;
-    LinkedList<AsyncWebParameter *> _params;
+    std::list<AsyncWebParameter> _params;
     std::vector<String> _pathParams;
 
     uint8_t _multiParseState;
@@ -210,7 +210,7 @@ class AsyncWebServerRequest {
     void _onDisconnect();
     void _onData(void *buf, size_t len);
 
-    void _addParam(AsyncWebParameter*);
+    //void _addParam(AsyncWebParameter*);
     void _addPathParam(const char *param);
 
     bool _parseReqHead();
