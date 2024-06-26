@@ -21,6 +21,7 @@
 #define ASYNCEVENTSOURCE_H_
 
 #include <Arduino.h>
+#include <list>
 #ifdef ESP32
 #include <mutex>
 #include <AsyncTCP.h>
@@ -54,8 +55,8 @@
 class AsyncEventSource;
 class AsyncEventSourceResponse;
 class AsyncEventSourceClient;
-typedef std::function<void(AsyncEventSourceClient *client)> ArEventHandlerFunction;
-typedef std::function<bool(AsyncWebServerRequest *request)> ArAuthorizeConnectHandler;
+using ArEventHandlerFunction = std::function<void(AsyncEventSourceClient *client)>;
+using ArAuthorizeConnectHandler = std::function<bool(AsyncWebServerRequest *request)>;
 
 class AsyncEventSourceMessage {
   private:
@@ -78,7 +79,7 @@ class AsyncEventSourceClient {
     AsyncClient *_client;
     AsyncEventSource *_server;
     uint32_t _lastId;
-    LinkedList<AsyncEventSourceMessage *> _messageQueue;
+    std::list< std::unique_ptr<AsyncEventSourceMessage> > _messageQueue;
     // ArFi 2020-08-27 for protecting/serializing _messageQueue
 #ifdef ESP32
     mutable std::mutex _lockmq;

@@ -156,7 +156,6 @@ size_t AsyncEventSourceMessage::send(AsyncClient *client) {
 // Client
 
 AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, AsyncEventSource *server)
-: _messageQueue(LinkedList<AsyncEventSourceMessage *>([](AsyncEventSourceMessage *m){ delete  m; }))
 {
   _client = request->client();
   _server = server;
@@ -180,7 +179,7 @@ AsyncEventSourceClient::~AsyncEventSourceClient(){
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_lockmq);
 #endif
-  _messageQueue.free();
+  _messageQueue.clear();
   close();
 }
 
@@ -195,7 +194,7 @@ void AsyncEventSourceClient::_queueMessage(AsyncEventSourceMessage *dataMessage)
   //length() is not thread-safe, thus acquiring the lock before this call..
   std::lock_guard<std::mutex> lock(_lockmq);
 #endif
-  if(_messageQueue.length() >= SSE_MAX_QUEUED_MESSAGES){
+  if(_messageQueue.size() >= SSE_MAX_QUEUED_MESSAGES){
 #ifdef ESP8266
     ets_printf(String(F("ERROR: Too many messages queued\n")).c_str());
 #else
@@ -203,7 +202,7 @@ void AsyncEventSourceClient::_queueMessage(AsyncEventSourceMessage *dataMessage)
 #endif
       delete dataMessage;
   } else {
-    _messageQueue.add(dataMessage);
+    _messageQueue.emplace_back(dataMessage);
     // runqueue trigger when new messages added
     if(_client->canSend()) {
       _runQueue();
@@ -216,10 +215,10 @@ void AsyncEventSourceClient::_onAck(size_t len, uint32_t time){
   // Same here, acquiring the lock early
   std::lock_guard<std::mutex> lock(_lockmq);
 #endif
-  while(len && !_messageQueue.isEmpty()){
+  while(len && _messageQueue.size()){
     len = _messageQueue.front()->ack(len, time);
     if(_messageQueue.front()->finished())
-      _messageQueue.remove(_messageQueue.front());
+      _messageQueue.pop_front();
   }
   _runQueue();
 }
@@ -229,7 +228,7 @@ void AsyncEventSourceClient::_onPoll(){
   // Same here, acquiring the lock early
   std::lock_guard<std::mutex> lock(_lockmq);
 #endif
-  if(!_messageQueue.isEmpty()){
+  if(_messageQueue.size()){
     _runQueue();
   }
 }
@@ -261,19 +260,15 @@ size_t AsyncEventSourceClient::packetsWaiting() const {
 #ifdef ESP32
     std::lock_guard<std::mutex> lock(_lockmq);
 #endif
-    size_t len = _messageQueue.length();
-    return len;
+    return _messageQueue.size();
 }
 
 void AsyncEventSourceClient::_runQueue() {
   // Calls to this private method now already protected by _lockmq acquisition
   // so no extra call of _lockmq.lock() here..
-  for (auto i = _messageQueue.begin(); i != _messageQueue.end(); ++i) {
-    // If it crashes here, iterator (i) has been invalidated as _messageQueue
-    // has been changed... (UL 2020-11-15: Not supposed to happen any more ;-) )
-    if (!(*i)->sent()) {
-      (*i)->send(_client);
-    }
+  for ( auto &i : _messageQueue){
+    if (!i->sent())
+      i->send(_client);
   }
 }
 
