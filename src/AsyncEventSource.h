@@ -79,12 +79,11 @@ class AsyncEventSourceClient {
     AsyncClient *_client;
     AsyncEventSource *_server;
     uint32_t _lastId;
-    std::list< std::unique_ptr<AsyncEventSourceMessage> > _messageQueue;
-    // ArFi 2020-08-27 for protecting/serializing _messageQueue
+    std::list< AsyncEventSourceMessage > _messageQueue;
 #ifdef ESP32
     mutable std::mutex _lockmq;
 #endif
-    void _queueMessage(AsyncEventSourceMessage *dataMessage);
+    void _queueMessage(const char * message, size_t len);
     void _runQueue();
 
   public:
