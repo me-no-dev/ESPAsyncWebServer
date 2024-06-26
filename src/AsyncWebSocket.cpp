@@ -314,8 +314,9 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
 AsyncWebSocketClient::~AsyncWebSocketClient()
 {
     {
-        AsyncWebLockGuard l(_lock);
-
+        #ifdef ESP32
+        std::lock_guard<std::mutex> lock(_lock);
+        #endif
         _messageQueue.clear();
         _controlQueue.clear();
     }
@@ -331,7 +332,9 @@ void AsyncWebSocketClient::_clearQueue()
 void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
     _lastMessageTime = millis();
 
-    AsyncWebLockGuard l(_lock);
+    #ifdef ESP32
+    std::lock_guard<std::mutex> lock(_lock);
+    #endif
 
     if (!_controlQueue.empty()) {
         auto &head = _controlQueue.front();
@@ -340,7 +343,6 @@ void AsyncWebSocketClient::_onAck(size_t len, uint32_t time){
             if (_status == WS_DISCONNECTING && head.opcode() == WS_DISCONNECT){
                 _controlQueue.pop_front();
                 _status = WS_DISCONNECTED;
-                l.unlock();
                 if (_client) _client->close(true);
                 return;
             }
@@ -362,65 +364,64 @@ void AsyncWebSocketClient::_onPoll()
     if (!_client)
         return;
 
-    AsyncWebLockGuard l(_lock);
+    #ifdef ESP32
+    std::unique_lock<std::mutex> lock(_lock);
+    #endif
     if (_client->canSend() && (!_controlQueue.empty() || !_messageQueue.empty()))
     {
-        l.unlock();
         _runQueue();
     }
     else if (_keepAlivePeriod > 0 && (millis() - _lastMessageTime) >= _keepAlivePeriod && (_controlQueue.empty() && _messageQueue.empty()))
     {
-        l.unlock();
+#ifdef ESP32
+        lock.unlock();
+#endif
         ping((uint8_t *)AWSC_PING_PAYLOAD, AWSC_PING_PAYLOAD_LEN);
     }
 }
 
 void AsyncWebSocketClient::_runQueue()
 {
+    // all calls to this method MUST be protected by a mutex lock!
     if (!_client)
         return;
-
-    AsyncWebLockGuard l(_lock);
 
     _clearQueue();
 
     if (!_controlQueue.empty() && (_messageQueue.empty() || _messageQueue.front().betweenFrames()) && webSocketSendFrameWindow(_client) > (size_t)(_controlQueue.front().len() - 1))
     {
-        //l.unlock();
         _controlQueue.front().send(_client);
     }
     else if (!_messageQueue.empty() && _messageQueue.front().betweenFrames() && webSocketSendFrameWindow(_client))
     {
-        //l.unlock();
         _messageQueue.front().send(_client);
     }
 }
 
 bool AsyncWebSocketClient::queueIsFull() const
 {
-    size_t size;
-    {
-        AsyncWebLockGuard l(_lock);
-        size = _messageQueue.size();
-    }
+    #ifdef ESP32
+    std::lock_guard<std::mutex> lock(_lock);
+    #endif
+    size_t size = _messageQueue.size();;
     return (size >= WS_MAX_QUEUED_MESSAGES) || (_status != WS_CONNECTED);
 }
 
 size_t AsyncWebSocketClient::queueLen() const
 {
-    AsyncWebLockGuard l(_lock);
+    #ifdef ESP32
+    std::lock_guard<std::mutex> lock(_lock);
+    #endif
 
     return _messageQueue.size() + _controlQueue.size();
 }
 
 bool AsyncWebSocketClient::canSend() const
 {
-    size_t size;
-    {
-        AsyncWebLockGuard l(_lock);
-        size = _messageQueue.size();
-    }
-    return size < WS_MAX_QUEUED_MESSAGES;
+    #ifdef ESP32
+    std::lock_guard<std::mutex> lock(_lock);
+    #endif
+    return _messageQueue.size() < WS_MAX_QUEUED_MESSAGES;
 }
 
 void AsyncWebSocketClient::_queueControl(uint8_t opcode, const uint8_t *data, size_t len, bool mask)
@@ -429,7 +430,9 @@ void AsyncWebSocketClient::_queueControl(uint8_t opcode, const uint8_t *data, si
         return;
 
     {
-        AsyncWebLockGuard l(_lock);
+        #ifdef ESP32
+        std::lock_guard<std::mutex> lock(_lock);
+        #endif
         _controlQueue.emplace_back(opcode, data, len, mask);
     }
 
@@ -439,42 +442,34 @@ void AsyncWebSocketClient::_queueControl(uint8_t opcode, const uint8_t *data, si
 
 void AsyncWebSocketClient::_queueMessage(AsyncWebSocketSharedBuffer buffer, uint8_t opcode, bool mask)
 {
-    if(_status != WS_CONNECTED)
+    if(!_client || buffer->size() == 0 || _status != WS_CONNECTED)
         return;
 
-    if (!_client)
-        return;
-
-    if (buffer->size() == 0)
-        return;
-
+    #ifdef ESP32
+    std::lock_guard<std::mutex> lock(_lock);
+    #endif
+    if (_messageQueue.size() >= WS_MAX_QUEUED_MESSAGES)
     {
-        AsyncWebLockGuard l(_lock);
-        if (_messageQueue.size() >= WS_MAX_QUEUED_MESSAGES)
+        if(closeWhenFull)
         {
-            l.unlock();
-            if(closeWhenFull)
-            {
 #ifdef ESP8266
-                ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: closing connection\n");
+            ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: closing connection\n");
 #else
-                log_e("Too many messages queued: closing connection");
+            log_e("Too many messages queued: closing connection");
 #endif
-                _status = WS_DISCONNECTED;
-                if (_client) _client->close(true);
-            } else {
+            _status = WS_DISCONNECTED;
+            if (_client) _client->close(true);
+        } else {
 #ifdef ESP8266
-                ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: discarding new message\n");
+            ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: discarding new message\n");
 #else
-                log_e("Too many messages queued: discarding new message");
+            log_e("Too many messages queued: discarding new message");
 #endif
-            }
-            return;
         }
-        else
-        {
-            _messageQueue.emplace_back(buffer, opcode, mask);
-        }
+        return;
+    }
+    else {
+        _messageQueue.emplace_back(buffer, opcode, mask);
     }
 
     if (_client && _client->canSend())

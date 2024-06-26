@@ -22,11 +22,12 @@
 
 #include <Arduino.h>
 #ifdef ESP32
+#include <mutex>
 #include <AsyncTCP.h>
 #ifndef SSE_MAX_QUEUED_MESSAGES
 #define SSE_MAX_QUEUED_MESSAGES 32
 #endif
-#else
+#else // esp8266
 #include <ESPAsyncTCP.h>
 #ifndef SSE_MAX_QUEUED_MESSAGES
 #define SSE_MAX_QUEUED_MESSAGES 8
@@ -34,8 +35,6 @@
 #endif
 
 #include <ESPAsyncWebServer.h>
-
-#include "AsyncWebSynchronization.h"
 
 #ifdef ESP8266
 #include <Hash.h>
@@ -81,7 +80,9 @@ class AsyncEventSourceClient {
     uint32_t _lastId;
     LinkedList<AsyncEventSourceMessage *> _messageQueue;
     // ArFi 2020-08-27 for protecting/serializing _messageQueue
-    AsyncPlainLock _lockmq;
+#ifdef ESP32
+    mutable std::mutex _lockmq;
+#endif
     void _queueMessage(AsyncEventSourceMessage *dataMessage);
     void _runQueue();
 
@@ -109,9 +110,11 @@ class AsyncEventSource: public AsyncWebHandler {
   private:
     String _url;
     LinkedList<AsyncEventSourceClient *> _clients;
+#ifdef ESP32
     // Same as for individual messages, protect mutations of _clients list
     // since simultaneous access from different tasks is possible
-    AsyncWebLock _client_queue_lock;
+    mutable std::mutex _client_queue_lock;
+#endif
     ArEventHandlerFunction _connectcb;
 	  ArAuthorizeConnectHandler _authorizeConnectHandler;
   public:

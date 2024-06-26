@@ -23,6 +23,7 @@
 
 #include <Arduino.h>
 #ifdef ESP32
+#include <mutex>
 #include <AsyncTCP.h>
 #ifndef WS_MAX_QUEUED_MESSAGES
 #define WS_MAX_QUEUED_MESSAGES 32
@@ -35,7 +36,6 @@
 #endif
 #include <ESPAsyncWebServer.h>
 
-#include "AsyncWebSynchronization.h"
 
 #include <list>
 #include <deque>
@@ -136,9 +136,9 @@ class AsyncWebSocketClient {
     AsyncWebSocket *_server;
     uint32_t _clientId;
     AwsClientStatus _status;
-
-    AsyncWebLock _lock;
-
+#ifdef ESP32
+    mutable std::mutex _lock;
+#endif
     std::deque<AsyncWebSocketControl> _controlQueue;
     std::deque<AsyncWebSocketMessage> _messageQueue;
     bool closeWhenFull = true;
@@ -260,7 +260,9 @@ class AsyncWebSocket: public AsyncWebHandler {
     AwsEventHandler _eventHandler{nullptr};
 	  AwsHandshakeHandler _handshakeHandler;
     bool _enabled;
-    AsyncWebLock _lock;
+#ifdef ESP32
+    mutable std::mutex _lock;
+#endif
 
   public:
     explicit AsyncWebSocket(const char* url) : _url(url) ,_cNextId(1), _enabled(true) {}
