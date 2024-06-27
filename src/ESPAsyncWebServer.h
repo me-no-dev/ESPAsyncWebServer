@@ -335,7 +335,7 @@ class AsyncWebServerRequest {
      */
     const AsyncWebParameter* getParam(const char* name, bool post = false, bool file = false) const;
 
-    const AsyncWebParameter* getParam(const String& name, bool post = false, bool file = false) const { return getParam(name.c_str()); };
+    const AsyncWebParameter* getParam(const String& name, bool post = false, bool file = false) const { return getParam(name.c_str(), post, file); };
 #ifdef ESP8266
     const AsyncWebParameter* getParam(const __FlashStringHelper* data, bool post, bool file) const;
 #endif
