@@ -208,7 +208,6 @@ class AsyncWebServerRequest {
     void _onDisconnect();
     void _onData(void *buf, size_t len);
 
-    //void _addParam(AsyncWebParameter*);
     void _addPathParam(const char *param);
 
     bool _parseReqHead();
@@ -268,7 +267,7 @@ class AsyncWebServerRequest {
     void addInterestingHeader(const String& name){ return addInterestingHeader(name.c_str()); };
 
     /**
-     * @brief issue 302 redirect responce
+     * @brief issue 302 redirect response
      * 
      * @param url 
      */
