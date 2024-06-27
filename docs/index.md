@@ -27,7 +27,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [@mathieucarbou](https://github.com/mathieucarbou): Made DEFAULT_MAX_SSE_CLIENTS customizable
 - [@mathieucarbou](https://github.com/mathieucarbou): Made DEFAULT_MAX_WS_CLIENTS customizable
 - [@mathieucarbou](https://github.com/mathieucarbou): Remove filename after inline in Content-Disposition header according to RFC2183
-- [@mathieucarbou](https://github.com/mathieucarbou): Removed SPIFFSEditor
+- [@mathieucarbou](https://github.com/mathieucarbou): Removed SPIFFSEditor to reduce library size and maintainance. SPIFF si also deprecated. If you need it, please copy the files from the original repository in your project. This fork focus on maintaining the server part and the SPIFFEditor is an application which has nothing to do inside a server library.
 - [@mathieucarbou](https://github.com/mathieucarbou): Resurrected `AsyncWebSocketMessageBuffer` and `makeBuffer()` in order to make the fork API-compatible with the original library from me-no-dev regarding WebSocket.
 - [@mathieucarbou](https://github.com/mathieucarbou): Some code cleanup
 - [@mathieucarbou](https://github.com/mathieucarbou): Use `-D DEFAULT_MAX_WS_CLIENTS` to change the number of allows WebSocket clients and use `cleanupClients()` to help cleanup resources about dead clients
