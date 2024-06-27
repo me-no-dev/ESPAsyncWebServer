@@ -1145,7 +1145,6 @@ size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...){
   }
   return 0;
 }
-#endif
 
 size_t AsyncWebSocket::printfAll_P(PGM_P formatP, ...)
 {
@@ -1168,6 +1167,7 @@ size_t AsyncWebSocket::printfAll_P(PGM_P formatP, ...)
     textAll(buffer);
     return len;
 }
+#endif
 
 const char __WS_STR_CONNECTION[] PROGMEM = { "Connection" };
 const char __WS_STR_UPGRADE[] PROGMEM = { "Upgrade" };
@@ -1225,7 +1225,7 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request)
             return;
         }
     }
-    AsyncWebHeader* version = request->getHeader(WS_STR_VERSION);
+    const AsyncWebHeader* version = request->getHeader(WS_STR_VERSION);
     if (version->value().toInt() != 13)
     {
         AsyncWebServerResponse *response = request->beginResponse(400);
@@ -1233,11 +1233,11 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest *request)
         request->send(response);
         return;
     }
-    AsyncWebHeader* key = request->getHeader(WS_STR_KEY);
+    const AsyncWebHeader* key = request->getHeader(WS_STR_KEY);
     AsyncWebServerResponse *response = new AsyncWebSocketResponse(key->value(), this);
     if (request->hasHeader(WS_STR_PROTOCOL))
     {
-        AsyncWebHeader* protocol = request->getHeader(WS_STR_PROTOCOL);
+        const AsyncWebHeader* protocol = request->getHeader(WS_STR_PROTOCOL);
         //ToDo: check protocol
         response->addHeader(WS_STR_PROTOCOL, protocol->value());
     }

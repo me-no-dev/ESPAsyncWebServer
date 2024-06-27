@@ -129,7 +129,7 @@ class AsyncWebHeader {
     AsyncWebHeader(const AsyncWebHeader &) = default;
 
     AsyncWebHeader(const String& name, const String& value): _name(name), _value(value){}
-    AsyncWebHeader(const String& data): _name(), _value(){
+    AsyncWebHeader(const String& data){
       if(!data) return;
       int index = data.indexOf(':');
       if (index < 0) return;
@@ -237,8 +237,15 @@ class AsyncWebServerRequest {
     const String& contentType() const { return _contentType; }
     size_t contentLength() const { return _contentLength; }
     bool multipart() const { return _isMultipart; }
+
+#ifndef ESP8266
+    const char* methodToString() const;
+    const char* requestedConnTypeToString() const;
+#else
     const __FlashStringHelper *methodToString() const;
     const __FlashStringHelper *requestedConnTypeToString() const;
+#endif
+
     RequestedConnectionType requestedConnType() const { return _reqconntype; }
     bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED);
     void onDisconnect (ArDisconnectHandler fn);
@@ -251,9 +258,22 @@ class AsyncWebServerRequest {
     void requestAuthentication(const char * realm = NULL, bool isDigest = true);
 
     void setHandler(AsyncWebHandler *handler){ _handler = handler; }
-    void addInterestingHeader(const String& name);
 
-    void redirect(const String& url);
+    /**
+     * @brief add header to collect from a response
+     * 
+     * @param name 
+     */
+    void addInterestingHeader(const char* name);
+    void addInterestingHeader(const String& name){ return addInterestingHeader(name.c_str()); };
+
+    /**
+     * @brief issue 302 redirect responce
+     * 
+     * @param url 
+     */
+    void redirect(const char* url);
+    void redirect(const String& url){ return redirect(url.c_str()); };
 
     void send(AsyncWebServerResponse *response);
     void send(int code, const String& contentType=String(), const String& content=String());
@@ -262,8 +282,10 @@ class AsyncWebServerRequest {
     void send(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback=nullptr);
     void send(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
     void sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
+#ifdef ESP8266
     void send_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback=nullptr);
     void send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback=nullptr);
+#endif
 
     AsyncWebServerResponse *beginResponse(int code, const String& contentType=String(), const String& content=String());
     AsyncWebServerResponse *beginResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
@@ -272,44 +294,83 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse *beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
     AsyncWebServerResponse *beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
     AsyncResponseStream *beginResponseStream(const String& contentType, size_t bufferSize=1460);
+#ifdef ESP8266
     AsyncWebServerResponse *beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback=nullptr);
     AsyncWebServerResponse *beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback=nullptr);
+#endif
 
     size_t headers() const;                     // get header count
-    bool hasHeader(const String& name) const;   // check if header exists
-    bool hasHeader(const __FlashStringHelper * data) const;   // check if header exists
 
-    AsyncWebHeader* getHeader(const String& name);
-    const AsyncWebHeader* getHeader(const String& name) const;
-    AsyncWebHeader* getHeader(const __FlashStringHelper * data);
+    // check if header exists
+    bool hasHeader(const char* name) const;
+    bool hasHeader(const String& name) const { return hasHeader(name.c_str()); };
+#ifdef ESP8266
+    bool hasHeader(const __FlashStringHelper * data) const;   // check if header exists
+#endif
+
+    const AsyncWebHeader* getHeader(const char* name) const;
+    const AsyncWebHeader* getHeader(const String& name) const { return getHeader(name.c_str()); };
+#ifdef ESP8266
     const AsyncWebHeader* getHeader(const __FlashStringHelper * data) const;
-    AsyncWebHeader* getHeader(size_t num);
+#endif
     const AsyncWebHeader* getHeader(size_t num) const;
 
     size_t params() const;                      // get arguments count
     bool hasParam(const String& name, bool post=false, bool file=false) const;
     bool hasParam(const __FlashStringHelper * data, bool post=false, bool file=false) const;
 
-    const AsyncWebParameter* getParam(const String& name, bool post=false, bool file=false) const;
+    /**
+     * @brief Get the Request parameter by name
+     * 
+     * @param name 
+     * @param post 
+     * @param file 
+     * @return const AsyncWebParameter* 
+     */
+    const AsyncWebParameter* getParam(const char* name, bool post=false, bool file=false) const;
+
+    const AsyncWebParameter* getParam(const String& name, bool post=false, bool file=false) const { return getParam(name.c_str()); };
 #ifdef ESP8266
     const AsyncWebParameter* getParam(const __FlashStringHelper * data, bool post, bool file) const;
 #endif
+
+    /**
+     * @brief Get request parameter by number
+     * i.e., n-th parameter
+     * @param num 
+     * @return const AsyncWebParameter* 
+     */
     const AsyncWebParameter* getParam(size_t num) const;
 
     size_t args() const { return params(); }     // get arguments count
-    const String& arg(const String& name) const; // get request argument value by name
+
+    // get request argument value by name
+    const String& arg(const char* name) const;
+    // get request argument value by name
+    const String& arg(const String& name) const { return arg(name.c_str()); };
+#ifdef ESP8266
     const String& arg(const __FlashStringHelper * data) const; // get request argument value by F(name)
+#endif
     const String& arg(size_t i) const;           // get request argument value by number
     const String& argName(size_t i) const;       // get request argument name by number
     bool hasArg(const char* name) const;         // check if argument exists
+#ifdef ESP8266
     bool hasArg(const __FlashStringHelper * data) const;         // check if F(argument) exists
+#endif
 
     const String& ASYNCWEBSERVER_REGEX_ATTRIBUTE pathArg(size_t i) const;
 
-    const String& header(const char* name) const;// get request header value by name
+    // get request header value by name
+    const String& header(const char* name) const;
+    const String& header(const String& name) const { return header(name.c_str()); };
+
+#ifdef ESP8266
     const String& header(const __FlashStringHelper * data) const;// get request header value by F(name)
+#endif
+
     const String& header(size_t i) const;        // get request header value by number
     const String& headerName(size_t i) const;    // get request header name by number
+
     String urlDecode(const String& text) const;
 };
 
@@ -362,8 +423,8 @@ class AsyncWebHandler {
   public:
     AsyncWebHandler(){}
     AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
-    AsyncWebHandler& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password); return *this; };
-    AsyncWebHandler& setAuthentication(const String& username, const String& password){  _username = username;_password = password; return *this; };
+    AsyncWebHandler& setAuthentication(const char *username, const char *password){  _username = username; _password = password; return *this; };
+    AsyncWebHandler& setAuthentication(const String& username, const String& password){  _username = username; _password = password; return *this; };
     bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler(){}
     virtual bool canHandle(AsyncWebServerRequest *request __attribute__((unused))){

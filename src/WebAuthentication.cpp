@@ -147,31 +147,36 @@ String requestDigestAuthentication(const char * realm){
   return header;
 }
 
-bool checkDigestAuthentication(const char * header, const __FlashStringHelper *method, const char * username, const char * password, const char * realm, bool passwordIsHash, const char * nonce, const char * opaque, const char * uri){
+#ifndef ESP8266
+bool checkDigestAuthentication(const char * header, const char* method, const char * username, const char * password, const char * realm, bool passwordIsHash, const char * nonce, const char * opaque, const char * uri)
+#else
+bool checkDigestAuthentication(const char * header, const __FlashStringHelper *method, const char * username, const char * password, const char * realm, bool passwordIsHash, const char * nonce, const char * opaque, const char * uri)
+#endif
+{
   if(username == NULL || password == NULL || header == NULL || method == NULL){
     //os_printf("AUTH FAIL: missing requred fields\n");
     return false;
   }
 
-  String myHeader = String(header);
+  String myHeader(header);
   int nextBreak = myHeader.indexOf(',');
   if(nextBreak < 0){
     //os_printf("AUTH FAIL: no variables\n");
     return false;
   }
 
-  String myUsername = String();
-  String myRealm = String();
-  String myNonce = String();
-  String myUri = String();
-  String myResponse = String();
-  String myQop = String();
-  String myNc = String();
-  String myCnonce = String();
+  String myUsername;
+  String myRealm;
+  String myNonce;
+  String myUri;
+  String myResponse;
+  String myQop;
+  String myNc;
+  String myCnonce;
 
   myHeader += F(", ");
   do {
-    String avLine = myHeader.substring(0, nextBreak);
+    String avLine(myHeader.substring(0, nextBreak));
     avLine.trim();
     myHeader = myHeader.substring(nextBreak+1);
     nextBreak = myHeader.indexOf(',');
@@ -181,7 +186,7 @@ bool checkDigestAuthentication(const char * header, const __FlashStringHelper *m
       //os_printf("AUTH FAIL: no = sign\n");
       return false;
     }
-    String varName = avLine.substring(0, eqSign);
+    String varName(avLine.substring(0, eqSign));
     avLine = avLine.substring(eqSign + 1);
     if(avLine.startsWith(String('"'))){
       avLine = avLine.substring(1, avLine.length() - 1);
@@ -227,7 +232,7 @@ bool checkDigestAuthentication(const char * header, const __FlashStringHelper *m
     }
   } while(nextBreak > 0);
 
-  String ha1 = (passwordIsHash) ? String(password) : stringMD5(myUsername + ':' + myRealm + ':' + String(password));
+  String ha1 = (passwordIsHash) ? String(password) : stringMD5(myUsername + ':' + myRealm + ':' + password);
   String ha2 = String(method) + ':' + myUri;
   String response = ha1 + ':' + myNonce + ':' + myNc + ':' + myCnonce + ':' + myQop + ':' + stringMD5(ha2);
 

@@ -605,7 +605,7 @@ size_t AsyncWebServerRequest::headers() const{
   return _headers.size();
 }
 
-bool AsyncWebServerRequest::hasHeader(const String& name) const {
+bool AsyncWebServerRequest::hasHeader(const char* name) const {
   for(const auto& h: _headers){
     if(h.name().equalsIgnoreCase(name)){
       return true;
@@ -614,44 +614,20 @@ bool AsyncWebServerRequest::hasHeader(const String& name) const {
   return false;
 }
 
+#ifdef ESP8266
 bool AsyncWebServerRequest::hasHeader(const __FlashStringHelper * data) const {
   return hasHeader(String(data));
 }
+#endif
 
-AsyncWebHeader* AsyncWebServerRequest::getHeader(const String& name) {
+const AsyncWebHeader* AsyncWebServerRequest::getHeader(const char* name) const {
   auto iter = std::find_if(std::begin(_headers), std::end(_headers),
                            [&name](const AsyncWebHeader &header){ return header.name().equalsIgnoreCase(name); });
 
-  if (iter == std::end(_headers))
-        return nullptr;
-
-  return &(*iter);
+  return (iter == std::end(_headers)) ? nullptr : &(*iter);
 }
 
-const AsyncWebHeader* AsyncWebServerRequest::getHeader(const String& name) const {
-  auto iter = std::find_if(std::begin(_headers), std::end(_headers),
-                           [&name](const AsyncWebHeader &header){ return header.name().equalsIgnoreCase(name); });
-
-  if (iter == std::end(_headers))
-        return nullptr;
-
-  return &(*iter);
-}
-
-AsyncWebHeader* AsyncWebServerRequest::getHeader(const __FlashStringHelper * data) {
-  PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = strlen_P(p);
-  char * name = (char*) malloc(n+1);
-  if (name) {
-    strcpy_P(name, p);
-    AsyncWebHeader* result = getHeader( String(name));
-    free(name);
-    return result;
-  } else {
-    return nullptr;
-  }
-}
-
+#ifdef ESP8266
 const AsyncWebHeader* AsyncWebServerRequest::getHeader(const __FlashStringHelper * data) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
   size_t n = strlen_P(p);
@@ -665,17 +641,12 @@ const AsyncWebHeader* AsyncWebServerRequest::getHeader(const __FlashStringHelper
     return nullptr;
   }
 }
-
-AsyncWebHeader* AsyncWebServerRequest::getHeader(size_t num) {
-  if (num >= _headers.size())
-      return nullptr;
-  return &(*std::next(std::begin(_headers), num));
-}
+#endif
 
 const AsyncWebHeader* AsyncWebServerRequest::getHeader(size_t num) const {
   if (num >= _headers.size())
       return nullptr;
-  return &(*std::next(std::begin(_headers), num));
+  return &(*std::next(_headers.cbegin(), num));
 }
 
 size_t AsyncWebServerRequest::params() const {
@@ -695,7 +666,7 @@ bool AsyncWebServerRequest::hasParam(const __FlashStringHelper * data, bool post
   return hasParam(String(data).c_str(), post, file);
 }
 
-const AsyncWebParameter* AsyncWebServerRequest::getParam(const String& name, bool post, bool file) const {
+const AsyncWebParameter* AsyncWebServerRequest::getParam(const char* name, bool post, bool file) const {
   for(const auto &p: _params){
     if(p.name() == name && p.isPost() == post && p.isFile() == file){
       return &p;
@@ -711,34 +682,15 @@ const AsyncWebParameter* AsyncWebServerRequest::getParam(const __FlashStringHelp
 #endif
 
 const AsyncWebParameter* AsyncWebServerRequest::getParam(size_t num) const {
-  if (num >= _params.size()) return nullptr;
-  auto iter = _params.cbegin();
-  std::advance(iter, num);
-  return &(*iter);
+  if (num >= _params.size())
+      return nullptr;
+  return &(*std::next(_params.cbegin(), num));
 }
 
-void AsyncWebServerRequest::addInterestingHeader(const String& name){
+void AsyncWebServerRequest::addInterestingHeader(const char* name){
   if(std::none_of(std::begin(_interestingHeaders), std::end(_interestingHeaders),
                   [&name](const String &str){ return str.equalsIgnoreCase(name); }))
-    _interestingHeaders.push_back(name);
-}
-
-void AsyncWebServerRequest::send(AsyncWebServerResponse *response){
-  _response = response;
-  if(_response == NULL){
-    _client->close(true);
-    _onDisconnect();
-    return;
-  }
-  if(!_response->_sourceValid()){
-    delete response;
-    _response = NULL;
-    send(500);
-  }
-  else {
-    _client->setRxTimeout(0);
-    _response->_respond(this);
-  }
+    _interestingHeaders.emplace_back(name);
 }
 
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse(int code, const String& contentType, const String& content){
@@ -775,12 +727,32 @@ AsyncResponseStream * AsyncWebServerRequest::beginResponseStream(const String& c
   return new AsyncResponseStream(contentType, bufferSize);
 }
 
+#ifdef ESP8266
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback){
   return new AsyncProgmemResponse(code, contentType, content, len, callback);
 }
 
 AsyncWebServerResponse * AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback){
   return beginResponse_P(code, contentType, (const uint8_t *)content, strlen_P(content), callback);
+}
+#endif
+
+void AsyncWebServerRequest::send(AsyncWebServerResponse *response){
+  _response = response;
+  if(_response == NULL){
+    _client->close(true);
+    _onDisconnect();
+    return;
+  }
+  if(!_response->_sourceValid()){
+    delete response;
+    _response = NULL;
+    send(500);
+  }
+  else {
+    _client->setRxTimeout(0);
+    _response->_respond(this);
+  }
 }
 
 void AsyncWebServerRequest::send(int code, const String& contentType, const String& content){
@@ -811,6 +783,7 @@ void AsyncWebServerRequest::sendChunked(const String& contentType, AwsResponseFi
   send(beginChunkedResponse(contentType, callback, templateCallback));
 }
 
+#ifdef ESP8266
 void AsyncWebServerRequest::send_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback){
   send(beginResponse_P(code, contentType, content, len, callback));
 }
@@ -818,8 +791,9 @@ void AsyncWebServerRequest::send_P(int code, const String& contentType, const ui
 void AsyncWebServerRequest::send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback){
   send(beginResponse_P(code, contentType, content, callback));
 }
+#endif
 
-void AsyncWebServerRequest::redirect(const String& url){
+void AsyncWebServerRequest::redirect(const char* url){
   AsyncWebServerResponse * response = beginResponse(302);
   response->addHeader(F("Location"), url);
   send(response);
@@ -885,12 +859,13 @@ bool AsyncWebServerRequest::hasArg(const char* name) const {
   return false;
 }
 
+#ifdef ESP8266
 bool AsyncWebServerRequest::hasArg(const __FlashStringHelper * data) const {
   return hasArg(String(data).c_str());
 }
+#endif
 
-
-const String& AsyncWebServerRequest::arg(const String& name) const {
+const String& AsyncWebServerRequest::arg(const char* name) const {
   for(const auto& arg: _params){
     if(arg.name() == name){
       return arg.value();
@@ -899,9 +874,11 @@ const String& AsyncWebServerRequest::arg(const String& name) const {
   return emptyString;
 }
 
+#ifdef ESP8266
 const String& AsyncWebServerRequest::arg(const __FlashStringHelper * data) const {
   return arg(String(data).c_str());
 }
+#endif
 
 const String& AsyncWebServerRequest::arg(size_t i) const {
   return getParam(i)->value();
@@ -916,14 +893,15 @@ const String& AsyncWebServerRequest::pathArg(size_t i) const {
 }
 
 const String& AsyncWebServerRequest::header(const char* name) const {
-  const AsyncWebHeader* h = getHeader(String(name));
+  const AsyncWebHeader* h = getHeader(name);
   return h ? h->value() : emptyString;
 }
 
+#ifdef ESP8266
 const String& AsyncWebServerRequest::header(const __FlashStringHelper * data) const {
   return header(String(data).c_str());
 };
-
+#endif
 
 const String& AsyncWebServerRequest::header(size_t i) const {
   const AsyncWebHeader* h = getHeader(i);
@@ -939,7 +917,7 @@ String AsyncWebServerRequest::urlDecode(const String& text) const {
   char temp[] = "0x00";
   unsigned int len = text.length();
   unsigned int i = 0;
-  String decoded = String();
+  String decoded;
   decoded.reserve(len); // Allocate the string internal buffer - never longer from source text
   while (i < len){
     char decodedChar;
@@ -958,7 +936,32 @@ String AsyncWebServerRequest::urlDecode(const String& text) const {
   return decoded;
 }
 
+#ifndef ESP8266
+const char* AsyncWebServerRequest::methodToString() const {
+  if(_method == HTTP_ANY)   return "ANY";
+  if(_method & HTTP_GET)    return "GET";
+  if(_method & HTTP_POST)   return "POST";
+  if(_method & HTTP_DELETE) return "DELETE";
+  if(_method & HTTP_PUT)    return "PUT";
+  if(_method & HTTP_PATCH)  return "PATCH";
+  if(_method & HTTP_HEAD)   return "HEAD";
+  if(_method & HTTP_OPTIONS) return "OPTIONS";
+  return "UNKNOWN";
+}
 
+const char* AsyncWebServerRequest::requestedConnTypeToString() const {
+  switch (_reqconntype) {
+    case RCT_NOT_USED: return "RCT_NOT_USED";
+    case RCT_DEFAULT:  return "RCT_DEFAULT";
+    case RCT_HTTP:     return "RCT_HTTP";
+    case RCT_WS:       return "RCT_WS";
+    case RCT_EVENT:    return "RCT_EVENT";
+    default:           return "ERROR";
+  }
+}
+#endif
+
+#ifdef ESP8266
 const __FlashStringHelper *AsyncWebServerRequest::methodToString() const {
   if(_method == HTTP_ANY) return F("ANY");
   else if(_method & HTTP_GET) return F("GET");
@@ -981,6 +984,7 @@ const __FlashStringHelper *AsyncWebServerRequest::requestedConnTypeToString() co
     default:           return F("ERROR");
   }
 }
+#endif
 
 bool AsyncWebServerRequest::isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2, RequestedConnectionType erct3) {
     bool res = false;
