@@ -36,6 +36,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [@tueddy](https://github.com/tueddy): Compile with Arduino 3 (ESP-IDF 5.1) ([#13](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/13))
 - [@vortigont](https://github.com/vortigont): Set real "Last-Modified" header based on file's LastWrite time ([#5](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/5))
 - [@vortigont](https://github.com/vortigont): Some websocket code cleanup ([#29](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/29))
+- [@vortigont](https://github.com/vortigont): Refactor code - replace DYI structs with STL objects  ([#39](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/39))
 
 **In progress**
 
