@@ -57,5 +57,8 @@
       "LICENSE",
       "README.md"
     ]
+  },
+  "build": {
+    "libCompatMode": "strict"
   }
 }
