@@ -702,6 +702,10 @@ AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const Str
   return new AsyncBasicResponse(code, contentType, content);
 }
 
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback) {
+  return new AsyncProgmemResponse(code, contentType, content, len, callback);
+}
+
 AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(FS& fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) {
   if (fs.exists(path) || (!download && fs.exists(path + F(".gz"))))
     return new AsyncFileResponse(fs, path, contentType, download, callback);

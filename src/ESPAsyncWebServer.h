@@ -303,6 +303,7 @@ class AsyncWebServerRequest {
 #endif
 
     AsyncWebServerResponse* beginResponse(int code, const String& contentType = String(), const String& content = String());
+    AsyncWebServerResponse* beginResponse(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr);
     AsyncWebServerResponse* beginResponse(FS& fs, const String& path, const String& contentType = String(), bool download = false, AwsTemplateProcessor callback = nullptr);
     AsyncWebServerResponse* beginResponse(File content, const String& path, const String& contentType = String(), bool download = false, AwsTemplateProcessor callback = nullptr);
     AsyncWebServerResponse* beginResponse(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback = nullptr);
