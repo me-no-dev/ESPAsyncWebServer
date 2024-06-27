@@ -39,9 +39,9 @@
 #include <Print.h>
 
 #if ARDUINOJSON_VERSION_MAJOR == 6
-#ifndef DYNAMIC_JSON_DOCUMENT_SIZE
-#define DYNAMIC_JSON_DOCUMENT_SIZE 1024
-#endif
+  #ifndef DYNAMIC_JSON_DOCUMENT_SIZE
+    #define DYNAMIC_JSON_DOCUMENT_SIZE 1024
+  #endif
 #endif
 
 constexpr const char* JSON_MIMETYPE = "application/json";
@@ -230,7 +230,7 @@ class AsyncCallbackJsonWebHandler : public AsyncWebHandler {
     }
 
     virtual void handleRequest(AsyncWebServerRequest* request) override final {
-      if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
+      if ((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
         return request->requestAuthentication();
       if (_onRequest) {
         if (request->method() == HTTP_GET) {

@@ -23,31 +23,31 @@
 
 #include "Arduino.h"
 
+#include "FS.h"
 #include <functional>
 #include <list>
 #include <vector>
-#include "FS.h"
 
 #ifdef ESP32
-#include <WiFi.h>
-#include <AsyncTCP.h>
+  #include <AsyncTCP.h>
+  #include <WiFi.h>
 #elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESPAsyncTCP.h>
+  #include <ESP8266WiFi.h>
+  #include <ESPAsyncTCP.h>
 #else
-#error Platform not supported
+  #error Platform not supported
 #endif
 
-#define ASYNCWEBSERVER_VERSION "2.10.8"
-#define ASYNCWEBSERVER_VERSION_MAJOR 2
-#define ASYNCWEBSERVER_VERSION_MINOR 10
+#define ASYNCWEBSERVER_VERSION          "2.10.8"
+#define ASYNCWEBSERVER_VERSION_MAJOR    2
+#define ASYNCWEBSERVER_VERSION_MINOR    10
 #define ASYNCWEBSERVER_VERSION_REVISION 8
 #define ASYNCWEBSERVER_FORK_mathieucarbou
 
 #ifdef ASYNCWEBSERVER_REGEX
-#define ASYNCWEBSERVER_REGEX_ATTRIBUTE
+  #define ASYNCWEBSERVER_REGEX_ATTRIBUTE
 #else
-#define ASYNCWEBSERVER_REGEX_ATTRIBUTE __attribute__((warning("ASYNCWEBSERVER_REGEX not defined")))
+  #define ASYNCWEBSERVER_REGEX_ATTRIBUTE __attribute__((warning("ASYNCWEBSERVER_REGEX not defined")))
 #endif
 
 class AsyncWebServer;
@@ -63,31 +63,31 @@ class AsyncResponseStream;
 
 #ifndef WEBSERVER_H
 typedef enum {
-  HTTP_GET     = 0b00000001,
-  HTTP_POST    = 0b00000010,
-  HTTP_DELETE  = 0b00000100,
-  HTTP_PUT     = 0b00001000,
-  HTTP_PATCH   = 0b00010000,
-  HTTP_HEAD    = 0b00100000,
+  HTTP_GET = 0b00000001,
+  HTTP_POST = 0b00000010,
+  HTTP_DELETE = 0b00000100,
+  HTTP_PUT = 0b00001000,
+  HTTP_PATCH = 0b00010000,
+  HTTP_HEAD = 0b00100000,
   HTTP_OPTIONS = 0b01000000,
-  HTTP_ANY     = 0b01111111,
+  HTTP_ANY = 0b01111111,
 } WebRequestMethod;
 #endif
 
 #ifndef HAVE_FS_FILE_OPEN_MODE
 namespace fs {
-    class FileOpenMode {
+  class FileOpenMode {
     public:
-        static const char *read;
-        static const char *write;
-        static const char *append;
-    };
+      static const char* read;
+      static const char* write;
+      static const char* append;
+  };
 };
 #else
-#include "FileOpenMode.h"
+  #include "FileOpenMode.h"
 #endif
 
-//if this value is returned when asked for data, packet will not be sent and you will be asked for data again
+// if this value is returned when asked for data, packet will not be sent and you will be asked for data again
 #define RESPONSE_TRY_AGAIN 0xFFFFFFFF
 
 typedef uint8_t WebRequestMethodComposite;
@@ -106,8 +106,7 @@ class AsyncWebParameter {
     bool _isFile;
 
   public:
-
-    AsyncWebParameter(const String& name, const String& value, bool form=false, bool file=false, size_t size=0): _name(name), _value(value), _size(size), _isForm(form), _isFile(file){}
+    AsyncWebParameter(const String& name, const String& value, bool form = false, bool file = false, size_t size = 0) : _name(name), _value(value), _size(size), _isForm(form), _isFile(file) {}
     const String& name() const { return _name; }
     const String& value() const { return _value; }
     size_t size() const { return _size; }
@@ -126,18 +125,20 @@ class AsyncWebHeader {
 
   public:
     AsyncWebHeader() = default;
-    AsyncWebHeader(const AsyncWebHeader &) = default;
+    AsyncWebHeader(const AsyncWebHeader&) = default;
 
-    AsyncWebHeader(const String& name, const String& value): _name(name), _value(value){}
-    AsyncWebHeader(const String& data){
-      if(!data) return;
+    AsyncWebHeader(const String& name, const String& value) : _name(name), _value(value) {}
+    AsyncWebHeader(const String& data) {
+      if (!data)
+        return;
       int index = data.indexOf(':');
-      if (index < 0) return;
+      if (index < 0)
+        return;
       _name = data.substring(0, index);
       _value = data.substring(index + 2);
     }
 
-    AsyncWebHeader &operator=(const AsyncWebHeader &) = default;
+    AsyncWebHeader& operator=(const AsyncWebHeader&) = default;
 
     const String& name() const { return _name; }
     const String& value() const { return _value; }
@@ -148,16 +149,22 @@ class AsyncWebHeader {
  * REQUEST :: Each incoming Client is wrapped inside a Request and both live together until disconnect
  * */
 
-typedef enum { RCT_NOT_USED = -1, RCT_DEFAULT = 0, RCT_HTTP, RCT_WS, RCT_EVENT, RCT_MAX } RequestedConnectionType;
+typedef enum { RCT_NOT_USED = -1,
+               RCT_DEFAULT = 0,
+               RCT_HTTP,
+               RCT_WS,
+               RCT_EVENT,
+               RCT_MAX } RequestedConnectionType;
 
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
 typedef std::function<String(const String&)> AwsTemplateProcessor;
 
 class AsyncWebServerRequest {
-  using File = fs::File;
-  using FS = fs::FS;
-  friend class AsyncWebServer;
-  friend class AsyncCallbackWebHandler;
+    using File = fs::File;
+    using FS = fs::FS;
+    friend class AsyncWebServer;
+    friend class AsyncCallbackWebHandler;
+
   private:
     AsyncClient* _client;
     AsyncWebServer* _server;
@@ -197,7 +204,7 @@ class AsyncWebServerRequest {
     String _itemFilename;
     String _itemType;
     String _itemValue;
-    uint8_t *_itemBuffer;
+    uint8_t* _itemBuffer;
     size_t _itemBufferIndex;
     bool _itemIsFile;
 
@@ -206,9 +213,9 @@ class AsyncWebServerRequest {
     void _onError(int8_t error);
     void _onTimeout(uint32_t time);
     void _onDisconnect();
-    void _onData(void *buf, size_t len);
+    void _onData(void* buf, size_t len);
 
-    void _addPathParam(const char *param);
+    void _addPathParam(const char* param);
 
     bool _parseReqHead();
     bool _parseReqHeader();
@@ -223,12 +230,12 @@ class AsyncWebServerRequest {
 
   public:
     File _tempFile;
-    void *_tempObject;
+    void* _tempObject;
 
     AsyncWebServerRequest(AsyncWebServer*, AsyncClient*);
     ~AsyncWebServerRequest();
 
-    AsyncClient* client(){ return _client; }
+    AsyncClient* client() { return _client; }
     uint8_t version() const { return _version; }
     WebRequestMethodComposite method() const { return _method; }
     const String& url() const { return _url; }
@@ -241,120 +248,120 @@ class AsyncWebServerRequest {
     const char* methodToString() const;
     const char* requestedConnTypeToString() const;
 #else
-    const __FlashStringHelper *methodToString() const;
-    const __FlashStringHelper *requestedConnTypeToString() const;
+    const __FlashStringHelper* methodToString() const;
+    const __FlashStringHelper* requestedConnTypeToString() const;
 #endif
 
     RequestedConnectionType requestedConnType() const { return _reqconntype; }
     bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED);
-    void onDisconnect (ArDisconnectHandler fn);
+    void onDisconnect(ArDisconnectHandler fn);
 
-    //hash is the string representation of:
-    // base64(user:pass) for basic or
-    // user:realm:md5(user:realm:pass) for digest
-    bool authenticate(const char * hash);
-    bool authenticate(const char * username, const char * password, const char * realm = NULL, bool passwordIsHash = false);
-    void requestAuthentication(const char * realm = NULL, bool isDigest = true);
+    // hash is the string representation of:
+    //  base64(user:pass) for basic or
+    //  user:realm:md5(user:realm:pass) for digest
+    bool authenticate(const char* hash);
+    bool authenticate(const char* username, const char* password, const char* realm = NULL, bool passwordIsHash = false);
+    void requestAuthentication(const char* realm = NULL, bool isDigest = true);
 
-    void setHandler(AsyncWebHandler *handler){ _handler = handler; }
+    void setHandler(AsyncWebHandler* handler) { _handler = handler; }
 
     /**
      * @brief add header to collect from a response
-     * 
-     * @param name 
+     *
+     * @param name
      */
     void addInterestingHeader(const char* name);
-    void addInterestingHeader(const String& name){ return addInterestingHeader(name.c_str()); };
+    void addInterestingHeader(const String& name) { return addInterestingHeader(name.c_str()); };
 
     /**
      * @brief issue 302 redirect response
-     * 
-     * @param url 
+     *
+     * @param url
      */
     void redirect(const char* url);
-    void redirect(const String& url){ return redirect(url.c_str()); };
+    void redirect(const String& url) { return redirect(url.c_str()); };
 
-    void send(AsyncWebServerResponse *response);
-    void send(int code, const String& contentType=String(), const String& content=String());
-    void send(FS &fs, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
-    void send(File content, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
-    void send(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback=nullptr);
-    void send(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
-    void sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
+    void send(AsyncWebServerResponse* response);
+    void send(int code, const String& contentType = String(), const String& content = String());
+    void send(FS& fs, const String& path, const String& contentType = String(), bool download = false, AwsTemplateProcessor callback = nullptr);
+    void send(File content, const String& path, const String& contentType = String(), bool download = false, AwsTemplateProcessor callback = nullptr);
+    void send(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback = nullptr);
+    void send(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
+    void sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
 #ifdef ESP8266
-    void send_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback=nullptr);
-    void send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback=nullptr);
+    void send_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr);
+    void send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr);
 #endif
 
-    AsyncWebServerResponse *beginResponse(int code, const String& contentType=String(), const String& content=String());
-    AsyncWebServerResponse *beginResponse(FS &fs, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
-    AsyncWebServerResponse *beginResponse(File content, const String& path, const String& contentType=String(), bool download=false, AwsTemplateProcessor callback=nullptr);
-    AsyncWebServerResponse *beginResponse(Stream &stream, const String& contentType, size_t len, AwsTemplateProcessor callback=nullptr);
-    AsyncWebServerResponse *beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
-    AsyncWebServerResponse *beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback=nullptr);
-    AsyncResponseStream *beginResponseStream(const String& contentType, size_t bufferSize=1460);
+    AsyncWebServerResponse* beginResponse(int code, const String& contentType = String(), const String& content = String());
+    AsyncWebServerResponse* beginResponse(FS& fs, const String& path, const String& contentType = String(), bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(File content, const String& path, const String& contentType = String(), bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
+    AsyncWebServerResponse* beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
+    AsyncResponseStream* beginResponseStream(const String& contentType, size_t bufferSize = 1460);
 #ifdef ESP8266
-    AsyncWebServerResponse *beginResponse_P(int code, const String& contentType, const uint8_t * content, size_t len, AwsTemplateProcessor callback=nullptr);
-    AsyncWebServerResponse *beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback=nullptr);
+    AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr);
 #endif
 
-    size_t headers() const;                     // get header count
+    size_t headers() const; // get header count
 
     // check if header exists
     bool hasHeader(const char* name) const;
     bool hasHeader(const String& name) const { return hasHeader(name.c_str()); };
 #ifdef ESP8266
-    bool hasHeader(const __FlashStringHelper * data) const;   // check if header exists
+    bool hasHeader(const __FlashStringHelper* data) const; // check if header exists
 #endif
 
     const AsyncWebHeader* getHeader(const char* name) const;
     const AsyncWebHeader* getHeader(const String& name) const { return getHeader(name.c_str()); };
 #ifdef ESP8266
-    const AsyncWebHeader* getHeader(const __FlashStringHelper * data) const;
+    const AsyncWebHeader* getHeader(const __FlashStringHelper* data) const;
 #endif
     const AsyncWebHeader* getHeader(size_t num) const;
 
-    size_t params() const;                      // get arguments count
-    bool hasParam(const String& name, bool post=false, bool file=false) const;
-    bool hasParam(const __FlashStringHelper * data, bool post=false, bool file=false) const;
+    size_t params() const; // get arguments count
+    bool hasParam(const String& name, bool post = false, bool file = false) const;
+    bool hasParam(const __FlashStringHelper* data, bool post = false, bool file = false) const;
 
     /**
      * @brief Get the Request parameter by name
-     * 
-     * @param name 
-     * @param post 
-     * @param file 
-     * @return const AsyncWebParameter* 
+     *
+     * @param name
+     * @param post
+     * @param file
+     * @return const AsyncWebParameter*
      */
-    const AsyncWebParameter* getParam(const char* name, bool post=false, bool file=false) const;
+    const AsyncWebParameter* getParam(const char* name, bool post = false, bool file = false) const;
 
-    const AsyncWebParameter* getParam(const String& name, bool post=false, bool file=false) const { return getParam(name.c_str()); };
+    const AsyncWebParameter* getParam(const String& name, bool post = false, bool file = false) const { return getParam(name.c_str()); };
 #ifdef ESP8266
-    const AsyncWebParameter* getParam(const __FlashStringHelper * data, bool post, bool file) const;
+    const AsyncWebParameter* getParam(const __FlashStringHelper* data, bool post, bool file) const;
 #endif
 
     /**
      * @brief Get request parameter by number
      * i.e., n-th parameter
-     * @param num 
-     * @return const AsyncWebParameter* 
+     * @param num
+     * @return const AsyncWebParameter*
      */
     const AsyncWebParameter* getParam(size_t num) const;
 
-    size_t args() const { return params(); }     // get arguments count
+    size_t args() const { return params(); } // get arguments count
 
     // get request argument value by name
     const String& arg(const char* name) const;
     // get request argument value by name
     const String& arg(const String& name) const { return arg(name.c_str()); };
 #ifdef ESP8266
-    const String& arg(const __FlashStringHelper * data) const; // get request argument value by F(name)
+    const String& arg(const __FlashStringHelper* data) const; // get request argument value by F(name)
 #endif
-    const String& arg(size_t i) const;           // get request argument value by number
-    const String& argName(size_t i) const;       // get request argument name by number
-    bool hasArg(const char* name) const;         // check if argument exists
+    const String& arg(size_t i) const;     // get request argument value by number
+    const String& argName(size_t i) const; // get request argument name by number
+    bool hasArg(const char* name) const;   // check if argument exists
 #ifdef ESP8266
-    bool hasArg(const __FlashStringHelper * data) const;         // check if F(argument) exists
+    bool hasArg(const __FlashStringHelper* data) const; // check if F(argument) exists
 #endif
 
     const String& ASYNCWEBSERVER_REGEX_ATTRIBUTE pathArg(size_t i) const;
@@ -364,11 +371,11 @@ class AsyncWebServerRequest {
     const String& header(const String& name) const { return header(name.c_str()); };
 
 #ifdef ESP8266
-    const String& header(const __FlashStringHelper * data) const;// get request header value by F(name)
+    const String& header(const __FlashStringHelper* data) const; // get request header value by F(name)
 #endif
 
-    const String& header(size_t i) const;        // get request header value by number
-    const String& headerName(size_t i) const;    // get request header name by number
+    const String& header(size_t i) const;     // get request header value by number
+    const String& headerName(size_t i) const; // get request header name by number
 
     String urlDecode(const String& text) const;
 };
@@ -377,11 +384,11 @@ class AsyncWebServerRequest {
  * FILTER :: Callback to filter AsyncWebRewrite and AsyncWebHandler (done by the Server)
  * */
 
-using ArRequestFilterFunction = std::function<bool(AsyncWebServerRequest *request)>;
+using ArRequestFilterFunction = std::function<bool(AsyncWebServerRequest* request)>;
 
-bool ON_STA_FILTER(AsyncWebServerRequest *request);
+bool ON_STA_FILTER(AsyncWebServerRequest* request);
 
-bool ON_AP_FILTER(AsyncWebServerRequest *request);
+bool ON_AP_FILTER(AsyncWebServerRequest* request);
 
 /*
  * REWRITE :: One instance can be handle any Request (done by the Server)
@@ -393,21 +400,25 @@ class AsyncWebRewrite {
     String _toUrl;
     String _params;
     ArRequestFilterFunction _filter{nullptr};
+
   public:
-    AsyncWebRewrite(const char* from, const char* to) : _from(from), _toUrl(to){
+    AsyncWebRewrite(const char* from, const char* to) : _from(from), _toUrl(to) {
       int index = _toUrl.indexOf('?');
       if (index > 0) {
-        _params = _toUrl.substring(index +1);
+        _params = _toUrl.substring(index + 1);
         _toUrl = _toUrl.substring(0, index);
       }
     }
-    virtual ~AsyncWebRewrite(){}
-    AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
-    bool filter(AsyncWebServerRequest *request) const { return _filter == NULL || _filter(request); }
+    virtual ~AsyncWebRewrite() {}
+    AsyncWebRewrite& setFilter(ArRequestFilterFunction fn) {
+      _filter = fn;
+      return *this;
+    }
+    bool filter(AsyncWebServerRequest* request) const { return _filter == NULL || _filter(request); }
     const String& from(void) const { return _from; }
     const String& toUrl(void) const { return _toUrl; }
     const String& params(void) const { return _params; }
-    virtual bool match(AsyncWebServerRequest *request) { return from() == request->url() && filter(request); }
+    virtual bool match(AsyncWebServerRequest* request) { return from() == request->url() && filter(request); }
 };
 
 /*
@@ -419,20 +430,32 @@ class AsyncWebHandler {
     ArRequestFilterFunction _filter{nullptr};
     String _username;
     String _password;
+
   public:
-    AsyncWebHandler(){}
-    AsyncWebHandler& setFilter(ArRequestFilterFunction fn) { _filter = fn; return *this; }
-    AsyncWebHandler& setAuthentication(const char *username, const char *password){  _username = username; _password = password; return *this; };
-    AsyncWebHandler& setAuthentication(const String& username, const String& password){  _username = username; _password = password; return *this; };
-    bool filter(AsyncWebServerRequest *request){ return _filter == NULL || _filter(request); }
-    virtual ~AsyncWebHandler(){}
-    virtual bool canHandle(AsyncWebServerRequest *request __attribute__((unused))){
+    AsyncWebHandler() {}
+    AsyncWebHandler& setFilter(ArRequestFilterFunction fn) {
+      _filter = fn;
+      return *this;
+    }
+    AsyncWebHandler& setAuthentication(const char* username, const char* password) {
+      _username = username;
+      _password = password;
+      return *this;
+    };
+    AsyncWebHandler& setAuthentication(const String& username, const String& password) {
+      _username = username;
+      _password = password;
+      return *this;
+    };
+    bool filter(AsyncWebServerRequest* request) { return _filter == NULL || _filter(request); }
+    virtual ~AsyncWebHandler() {}
+    virtual bool canHandle(AsyncWebServerRequest* request __attribute__((unused))) {
       return false;
     }
-    virtual void handleRequest(AsyncWebServerRequest *request __attribute__((unused))){}
-    virtual void handleUpload(AsyncWebServerRequest *request  __attribute__((unused)), const String& filename __attribute__((unused)), size_t index __attribute__((unused)), uint8_t *data __attribute__((unused)), size_t len __attribute__((unused)), bool final  __attribute__((unused))){}
-    virtual void handleBody(AsyncWebServerRequest *request __attribute__((unused)), uint8_t *data __attribute__((unused)), size_t len __attribute__((unused)), size_t index __attribute__((unused)), size_t total __attribute__((unused))){}
-    virtual bool isRequestHandlerTrivial(){return true;}
+    virtual void handleRequest(AsyncWebServerRequest* request __attribute__((unused))) {}
+    virtual void handleUpload(AsyncWebServerRequest* request __attribute__((unused)), const String& filename __attribute__((unused)), size_t index __attribute__((unused)), uint8_t* data __attribute__((unused)), size_t len __attribute__((unused)), bool final __attribute__((unused))) {}
+    virtual void handleBody(AsyncWebServerRequest* request __attribute__((unused)), uint8_t* data __attribute__((unused)), size_t len __attribute__((unused)), size_t index __attribute__((unused)), size_t total __attribute__((unused))) {}
+    virtual bool isRequestHandlerTrivial() { return true; }
 };
 
 /*
@@ -440,7 +463,12 @@ class AsyncWebHandler {
  * */
 
 typedef enum {
-  RESPONSE_SETUP, RESPONSE_HEADERS, RESPONSE_CONTENT, RESPONSE_WAIT_ACK, RESPONSE_END, RESPONSE_FAILED
+  RESPONSE_SETUP,
+  RESPONSE_HEADERS,
+  RESPONSE_CONTENT,
+  RESPONSE_WAIT_ACK,
+  RESPONSE_END,
+  RESPONSE_FAILED
 } WebResponseState;
 
 class AsyncWebServerResponse {
@@ -457,8 +485,9 @@ class AsyncWebServerResponse {
     size_t _writtenLength;
     WebResponseState _state;
     const char* _responseCodeToString(int code);
-public:
-    static const __FlashStringHelper *responseCodeToString(int code);
+
+  public:
+    static const __FlashStringHelper* responseCodeToString(int code);
 
   public:
     AsyncWebServerResponse();
@@ -472,23 +501,23 @@ public:
     virtual bool _finished() const;
     virtual bool _failed() const;
     virtual bool _sourceValid() const;
-    virtual void _respond(AsyncWebServerRequest *request);
-    virtual size_t _ack(AsyncWebServerRequest *request, size_t len, uint32_t time);
+    virtual void _respond(AsyncWebServerRequest* request);
+    virtual size_t _ack(AsyncWebServerRequest* request, size_t len, uint32_t time);
 };
 
 /*
  * SERVER :: One instance
  * */
 
-typedef std::function<void(AsyncWebServerRequest *request)> ArRequestHandlerFunction;
-typedef std::function<void(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final)> ArUploadHandlerFunction;
-typedef std::function<void(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)> ArBodyHandlerFunction;
+typedef std::function<void(AsyncWebServerRequest* request)> ArRequestHandlerFunction;
+typedef std::function<void(AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final)> ArUploadHandlerFunction;
+typedef std::function<void(AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total)> ArBodyHandlerFunction;
 
 class AsyncWebServer {
   protected:
     AsyncServer _server;
-    std::list<std::shared_ptr<AsyncWebRewrite> > _rewrites;
-    std::list<std::unique_ptr<AsyncWebHandler> > _handlers;
+    std::list<std::shared_ptr<AsyncWebRewrite>> _rewrites;
+    std::list<std::unique_ptr<AsyncWebHandler>> _handlers;
     AsyncCallbackWebHandler* _catchAllHandler;
 
   public:
@@ -500,7 +529,7 @@ class AsyncWebServer {
 
 #if ASYNC_TCP_SSL_ENABLED
     void onSslFileRequest(AcSSlFileHandler cb, void* arg);
-    void beginSecure(const char *cert, const char *private_key_file, const char *password);
+    void beginSecure(const char* cert, const char* private_key_file, const char* password);
 #endif
 
     AsyncWebRewrite& addRewrite(AsyncWebRewrite* rewrite);
@@ -509,7 +538,7 @@ class AsyncWebServer {
      * @brief (compat) Add url rewrite rule by pointer
      * a deep copy of the pounter object will be created,
      * it is up to user to manage further lifetime of the object in argument
-     * 
+     *
      * @param rewrite pointer to rewrite object to copy setting from
      * @return AsyncWebRewrite& reference to a newly created rewrite rule
      */
@@ -517,10 +546,10 @@ class AsyncWebServer {
 
     /**
      * @brief add url rewrite rule
-     * 
-     * @param from 
-     * @param to 
-     * @return AsyncWebRewrite& 
+     *
+     * @param from
+     * @param to
+     * @return AsyncWebRewrite&
      */
     AsyncWebRewrite& rewrite(const char* from, const char* to);
 
@@ -528,19 +557,19 @@ class AsyncWebServer {
      * @brief (compat) remove rewrite rule via referenced object
      * this will NOT deallocate pointed object itself, internal rule with same from/to urls will be removed if any
      * it's a compat method, better use `removeRewrite(const char* from, const char* to)`
-     * @param rewrite 
-     * @return true 
-     * @return false 
+     * @param rewrite
+     * @return true
+     * @return false
      */
     bool removeRewrite(AsyncWebRewrite* rewrite);
 
     /**
      * @brief remove rewrite rule
-     * 
-     * @param from 
-     * @param to 
-     * @return true 
-     * @return false 
+     *
+     * @param from
+     * @param to
+     * @return true
+     * @return false
      */
     bool removeRewrite(const char* from, const char* to);
 
@@ -554,45 +583,45 @@ class AsyncWebServer {
 
     AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
 
-    void onNotFound(ArRequestHandlerFunction fn);  //called when handler is not assigned
-    void onFileUpload(ArUploadHandlerFunction fn); //handle file uploads
-    void onRequestBody(ArBodyHandlerFunction fn); //handle posts with plain body content (JSON often transmitted this way as a request)
+    void onNotFound(ArRequestHandlerFunction fn);  // called when handler is not assigned
+    void onFileUpload(ArUploadHandlerFunction fn); // handle file uploads
+    void onRequestBody(ArBodyHandlerFunction fn);  // handle posts with plain body content (JSON often transmitted this way as a request)
 
-    void reset(); //remove all writers and handlers, with onNotFound/onFileUpload/onRequestBody
+    void reset(); // remove all writers and handlers, with onNotFound/onFileUpload/onRequestBody
 
-    void _handleDisconnect(AsyncWebServerRequest *request);
-    void _attachHandler(AsyncWebServerRequest *request);
-    void _rewriteRequest(AsyncWebServerRequest *request);
+    void _handleDisconnect(AsyncWebServerRequest* request);
+    void _attachHandler(AsyncWebServerRequest* request);
+    void _rewriteRequest(AsyncWebServerRequest* request);
 };
 
 class DefaultHeaders {
-  using headers_t = std::list<AsyncWebHeader>;
-  headers_t _headers;
+    using headers_t = std::list<AsyncWebHeader>;
+    headers_t _headers;
 
-public:
-  DefaultHeaders() = default;
+  public:
+    DefaultHeaders() = default;
 
-  using ConstIterator = headers_t::const_iterator;
+    using ConstIterator = headers_t::const_iterator;
 
-  void addHeader(const String& name, const String& value){
-    _headers.emplace_back(name, value);
-  }
+    void addHeader(const String& name, const String& value) {
+      _headers.emplace_back(name, value);
+    }
 
-  ConstIterator begin() const { return _headers.begin(); }
-  ConstIterator end() const { return _headers.end(); }
+    ConstIterator begin() const { return _headers.begin(); }
+    ConstIterator end() const { return _headers.end(); }
 
-  DefaultHeaders(DefaultHeaders const &) = delete;
-  DefaultHeaders &operator=(DefaultHeaders const &) = delete;
+    DefaultHeaders(DefaultHeaders const&) = delete;
+    DefaultHeaders& operator=(DefaultHeaders const&) = delete;
 
-  static DefaultHeaders &Instance() {
-    static DefaultHeaders instance;
-    return instance;
-  }
+    static DefaultHeaders& Instance() {
+      static DefaultHeaders instance;
+      return instance;
+    }
 };
 
-#include "WebResponseImpl.h"
-#include "WebHandlerImpl.h"
-#include "AsyncWebSocket.h"
 #include "AsyncEventSource.h"
+#include "AsyncWebSocket.h"
+#include "WebHandlerImpl.h"
+#include "WebResponseImpl.h"
 
 #endif /* _AsyncWebServer_H_ */
