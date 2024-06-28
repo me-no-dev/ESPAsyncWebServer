@@ -706,6 +706,10 @@ AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const Str
   return new AsyncProgmemResponse(code, contentType, content, len, callback);
 }
 
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback) {
+  return new AsyncProgmemResponse(code, contentType, (const uint8_t*)content, strlen_P(content), callback);
+}
+
 AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(FS& fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) {
   if (fs.exists(path) || (!download && fs.exists(path + F(".gz"))))
     return new AsyncFileResponse(fs, path, contentType, download, callback);
@@ -736,16 +740,6 @@ AsyncResponseStream* AsyncWebServerRequest::beginResponseStream(const String& co
   return new AsyncResponseStream(contentType, bufferSize);
 }
 
-#ifdef ESP8266
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback) {
-  return new AsyncProgmemResponse(code, contentType, content, len, callback);
-}
-
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback) {
-  return beginResponse_P(code, contentType, (const uint8_t*)content, strlen_P(content), callback);
-}
-#endif
-
 void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
   _response = response;
   if (_response == NULL) {
@@ -765,6 +759,14 @@ void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
 
 void AsyncWebServerRequest::send(int code, const String& contentType, const String& content) {
   send(beginResponse(code, contentType, content));
+}
+
+void AsyncWebServerRequest::send(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback) {
+  send(beginResponse(code, contentType, content, len, callback));
+}
+
+void AsyncWebServerRequest::send(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback) {
+  send(beginResponse(code, contentType, content, callback));
 }
 
 void AsyncWebServerRequest::send(FS& fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) {
@@ -792,16 +794,6 @@ void AsyncWebServerRequest::send(const String& contentType, size_t len, AwsRespo
 void AsyncWebServerRequest::sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback) {
   send(beginChunkedResponse(contentType, callback, templateCallback));
 }
-
-#ifdef ESP8266
-void AsyncWebServerRequest::send_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback) {
-  send(beginResponse_P(code, contentType, content, len, callback));
-}
-
-void AsyncWebServerRequest::send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback) {
-  send(beginResponse_P(code, contentType, content, callback));
-}
-#endif
 
 void AsyncWebServerRequest::redirect(const char* url) {
   AsyncWebServerResponse* response = beginResponse(302);
