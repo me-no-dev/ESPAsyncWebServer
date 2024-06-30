@@ -120,7 +120,6 @@ class AsyncJsonResponse : public AsyncAbstractResponse {
     }
 #endif
 
-    ~AsyncJsonResponse() {}
     JsonVariant& getRoot() { return _root; }
     bool _sourceValid() const { return _isValid; }
     size_t setLength() {
