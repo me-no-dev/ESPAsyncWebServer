@@ -43,7 +43,7 @@
   #error Platform not supported
 #endif
 
-#define ASYNCWEBSERVER_VERSION          "3.0.3"
+#define ASYNCWEBSERVER_VERSION          "3.0.4"
 #define ASYNCWEBSERVER_VERSION_MAJOR    3
 #define ASYNCWEBSERVER_VERSION_MINOR    0
 #define ASYNCWEBSERVER_VERSION_REVISION 3
