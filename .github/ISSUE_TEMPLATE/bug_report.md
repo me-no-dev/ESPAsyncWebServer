@@ -28,6 +28,8 @@ If yes, please specify which one
 Please provide the stack trace here taken with `monitor_filters = esp32_exception_decoder`.
 **Any issue opened with a non readable stack trace will be ignored because not helpful at all.**
 
+As an alternative, you can use [https://maximeborges.github.io/esp-stacktrace-decoder/](https://maximeborges.github.io/esp-stacktrace-decoder/).
+
 **Additional notes**
 
 Add any other context about the problem here.
