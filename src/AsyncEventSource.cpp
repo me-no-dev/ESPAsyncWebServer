@@ -22,26 +22,27 @@
   #include <rom/ets_sys.h>
 #endif
 #include "AsyncEventSource.h"
+#include "literals.h"
 
 static String generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect) {
   String ev;
 
   if (reconnect) {
-    ev += F("retry: ");
+    ev += T_retry_;
     ev += reconnect;
-    ev += F("\r\n");
+    ev += T_rn;
   }
 
   if (id) {
-    ev += F("id: ");
-    ev += String(id);
-    ev += F("\r\n");
+    ev += T_id__;
+    ev += id;
+    ev += T_rn;
   }
 
   if (event != NULL) {
-    ev += F("event: ");
-    ev += String(event);
-    ev += F("\r\n");
+    ev += T_event_;
+    ev += event;
+    ev += T_rn;
   }
 
   if (message != NULL) {
@@ -57,9 +58,9 @@ static String generateEventMessage(const char* message, const char* event, uint3
         if (ldata != NULL) {
           memcpy(ldata, lineStart, llen);
           ldata[llen] = 0;
-          ev += F("data: ");
+          ev += T_data_;
           ev += ldata;
-          ev += F("\r\n\r\n");
+          ev += T_rnrn;
           free(ldata);
         }
         lineStart = (char*)message + messageLen;
@@ -92,14 +93,14 @@ static String generateEventMessage(const char* message, const char* event, uint3
         if (ldata != NULL) {
           memcpy(ldata, lineStart, llen);
           ldata[llen] = 0;
-          ev += F("data: ");
+          ev += T_data_;
           ev += ldata;
-          ev += F("\r\n");
+          ev += T_rn;
           free(ldata);
         }
         lineStart = nextLine;
         if (lineStart == ((char*)message + messageLen))
-          ev += F("\r\n");
+          ev += T_rn;
       }
     } while (lineStart < ((char*)message + messageLen));
   }
@@ -158,8 +159,8 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest* request, A
   _client = request->client();
   _server = server;
   _lastId = 0;
-  if (request->hasHeader(F("Last-Event-ID")))
-    _lastId = atoi(request->getHeader(F("Last-Event-ID"))->value().c_str());
+  if (request->hasHeader(T_Last_Event_ID))
+    _lastId = atoi(request->getHeader(T_Last_Event_ID)->value().c_str());
 
   _client->setRxTimeout(0);
   _client->onError(NULL, NULL);
@@ -360,8 +361,8 @@ bool AsyncEventSource::canHandle(AsyncWebServerRequest* request) {
   if (request->method() != HTTP_GET || !request->url().equals(_url)) {
     return false;
   }
-  request->addInterestingHeader(F("Last-Event-ID"));
-  request->addInterestingHeader("Cookie");
+  request->addInterestingHeader(T_Last_Event_ID);
+  request->addInterestingHeader(T_Cookie);
   return true;
 }
 
@@ -382,10 +383,10 @@ void AsyncEventSource::handleRequest(AsyncWebServerRequest* request) {
 AsyncEventSourceResponse::AsyncEventSourceResponse(AsyncEventSource* server) {
   _server = server;
   _code = 200;
-  _contentType = F("text/event-stream");
+  _contentType = T_text_event_stream;
   _sendContentLength = false;
-  addHeader(F("Cache-Control"), F("no-cache"));
-  addHeader(F("Connection"), F("keep-alive"));
+  addHeader(T_Cache_Control, T_no_cache);
+  addHeader(T_Connection, T_keep_alive);
 }
 
 void AsyncEventSourceResponse::_respond(AsyncWebServerRequest* request) {

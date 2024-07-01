@@ -222,22 +222,22 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest* request) {
     } else {
       etag = String(request->_tempFile.size());
     }
-    if (_last_modified.length() && _last_modified == request->header(F("If-Modified-Since"))) {
+    if (_last_modified.length() && _last_modified == request->header(T_IMS)) {
       request->_tempFile.close();
       request->send(304); // Not modified
-    } else if (_cache_control.length() && request->hasHeader(F("If-None-Match")) && request->header(F("If-None-Match")).equals(etag)) {
+    } else if (_cache_control.length() && request->hasHeader(T_INM) && request->header(T_INM).equals(etag)) {
       request->_tempFile.close();
       AsyncWebServerResponse* response = new AsyncBasicResponse(304); // Not modified
-      response->addHeader(F("Cache-Control"), _cache_control);
-      response->addHeader(F("ETag"), etag);
+      response->addHeader(T_Cache_Control, _cache_control);
+      response->addHeader(T_ETag, etag);
       request->send(response);
     } else {
       AsyncWebServerResponse* response = new AsyncFileResponse(request->_tempFile, filename, String(), false, _callback);
       if (_last_modified.length())
-        response->addHeader(F("Last-Modified"), _last_modified);
+        response->addHeader(T_Last_Modified, _last_modified);
       if (_cache_control.length()) {
-        response->addHeader(F("Cache-Control"), _cache_control);
-        response->addHeader(F("ETag"), etag);
+        response->addHeader(T_Cache_Control, _cache_control);
+        response->addHeader(T_ETag, etag);
       }
       request->send(response);
     }

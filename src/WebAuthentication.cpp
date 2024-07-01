@@ -25,6 +25,7 @@
 #else
   #include "md5.h"
 #endif
+#include "literals.h"
 
 // Basic Auth hash = base64("username:password")
 
@@ -133,16 +134,16 @@ String generateDigestHash(const char* username, const char* password, const char
 }
 
 String requestDigestAuthentication(const char* realm) {
-  String header = F("realm=\"");
+  String header(T_realm__);
   if (realm == NULL)
-    header.concat(F("asyncesp"));
+    header.concat(T_asyncesp);
   else
     header.concat(realm);
-  header.concat(F("\", qop=\"auth\", nonce=\""));
+  header.concat(T_auth_nonce);
   header.concat(genRandomMD5());
-  header.concat(F("\", opaque=\""));
+  header.concat(T__opaque);
   header.concat(genRandomMD5());
-  header += '"';
+  header += (char)0x22; // '"'
   return header;
 }
 
@@ -173,7 +174,8 @@ bool checkDigestAuthentication(const char* header, const __FlashStringHelper* me
   String myNc;
   String myCnonce;
 
-  myHeader += F(", ");
+  myHeader += (char)0x2c; // ','
+  myHeader += (char)0x20; // ' '
   do {
     String avLine(myHeader.substring(0, nextBreak));
     avLine.trim();
@@ -191,42 +193,42 @@ bool checkDigestAuthentication(const char* header, const __FlashStringHelper* me
       avLine = avLine.substring(1, avLine.length() - 1);
     }
 
-    if (varName.equals(F("username"))) {
+    if (varName.equals(T_username)) {
       if (!avLine.equals(username)) {
         // os_printf("AUTH FAIL: username\n");
         return false;
       }
       myUsername = avLine;
-    } else if (varName.equals(F("realm"))) {
+    } else if (varName.equals(T_realm)) {
       if (realm != NULL && !avLine.equals(realm)) {
         // os_printf("AUTH FAIL: realm\n");
         return false;
       }
       myRealm = avLine;
-    } else if (varName.equals(F("nonce"))) {
+    } else if (varName.equals(T_nonce)) {
       if (nonce != NULL && !avLine.equals(nonce)) {
         // os_printf("AUTH FAIL: nonce\n");
         return false;
       }
       myNonce = avLine;
-    } else if (varName.equals(F("opaque"))) {
+    } else if (varName.equals(T_opaque)) {
       if (opaque != NULL && !avLine.equals(opaque)) {
         // os_printf("AUTH FAIL: opaque\n");
         return false;
       }
-    } else if (varName.equals(F("uri"))) {
+    } else if (varName.equals(T_uri)) {
       if (uri != NULL && !avLine.equals(uri)) {
         // os_printf("AUTH FAIL: uri\n");
         return false;
       }
       myUri = avLine;
-    } else if (varName.equals(F("response"))) {
+    } else if (varName.equals(T_response)) {
       myResponse = avLine;
-    } else if (varName.equals(F("qop"))) {
+    } else if (varName.equals(T_qop)) {
       myQop = avLine;
-    } else if (varName.equals(F("nc"))) {
+    } else if (varName.equals(T_nc)) {
       myNc = avLine;
-    } else if (varName.equals(F("cnonce"))) {
+    } else if (varName.equals(T_cnonce)) {
       myCnonce = avLine;
     }
   } while (nextBreak > 0);

@@ -21,6 +21,7 @@
 #include "ESPAsyncWebServer.h"
 #include "WebAuthentication.h"
 #include "WebResponseImpl.h"
+#include "literals.h"
 
 #ifndef ESP8266
   #define os_strlen strlen
@@ -113,9 +114,9 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
           _parsedLength += len;
       } else {
         if (_parsedLength == 0) {
-          if (_contentType.startsWith(F("application/x-www-form-urlencoded"))) {
+          if (_contentType.startsWith(T_app_xform_urlencoded)) {
             _isPlainPost = true;
-          } else if (_contentType == F("text/plain") && __is_param_char(((char*)buf)[0])) {
+          } else if (_contentType == T_text_plain && __is_param_char(((char*)buf)[0])) {
             size_t i = 0;
             while (i < len && __is_param_char(((char*)buf)[i++]))
               ;
@@ -153,7 +154,7 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
 }
 
 void AsyncWebServerRequest::_removeNotInterestingHeaders() {
-  if (std::any_of(std::begin(_interestingHeaders), std::end(_interestingHeaders), [](const String& str) { return str.equalsIgnoreCase(F("ANY")); }))
+  if (std::any_of(std::begin(_interestingHeaders), std::end(_interestingHeaders), [](const String& str) { return str.equalsIgnoreCase(T_ANY); }))
     return; // nothing to do
 
   for (auto iter = std::begin(_headers); iter != std::end(_headers);) {
@@ -246,19 +247,19 @@ bool AsyncWebServerRequest::_parseReqHead() {
   String u = _temp.substring(m.length() + 1, index);
   _temp = _temp.substring(index + 1);
 
-  if (m == F("GET")) {
+  if (m == T_GET) {
     _method = HTTP_GET;
-  } else if (m == F("POST")) {
+  } else if (m == T_POST) {
     _method = HTTP_POST;
-  } else if (m == F("DELETE")) {
+  } else if (m == T_DELETE) {
     _method = HTTP_DELETE;
-  } else if (m == F("PUT")) {
+  } else if (m == T_PUT) {
     _method = HTTP_PUT;
-  } else if (m == F("PATCH")) {
+  } else if (m == T_PATCH) {
     _method = HTTP_PATCH;
-  } else if (m == F("HEAD")) {
+  } else if (m == T_HEAD) {
     _method = HTTP_HEAD;
-  } else if (m == F("OPTIONS")) {
+  } else if (m == T_OPTIONS) {
     _method = HTTP_OPTIONS;
   }
 
@@ -271,7 +272,7 @@ bool AsyncWebServerRequest::_parseReqHead() {
   _url = urlDecode(u);
   _addGetParams(g);
 
-  if (!_temp.startsWith(F("HTTP/1.0")))
+  if (!_temp.startsWith(T_HTTP_1_0))
     _version = 1;
 
   _temp = String();
@@ -304,34 +305,34 @@ bool strContains(const String& src, const String& find, bool mindcase = true) {
 bool AsyncWebServerRequest::_parseReqHeader() {
   int index = _temp.indexOf(':');
   if (index) {
-    String name = _temp.substring(0, index);
-    String value = _temp.substring(index + 2);
-    if (name.equalsIgnoreCase("Host")) {
+    String name(_temp.substring(0, index));
+    String value(_temp.substring(index + 2));
+    if (name.equalsIgnoreCase(T_Host)) {
       _host = value;
-    } else if (name.equalsIgnoreCase(F("Content-Type"))) {
+    } else if (name.equalsIgnoreCase(T_Content_Type)) {
       _contentType = value.substring(0, value.indexOf(';'));
-      if (value.startsWith(F("multipart/"))) {
+      if (value.startsWith(T_MULTIPART_)) {
         _boundary = value.substring(value.indexOf('=') + 1);
         _boundary.replace(String('"'), String());
         _isMultipart = true;
       }
-    } else if (name.equalsIgnoreCase(F("Content-Length"))) {
+    } else if (name.equalsIgnoreCase(T_Content_Length)) {
       _contentLength = atoi(value.c_str());
-    } else if (name.equalsIgnoreCase(F("Expect")) && value == F("100-continue")) {
+    } else if (name.equalsIgnoreCase(T_EXPECT) && value == T_100_CONTINUE) {
       _expectingContinue = true;
-    } else if (name.equalsIgnoreCase(F("Authorization"))) {
-      if (value.length() > 5 && value.substring(0, 5).equalsIgnoreCase(F("Basic"))) {
+    } else if (name.equalsIgnoreCase(T_AUTH)) {
+      if (value.length() > 5 && value.substring(0, 5).equalsIgnoreCase(T_BASIC)) {
         _authorization = value.substring(6);
-      } else if (value.length() > 6 && value.substring(0, 6).equalsIgnoreCase(F("Digest"))) {
+      } else if (value.length() > 6 && value.substring(0, 6).equalsIgnoreCase(T_DIGEST)) {
         _isDigest = true;
         _authorization = value.substring(7);
       }
     } else {
-      if (name.equalsIgnoreCase(F("Upgrade")) && value.equalsIgnoreCase(F("websocket"))) {
+      if (name.equalsIgnoreCase(T_UPGRADE) && value.equalsIgnoreCase(T_WS)) {
         // WebSocket request can be uniquely identified by header: [Upgrade: websocket]
         _reqconntype = RCT_WS;
       } else {
-        if (name.equalsIgnoreCase(F("Accept")) && strContains(value, F("text/event-stream"), false)) {
+        if (name.equalsIgnoreCase(T_ACCEPT) && strContains(value, F(T_text_event_stream), false)) {
           // WebEvent request can be uniquely identified by header:  [Accept: text/event-stream]
           _reqconntype = RCT_EVENT;
         }
@@ -347,9 +348,9 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data) {
   if (data && (char)data != '&')
     _temp += (char)data;
   if (!data || (char)data == '&' || _parsedLength == _contentLength) {
-    String name = F("body");
-    String value = _temp;
-    if (!_temp.startsWith(String('{')) && !_temp.startsWith(String('[')) && _temp.indexOf('=') > 0) {
+    String name(T_BODY);
+    String value(_temp);
+    if (!(_temp.charAt(0) == '{') && !(_temp.charAt(0) == '[') && _temp.indexOf('=') > 0) {
       name = _temp.substring(0, _temp.indexOf('='));
       value = _temp.substring(_temp.indexOf('=') + 1);
     }
@@ -430,17 +431,17 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last) {
       _temp += (char)data;
     if ((char)data == '\n') {
       if (_temp.length()) {
-        if (_temp.length() > 12 && _temp.substring(0, 12).equalsIgnoreCase(F("Content-Type"))) {
+        if (_temp.length() > 12 && _temp.substring(0, 12).equalsIgnoreCase(T_Content_Type)) {
           _itemType = _temp.substring(14);
           _itemIsFile = true;
-        } else if (_temp.length() > 19 && _temp.substring(0, 19).equalsIgnoreCase(F("Content-Disposition"))) {
+        } else if (_temp.length() > 19 && _temp.substring(0, 19).equalsIgnoreCase(T_Content_Disposition)) {
           _temp = _temp.substring(_temp.indexOf(';') + 2);
           while (_temp.indexOf(';') > 0) {
             String name = _temp.substring(0, _temp.indexOf('='));
             String nameVal = _temp.substring(_temp.indexOf('=') + 2, _temp.indexOf(';') - 1);
-            if (name == F("name")) {
+            if (name == T_name) {
               _itemName = nameVal;
-            } else if (name == F("filename")) {
+            } else if (name == T_filename) {
               _itemFilename = nameVal;
               _itemIsFile = true;
             }
@@ -448,9 +449,9 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last) {
           }
           String name = _temp.substring(0, _temp.indexOf('='));
           String nameVal = _temp.substring(_temp.indexOf('=') + 2, _temp.length() - 1);
-          if (name == F("name")) {
+          if (name == T_name) {
             _itemName = nameVal;
-          } else if (name == F("filename")) {
+          } else if (name == T_filename) {
             _itemFilename = nameVal;
             _itemIsFile = true;
           }
@@ -590,7 +591,7 @@ void AsyncWebServerRequest::_parseLine() {
       _server->_attachHandler(this);
       _removeNotInterestingHeaders();
       if (_expectingContinue) {
-        String response = F("HTTP/1.1 100 Continue\r\n\r\n");
+        String response(T_HTTP_100_CONT);
         _client->write(response.c_str(), response.length());
       }
       // check handler for authentication
@@ -711,7 +712,7 @@ AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const Str
 }
 
 AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(FS& fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) {
-  if (fs.exists(path) || (!download && fs.exists(path + F(".gz"))))
+  if (fs.exists(path) || (!download && fs.exists(path + T__gz)))
     return new AsyncFileResponse(fs, path, contentType, download, callback);
   return NULL;
 }
@@ -770,7 +771,7 @@ void AsyncWebServerRequest::send(int code, const String& contentType, PGM_P cont
 }
 
 void AsyncWebServerRequest::send(FS& fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) {
-  if (fs.exists(path) || (!download && fs.exists(path + F(".gz")))) {
+  if (fs.exists(path) || (!download && fs.exists(path + T__gz))) {
     send(beginResponse(fs, path, contentType, download, callback));
   } else
     send(404);
@@ -797,7 +798,7 @@ void AsyncWebServerRequest::sendChunked(const String& contentType, AwsResponseFi
 
 void AsyncWebServerRequest::redirect(const char* url) {
   AsyncWebServerResponse* response = beginResponse(302);
-  response->addHeader(F("Location"), url);
+  response->addHeader(T_LOCATION, url);
   send(response);
 }
 
@@ -838,16 +839,16 @@ bool AsyncWebServerRequest::authenticate(const char* hash) {
 void AsyncWebServerRequest::requestAuthentication(const char* realm, bool isDigest) {
   AsyncWebServerResponse* r = beginResponse(401);
   if (!isDigest && realm == NULL) {
-    r->addHeader(F("WWW-Authenticate"), F("Basic realm=\"Login Required\""));
+    r->addHeader(T_WWW_AUTH, T_BASIC_REALM_LOGIN_REQ);
   } else if (!isDigest) {
-    String header = F("Basic realm=\"");
+    String header(T_BASIC_REALM);
     header.concat(realm);
     header += '"';
-    r->addHeader(F("WWW-Authenticate"), header);
+    r->addHeader(T_WWW_AUTH, header);
   } else {
-    String header = F("Digest ");
+    String header(T_DIGEST_);
     header.concat(requestDigestAuthentication(realm));
-    r->addHeader(F("WWW-Authenticate"), header);
+    r->addHeader(T_WWW_AUTH, header);
   }
   send(r);
 }
@@ -939,82 +940,52 @@ String AsyncWebServerRequest::urlDecode(const String& text) const {
 }
 
 #ifndef ESP8266
-const char* AsyncWebServerRequest::methodToString() const {
+const char* AsyncWebServerRequest::methodToString() const
+#else
+const __FlashStringHelper* AsyncWebServerRequest::methodToString() const
+#endif
+{
   if (_method == HTTP_ANY)
-    return "ANY";
+    return T_ANY;
   if (_method & HTTP_GET)
-    return "GET";
+    return T_GET;
   if (_method & HTTP_POST)
-    return "POST";
+    return T_POST;
   if (_method & HTTP_DELETE)
-    return "DELETE";
+    return T_DELETE;
   if (_method & HTTP_PUT)
-    return "PUT";
+    return T_PUT;
   if (_method & HTTP_PATCH)
-    return "PATCH";
+    return T_PATCH;
   if (_method & HTTP_HEAD)
-    return "HEAD";
+    return T_HEAD;
   if (_method & HTTP_OPTIONS)
-    return "OPTIONS";
-  return "UNKNOWN";
+    return T_OPTIONS;
+  return T_UNKNOWN;
 }
 
-const char* AsyncWebServerRequest::requestedConnTypeToString() const {
+#ifndef ESP8266
+const char* AsyncWebServerRequest::requestedConnTypeToString() const
+#else
+const __FlashStringHelper* AsyncWebServerRequest::requestedConnTypeToString() const
+#endif
+{
+
   switch (_reqconntype) {
     case RCT_NOT_USED:
-      return "RCT_NOT_USED";
+      return T_RCT_NOT_USED;
     case RCT_DEFAULT:
-      return "RCT_DEFAULT";
+      return T_RCT_DEFAULT;
     case RCT_HTTP:
-      return "RCT_HTTP";
+      return T_RCT_HTTP;
     case RCT_WS:
-      return "RCT_WS";
+      return T_RCT_WS;
     case RCT_EVENT:
-      return "RCT_EVENT";
+      return T_RCT_EVENT;
     default:
-      return "ERROR";
+      return T_ERROR;
   }
 }
-#endif
-
-#ifdef ESP8266
-const __FlashStringHelper* AsyncWebServerRequest::methodToString() const {
-  if (_method == HTTP_ANY)
-    return F("ANY");
-  else if (_method & HTTP_GET)
-    return F("GET");
-  else if (_method & HTTP_POST)
-    return F("POST");
-  else if (_method & HTTP_DELETE)
-    return F("DELETE");
-  else if (_method & HTTP_PUT)
-    return F("PUT");
-  else if (_method & HTTP_PATCH)
-    return F("PATCH");
-  else if (_method & HTTP_HEAD)
-    return F("HEAD");
-  else if (_method & HTTP_OPTIONS)
-    return F("OPTIONS");
-  return F("UNKNOWN");
-}
-
-const __FlashStringHelper* AsyncWebServerRequest::requestedConnTypeToString() const {
-  switch (_reqconntype) {
-    case RCT_NOT_USED:
-      return F("RCT_NOT_USED");
-    case RCT_DEFAULT:
-      return F("RCT_DEFAULT");
-    case RCT_HTTP:
-      return F("RCT_HTTP");
-    case RCT_WS:
-      return F("RCT_WS");
-    case RCT_EVENT:
-      return F("RCT_EVENT");
-    default:
-      return F("ERROR");
-  }
-}
-#endif
 
 bool AsyncWebServerRequest::isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2, RequestedConnectionType erct3) {
   bool res = false;

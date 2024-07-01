@@ -145,7 +145,7 @@ void AsyncWebServer::_attachHandler(AsyncWebServerRequest* request) {
     }
   }
 
-  request->addInterestingHeader(F("ANY"));
+  request->addInterestingHeader(T_ANY);
   request->setHandler(_catchAllHandler);
 }
 

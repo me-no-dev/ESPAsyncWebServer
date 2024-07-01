@@ -1108,7 +1108,7 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest* request) {
   const AsyncWebHeader* version = request->getHeader(WS_STR_VERSION);
   if (version->value().toInt() != 13) {
     AsyncWebServerResponse* response = request->beginResponse(400);
-    response->addHeader(WS_STR_VERSION, F("13"));
+    response->addHeader(WS_STR_VERSION, T_13);
     request->send(response);
     return;
   }
@@ -1173,7 +1173,7 @@ AsyncWebSocketResponse::AsyncWebSocketResponse(const String& key, AsyncWebSocket
   int len = base64_encode_block((const char*)hash, 20, buffer, &_state);
   len = base64_encode_blockend((buffer + len), &_state);
   addHeader(WS_STR_CONNECTION, WS_STR_UPGRADE);
-  addHeader(WS_STR_UPGRADE, F("websocket"));
+  addHeader(WS_STR_UPGRADE, T_WS);
   addHeader(WS_STR_ACCEPT, buffer);
 }
 

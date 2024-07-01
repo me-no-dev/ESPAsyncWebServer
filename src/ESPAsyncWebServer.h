@@ -43,6 +43,8 @@
   #error Platform not supported
 #endif
 
+#include "literals.h"
+
 #define ASYNCWEBSERVER_VERSION          "3.0.6"
 #define ASYNCWEBSERVER_VERSION_MAJOR    3
 #define ASYNCWEBSERVER_VERSION_MINOR    0
@@ -151,7 +153,7 @@ class AsyncWebHeader {
 
     const String& name() const { return _name; }
     const String& value() const { return _value; }
-    String toString() const { return _name + F(": ") + _value + F("\r\n"); }
+    String toString() const { return _name + (char)0x3a + (char)0x20 /*": "*/ + _value + T_rn; }
 };
 
 /*
@@ -509,10 +511,13 @@ class AsyncWebServerResponse {
     size_t _ackedLength;
     size_t _writtenLength;
     WebResponseState _state;
-    const char* _responseCodeToString(int code);
 
   public:
+#ifndef ESP8266
+    static const char* responseCodeToString(int code);
+#else
     static const __FlashStringHelper* responseCodeToString(int code);
+#endif
 
   public:
     AsyncWebServerResponse();

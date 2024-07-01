@@ -33,95 +33,98 @@ void* memchr(void* ptr, int ch, size_t count) {
 
 /*
  * Abstract Response
- * */
-const char* AsyncWebServerResponse::_responseCodeToString(int code) {
-  return reinterpret_cast<const char*>(responseCodeToString(code));
-}
+ *
+ */
 
-const __FlashStringHelper* AsyncWebServerResponse::responseCodeToString(int code) {
+#ifndef ESP8266
+const char* AsyncWebServerResponse::responseCodeToString(int code)
+#else
+const __FlashStringHelper* AsyncWebServerResponse::responseCodeToString(int code)
+#endif
+{
   switch (code) {
     case 100:
-      return F("Continue");
+      return T_HTTP_CODE_100;
     case 101:
-      return F("Switching Protocols");
+      return T_HTTP_CODE_101;
     case 200:
-      return F("OK");
+      return T_HTTP_CODE_200;
     case 201:
-      return F("Created");
+      return T_HTTP_CODE_201;
     case 202:
-      return F("Accepted");
+      return T_HTTP_CODE_202;
     case 203:
-      return F("Non-Authoritative Information");
+      return T_HTTP_CODE_203;
     case 204:
-      return F("No Content");
+      return T_HTTP_CODE_204;
     case 205:
-      return F("Reset Content");
+      return T_HTTP_CODE_205;
     case 206:
-      return F("Partial Content");
+      return T_HTTP_CODE_206;
     case 300:
-      return F("Multiple Choices");
+      return T_HTTP_CODE_300;
     case 301:
-      return F("Moved Permanently");
+      return T_HTTP_CODE_301;
     case 302:
-      return F("Found");
+      return T_HTTP_CODE_302;
     case 303:
-      return F("See Other");
+      return T_HTTP_CODE_303;
     case 304:
-      return F("Not Modified");
+      return T_HTTP_CODE_304;
     case 305:
-      return F("Use Proxy");
+      return T_HTTP_CODE_305;
     case 307:
-      return F("Temporary Redirect");
+      return T_HTTP_CODE_307;
     case 400:
-      return F("Bad Request");
+      return T_HTTP_CODE_400;
     case 401:
-      return F("Unauthorized");
+      return T_HTTP_CODE_401;
     case 402:
-      return F("Payment Required");
+      return T_HTTP_CODE_402;
     case 403:
-      return F("Forbidden");
+      return T_HTTP_CODE_403;
     case 404:
-      return F("Not Found");
+      return T_HTTP_CODE_404;
     case 405:
-      return F("Method Not Allowed");
+      return T_HTTP_CODE_405;
     case 406:
-      return F("Not Acceptable");
+      return T_HTTP_CODE_406;
     case 407:
-      return F("Proxy Authentication Required");
+      return T_HTTP_CODE_407;
     case 408:
-      return F("Request Time-out");
+      return T_HTTP_CODE_408;
     case 409:
-      return F("Conflict");
+      return T_HTTP_CODE_409;
     case 410:
-      return F("Gone");
+      return T_HTTP_CODE_410;
     case 411:
-      return F("Length Required");
+      return T_HTTP_CODE_411;
     case 412:
-      return F("Precondition Failed");
+      return T_HTTP_CODE_412;
     case 413:
-      return F("Request Entity Too Large");
+      return T_HTTP_CODE_413;
     case 414:
-      return F("Request-URI Too Large");
+      return T_HTTP_CODE_414;
     case 415:
-      return F("Unsupported Media Type");
+      return T_HTTP_CODE_415;
     case 416:
-      return F("Requested range not satisfiable");
+      return T_HTTP_CODE_416;
     case 417:
-      return F("Expectation Failed");
+      return T_HTTP_CODE_417;
     case 500:
-      return F("Internal Server Error");
+      return T_HTTP_CODE_500;
     case 501:
-      return F("Not Implemented");
+      return T_HTTP_CODE_501;
     case 502:
-      return F("Bad Gateway");
+      return T_HTTP_CODE_502;
     case 503:
-      return F("Service Unavailable");
+      return T_HTTP_CODE_503;
     case 504:
-      return F("Gateway Time-out");
+      return T_HTTP_CODE_504;
     case 505:
-      return F("HTTP Version not supported");
+      return T_HTTP_CODE_505;
     default:
-      return F("");
+      return T_HTTP_CODE_ANY;
   }
 }
 
@@ -155,15 +158,19 @@ void AsyncWebServerResponse::addHeader(const String& name, const String& value) 
 
 String AsyncWebServerResponse::_assembleHead(uint8_t version) {
   if (version) {
-    addHeader(F("Accept-Ranges"), F("none"));
+    addHeader(T_Accept_Ranges, T_none);
     if (_chunked)
-      addHeader(F("Transfer-Encoding"), F("chunked"));
+      addHeader(Transfer_Encoding, T_chunked);
   }
-  String out = String();
+  String out;
   int bufSize = 300;
   char buf[bufSize];
 
-  snprintf_P(buf, bufSize, PSTR("HTTP/1.%d %d %s\r\n"), version, _code, _responseCodeToString(_code));
+#ifndef ESP8266
+  snprintf(buf, bufSize, "HTTP/1.%d %d %s\r\n", version, _code, responseCodeToString(_code));
+#else
+  snprintf_P(buf, bufSize, PSTR("HTTP/1.%d %d %s\r\n"), version, _code, String(responseCodeToString(_code)).c_str());
+#endif
   out.concat(buf);
 
   if (_sendContentLength) {
@@ -181,7 +188,7 @@ String AsyncWebServerResponse::_assembleHead(uint8_t version) {
   }
   _headers.clear();
 
-  out.concat(F("\r\n"));
+  out.concat(T_rn);
   _headLength = out.length();
   return out;
 }
@@ -211,9 +218,9 @@ AsyncBasicResponse::AsyncBasicResponse(int code, const String& contentType, cons
   if (_content.length()) {
     _contentLength = _content.length();
     if (!_contentType.length())
-      _contentType = F("text/plain");
+      _contentType = T_text_plain;
   }
-  addHeader(F("Connection"), F("close"));
+  addHeader(T_Connection, T_close);
 }
 
 void AsyncBasicResponse::_respond(AsyncWebServerRequest* request) {
@@ -291,7 +298,7 @@ AsyncAbstractResponse::AsyncAbstractResponse(AwsTemplateProcessor callback) : _c
 }
 
 void AsyncAbstractResponse::_respond(AsyncWebServerRequest* request) {
-  addHeader(F("Connection"), F("close"));
+  addHeader(T_Connection, T_close);
   _head = _assembleHead(request->version());
   _state = RESPONSE_HEADERS;
   _ack(request, 0, 0);
@@ -514,48 +521,48 @@ AsyncFileResponse::~AsyncFileResponse() {
 }
 
 void AsyncFileResponse::_setContentType(const String& path) {
-#if HAVE_EXTERN_GET_CONTENT_TYPE_FUNCTION
+#if HAVE_EXTERN_GET_Content_Type_FUNCTION
   extern const __FlashStringHelper* getContentType(const String& path);
   _contentType = getContentType(path);
 #else
-  if (path.endsWith(F(".html")))
-    _contentType = F("text/html");
-  else if (path.endsWith(F(".htm")))
-    _contentType = F("text/html");
-  else if (path.endsWith(F(".css")))
-    _contentType = F("text/css");
-  else if (path.endsWith(F(".json")))
-    _contentType = F("application/json");
-  else if (path.endsWith(F(".js")))
-    _contentType = F("application/javascript");
-  else if (path.endsWith(F(".png")))
-    _contentType = F("image/png");
-  else if (path.endsWith(F(".gif")))
-    _contentType = F("image/gif");
-  else if (path.endsWith(F(".jpg")))
-    _contentType = F("image/jpeg");
-  else if (path.endsWith(F(".ico")))
-    _contentType = F("image/x-icon");
-  else if (path.endsWith(F(".svg")))
-    _contentType = F("image/svg+xml");
-  else if (path.endsWith(F(".eot")))
-    _contentType = F("font/eot");
-  else if (path.endsWith(F(".woff")))
-    _contentType = F("font/woff");
-  else if (path.endsWith(F(".woff2")))
-    _contentType = F("font/woff2");
-  else if (path.endsWith(F(".ttf")))
-    _contentType = F("font/ttf");
-  else if (path.endsWith(F(".xml")))
-    _contentType = F("text/xml");
-  else if (path.endsWith(F(".pdf")))
-    _contentType = F("application/pdf");
-  else if (path.endsWith(F(".zip")))
-    _contentType = F("application/zip");
-  else if (path.endsWith(F(".gz")))
-    _contentType = F("application/x-gzip");
+  if (path.endsWith(T__html))
+    _contentType = T_text_html;
+  else if (path.endsWith(T__htm))
+    _contentType = T_text_html;
+  else if (path.endsWith(T__css))
+    _contentType = T_text_css;
+  else if (path.endsWith(T__json))
+    _contentType = T_application_json;
+  else if (path.endsWith(T__js))
+    _contentType = T_application_javascript;
+  else if (path.endsWith(T__png))
+    _contentType = T_image_png;
+  else if (path.endsWith(T__gif))
+    _contentType = T_image_gif;
+  else if (path.endsWith(T__jpg))
+    _contentType = T_image_jpeg;
+  else if (path.endsWith(T__ico))
+    _contentType = T_image_x_icon;
+  else if (path.endsWith(T__svg))
+    _contentType = T_image_svg_xml;
+  else if (path.endsWith(T__eot))
+    _contentType = T_font_eot;
+  else if (path.endsWith(T__woff))
+    _contentType = T_font_woff;
+  else if (path.endsWith(T__woff2))
+    _contentType = T_font_woff2;
+  else if (path.endsWith(T__ttf))
+    _contentType = T_font_ttf;
+  else if (path.endsWith(T__xml))
+    _contentType = T_text_xml;
+  else if (path.endsWith(T__pdf))
+    _contentType = T_application_pdf;
+  else if (path.endsWith(T__zip))
+    _contentType = T_application_zip;
+  else if (path.endsWith(T__gz))
+    _contentType = T_application_x_gzip;
   else
-    _contentType = F("text/plain");
+    _contentType = T_text_plain;
 #endif
 }
 
@@ -563,9 +570,9 @@ AsyncFileResponse::AsyncFileResponse(FS& fs, const String& path, const String& c
   _code = 200;
   _path = path;
 
-  if (!download && !fs.exists(_path) && fs.exists(_path + F(".gz"))) {
-    _path = _path + F(".gz");
-    addHeader(F("Content-Encoding"), F("gzip"));
+  if (!download && !fs.exists(_path) && fs.exists(_path + T__gz)) {
+    _path = _path + T__gz;
+    addHeader(T_Content_Encoding, T_gzip);
     _callback = nullptr; // Unable to process zipped templates
     _sendContentLength = true;
     _chunked = false;
@@ -590,15 +597,15 @@ AsyncFileResponse::AsyncFileResponse(FS& fs, const String& path, const String& c
     // set filename and force rendering
     snprintf_P(buf, sizeof(buf), PSTR("inline"));
   }
-  addHeader(F("Content-Disposition"), buf);
+  addHeader(T_Content_Disposition, buf);
 }
 
 AsyncFileResponse::AsyncFileResponse(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
   _code = 200;
   _path = path;
 
-  if (!download && String(content.name()).endsWith(F(".gz")) && !path.endsWith(F(".gz"))) {
-    addHeader(F("Content-Encoding"), F("gzip"));
+  if (!download && String(content.name()).endsWith(T__gz) && !path.endsWith(T__gz)) {
+    addHeader(T_Content_Encoding, T_gzip);
     _callback = nullptr; // Unable to process gzipped templates
     _sendContentLength = true;
     _chunked = false;
@@ -621,7 +628,7 @@ AsyncFileResponse::AsyncFileResponse(File content, const String& path, const Str
   } else {
     snprintf_P(buf, sizeof(buf), PSTR("inline"));
   }
-  addHeader(F("Content-Disposition"), buf);
+  addHeader(T_Content_Disposition, buf);
 }
 
 size_t AsyncFileResponse::_fillBuffer(uint8_t* data, size_t len) {
