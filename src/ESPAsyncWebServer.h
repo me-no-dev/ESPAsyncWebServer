@@ -384,6 +384,7 @@ class AsyncWebServerRequest {
     const String& arg(size_t i) const;     // get request argument value by number
     const String& argName(size_t i) const; // get request argument name by number
     bool hasArg(const char* name) const;   // check if argument exists
+    bool hasArg(const String& name) const { return hasArg(name.c_str()); };
 #ifdef ESP8266
     bool hasArg(const __FlashStringHelper* data) const; // check if F(argument) exists
 #endif
