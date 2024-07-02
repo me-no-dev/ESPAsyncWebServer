@@ -22,10 +22,7 @@
 #include "WebAuthentication.h"
 #include "WebResponseImpl.h"
 #include "literals.h"
-
-#ifndef ESP8266
-  #define os_strlen strlen
-#endif
+#include <cstring>
 
 #define __is_param_char(c) ((c) && ((c) != '{') && ((c) != '[') && ((c) != '&') && ((c) != '='))
 
