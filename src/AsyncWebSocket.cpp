@@ -613,7 +613,7 @@ size_t AsyncWebSocketClient::printf(const char* format, ...) {
   return len;
 }
 
-#ifndef ESP32
+#ifdef ESP8266
 size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
   va_list arg;
   va_start(arg, formatP);
@@ -680,7 +680,7 @@ void AsyncWebSocketClient::text(const String& message) {
   text(message.c_str(), message.length());
 }
 
-#ifndef ESP32
+#ifdef ESP8266
 void AsyncWebSocketClient::text(const __FlashStringHelper* data) {
   PGM_P p = reinterpret_cast<PGM_P>(data);
 
@@ -699,7 +699,7 @@ void AsyncWebSocketClient::text(const __FlashStringHelper* data) {
     free(message);
   }
 }
-#endif // ESP32
+#endif // ESP8266
 
 void AsyncWebSocketClient::binary(AsyncWebSocketMessageBuffer* buffer) {
   if (buffer) {
@@ -728,7 +728,7 @@ void AsyncWebSocketClient::binary(const String& message) {
   binary(message.c_str(), message.length());
 }
 
-#ifndef ESP32
+#ifdef ESP8266
 void AsyncWebSocketClient::binary(const __FlashStringHelper* data, size_t len) {
   PGM_P p = reinterpret_cast<PGM_P>(data);
   char* message = (char*)malloc(len);
@@ -739,6 +739,7 @@ void AsyncWebSocketClient::binary(const __FlashStringHelper* data, size_t len) {
   }
 }
 #endif
+
 IPAddress AsyncWebSocketClient::remoteIP() const {
   if (!_client)
     return IPAddress((uint32_t)0U);
@@ -839,7 +840,7 @@ void AsyncWebSocket::text(uint32_t id, const String& message) {
   text(id, message.c_str(), message.length());
 }
 
-#ifndef ESP8266
+#ifdef ESP8266
 void AsyncWebSocket::text(uint32_t id, const __FlashStringHelper* data) {
   PGM_P p = reinterpret_cast<PGM_P>(data);
 
@@ -883,7 +884,7 @@ void AsyncWebSocket::textAll(const char* message) {
 void AsyncWebSocket::textAll(const String& message) {
   textAll(message.c_str(), message.length());
 }
-#ifndef ESP32
+#ifdef ESP8266
 void AsyncWebSocket::textAll(const __FlashStringHelper* data) {
   PGM_P p = reinterpret_cast<PGM_P>(data);
 
@@ -902,7 +903,7 @@ void AsyncWebSocket::textAll(const __FlashStringHelper* data) {
     free(message);
   }
 }
-#endif // ESP32
+#endif // ESP8266
 void AsyncWebSocket::textAll(AsyncWebSocketMessageBuffer* buffer) {
   if (buffer) {
     textAll(std::move(buffer->_buffer));
@@ -929,7 +930,8 @@ void AsyncWebSocket::binary(uint32_t id, const char* message) {
 void AsyncWebSocket::binary(uint32_t id, const String& message) {
   binary(id, message.c_str(), message.length());
 }
-#ifndef ESP32
+
+#ifdef ESP8266
 void AsyncWebSocket::binary(uint32_t id, const __FlashStringHelper* data, size_t len) {
   PGM_P p = reinterpret_cast<PGM_P>(data);
   char* message = (char*)malloc(len);
@@ -939,7 +941,8 @@ void AsyncWebSocket::binary(uint32_t id, const __FlashStringHelper* data, size_t
     free(message);
   }
 }
-#endif // ESP32
+#endif // ESP8266
+
 void AsyncWebSocket::binary(uint32_t id, AsyncWebSocketMessageBuffer* buffer) {
   if (buffer) {
     binary(id, std::move(buffer->_buffer));
@@ -963,7 +966,8 @@ void AsyncWebSocket::binaryAll(const char* message) {
 void AsyncWebSocket::binaryAll(const String& message) {
   binaryAll(message.c_str(), message.length());
 }
-#ifndef ESP32
+
+#ifdef ESP8266
 void AsyncWebSocket::binaryAll(const __FlashStringHelper* data, size_t len) {
   PGM_P p = reinterpret_cast<PGM_P>(data);
   char* message = (char*)malloc(len);
@@ -973,7 +977,8 @@ void AsyncWebSocket::binaryAll(const __FlashStringHelper* data, size_t len) {
     free(message);
   }
 }
-#endif // ESP32
+#endif // ESP8266
+
 void AsyncWebSocket::binaryAll(AsyncWebSocketMessageBuffer* buffer) {
   if (buffer) {
     binaryAll(std::move(buffer->_buffer));
@@ -1019,7 +1024,7 @@ size_t AsyncWebSocket::printfAll(const char* format, ...) {
   return len;
 }
 
-#ifndef ESP32
+#ifdef ESP8266
 size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...) {
   AsyncWebSocketClient* c = client(id);
   if (c != NULL) {
