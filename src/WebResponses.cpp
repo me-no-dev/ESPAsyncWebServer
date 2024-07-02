@@ -607,7 +607,11 @@ AsyncFileResponse::~AsyncFileResponse() {
 
 void AsyncFileResponse::_setContentType(const String& path) {
 #if HAVE_EXTERN_GET_Content_Type_FUNCTION
-  extern const __FlashStringHelper* getContentType(const String& path);
+  #ifndef ESP8266
+    extern const char* getContentType(const String& path);
+  #else
+    extern const __FlashStringHelper* getContentType(const String& path);
+  #endif
   _contentType = getContentType(path);
 #else
   if (path.endsWith(T__html))

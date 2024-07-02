@@ -349,7 +349,9 @@ class AsyncWebServerRequest {
 
     size_t params() const; // get arguments count
     bool hasParam(const String& name, bool post = false, bool file = false) const;
-    bool hasParam(const __FlashStringHelper* data, bool post = false, bool file = false) const;
+#ifdef ESP8266
+    bool hasParam(const __FlashStringHelper* data, bool post = false, bool file = false) const { return hasParam(String(data).c_str(), post, file); };
+#endif
 
     /**
      * @brief Get the Request parameter by name

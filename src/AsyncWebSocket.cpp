@@ -838,7 +838,8 @@ void AsyncWebSocket::text(uint32_t id, const char* message) {
 void AsyncWebSocket::text(uint32_t id, const String& message) {
   text(id, message.c_str(), message.length());
 }
-#ifndef ESP32
+
+#ifndef ESP8266
 void AsyncWebSocket::text(uint32_t id, const __FlashStringHelper* data) {
   PGM_P p = reinterpret_cast<PGM_P>(data);
 
@@ -857,7 +858,8 @@ void AsyncWebSocket::text(uint32_t id, const __FlashStringHelper* data) {
     free(message);
   }
 }
-#endif // ESP32
+#endif // ESP8266
+
 void AsyncWebSocket::text(uint32_t id, AsyncWebSocketMessageBuffer* buffer) {
   if (buffer) {
     text(id, std::move(buffer->_buffer));

@@ -661,10 +661,6 @@ bool AsyncWebServerRequest::hasParam(const String& name, bool post, bool file) c
   return false;
 }
 
-bool AsyncWebServerRequest::hasParam(const __FlashStringHelper* data, bool post, bool file) const {
-  return hasParam(String(data).c_str(), post, file);
-}
-
 const AsyncWebParameter* AsyncWebServerRequest::getParam(const char* name, bool post, bool file) const {
   for (const auto& p : _params) {
     if (p.name() == name && p.isPost() == post && p.isFile() == file) {
