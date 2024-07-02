@@ -321,7 +321,12 @@ bool AsyncWebServerRequest::_parseReqHeader() {
     }
     _headers.emplace_back(name, value);
   }
+#ifndef TARGET_RP2040
   _temp.clear();
+#else
+  // Ancient PRI core does not have String::clear() method 8-()
+  _temp = String();
+#endif
   return true;
 }
 
@@ -336,7 +341,13 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data) {
       value = _temp.substring(_temp.indexOf('=') + 1);
     }
     _params.emplace_back(urlDecode(name), urlDecode(value), true);
-    _temp = String();
+
+#ifndef TARGET_RP2040
+  _temp.clear();
+#else
+  // Ancient PRI core does not have String::clear() method 8-()
+  _temp = String();
+#endif
   }
 }
 
