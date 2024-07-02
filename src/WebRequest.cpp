@@ -279,29 +279,6 @@ bool AsyncWebServerRequest::_parseReqHead() {
   return true;
 }
 
-bool strContains(const String& src, const String& find, bool mindcase = true) {
-  int pos = 0, i = 0;
-  const int slen = src.length();
-  const int flen = find.length();
-
-  if (slen < flen)
-    return false;
-  while (pos <= (slen - flen)) {
-    for (i = 0; i < flen; i++) {
-      if (mindcase) {
-        if (src[pos + i] != find[i])
-          i = flen + 1; // no match
-      } else if (tolower(src[pos + i]) != tolower(find[i])) {
-        i = flen + 1; // no match
-      }
-    }
-    if (i == flen)
-      return true;
-    pos++;
-  }
-  return false;
-}
-
 bool AsyncWebServerRequest::_parseReqHeader() {
   int index = _temp.indexOf(':');
   if (index) {
@@ -331,8 +308,15 @@ bool AsyncWebServerRequest::_parseReqHeader() {
       if (name.equalsIgnoreCase(T_UPGRADE) && value.equalsIgnoreCase(T_WS)) {
         // WebSocket request can be uniquely identified by header: [Upgrade: websocket]
         _reqconntype = RCT_WS;
-      } else {
-        if (name.equalsIgnoreCase(T_ACCEPT) && strContains(value, F(T_text_event_stream), false)) {
+      } else if (name.equalsIgnoreCase(T_ACCEPT)){
+        String lowcase(value);
+        lowcase.toLowerCase();
+#ifndef ESP8266
+        const char* substr = std::strstr(lowcase.c_str(), T_text_event_stream);
+#else
+        const char* substr = std::strstr(lowcase.c_str(), String(T_text_event_stream).c_str());
+#endif
+        if (substr != NULL) {
           // WebEvent request can be uniquely identified by header:  [Accept: text/event-stream]
           _reqconntype = RCT_EVENT;
         }
@@ -340,7 +324,7 @@ bool AsyncWebServerRequest::_parseReqHeader() {
     }
     _headers.emplace_back(name, value);
   }
-  _temp = String();
+  _temp.clear();
   return true;
 }
 
@@ -940,11 +924,7 @@ String AsyncWebServerRequest::urlDecode(const String& text) const {
 }
 
 #ifndef ESP8266
-const char* AsyncWebServerRequest::methodToString() const
-#else
-const __FlashStringHelper* AsyncWebServerRequest::methodToString() const
-#endif
-{
+const char* AsyncWebServerRequest::methodToString() const {
   if (_method == HTTP_ANY)
     return T_ANY;
   if (_method & HTTP_GET)
@@ -963,14 +943,30 @@ const __FlashStringHelper* AsyncWebServerRequest::methodToString() const
     return T_OPTIONS;
   return T_UNKNOWN;
 }
+#else // ESP8266
+const __FlashStringHelper* AsyncWebServerRequest::methodToString() const {
+  if (_method == HTTP_ANY)
+    return FPSTR(T_ANY);
+  if (_method & HTTP_GET)
+    return FPSTR(T_GET);
+  if (_method & HTTP_POST)
+    return FPSTR(T_POST);
+  if (_method & HTTP_DELETE)
+    return FPSTR(T_DELETE);
+  if (_method & HTTP_PUT)
+    return FPSTR(T_PUT);
+  if (_method & HTTP_PATCH)
+    return FPSTR(T_PATCH);
+  if (_method & HTTP_HEAD)
+    return FPSTR(T_HEAD);
+  if (_method & HTTP_OPTIONS)
+    return FPSTR(T_OPTIONS);
+  return FPSTR(T_UNKNOWN);
+}
+#endif // ESP8266
 
 #ifndef ESP8266
-const char* AsyncWebServerRequest::requestedConnTypeToString() const
-#else
-const __FlashStringHelper* AsyncWebServerRequest::requestedConnTypeToString() const
-#endif
-{
-
+const char* AsyncWebServerRequest::requestedConnTypeToString() const {
   switch (_reqconntype) {
     case RCT_NOT_USED:
       return T_RCT_NOT_USED;
@@ -986,6 +982,24 @@ const __FlashStringHelper* AsyncWebServerRequest::requestedConnTypeToString() co
       return T_ERROR;
   }
 }
+#else // ESP8266
+const __FlashStringHelper* AsyncWebServerRequest::requestedConnTypeToString() const {
+  switch (_reqconntype) {
+    case RCT_NOT_USED:
+      return FPSTR(T_RCT_NOT_USED);
+    case RCT_DEFAULT:
+      return FPSTR(T_RCT_DEFAULT);
+    case RCT_HTTP:
+      return FPSTR(T_RCT_HTTP);
+    case RCT_WS:
+      return FPSTR(T_RCT_WS);
+    case RCT_EVENT:
+      return FPSTR(T_RCT_EVENT);
+    default:
+      return FPSTR(T_ERROR);
+  }
+}
+#endif // ESP8266
 
 bool AsyncWebServerRequest::isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2, RequestedConnectionType erct3) {
   bool res = false;

@@ -37,11 +37,7 @@ void* memchr(void* ptr, int ch, size_t count) {
  */
 
 #ifndef ESP8266
-const char* AsyncWebServerResponse::responseCodeToString(int code)
-#else
-const __FlashStringHelper* AsyncWebServerResponse::responseCodeToString(int code)
-#endif
-{
+const char* AsyncWebServerResponse::responseCodeToString(int code) {
   switch (code) {
     case 100:
       return T_HTTP_CODE_100;
@@ -127,6 +123,95 @@ const __FlashStringHelper* AsyncWebServerResponse::responseCodeToString(int code
       return T_HTTP_CODE_ANY;
   }
 }
+#else // ESP8266
+const __FlashStringHelper* AsyncWebServerResponse::responseCodeToString(int code)
+{
+  switch (code) {
+    case 100:
+      return FPSTR(T_HTTP_CODE_100);
+    case 101:
+      return FPSTR(T_HTTP_CODE_101);
+    case 200:
+      return FPSTR(T_HTTP_CODE_200);
+    case 201:
+      return FPSTR(T_HTTP_CODE_201);
+    case 202:
+      return FPSTR(T_HTTP_CODE_202);
+    case 203:
+      return FPSTR(T_HTTP_CODE_203);
+    case 204:
+      return FPSTR(T_HTTP_CODE_204);
+    case 205:
+      return FPSTR(T_HTTP_CODE_205);
+    case 206:
+      return FPSTR(T_HTTP_CODE_206);
+    case 300:
+      return FPSTR(T_HTTP_CODE_300);
+    case 301:
+      return FPSTR(T_HTTP_CODE_301);
+    case 302:
+      return FPSTR(T_HTTP_CODE_302);
+    case 303:
+      return FPSTR(T_HTTP_CODE_303);
+    case 304:
+      return FPSTR(T_HTTP_CODE_304);
+    case 305:
+      return FPSTR(T_HTTP_CODE_305);
+    case 307:
+      return FPSTR(T_HTTP_CODE_307);
+    case 400:
+      return FPSTR(T_HTTP_CODE_400);
+    case 401:
+      return FPSTR(T_HTTP_CODE_401);
+    case 402:
+      return FPSTR(T_HTTP_CODE_402);
+    case 403:
+      return FPSTR(T_HTTP_CODE_403);
+    case 404:
+      return FPSTR(T_HTTP_CODE_404);
+    case 405:
+      return FPSTR(T_HTTP_CODE_405);
+    case 406:
+      return FPSTR(T_HTTP_CODE_406);
+    case 407:
+      return FPSTR(T_HTTP_CODE_407);
+    case 408:
+      return FPSTR(T_HTTP_CODE_408);
+    case 409:
+      return FPSTR(T_HTTP_CODE_409);
+    case 410:
+      return FPSTR(T_HTTP_CODE_410);
+    case 411:
+      return FPSTR(T_HTTP_CODE_411);
+    case 412:
+      return FPSTR(T_HTTP_CODE_412);
+    case 413:
+      return FPSTR(T_HTTP_CODE_413);
+    case 414:
+      return FPSTR(T_HTTP_CODE_414);
+    case 415:
+      return FPSTR(T_HTTP_CODE_415);
+    case 416:
+      return FPSTR(T_HTTP_CODE_416);
+    case 417:
+      return FPSTR(T_HTTP_CODE_417);
+    case 500:
+      return FPSTR(T_HTTP_CODE_500);
+    case 501:
+      return FPSTR(T_HTTP_CODE_501);
+    case 502:
+      return FPSTR(T_HTTP_CODE_502);
+    case 503:
+      return FPSTR(T_HTTP_CODE_503);
+    case 504:
+      return FPSTR(T_HTTP_CODE_504);
+    case 505:
+      return FPSTR(T_HTTP_CODE_505);
+    default:
+      return FPSTR(T_HTTP_CODE_ANY);
+  }
+}
+#endif // ESP8266
 
 AsyncWebServerResponse::AsyncWebServerResponse()
     : _code(0), _contentType(), _contentLength(0), _sendContentLength(true), _chunked(false), _headLength(0), _sentLength(0), _ackedLength(0), _writtenLength(0), _state(RESPONSE_SETUP) {
