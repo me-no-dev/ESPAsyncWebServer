@@ -21,6 +21,9 @@
 #include "ESPAsyncWebServer.h"
 #include "WebHandlerImpl.h"
 
+using namespace asyncsrv;
+
+
 AsyncStaticWebHandler::AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control)
     : _fs(fs), _uri(uri), _path(path), _default_file(F("index.htm")), _cache_control(cache_control), _last_modified(), _callback(nullptr) {
   // Ensure leading '/'

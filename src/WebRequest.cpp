@@ -26,6 +26,8 @@
 
 #define __is_param_char(c) ((c) && ((c) != '{') && ((c) != '[') && ((c) != '&') && ((c) != '='))
 
+using namespace asyncsrv;
+
 enum { PARSE_REQ_START,
        PARSE_REQ_HEADERS,
        PARSE_REQ_BODY,

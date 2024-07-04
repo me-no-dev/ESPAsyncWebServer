@@ -27,6 +27,8 @@
 #endif
 #include "literals.h"
 
+using namespace asyncsrv;
+
 // Basic Auth hash = base64("username:password")
 
 bool checkBasicAuthentication(const char* hash, const char* username, const char* password) {

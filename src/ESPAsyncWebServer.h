@@ -153,7 +153,7 @@ class AsyncWebHeader {
 
     const String& name() const { return _name; }
     const String& value() const { return _value; }
-    String toString() const { return _name + (char)0x3a + (char)0x20 /*": "*/ + _value + T_rn; }
+    String toString() const { return _name + (char)0x3a + (char)0x20 /*": "*/ + _value + asyncsrv::T_rn; }
 };
 
 /*

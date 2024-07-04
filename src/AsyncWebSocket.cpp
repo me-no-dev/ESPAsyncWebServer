@@ -38,6 +38,9 @@
 
 #define MAX_PRINTF_LEN 64
 
+using namespace asyncsrv;
+
+
 size_t webSocketSendFrameWindow(AsyncClient* client) {
   if (!client->canSend())
     return 0;

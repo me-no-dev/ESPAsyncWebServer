@@ -1,5 +1,6 @@
 #pragma once
 
+namespace asyncsrv {
 
 #ifndef ESP8622
 static constexpr const char* T_100_CONTINUE     = "100-continue";
@@ -336,3 +337,5 @@ static const char T_uri[] PROGMEM = "uri";
 static const char T_username[] PROGMEM = "username";
 
 #endif  // ESP8622
+
+}   // namespace asyncsrv {}
