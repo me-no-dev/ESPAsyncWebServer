@@ -27,8 +27,8 @@
   "dependencies": [
     {
       "owner": "mathieucarbou",
-      "name": "Async TCP",
-      "version": "^3.1.4",
+      "name": "AsyncTCP",
+      "version": "^3.2.1",
       "platforms": "espressif32"
     },
     {
