@@ -22,7 +22,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [@mathieucarbou](https://github.com/mathieucarbou): Arduino 3 / ESP-IDF 5.1 compatibility
 - [@mathieucarbou](https://github.com/mathieucarbou): Arduino Json 7 compatibility and backward compatible with 6 and 6 (changes in `AsyncJson.h`). The API to use Json has not changed. These are only internal changes.
 - [@mathieucarbou](https://github.com/mathieucarbou): CI
-- [@mathieucarbou](https://github.com/mathieucarbou): Depends on `mathieucarbou/AsyncTCP @ 3.2.2`
+- [@mathieucarbou](https://github.com/mathieucarbou): Depends on `mathieucarbou/AsyncTCP @ 3.2.3`
 - [@mathieucarbou](https://github.com/mathieucarbou): Deployed in PlatformIO registry and Arduino IDE library manager
 - [@mathieucarbou](https://github.com/mathieucarbou): Firmware size optimization: remove mbedtls dependency (accounts for 33KB in firmware)
 - [@mathieucarbou](https://github.com/mathieucarbou): Made DEFAULT_MAX_SSE_CLIENTS customizable
@@ -41,7 +41,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 
 ## Dependencies:
 
-- **ESP32**: `mathieucarbou/AsyncTCP @ 3.2.2` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.2](https://github.com/mathieucarbou/AsyncTCP/releases/tag/v3.2.0))
+- **ESP32**: `mathieucarbou/AsyncTCP @ 3.2.3` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.3](https://github.com/mathieucarbou/AsyncTCP/releases/tag/v3.2.0))
 - **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0` (Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0))
 - **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0` (Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0))
 
