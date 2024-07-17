@@ -60,7 +60,7 @@ AsyncEventSource events("/events");
 
 unsigned long currentMillis = 0;
 unsigned long previousMillis = 0;
-const uint16_t interval = 1000;
+const uint16_t interval = 500;
 
 const int button1Pin = 4;
 bool button1 = false;
@@ -102,7 +102,16 @@ void setup() {
 
   // WiFi.softAPConfig(local_IP, gateway, subnet);
   // WiFi.softAP(ssid, password, 11);
+  
   WiFi.softAP("esp-captive");
+  
+  // WiFi.mode(WIFI_STA);
+  // WiFi.begin("IoT");
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   delay(1000);
+  //   Serial.println("Connecting to WiFi..");
+  // }
+  // Serial.println(WiFi.localIP());
 
   // WiFi.setTxPower(WIFI_POWER_21dBm);
   // esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
