@@ -9,6 +9,20 @@ Supports: WebSocket, SSE, Authentication, Arduino Json 7, File Upload, Static Fi
 
 This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubox-node-org/ESPAsyncWebServer) and includes all the concurrency fixes.
 
+## Coordinate and dependencies:
+
+**WARNING** The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations.
+
+```
+mathieucarbou/ESPAsyncWebServer @ 3.1.1
+```
+
+Dependency:
+
+- **ESP32**: `mathieucarbou/AsyncTCP @ 3.2.3` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.3](https://github.com/mathieucarbou/AsyncTCP/releases/tag/v3.2.0))
+- **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0` (Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0))
+- **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0` (Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0))
+
 ## Changes in this fork
 
 - [@ayushsharma82](https://github.com/ayushsharma82) and [@mathieucarbou](https://github.com/mathieucarbou): Add RP2040 support ([#31](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/31))
@@ -38,12 +52,6 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [@vortigont](https://github.com/vortigont): Set real "Last-Modified" header based on file's LastWrite time ([#5](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/5))
 - [@vortigont](https://github.com/vortigont): Some websocket code cleanup ([#29](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/29))
 - [@vortigont](https://github.com/vortigont): Refactor code - replace DYI structs with STL objects  ([#39](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/39))
-
-## Dependencies:
-
-- **ESP32**: `mathieucarbou/AsyncTCP @ 3.2.3` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.3](https://github.com/mathieucarbou/AsyncTCP/releases/tag/v3.2.0))
-- **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0` (Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0))
-- **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0` (Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0))
 
 ## Documentation
 
