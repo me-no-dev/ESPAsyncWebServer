@@ -16,12 +16,14 @@
   #include <WebServer.h>
   #include <WiFi.h>
 #endif
+
 #include <ESPAsyncWebServer.h>
 
-AsyncWebServer server(80);
+#include <ArduinoJson.h>
+#include <AsyncJson.h>
+#include <AsyncMessagePack.h>
 
-const char* ssid = "YOUR_SSID";
-const char* password = "YOUR_PASSWORD";
+AsyncWebServer server(80);
 
 const char* PARAM_MESSAGE = "message";
 
@@ -29,18 +31,24 @@ void notFound(AsyncWebServerRequest* request) {
   request->send(404, "text/plain", "Not found");
 }
 
+AsyncCallbackJsonWebHandler* jsonHandler = new AsyncCallbackJsonWebHandler("/json2");
+AsyncCallbackMessagePackWebHandler* msgPackHandler = new AsyncCallbackMessagePackWebHandler("/msgpack2");
+
 void setup() {
 
   Serial.begin(115200);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.printf("WiFi Failed!\n");
-    return;
-  }
 
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
+  // WiFi.mode(WIFI_STA);
+  // WiFi.begin("YOUR_SSID", "YOUR_PASSWORD");
+  // if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+  //   Serial.printf("WiFi Failed!\n");
+  //   return;
+  // }
+  // Serial.print("IP Address: ");
+  // Serial.println(WiFi.localIP());
+
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("esp-captive");
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
     request->send(200, "text/plain", "Hello, world");
@@ -67,6 +75,55 @@ void setup() {
     }
     request->send(200, "text/plain", "Hello, POST: " + message);
   });
+
+  // JSON
+
+  // receives JSON and sends JSON
+  jsonHandler->onRequest([](AsyncWebServerRequest* request, JsonVariant& json) {
+    JsonObject jsonObj = json.as<JsonObject>();
+    // ...
+
+    AsyncJsonResponse* response = new AsyncJsonResponse();
+    JsonObject root = response->getRoot().to<JsonObject>();
+    root["hello"] = "world";
+    response->setLength();
+    request->send(response);
+  });
+
+  // sends JSON
+  server.on("/json1", HTTP_GET, [](AsyncWebServerRequest* request) {
+    AsyncJsonResponse* response = new AsyncJsonResponse();
+    JsonObject root = response->getRoot().to<JsonObject>();
+    root["hello"] = "world";
+    response->setLength();
+    request->send(response);
+  });
+
+  // MessagePack
+
+  // receives MessagePack and sends MessagePack
+  msgPackHandler->onRequest([](AsyncWebServerRequest* request, JsonVariant& json) {
+    JsonObject jsonObj = json.as<JsonObject>();
+    // ...
+
+    AsyncMessagePackResponse* response = new AsyncMessagePackResponse();
+    JsonObject root = response->getRoot().to<JsonObject>();
+    root["hello"] = "world";
+    response->setLength();
+    request->send(response);
+  });
+
+  // sends MessagePack
+  server.on("/msgpack1", HTTP_GET, [](AsyncWebServerRequest* request) {
+    AsyncMessagePackResponse* response = new AsyncMessagePackResponse();
+    JsonObject root = response->getRoot().to<JsonObject>();
+    root["hello"] = "world";
+    response->setLength();
+    request->send(response);
+  });
+
+  server.addHandler(jsonHandler);
+  server.addHandler(msgPackHandler);
 
   server.onNotFound(notFound);
 

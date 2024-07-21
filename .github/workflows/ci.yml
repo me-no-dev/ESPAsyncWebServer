@@ -50,6 +50,9 @@ jobs:
       - name: Install core
         run: arduino-cli core install --additional-urls "${{ matrix.index_url }}" ${{ matrix.core }}
 
+      - name: Install ArduinoJson
+        run: arduino-cli lib install ArduinoJson
+
       - name: Install AsyncTCP (ESP32)
         if: ${{ matrix.core == 'esp32:esp32' }}
         run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/AsyncTCP#v3.2.3
