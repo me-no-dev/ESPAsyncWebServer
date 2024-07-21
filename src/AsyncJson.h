@@ -26,7 +26,7 @@
 
   AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/rest/endpoint");
   handler->onRequest([](AsyncWebServerRequest *request, JsonVariant &json) {
-    JsonObject& jsonObj = json.as<JsonObject>();
+    JsonObject jsonObj = json.as<JsonObject>();
     // ...
   });
   server.addHandler(handler);
@@ -36,7 +36,8 @@
 #define ASYNC_JSON_H_
 #include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
-#include <Print.h>
+
+#include "ChunkPrint.h"
 
 #if ARDUINOJSON_VERSION_MAJOR == 6
   #ifndef DYNAMIC_JSON_DOCUMENT_SIZE
@@ -49,33 +50,6 @@ constexpr const char* JSON_MIMETYPE = "application/json";
 /*
  * Json Response
  * */
-
-class ChunkPrint : public Print {
-  private:
-    uint8_t* _destination;
-    size_t _to_skip;
-    size_t _to_write;
-    size_t _pos;
-
-  public:
-    ChunkPrint(uint8_t* destination, size_t from, size_t len)
-        : _destination(destination), _to_skip(from), _to_write(len), _pos{0} {}
-    virtual ~ChunkPrint() {}
-    size_t write(uint8_t c) {
-      if (_to_skip > 0) {
-        _to_skip--;
-        return 1;
-      } else if (_to_write > 0) {
-        _to_write--;
-        _destination[_pos++] = c;
-        return 1;
-      }
-      return 0;
-    }
-    size_t write(const uint8_t* buffer, size_t size) {
-      return this->Print::write(buffer, size);
-    }
-};
 
 class AsyncJsonResponse : public AsyncAbstractResponse {
   protected:
@@ -199,10 +173,10 @@ class AsyncCallbackJsonWebHandler : public AsyncWebHandler {
 
   public:
 #if ARDUINOJSON_VERSION_MAJOR == 6
-    AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest, size_t maxJsonBufferSize = DYNAMIC_JSON_DOCUMENT_SIZE)
+    AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest = nullptr, size_t maxJsonBufferSize = DYNAMIC_JSON_DOCUMENT_SIZE)
         : _uri(uri), _method(HTTP_GET | HTTP_POST | HTTP_PUT | HTTP_PATCH), _onRequest(onRequest), maxJsonBufferSize(maxJsonBufferSize), _maxContentLength(16384) {}
 #else
-    AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest)
+    AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest = nullptr)
         : _uri(uri), _method(HTTP_GET | HTTP_POST | HTTP_PUT | HTTP_PATCH), _onRequest(onRequest), _maxContentLength(16384) {}
 #endif
 
