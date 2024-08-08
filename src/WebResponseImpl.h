@@ -36,7 +36,7 @@ class AsyncBasicResponse : public AsyncWebServerResponse {
     String _content;
 
   public:
-    AsyncBasicResponse(int code, const String& contentType = String(), const String& content = String());
+    AsyncBasicResponse(int code, const String& contentType = emptyString, const String& content = emptyString);
     void _respond(AsyncWebServerRequest* request);
     size_t _ack(AsyncWebServerRequest* request, size_t len, uint32_t time);
     bool _sourceValid() const { return true; }
@@ -79,8 +79,8 @@ class AsyncFileResponse : public AsyncAbstractResponse {
     void _setContentType(const String& path);
 
   public:
-    AsyncFileResponse(FS& fs, const String& path, const String& contentType = String(), bool download = false, AwsTemplateProcessor callback = nullptr);
-    AsyncFileResponse(File content, const String& path, const String& contentType = String(), bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncFileResponse(FS& fs, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncFileResponse(File content, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr);
     ~AsyncFileResponse();
     bool _sourceValid() const { return !!(_content); }
     virtual size_t _fillBuffer(uint8_t* buf, size_t maxLen) override;

@@ -353,7 +353,7 @@ size_t AsyncBasicResponse::_ack(AsyncWebServerRequest* request, size_t len, uint
     // we can fit in this packet
     if (space > available) {
       _writtenLength += request->client()->write(_content.c_str(), available);
-      _content = String();
+      _content = emptyString;
       _state = RESPONSE_WAIT_ACK;
       return available;
     }
@@ -465,7 +465,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest* request, size_t len, u
     }
 
     if (headLen) {
-      _head = String();
+      _head = emptyString;
     }
 
     if (outLen) {

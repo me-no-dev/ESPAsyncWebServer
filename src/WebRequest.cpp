@@ -274,7 +274,7 @@ bool AsyncWebServerRequest::_parseReqHead() {
   if (!_temp.startsWith(T_HTTP_1_0))
     _version = 1;
 
-  _temp = String();
+  _temp = emptyString;
   return true;
 }
 
@@ -327,7 +327,7 @@ bool AsyncWebServerRequest::_parseReqHeader() {
   _temp.clear();
 #else
   // Ancient PRI core does not have String::clear() method 8-()
-  _temp = String();
+  _temp = emptyString;
 #endif
   return true;
 }
@@ -348,7 +348,7 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data) {
   _temp.clear();
 #else
   // Ancient PRI core does not have String::clear() method 8-()
-  _temp = String();
+  _temp = emptyString;
 #endif
   }
 }
@@ -390,10 +390,10 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last) {
 
   if (!_parsedLength) {
     _multiParseState = EXPECT_BOUNDARY;
-    _temp = String();
-    _itemName = String();
-    _itemFilename = String();
-    _itemType = String();
+    _temp = emptyString;
+    _itemName = emptyString;
+    _itemFilename = emptyString;
+    _itemType = emptyString;
   }
 
   if (_multiParseState == WAIT_FOR_RETURN1) {
@@ -450,13 +450,13 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last) {
             _itemIsFile = true;
           }
         }
-        _temp = String();
+        _temp = emptyString;
       } else {
         _multiParseState = WAIT_FOR_RETURN1;
         // value starts from here
         _itemSize = 0;
         _itemStartIndex = _parsedLength;
-        _itemValue = String();
+        _itemValue = emptyString;
         if (_itemIsFile) {
           if (_itemBuffer)
             free(_itemBuffer);
