@@ -10,6 +10,9 @@
   "files.associations": {
     "*.cps": "javascript",
     "*.config": "cpp",
-    "compare": "cpp"
+    "compare": "cpp",
+    "*.tcc": "cpp",
+    "deque": "cpp",
+    "vector": "cpp"
   }
 }
