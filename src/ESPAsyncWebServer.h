@@ -35,10 +35,10 @@
   #include <ESP8266WiFi.h>
   #include <ESPAsyncTCP.h>
 #elif defined(TARGET_RP2040)
-  #include <WiFi.h>
   #include <AsyncTCP_RP2040W.h>
-  #include <http_parser.h>
   #include <HTTP_Method.h>
+  #include <WiFi.h>
+  #include <http_parser.h>
 #else
   #error Platform not supported
 #endif
@@ -68,20 +68,20 @@ class AsyncStaticWebHandler;
 class AsyncCallbackWebHandler;
 class AsyncResponseStream;
 
-#if defined (TARGET_RP2040)
-  typedef enum http_method WebRequestMethod;
+#if defined(TARGET_RP2040)
+typedef enum http_method WebRequestMethod;
 #else
   #ifndef WEBSERVER_H
-  typedef enum {
-    HTTP_GET = 0b00000001,
-    HTTP_POST = 0b00000010,
-    HTTP_DELETE = 0b00000100,
-    HTTP_PUT = 0b00001000,
-    HTTP_PATCH = 0b00010000,
-    HTTP_HEAD = 0b00100000,
-    HTTP_OPTIONS = 0b01000000,
-    HTTP_ANY = 0b01111111,
-  } WebRequestMethod;
+typedef enum {
+  HTTP_GET = 0b00000001,
+  HTTP_POST = 0b00000010,
+  HTTP_DELETE = 0b00000100,
+  HTTP_PUT = 0b00001000,
+  HTTP_PATCH = 0b00010000,
+  HTTP_HEAD = 0b00100000,
+  HTTP_OPTIONS = 0b01000000,
+  HTTP_ANY = 0b01111111,
+} WebRequestMethod;
   #endif
 #endif
 
@@ -138,6 +138,7 @@ class AsyncWebHeader {
     AsyncWebHeader() = default;
     AsyncWebHeader(const AsyncWebHeader&) = default;
 
+    AsyncWebHeader(const char* name, const char* value) : _name(name), _value(value) {}
     AsyncWebHeader(const String& name, const String& value) : _name(name), _value(value) {}
     AsyncWebHeader(const String& data) {
       if (!data)
@@ -293,14 +294,37 @@ class AsyncWebServerRequest {
     void redirect(const String& url) { return redirect(url.c_str()); };
 
     void send(AsyncWebServerResponse* response);
-    void send(int code, const String& contentType = emptyString, const String& content = emptyString);
-    void send(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr);
-    void send(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr);
-    void send(FS& fs, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr);
-    void send(File content, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr);
-    void send(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback = nullptr);
-    void send(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
-    void sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
+
+    void send(int code, const char* contentType = "", const char* content = "", AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
+    void send(int code, const String& contentType, const String& content = emptyString, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
+
+    void send(int code, const char* contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, len, callback)); }
+    void send(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, len, callback)); }
+
+    void send(FS& fs, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr) {
+      if (fs.exists(path) || (!download && fs.exists(path + asyncsrv::T__gz))) {
+        send(beginResponse(fs, path, contentType, download, callback));
+      } else
+        send(404);
+    }
+    void send(FS& fs, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr) { send(fs, path, contentType.c_str(), download, callback); }
+
+    void send(File content, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr) {
+      if (content) {
+        send(beginResponse(content, path, contentType, download, callback));
+      } else
+        send(404);
+    }
+    void send(File content, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr) { send(content, path, contentType.c_str(), download, callback); }
+
+    void send(Stream& stream, const char* contentType, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(stream, contentType, len, callback)); }
+    void send(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(stream, contentType, len, callback)); }
+
+    void send(const char* contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr) { send(beginResponse(contentType, len, callback, templateCallback)); }
+    void send(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr) { send(beginResponse(contentType, len, callback, templateCallback)); }
+
+    void sendChunked(const char* contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr) { send(beginChunkedResponse(contentType, callback, templateCallback)); }
+    void sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr) { send(beginChunkedResponse(contentType, callback, templateCallback)); }
 
     [[deprecated("Replaced by send(...)")]]
     void send_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) {
@@ -311,16 +335,33 @@ class AsyncWebServerRequest {
       send(code, contentType, content, callback);
     }
 
-    AsyncWebServerResponse* beginResponse(int code, const String& contentType = emptyString, const String& content = emptyString);
-    AsyncWebServerResponse* beginResponse(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr);
-    AsyncWebServerResponse* beginResponse(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr);
-    AsyncWebServerResponse* beginResponse(FS& fs, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr);
-    AsyncWebServerResponse* beginResponse(File content, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr);
-    AsyncWebServerResponse* beginResponse(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback = nullptr);
-    AsyncWebServerResponse* beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
-    AsyncWebServerResponse* beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
-    AsyncResponseStream* beginResponseStream(const String& contentType, size_t bufferSize = 1460);
+#ifdef ESP8266
+    void send(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
+#endif
 
+    AsyncWebServerResponse* beginResponse(int code, const char* contentType = "", const char* content = "", AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(int code, const String& contentType, const String& content = emptyString, AwsTemplateProcessor callback = nullptr) { return beginResponse(code, contentType.c_str(), content.c_str(), callback); }
+
+    AsyncWebServerResponse* beginResponse(int code, const char* contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) { return beginResponse(code, contentType.c_str(), content, len, callback); }
+
+    AsyncWebServerResponse* beginResponse(FS& fs, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(FS& fs, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr) { return beginResponse(fs, path, contentType.c_str(), download, callback); }
+
+    AsyncWebServerResponse* beginResponse(File content, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(File content, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr) { return beginResponse(content, path, contentType.c_str(), download, callback); }
+
+    AsyncWebServerResponse* beginResponse(Stream& stream, const char* contentType, size_t len, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback = nullptr) { return beginResponse(stream, contentType.c_str(), len, callback); }
+
+    AsyncWebServerResponse* beginResponse(const char* contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
+    AsyncWebServerResponse* beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr) { return beginResponse(contentType.c_str(), len, callback, templateCallback); }
+
+    AsyncWebServerResponse* beginChunkedResponse(const char* contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
+    AsyncWebServerResponse* beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
+
+    AsyncResponseStream* beginResponseStream(const char* contentType, size_t bufferSize = 1460);
+    AsyncResponseStream* beginResponseStream(const String& contentType, size_t bufferSize = 1460) { return beginResponseStream(contentType.c_str(), bufferSize); }
 
     [[deprecated("Replaced by beginResponse(...)")]]
     AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) {
@@ -330,6 +371,10 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) {
       return beginResponse(code, contentType, content, callback);
     }
+
+#ifdef ESP8266
+    AsyncWebServerResponse* beginResponse(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr);
+#endif
 
     size_t headers() const; // get header count
 
@@ -348,7 +393,8 @@ class AsyncWebServerRequest {
     const AsyncWebHeader* getHeader(size_t num) const;
 
     size_t params() const; // get arguments count
-    bool hasParam(const String& name, bool post = false, bool file = false) const;
+    bool hasParam(const char* name, bool post = false, bool file = false) const;
+    bool hasParam(const String& name, bool post = false, bool file = false) const { return hasParam(name.c_str(), post, file); };
 #ifdef ESP8266
     bool hasParam(const __FlashStringHelper* data, bool post = false, bool file = false) const { return hasParam(String(data).c_str(), post, file); };
 #endif
@@ -526,8 +572,10 @@ class AsyncWebServerResponse {
     virtual ~AsyncWebServerResponse();
     virtual void setCode(int code);
     virtual void setContentLength(size_t len);
-    virtual void setContentType(const String& type);
-    virtual void addHeader(const String& name, const String& value);
+    void setContentType(const String& type) { setContentType(type.c_str()); }
+    virtual void setContentType(const char* type);
+    virtual void addHeader(const char* name, const char* value);
+    void addHeader(const String& name, const String& value) { addHeader(name.c_str(), value.c_str()); }
     virtual String _assembleHead(uint8_t version);
     virtual bool _started() const;
     virtual bool _finished() const;

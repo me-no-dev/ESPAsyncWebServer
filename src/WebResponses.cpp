@@ -234,12 +234,12 @@ void AsyncWebServerResponse::setContentLength(size_t len) {
     _contentLength = len;
 }
 
-void AsyncWebServerResponse::setContentType(const String& type) {
+void AsyncWebServerResponse::setContentType(const char* type) {
   if (_state == RESPONSE_SETUP)
     _contentType = type;
 }
 
-void AsyncWebServerResponse::addHeader(const String& name, const String& value) {
+void AsyncWebServerResponse::addHeader(const char* name, const char* value) {
   _headers.emplace_back(name, value);
 }
 
@@ -298,7 +298,7 @@ size_t AsyncWebServerResponse::_ack(AsyncWebServerRequest* request, size_t len, 
 /*
  * String/Code Response
  * */
-AsyncBasicResponse::AsyncBasicResponse(int code, const String& contentType, const String& content) {
+AsyncBasicResponse::AsyncBasicResponse(int code, const char* contentType, const char* content) {
   _code = code;
   _content = content;
   _contentType = contentType;
@@ -607,7 +607,7 @@ AsyncFileResponse::~AsyncFileResponse() {
     _content.close();
 }
 
-void AsyncFileResponse::_setContentType(const String& path) {
+void AsyncFileResponse::_setContentTypeFromPath(const String& path) {
 #if HAVE_EXTERN_GET_Content_Type_FUNCTION
   #ifndef ESP8266
     extern const char* getContentType(const String& path);
@@ -657,7 +657,7 @@ void AsyncFileResponse::_setContentType(const String& path) {
 #endif
 }
 
-AsyncFileResponse::AsyncFileResponse(FS& fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
+AsyncFileResponse::AsyncFileResponse(FS& fs, const String& path, const char* contentType, bool download, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
   _code = 200;
   _path = path;
 
@@ -672,8 +672,8 @@ AsyncFileResponse::AsyncFileResponse(FS& fs, const String& path, const String& c
   _content = fs.open(_path, fs::FileOpenMode::read);
   _contentLength = _content.size();
 
-  if (contentType.length() == 0)
-    _setContentType(path);
+  if (strlen(contentType) == 0)
+    _setContentTypeFromPath(path);
   else
     _contentType = contentType;
 
@@ -691,7 +691,7 @@ AsyncFileResponse::AsyncFileResponse(FS& fs, const String& path, const String& c
   addHeader(T_Content_Disposition, buf);
 }
 
-AsyncFileResponse::AsyncFileResponse(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
+AsyncFileResponse::AsyncFileResponse(File content, const String& path, const char* contentType, bool download, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
   _code = 200;
   _path = path;
 
@@ -705,8 +705,8 @@ AsyncFileResponse::AsyncFileResponse(File content, const String& path, const Str
   _content = content;
   _contentLength = _content.size();
 
-  if (contentType.length() == 0)
-    _setContentType(path);
+  if (strlen(contentType) == 0)
+    _setContentTypeFromPath(path);
   else
     _contentType = contentType;
 
@@ -730,7 +730,7 @@ size_t AsyncFileResponse::_fillBuffer(uint8_t* data, size_t len) {
  * Stream Response
  * */
 
-AsyncStreamResponse::AsyncStreamResponse(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
+AsyncStreamResponse::AsyncStreamResponse(Stream& stream, const char* contentType, size_t len, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
   _code = 200;
   _content = &stream;
   _contentLength = len;
@@ -750,7 +750,7 @@ size_t AsyncStreamResponse::_fillBuffer(uint8_t* data, size_t len) {
  * Callback Response
  * */
 
-AsyncCallbackResponse::AsyncCallbackResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback) : AsyncAbstractResponse(templateCallback) {
+AsyncCallbackResponse::AsyncCallbackResponse(const char* contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback) : AsyncAbstractResponse(templateCallback) {
   _code = 200;
   _content = callback;
   _contentLength = len;
@@ -772,7 +772,7 @@ size_t AsyncCallbackResponse::_fillBuffer(uint8_t* data, size_t len) {
  * Chunked Response
  * */
 
-AsyncChunkedResponse::AsyncChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor processorCallback) : AsyncAbstractResponse(processorCallback) {
+AsyncChunkedResponse::AsyncChunkedResponse(const char* contentType, AwsResponseFiller callback, AwsTemplateProcessor processorCallback) : AsyncAbstractResponse(processorCallback) {
   _code = 200;
   _content = callback;
   _contentLength = 0;
@@ -794,7 +794,7 @@ size_t AsyncChunkedResponse::_fillBuffer(uint8_t* data, size_t len) {
  * Progmem Response
  * */
 
-AsyncProgmemResponse::AsyncProgmemResponse(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
+AsyncProgmemResponse::AsyncProgmemResponse(int code, const char* contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
   _code = code;
   _content = content;
   _contentType = contentType;
@@ -818,7 +818,7 @@ size_t AsyncProgmemResponse::_fillBuffer(uint8_t* data, size_t len) {
  * Response Stream (You can print/write/printf to it, up to the contentLen bytes)
  * */
 
-AsyncResponseStream::AsyncResponseStream(const String& contentType, size_t bufferSize) {
+AsyncResponseStream::AsyncResponseStream(const char* contentType, size_t bufferSize) {
   _code = 200;
   _contentLength = 0;
   _contentType = contentType;

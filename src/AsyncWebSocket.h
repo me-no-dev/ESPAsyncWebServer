@@ -230,18 +230,12 @@ class AsyncWebSocketClient {
     size_t queueLen() const;
 
     size_t printf(const char* format, ...) __attribute__((format(printf, 2, 3)));
-#ifndef ESP32
-    size_t printf_P(PGM_P formatP, ...) __attribute__((format(printf, 2, 3)));
-#endif
 
     void text(AsyncWebSocketSharedBuffer buffer);
     void text(const uint8_t* message, size_t len);
     void text(const char* message, size_t len);
     void text(const char* message);
     void text(const String& message);
-#ifndef ESP32
-    void text(const __FlashStringHelper* message);
-#endif // ESP32
     void text(AsyncWebSocketMessageBuffer* buffer);
 
     void binary(AsyncWebSocketSharedBuffer buffer);
@@ -249,9 +243,6 @@ class AsyncWebSocketClient {
     void binary(const char* message, size_t len);
     void binary(const char* message);
     void binary(const String& message);
-#ifndef ESP32
-    void binary(const __FlashStringHelper* message, size_t len);
-#endif // ESP32
     void binary(AsyncWebSocketMessageBuffer* buffer);
 
     bool canSend() const;
@@ -263,6 +254,12 @@ class AsyncWebSocketClient {
     void _onTimeout(uint32_t time);
     void _onDisconnect();
     void _onData(void* pbuf, size_t plen);
+
+#ifdef ESP8266
+    size_t printf_P(PGM_P formatP, ...) __attribute__((format(printf, 2, 3)));
+    void text(const __FlashStringHelper* message);
+    void binary(const __FlashStringHelper* message, size_t len);
+#endif
 };
 
 using AwsHandshakeHandler = std::function<bool(AsyncWebServerRequest* request)>;
@@ -308,17 +305,11 @@ class AsyncWebSocket : public AsyncWebHandler {
     void text(uint32_t id, const String& message);
     void text(uint32_t id, AsyncWebSocketMessageBuffer* buffer);
     void text(uint32_t id, AsyncWebSocketSharedBuffer buffer);
-#ifdef ESP8266
-    void text(uint32_t id, const __FlashStringHelper* message);
-#endif // ESP8266
 
     void textAll(const uint8_t* message, size_t len);
     void textAll(const char* message, size_t len);
     void textAll(const char* message);
     void textAll(const String& message);
-#ifdef ESP8266
-    void textAll(const __FlashStringHelper* message);
-#endif // ESP8266
     void textAll(AsyncWebSocketMessageBuffer* buffer);
     void textAll(AsyncWebSocketSharedBuffer buffer);
 
@@ -326,9 +317,6 @@ class AsyncWebSocket : public AsyncWebHandler {
     void binary(uint32_t id, const char* message, size_t len);
     void binary(uint32_t id, const char* message);
     void binary(uint32_t id, const String& message);
-#ifdef ESP8266
-    void binary(uint32_t id, const __FlashStringHelper* message, size_t len);
-#endif // ESP8266
     void binary(uint32_t id, AsyncWebSocketMessageBuffer* buffer);
     void binary(uint32_t id, AsyncWebSocketSharedBuffer buffer);
 
@@ -336,9 +324,6 @@ class AsyncWebSocket : public AsyncWebHandler {
     void binaryAll(const char* message, size_t len);
     void binaryAll(const char* message);
     void binaryAll(const String& message);
-#ifdef ESP8266
-    void binaryAll(const __FlashStringHelper* message, size_t len);
-#endif // ESP8266
     void binaryAll(AsyncWebSocketMessageBuffer* buffer);
     void binaryAll(AsyncWebSocketSharedBuffer buffer);
 
@@ -346,6 +331,10 @@ class AsyncWebSocket : public AsyncWebHandler {
     size_t printfAll(const char* format, ...) __attribute__((format(printf, 2, 3)));
 
 #ifdef ESP8266
+    void text(uint32_t id, const __FlashStringHelper* message);
+    void textAll(const __FlashStringHelper* message);
+    void binary(uint32_t id, const __FlashStringHelper* message, size_t len);
+    void binaryAll(const __FlashStringHelper* message, size_t len);
     size_t printf_P(uint32_t id, PGM_P formatP, ...) __attribute__((format(printf, 3, 4)));
     size_t printfAll_P(PGM_P formatP, ...) __attribute__((format(printf, 2, 3)));
 #endif

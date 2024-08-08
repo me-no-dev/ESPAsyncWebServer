@@ -307,7 +307,7 @@ bool AsyncWebServerRequest::_parseReqHeader() {
       if (name.equalsIgnoreCase(T_UPGRADE) && value.equalsIgnoreCase(T_WS)) {
         // WebSocket request can be uniquely identified by header: [Upgrade: websocket]
         _reqconntype = RCT_WS;
-      } else if (name.equalsIgnoreCase(T_ACCEPT)){
+      } else if (name.equalsIgnoreCase(T_ACCEPT)) {
         String lowcase(value);
         lowcase.toLowerCase();
 #ifndef ESP8266
@@ -345,10 +345,10 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data) {
     _params.emplace_back(urlDecode(name), urlDecode(value), true);
 
 #ifndef TARGET_RP2040
-  _temp.clear();
+    _temp.clear();
 #else
-  // Ancient PRI core does not have String::clear() method 8-()
-  _temp = emptyString;
+    // Ancient PRI core does not have String::clear() method 8-()
+    _temp = emptyString;
 #endif
   }
 }
@@ -654,9 +654,9 @@ size_t AsyncWebServerRequest::params() const {
   return _params.size();
 }
 
-bool AsyncWebServerRequest::hasParam(const String& name, bool post, bool file) const {
+bool AsyncWebServerRequest::hasParam(const char* name, bool post, bool file) const {
   for (const auto& p : _params) {
-    if (p.name() == name && p.isPost() == post && p.isFile() == file) {
+    if (p.name().equals(name) && p.isPost() == post && p.isFile() == file) {
       return true;
     }
   }
@@ -689,47 +689,51 @@ void AsyncWebServerRequest::addInterestingHeader(const char* name) {
     _interestingHeaders.emplace_back(name);
 }
 
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const String& contentType, const String& content) {
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const char* contentType, const char* content, AwsTemplateProcessor callback) {
+  if (callback)
+    return new AsyncProgmemResponse(code, contentType, (const uint8_t*)content, strlen(content), callback);
   return new AsyncBasicResponse(code, contentType, content);
 }
 
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback) {
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const char* contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback) {
   return new AsyncProgmemResponse(code, contentType, content, len, callback);
 }
 
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback) {
-  return new AsyncProgmemResponse(code, contentType, (const uint8_t*)content, strlen_P(content), callback);
-}
-
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(FS& fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) {
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(FS& fs, const String& path, const char* contentType, bool download, AwsTemplateProcessor callback) {
   if (fs.exists(path) || (!download && fs.exists(path + T__gz)))
     return new AsyncFileResponse(fs, path, contentType, download, callback);
   return NULL;
 }
 
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) {
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(File content, const String& path, const char* contentType, bool download, AwsTemplateProcessor callback) {
   if (content == true)
     return new AsyncFileResponse(content, path, contentType, download, callback);
   return NULL;
 }
 
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback) {
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(Stream& stream, const char* contentType, size_t len, AwsTemplateProcessor callback) {
   return new AsyncStreamResponse(stream, contentType, len, callback);
 }
 
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback) {
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(const char* contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback) {
   return new AsyncCallbackResponse(contentType, len, callback, templateCallback);
 }
 
-AsyncWebServerResponse* AsyncWebServerRequest::beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback) {
+AsyncWebServerResponse* AsyncWebServerRequest::beginChunkedResponse(const char* contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback) {
   if (_version)
     return new AsyncChunkedResponse(contentType, callback, templateCallback);
   return new AsyncCallbackResponse(contentType, 0, callback, templateCallback);
 }
 
-AsyncResponseStream* AsyncWebServerRequest::beginResponseStream(const String& contentType, size_t bufferSize) {
+AsyncResponseStream* AsyncWebServerRequest::beginResponseStream(const char* contentType, size_t bufferSize) {
   return new AsyncResponseStream(contentType, bufferSize);
 }
+
+#ifdef ESP8266
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback) {
+  return new AsyncProgmemResponse(code, contentType, (const uint8_t*)content, strlen_P(content), callback);
+}
+#endif
 
 void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
   _response = response;
@@ -746,44 +750,6 @@ void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
     _client->setRxTimeout(0);
     _response->_respond(this);
   }
-}
-
-void AsyncWebServerRequest::send(int code, const String& contentType, const String& content) {
-  send(beginResponse(code, contentType, content));
-}
-
-void AsyncWebServerRequest::send(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback) {
-  send(beginResponse(code, contentType, content, len, callback));
-}
-
-void AsyncWebServerRequest::send(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback) {
-  send(beginResponse(code, contentType, content, callback));
-}
-
-void AsyncWebServerRequest::send(FS& fs, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) {
-  if (fs.exists(path) || (!download && fs.exists(path + T__gz))) {
-    send(beginResponse(fs, path, contentType, download, callback));
-  } else
-    send(404);
-}
-
-void AsyncWebServerRequest::send(File content, const String& path, const String& contentType, bool download, AwsTemplateProcessor callback) {
-  if (content == true) {
-    send(beginResponse(content, path, contentType, download, callback));
-  } else
-    send(404);
-}
-
-void AsyncWebServerRequest::send(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback) {
-  send(beginResponse(stream, contentType, len, callback));
-}
-
-void AsyncWebServerRequest::send(const String& contentType, size_t len, AwsResponseFiller callback, AwsTemplateProcessor templateCallback) {
-  send(beginResponse(contentType, len, callback, templateCallback));
-}
-
-void AsyncWebServerRequest::sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback) {
-  send(beginChunkedResponse(contentType, callback, templateCallback));
 }
 
 void AsyncWebServerRequest::redirect(const char* url) {
@@ -834,11 +800,11 @@ void AsyncWebServerRequest::requestAuthentication(const char* realm, bool isDige
     String header(T_BASIC_REALM);
     header.concat(realm);
     header += '"';
-    r->addHeader(T_WWW_AUTH, header);
+    r->addHeader(T_WWW_AUTH, header.c_str());
   } else {
     String header(T_DIGEST_);
     header.concat(requestDigestAuthentication(realm));
-    r->addHeader(T_WWW_AUTH, header);
+    r->addHeader(T_WWW_AUTH, header.c_str());
   }
   send(r);
 }
@@ -949,7 +915,7 @@ const char* AsyncWebServerRequest::methodToString() const {
     return T_OPTIONS;
   return T_UNKNOWN;
 }
-#else // ESP8266
+#else  // ESP8266
 const __FlashStringHelper* AsyncWebServerRequest::methodToString() const {
   if (_method == HTTP_ANY)
     return FPSTR(T_ANY);
@@ -988,7 +954,7 @@ const char* AsyncWebServerRequest::requestedConnTypeToString() const {
       return T_ERROR;
   }
 }
-#else // ESP8266
+#else  // ESP8266
 const __FlashStringHelper* AsyncWebServerRequest::requestedConnTypeToString() const {
   switch (_reqconntype) {
     case RCT_NOT_USED:
