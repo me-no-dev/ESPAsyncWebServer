@@ -28,6 +28,7 @@
 #endif
 #include <memory>
 #include <vector>
+#include "literals.h"
 
 // It is possible to restore these defines, but one can use _min and _max instead. Or std::min, std::max.
 
@@ -36,7 +37,7 @@ class AsyncBasicResponse : public AsyncWebServerResponse {
     String _content;
 
   public:
-    AsyncBasicResponse(int code, const char* contentType = "", const char* content = "");
+    explicit AsyncBasicResponse(int code, const char* contentType = asyncsrv::empty, const char* content = asyncsrv::empty);
     AsyncBasicResponse(int code, const String& contentType, const String& content = emptyString) : AsyncBasicResponse(code, contentType.c_str(), content.c_str()) {}
     void _respond(AsyncWebServerRequest* request);
     size_t _ack(AsyncWebServerRequest* request, size_t len, uint32_t time);
@@ -80,9 +81,9 @@ class AsyncFileResponse : public AsyncAbstractResponse {
     void _setContentTypeFromPath(const String& path);
 
   public:
-    AsyncFileResponse(FS& fs, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncFileResponse(FS& fs, const String& path, const char* contentType = asyncsrv::empty, bool download = false, AwsTemplateProcessor callback = nullptr);
     AsyncFileResponse(FS& fs, const String& path, const String& contentType, bool download = false, AwsTemplateProcessor callback = nullptr) : AsyncFileResponse(fs, path, contentType.c_str(), download, callback) {}
-    AsyncFileResponse(File content, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncFileResponse(File content, const String& path, const char* contentType = asyncsrv::empty, bool download = false, AwsTemplateProcessor callback = nullptr);
     AsyncFileResponse(File content, const String& path, const String& contentType, bool download = false, AwsTemplateProcessor callack = nullptr) : AsyncFileResponse(content, path, contentType.c_str(), download, callack) {}
     ~AsyncFileResponse();
     bool _sourceValid() const { return !!(_content); }

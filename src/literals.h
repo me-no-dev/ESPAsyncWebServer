@@ -2,6 +2,8 @@
 
 namespace asyncsrv {
 
+static constexpr const char* empty = "";
+
 #ifndef ESP8622
 static constexpr const char* T_100_CONTINUE     = "100-continue";
 static constexpr const char* T_ACCEPT           = "Accept";

@@ -295,13 +295,13 @@ class AsyncWebServerRequest {
 
     void send(AsyncWebServerResponse* response);
 
-    void send(int code, const char* contentType = "", const char* content = "", AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
+    void send(int code, const char* contentType = asyncsrv::empty, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
     void send(int code, const String& contentType, const String& content = emptyString, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
 
     void send(int code, const char* contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, len, callback)); }
     void send(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, len, callback)); }
 
-    void send(FS& fs, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr) {
+    void send(FS& fs, const String& path, const char* contentType = asyncsrv::empty, bool download = false, AwsTemplateProcessor callback = nullptr) {
       if (fs.exists(path) || (!download && fs.exists(path + asyncsrv::T__gz))) {
         send(beginResponse(fs, path, contentType, download, callback));
       } else
@@ -309,7 +309,7 @@ class AsyncWebServerRequest {
     }
     void send(FS& fs, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr) { send(fs, path, contentType.c_str(), download, callback); }
 
-    void send(File content, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr) {
+    void send(File content, const String& path, const char* contentType = asyncsrv::empty, bool download = false, AwsTemplateProcessor callback = nullptr) {
       if (content) {
         send(beginResponse(content, path, contentType, download, callback));
       } else
@@ -339,16 +339,16 @@ class AsyncWebServerRequest {
     void send(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
 #endif
 
-    AsyncWebServerResponse* beginResponse(int code, const char* contentType = "", const char* content = "", AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(int code, const char* contentType = asyncsrv::empty, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr);
     AsyncWebServerResponse* beginResponse(int code, const String& contentType, const String& content = emptyString, AwsTemplateProcessor callback = nullptr) { return beginResponse(code, contentType.c_str(), content.c_str(), callback); }
 
     AsyncWebServerResponse* beginResponse(int code, const char* contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr);
     AsyncWebServerResponse* beginResponse(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) { return beginResponse(code, contentType.c_str(), content, len, callback); }
 
-    AsyncWebServerResponse* beginResponse(FS& fs, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(FS& fs, const String& path, const char* contentType = asyncsrv::empty, bool download = false, AwsTemplateProcessor callback = nullptr);
     AsyncWebServerResponse* beginResponse(FS& fs, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr) { return beginResponse(fs, path, contentType.c_str(), download, callback); }
 
-    AsyncWebServerResponse* beginResponse(File content, const String& path, const char* contentType = "", bool download = false, AwsTemplateProcessor callback = nullptr);
+    AsyncWebServerResponse* beginResponse(File content, const String& path, const char* contentType = asyncsrv::empty, bool download = false, AwsTemplateProcessor callback = nullptr);
     AsyncWebServerResponse* beginResponse(File content, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr) { return beginResponse(content, path, contentType.c_str(), download, callback); }
 
     AsyncWebServerResponse* beginResponse(Stream& stream, const char* contentType, size_t len, AwsTemplateProcessor callback = nullptr);
