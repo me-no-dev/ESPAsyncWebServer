@@ -154,7 +154,14 @@ class AsyncWebHeader {
 
     const String& name() const { return _name; }
     const String& value() const { return _value; }
-    String toString() const { return _name + (char)0x3a + (char)0x20 /*": "*/ + _value + asyncsrv::T_rn; }
+    String toString() const {
+      String str = _name;
+      str.concat((char)0x3a);
+      str.concat((char)0x20);
+      str.concat(_value);
+      str.concat(asyncsrv::T_rn);
+      return str;
+    }
 };
 
 /*
