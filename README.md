@@ -14,7 +14,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 **WARNING** The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations.
 
 ```
-mathieucarbou/ESPAsyncWebServer @ 3.1.4
+mathieucarbou/ESPAsyncWebServer @ 3.1.5
 ```
 
 Dependency:
