@@ -24,11 +24,19 @@
 using namespace asyncsrv;
 
 bool ON_STA_FILTER(AsyncWebServerRequest* request) {
+  #ifndef CONFIG_IDF_TARGET_ESP32H2
   return WiFi.localIP() == request->client()->localIP();
+  #else
+  return false;
+  #endif
 }
 
 bool ON_AP_FILTER(AsyncWebServerRequest* request) {
+  #ifndef CONFIG_IDF_TARGET_ESP32H2
   return WiFi.localIP() != request->client()->localIP();
+  #else
+  return false;
+  #endif
 }
 
 #ifndef HAVE_FS_FILE_OPEN_MODE
