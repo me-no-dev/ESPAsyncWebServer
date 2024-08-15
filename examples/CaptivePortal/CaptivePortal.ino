@@ -29,7 +29,9 @@ class CaptiveRequestHandler : public AsyncWebHandler {
       response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
       response->print("<p>This is out captive portal front page.</p>");
       response->printf("<p>You were trying to reach: http://%s%s</p>", request->host().c_str(), request->url().c_str());
+#ifndef CONFIG_IDF_TARGET_ESP32H2
       response->printf("<p>Try opening <a href='http://%s'>this link</a> instead</p>", WiFi.softAPIP().toString().c_str());
+#endif
       response->print("</body></html>");
       request->send(response);
     }
@@ -40,6 +42,7 @@ void setup() {
   Serial.println();
   Serial.println("Configuring access point...");
 
+#ifndef CONFIG_IDF_TARGET_ESP32H2
   if (!WiFi.softAP("esp-captive")) {
     Serial.println("Soft AP creation failed.");
     while (1)
@@ -47,6 +50,8 @@ void setup() {
   }
 
   dnsServer.start(53, "*", WiFi.softAPIP());
+#endif
+
   server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER); // only when requested from AP
   // more handlers...
   server.begin();

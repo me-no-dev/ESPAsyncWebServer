@@ -38,6 +38,7 @@ void setup() {
 
   Serial.begin(115200);
 
+#ifndef CONFIG_IDF_TARGET_ESP32H2
   // WiFi.mode(WIFI_STA);
   // WiFi.begin("YOUR_SSID", "YOUR_PASSWORD");
   // if (WiFi.waitForConnectResult() != WL_CONNECTED) {
@@ -49,6 +50,7 @@ void setup() {
 
   WiFi.mode(WIFI_AP);
   WiFi.softAP("esp-captive");
+#endif
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
     request->send(200, "text/plain", "Hello, world");
