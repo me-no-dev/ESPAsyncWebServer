@@ -41,7 +41,7 @@ static constexpr const char* T_none             = "none";
 static constexpr const char* T_UPGRADE          = "Upgrade";
 static constexpr const char* T_WS               = "websocket";
 static constexpr const char* T_WWW_AUTH         = "WWW-Authenticate";
-static constexpr const char* Transfer_Encoding  = "Transfer-Encoding";
+static constexpr const char* T_Transfer_Encoding = "Transfer-Encoding";
 
 // HTTP Methods
 static constexpr const char* T_ANY      = "ANY";
@@ -210,7 +210,7 @@ static const char T_none[] PROGMEM = "none";
 static const char T_UPGRADE[] PROGMEM = "Upgrade";
 static const char T_WS[] PROGMEM = "websocket";
 static const char T_WWW_AUTH[] PROGMEM = "WWW-Authenticate";
-static const char Transfer_Encoding[] PROGMEM = "Transfer-Encoding";
+static const char T_Transfer_Encoding[] PROGMEM = "Transfer-Encoding";
 
 // HTTP Methods
 static const char T_ANY[] PROGMEM = "ANY";

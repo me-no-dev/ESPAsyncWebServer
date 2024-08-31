@@ -581,8 +581,9 @@ class AsyncWebServerResponse {
     virtual void setContentLength(size_t len);
     void setContentType(const String& type) { setContentType(type.c_str()); }
     virtual void setContentType(const char* type);
-    virtual void addHeader(const char* name, const char* value);
-    void addHeader(const String& name, const String& value) { addHeader(name.c_str(), value.c_str()); }
+    virtual bool addHeader(const char* name, const char* value, bool replaceExisting = true);
+    bool addHeader(const String& name, const String& value, bool replaceExisting = true) { return addHeader(name.c_str(), value.c_str(), replaceExisting); }
+    virtual bool removeHeader(const char* name);
     virtual String _assembleHead(uint8_t version);
     virtual bool _started() const;
     virtual bool _finished() const;

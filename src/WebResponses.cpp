@@ -239,18 +239,43 @@ void AsyncWebServerResponse::setContentType(const char* type) {
     _contentType = type;
 }
 
-void AsyncWebServerResponse::addHeader(const char* name, const char* value) {
+bool AsyncWebServerResponse::removeHeader(const char* name) {
+  for (auto i = _headers.begin(); i != _headers.end(); ++i) {
+    if (i->name().equalsIgnoreCase(name)) {
+      _headers.erase(i);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool AsyncWebServerResponse::addHeader(const char* name, const char* value, bool replaceExisting) {
+  for (auto i = _headers.begin(); i != _headers.end(); ++i) {
+    if (i->name().equalsIgnoreCase(name)) {
+      // header already set
+      if (replaceExisting) {
+        // remove, break and add the new one
+        _headers.erase(i);
+        break;
+      } else {
+        // do not update
+        return false;
+      }
+    }
+  }
+  // header was not found found, or existing one was removed
   _headers.emplace_back(name, value);
+  return true;
 }
 
 String AsyncWebServerResponse::_assembleHead(uint8_t version) {
   if (version) {
-    addHeader(T_Accept_Ranges, T_none);
+    addHeader(T_Accept_Ranges, T_none, false);
     if (_chunked)
-      addHeader(Transfer_Encoding, T_chunked);
+      addHeader(T_Transfer_Encoding, T_chunked, false);
   }
   String out;
-  int bufSize = 300;
+  constexpr size_t bufSize = 300;
   char buf[bufSize];
 
 #ifndef ESP8266
@@ -307,7 +332,7 @@ AsyncBasicResponse::AsyncBasicResponse(int code, const char* contentType, const 
     if (!_contentType.length())
       _contentType = T_text_plain;
   }
-  addHeader(T_Connection, T_close);
+  addHeader(T_Connection, T_close, false);
 }
 
 void AsyncBasicResponse::_respond(AsyncWebServerRequest* request) {
@@ -385,7 +410,7 @@ AsyncAbstractResponse::AsyncAbstractResponse(AwsTemplateProcessor callback) : _c
 }
 
 void AsyncAbstractResponse::_respond(AsyncWebServerRequest* request) {
-  addHeader(T_Connection, T_close);
+  addHeader(T_Connection, T_close, false);
   _head = _assembleHead(request->version());
   _state = RESPONSE_HEADERS;
   _ack(request, 0, 0);
@@ -663,7 +688,7 @@ AsyncFileResponse::AsyncFileResponse(FS& fs, const String& path, const char* con
 
   if (!download && !fs.exists(_path) && fs.exists(_path + T__gz)) {
     _path = _path + T__gz;
-    addHeader(T_Content_Encoding, T_gzip);
+    addHeader(T_Content_Encoding, T_gzip, false);
     _callback = nullptr; // Unable to process zipped templates
     _sendContentLength = true;
     _chunked = false;
@@ -688,7 +713,7 @@ AsyncFileResponse::AsyncFileResponse(FS& fs, const String& path, const char* con
     // set filename and force rendering
     snprintf_P(buf, sizeof(buf), PSTR("inline"));
   }
-  addHeader(T_Content_Disposition, buf);
+  addHeader(T_Content_Disposition, buf, false);
 }
 
 AsyncFileResponse::AsyncFileResponse(File content, const String& path, const char* contentType, bool download, AwsTemplateProcessor callback) : AsyncAbstractResponse(callback) {
@@ -696,7 +721,7 @@ AsyncFileResponse::AsyncFileResponse(File content, const String& path, const cha
   _path = path;
 
   if (!download && String(content.name()).endsWith(T__gz) && !path.endsWith(T__gz)) {
-    addHeader(T_Content_Encoding, T_gzip);
+    addHeader(T_Content_Encoding, T_gzip, false);
     _callback = nullptr; // Unable to process gzipped templates
     _sendContentLength = true;
     _chunked = false;
@@ -719,7 +744,7 @@ AsyncFileResponse::AsyncFileResponse(File content, const String& path, const cha
   } else {
     snprintf_P(buf, sizeof(buf), PSTR("inline"));
   }
-  addHeader(T_Content_Disposition, buf);
+  addHeader(T_Content_Disposition, buf, false);
 }
 
 size_t AsyncFileResponse::_fillBuffer(uint8_t* data, size_t len) {

@@ -61,6 +61,27 @@ void setup() {
     request->send(LittleFS, "/index.html");
   });
 
+  /*
+    ❯ curl -I -X HEAD http://192.168.4.1/download
+    HTTP/1.1 200 OK
+    Content-Length: 1024
+    Content-Type: application/octet-stream
+    Connection: close
+    Accept-Ranges: bytes
+  */
+ // Ref: https://github.com/mathieucarbou/ESPAsyncWebServer/pull/80
+  server.on("/download", HTTP_HEAD | HTTP_GET, [](AsyncWebServerRequest* request) {
+    if (request->method() == HTTP_HEAD) {
+      AsyncWebServerResponse* response = request->beginResponse(200, "application/octet-stream");
+      response->setContentLength(1024); // myFile.getSize()
+      response->addHeader("Accept-Ranges", "bytes");
+      // ...
+      request->send(response);
+    } else {
+      // ...
+    }
+  });
+
   // Send a GET request to <IP>/get?message=<message>
   server.on("/get", HTTP_GET, [](AsyncWebServerRequest* request) {
     String message;
