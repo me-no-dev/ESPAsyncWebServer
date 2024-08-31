@@ -22,6 +22,7 @@
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
 #include <AsyncMessagePack.h>
+#include <LittleFS.h>
 
 AsyncWebServer server(80);
 
@@ -54,6 +55,10 @@ void setup() {
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
     request->send(200, "text/plain", "Hello, world");
+  });
+
+  server.on("/file", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(LittleFS, "/index.html");
   });
 
   // Send a GET request to <IP>/get?message=<message>

@@ -70,5 +70,10 @@
     "cinttypes": "cpp",
     "typeinfo": "cpp",
     "variant": "cpp"
-  }
+  },
+  "git.enableCommitSigning": true,
+  "git.alwaysSignOff": false,
+  "git-graph.repository.sign.tags": true,
+  "git-graph.repository.commits.showSignatureStatus": true,
+  "git-graph.repository.sign.commits": true
 }
