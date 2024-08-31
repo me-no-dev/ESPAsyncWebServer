@@ -314,7 +314,7 @@ class AsyncWebServerRequest {
       } else
         send(404);
     }
-    void send(FS& fs, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr) { send(fs, path, contentType.c_str(), download, callback); }
+    void send(FS& fs, const String& path, const String& contentType, bool download = false, AwsTemplateProcessor callback = nullptr) { send(fs, path, contentType.c_str(), download, callback); }
 
     void send(File content, const String& path, const char* contentType = asyncsrv::empty, bool download = false, AwsTemplateProcessor callback = nullptr) {
       if (content) {
@@ -322,7 +322,7 @@ class AsyncWebServerRequest {
       } else
         send(404);
     }
-    void send(File content, const String& path, const String& contentType = emptyString, bool download = false, AwsTemplateProcessor callback = nullptr) { send(content, path, contentType.c_str(), download, callback); }
+    void send(File content, const String& path, const String& contentType, bool download = false, AwsTemplateProcessor callback = nullptr) { send(content, path, contentType.c_str(), download, callback); }
 
     void send(Stream& stream, const char* contentType, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(stream, contentType, len, callback)); }
     void send(Stream& stream, const String& contentType, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(stream, contentType, len, callback)); }
