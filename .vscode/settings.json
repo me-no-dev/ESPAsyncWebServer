@@ -70,6 +70,5 @@
       "tooltip": "PlatformIO: Rebuild IntelliSense Index",
       "commands": "platformio-ide.rebuildProjectIndex"
     }
-  ],
-  "git.allowForcePush": true
+  ]
 }
