@@ -1,11 +1,12 @@
 # ESPAsyncWebServer
 
-[![License: LGPL 3.0](https://img.shields.io/badge/License-LGPL%203.0-yellow.svg)](https://opensource.org/license/lgpl-3-0/)
-[![Continuous Integration](https://github.com/mathieucarbou/ESPAsyncWebServer/actions/workflows/ci.yml/badge.svg)](https://github.com/mathieucarbou/ESPAsyncWebServer/actions/workflows/ci.yml)
-
 [![Latest Release](https://img.shields.io/github/release/mathieucarbou/ESPAsyncWebServer.svg)](https://GitHub.com/mathieucarbou/ESPAsyncWebServer/releases/)
 [![PlatformIO Registry](https://badges.registry.platformio.org/packages/mathieucarbou/library/ESPAsyncWebServer.svg)](https://registry.platformio.org/libraries/mathieucarbou/ESPAsyncWebServer)
 
+[![License: LGPL 3.0](https://img.shields.io/badge/License-LGPL%203.0-yellow.svg)](https://opensource.org/license/lgpl-3-0/)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
+
+[![Continuous Integration](https://github.com/mathieucarbou/ESPAsyncWebServer/actions/workflows/ci.yml/badge.svg)](https://github.com/mathieucarbou/ESPAsyncWebServer/actions/workflows/ci.yml)
 [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/mathieucarbou/ESPAsyncWebServer)
 
 Asynchronous HTTP and WebSocket Server Library for ESP32, ESP8266 and RP2040
