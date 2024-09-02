@@ -372,11 +372,11 @@ class AsyncWebServerRequest {
 
     [[deprecated("Replaced by beginResponse(...)")]]
     AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) {
-      return beginResponse(code, contentType, content, len, callback);
+      return beginResponse(code, contentType.c_str(), content, len, callback);
     }
     [[deprecated("Replaced by beginResponse(...)")]]
     AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) {
-      return beginResponse(code, contentType, content, callback);
+      return beginResponse(code, contentType.c_str(), content, callback);
     }
 
 #ifdef ESP8266
