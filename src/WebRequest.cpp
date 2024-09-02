@@ -624,7 +624,6 @@ bool AsyncWebServerRequest::hasHeader(const __FlashStringHelper* data) const {
 
 const AsyncWebHeader* AsyncWebServerRequest::getHeader(const char* name) const {
   auto iter = std::find_if(std::begin(_headers), std::end(_headers), [&name](const AsyncWebHeader& header) { return header.name().equalsIgnoreCase(name); });
-
   return (iter == std::end(_headers)) ? nullptr : &(*iter);
 }
 

@@ -1192,7 +1192,8 @@ void AsyncWebSocketResponse::_respond(AsyncWebServerRequest* request) {
     request->client()->close(true);
     return;
   }
-  String out(_assembleHead(request->version()));
+  String out;
+  _assembleHead(out, request->version());
   request->client()->write(out.c_str(), _headLength);
   _state = RESPONSE_WAIT_ACK;
 }

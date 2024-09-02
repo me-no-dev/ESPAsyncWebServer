@@ -155,7 +155,9 @@ class AsyncWebHeader {
     const String& name() const { return _name; }
     const String& value() const { return _value; }
     String toString() const {
-      String str = _name;
+      String str;
+      str.reserve(_name.length() + _value.length() + 2);
+      str.concat(_name);
       str.concat((char)0x3a);
       str.concat((char)0x20);
       str.concat(_value);
@@ -583,8 +585,19 @@ class AsyncWebServerResponse {
     virtual void setContentType(const char* type);
     virtual bool addHeader(const char* name, const char* value, bool replaceExisting = true);
     bool addHeader(const String& name, const String& value, bool replaceExisting = true) { return addHeader(name.c_str(), value.c_str(), replaceExisting); }
+    bool addHeader(const char* name, long value, bool replaceExisting = true) { return addHeader(name, String(value), replaceExisting); }
+    bool addHeader(const String& name, long value, bool replaceExisting = true) { return addHeader(name.c_str(), value, replaceExisting); }
     virtual bool removeHeader(const char* name);
-    virtual String _assembleHead(uint8_t version);
+    virtual const AsyncWebHeader* getHeader(const char* name) const;
+    
+    [[deprecated("Use instead: _assembleHead(String& buffer, uint8_t version)")]]
+    String _assembleHead(uint8_t version) {
+      String buffer;
+      _assembleHead(buffer, version);
+      return buffer;
+    }
+    virtual void _assembleHead(String& buffer, uint8_t version);
+
     virtual bool _started() const;
     virtual bool _finished() const;
     virtual bool _failed() const;

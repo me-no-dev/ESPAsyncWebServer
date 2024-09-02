@@ -73,8 +73,11 @@ void setup() {
   server.on("/download", HTTP_HEAD | HTTP_GET, [](AsyncWebServerRequest* request) {
     if (request->method() == HTTP_HEAD) {
       AsyncWebServerResponse* response = request->beginResponse(200, "application/octet-stream");
-      response->setContentLength(1024); // myFile.getSize()
-      response->addHeader("Accept-Ranges", "bytes");
+      response->addHeader(asyncsrv::T_Accept_Ranges, "bytes");
+      response->addHeader(asyncsrv::T_Content_Length, 10);
+      response->setContentLength(1024); // overrides previous one
+      response->addHeader(asyncsrv::T_Content_Type, "foo");
+      response->setContentType("application/octet-stream"); // overrides previous one
       // ...
       request->send(response);
     } else {
