@@ -45,7 +45,6 @@ Dependency:
 - [@mathieucarbou](https://github.com/mathieucarbou): Depends on `mathieucarbou/AsyncTCP @ 3.2.5`
 - [@mathieucarbou](https://github.com/mathieucarbou): Deployed in PlatformIO registry and Arduino IDE library manager
 - [@mathieucarbou](https://github.com/mathieucarbou): Firmware size optimization: remove mbedtls dependency (accounts for 33KB in firmware)
-- [@mathieucarbou](https://github.com/mathieucarbou): Made DEFAULT_MAX_SSE_CLIENTS customizable
 - [@mathieucarbou](https://github.com/mathieucarbou): Made DEFAULT_MAX_WS_CLIENTS customizable
 - [@mathieucarbou](https://github.com/mathieucarbou): MessagePack Support ([#62](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/62))
 - [@mathieucarbou](https://github.com/mathieucarbou): Remove filename after inline in Content-Disposition header according to RFC2183

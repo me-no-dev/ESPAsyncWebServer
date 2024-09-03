@@ -49,14 +49,6 @@
   #endif
 #endif
 
-#ifndef DEFAULT_MAX_SSE_CLIENTS
-  #ifdef ESP32
-    #define DEFAULT_MAX_SSE_CLIENTS 8
-  #else
-    #define DEFAULT_MAX_SSE_CLIENTS 4
-  #endif
-#endif
-
 class AsyncEventSource;
 class AsyncEventSourceResponse;
 class AsyncEventSourceClient;
