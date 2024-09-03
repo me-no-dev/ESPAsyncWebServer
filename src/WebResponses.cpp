@@ -125,9 +125,8 @@ const char* AsyncWebServerResponse::responseCodeToString(int code) {
       return T_HTTP_CODE_ANY;
   }
 }
-#else // ESP8266
-const __FlashStringHelper* AsyncWebServerResponse::responseCodeToString(int code)
-{
+#else  // ESP8266
+const __FlashStringHelper* AsyncWebServerResponse::responseCodeToString(int code) {
   switch (code) {
     case 100:
       return FPSTR(T_HTTP_CODE_100);
@@ -230,12 +229,12 @@ void AsyncWebServerResponse::setCode(int code) {
 }
 
 void AsyncWebServerResponse::setContentLength(size_t len) {
-  if (_state == RESPONSE_SETUP)
+  if (_state == RESPONSE_SETUP && addHeader(T_Content_Length, len, true))
     _contentLength = len;
 }
 
 void AsyncWebServerResponse::setContentType(const char* type) {
-  if (_state == RESPONSE_SETUP)
+  if (_state == RESPONSE_SETUP && addHeader(T_Content_Type, type, true))
     _contentType = type;
 }
 
@@ -247,6 +246,11 @@ bool AsyncWebServerResponse::removeHeader(const char* name) {
     }
   }
   return false;
+}
+
+const AsyncWebHeader* AsyncWebServerResponse::getHeader(const char* name) const {
+  auto iter = std::find_if(std::begin(_headers), std::end(_headers), [&name](const AsyncWebHeader& header) { return header.name().equalsIgnoreCase(name); });
+  return (iter == std::end(_headers)) ? nullptr : &(*iter);
 }
 
 bool AsyncWebServerResponse::addHeader(const char* name, const char* value, bool replaceExisting) {
@@ -268,41 +272,56 @@ bool AsyncWebServerResponse::addHeader(const char* name, const char* value, bool
   return true;
 }
 
-String AsyncWebServerResponse::_assembleHead(uint8_t version) {
+void AsyncWebServerResponse::_assembleHead(String& buffer, uint8_t version) {
   if (version) {
     addHeader(T_Accept_Ranges, T_none, false);
     if (_chunked)
       addHeader(T_Transfer_Encoding, T_chunked, false);
   }
-  String out;
-  constexpr size_t bufSize = 300;
-  char buf[bufSize];
 
-#ifndef ESP8266
-  snprintf(buf, bufSize, "HTTP/1.%d %d %s\r\n", version, _code, responseCodeToString(_code));
+  if (_sendContentLength)
+    addHeader(T_Content_Length, String(_contentLength), false);
+
+  if (_contentType.length())
+    addHeader(T_Content_Type, _contentType.c_str(), false);
+
+  // precompute buffer size to avoid reallocations by String class
+  size_t len = 0;
+  len += 50; // HTTP/1.1 200 <reason>\r\n
+  for (const auto& header : _headers)
+    len += header.name().length() + header.value().length() + 4;
+
+  // prepare buffer
+  buffer.reserve(len);
+
+  // HTTP header
+#ifdef ESP8266
+  buffer.concat(PSTR("HTTP/1."));
 #else
-  snprintf_P(buf, bufSize, PSTR("HTTP/1.%d %d %s\r\n"), version, _code, String(responseCodeToString(_code)).c_str());
+  buffer.concat("HTTP/1.");
 #endif
-  out.concat(buf);
+  buffer.concat(version);
+  buffer.concat(' ');
+  buffer.concat(_code);
+  buffer.concat(' ');
+  buffer.concat(responseCodeToString(_code));
+  buffer.concat(T_rn);
 
-  if (_sendContentLength) {
-    snprintf_P(buf, bufSize, PSTR("Content-Length: %d\r\n"), _contentLength);
-    out.concat(buf);
-  }
-  if (_contentType.length()) {
-    snprintf_P(buf, bufSize, PSTR("Content-Type: %s\r\n"), _contentType.c_str());
-    out.concat(buf);
-  }
-
+  // Add headers
   for (const auto& header : _headers) {
-    snprintf_P(buf, bufSize, PSTR("%s: %s\r\n"), header.name().c_str(), header.value().c_str());
-    out.concat(buf);
+    buffer.concat(header.name());
+#ifdef ESP8266
+    buffer.concat(PSTR(": "));
+#else
+    buffer.concat(": ");
+#endif
+    buffer.concat(header.value());
+    buffer.concat(T_rn);
   }
   _headers.clear();
 
-  out.concat(T_rn);
-  _headLength = out.length();
-  return out;
+  buffer.concat(T_rn);
+  _headLength = buffer.length();
 }
 
 bool AsyncWebServerResponse::_started() const { return _state > RESPONSE_SETUP; }
@@ -337,7 +356,8 @@ AsyncBasicResponse::AsyncBasicResponse(int code, const char* contentType, const 
 
 void AsyncBasicResponse::_respond(AsyncWebServerRequest* request) {
   _state = RESPONSE_HEADERS;
-  String out = _assembleHead(request->version());
+  String out;
+  _assembleHead(out, request->version());
   size_t outLen = out.length();
   size_t space = request->client()->space();
   if (!_contentLength && space >= outLen) {
@@ -411,7 +431,7 @@ AsyncAbstractResponse::AsyncAbstractResponse(AwsTemplateProcessor callback) : _c
 
 void AsyncAbstractResponse::_respond(AsyncWebServerRequest* request) {
   addHeader(T_Connection, T_close, false);
-  _head = _assembleHead(request->version());
+  _assembleHead(_head, request->version());
   _state = RESPONSE_HEADERS;
   _ack(request, 0, 0);
 }
@@ -635,9 +655,9 @@ AsyncFileResponse::~AsyncFileResponse() {
 void AsyncFileResponse::_setContentTypeFromPath(const String& path) {
 #if HAVE_EXTERN_GET_Content_Type_FUNCTION
   #ifndef ESP8266
-    extern const char* getContentType(const String& path);
+  extern const char* getContentType(const String& path);
   #else
-    extern const __FlashStringHelper* getContentType(const String& path);
+  extern const __FlashStringHelper* getContentType(const String& path);
   #endif
   _contentType = getContentType(path);
 #else
