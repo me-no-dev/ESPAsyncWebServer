@@ -36,10 +36,7 @@
   #include <Hash.h>
 #endif
 
-#define MAX_PRINTF_LEN 64
-
 using namespace asyncsrv;
-
 
 size_t webSocketSendFrameWindow(AsyncClient* client) {
   if (!client->canSend())
@@ -589,30 +586,23 @@ void AsyncWebSocketClient::_onData(void* pbuf, size_t plen) {
 size_t AsyncWebSocketClient::printf(const char* format, ...) {
   va_list arg;
   va_start(arg, format);
-  char* temp = new char[MAX_PRINTF_LEN];
-  if (!temp) {
-    va_end(arg);
-    return 0;
-  }
-  char* buffer = temp;
-  size_t len = vsnprintf(temp, MAX_PRINTF_LEN, format, arg);
+  size_t len = vsnprintf(nullptr, 0, format, arg);
   va_end(arg);
 
-  if (len > (MAX_PRINTF_LEN - 1)) {
-    buffer = new char[len + 1];
-    if (!buffer) {
-      delete[] temp;
-      return 0;
-    }
-    va_start(arg, format);
-    vsnprintf(buffer, len + 1, format, arg);
-    va_end(arg);
-  }
+  if (len == 0)
+    return 0;
+
+  char* buffer = new char[len + 1];
+
+  if (!buffer)
+    return 0;
+
+  va_start(arg, format);
+  len = vsnprintf(buffer, len + 1, format, arg);
+  va_end(arg);
+
   text(buffer, len);
-  if (buffer != temp) {
-    delete[] buffer;
-  }
-  delete[] temp;
+  delete[] buffer;
   return len;
 }
 
@@ -620,30 +610,23 @@ size_t AsyncWebSocketClient::printf(const char* format, ...) {
 size_t AsyncWebSocketClient::printf_P(PGM_P formatP, ...) {
   va_list arg;
   va_start(arg, formatP);
-  char* temp = new char[MAX_PRINTF_LEN];
-  if (!temp) {
-    va_end(arg);
-    return 0;
-  }
-  char* buffer = temp;
-  size_t len = vsnprintf_P(temp, MAX_PRINTF_LEN, formatP, arg);
+  size_t len = vsnprintf_P(nullptr, 0, formatP, arg);
   va_end(arg);
 
-  if (len > (MAX_PRINTF_LEN - 1)) {
-    buffer = new char[len + 1];
-    if (!buffer) {
-      delete[] temp;
-      return 0;
-    }
-    va_start(arg, formatP);
-    vsnprintf_P(buffer, len + 1, formatP, arg);
-    va_end(arg);
-  }
+  if (len == 0)
+    return 0;
+
+  char* buffer = new char[len + 1];
+
+  if (!buffer)
+    return 0;
+
+  va_start(arg, formatP);
+  len = vsnprintf_P(buffer, len + 1, formatP, arg);
+  va_end(arg);
+
   text(buffer, len);
-  if (buffer != temp) {
-    delete[] buffer;
-  }
-  delete[] temp;
+  delete[] buffer;
   return len;
 }
 #endif
@@ -1008,22 +991,24 @@ size_t AsyncWebSocket::printf(uint32_t id, const char* format, ...) {
 
 size_t AsyncWebSocket::printfAll(const char* format, ...) {
   va_list arg;
-  char* temp = new char[MAX_PRINTF_LEN];
-  if (!temp)
+  va_start(arg, format);
+  size_t len = vsnprintf(nullptr, 0, format, arg);
+  va_end(arg);
+
+  if (len == 0)
+    return 0;
+
+  char* buffer = new char[len + 1];
+
+  if (!buffer)
     return 0;
 
   va_start(arg, format);
-  size_t len = vsnprintf(temp, MAX_PRINTF_LEN, format, arg);
-  va_end(arg);
-  delete[] temp;
-
-  AsyncWebSocketSharedBuffer buffer = std::make_shared<std::vector<uint8_t>>(len);
-
-  va_start(arg, format);
-  vsnprintf((char*)buffer->data(), len + 1, format, arg);
+  len = vsnprintf(buffer, len + 1, format, arg);
   va_end(arg);
 
-  textAll(buffer);
+  textAll(buffer, len);
+  delete[] buffer;
   return len;
 }
 
@@ -1042,22 +1027,24 @@ size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...) {
 
 size_t AsyncWebSocket::printfAll_P(PGM_P formatP, ...) {
   va_list arg;
-  char* temp = new char[MAX_PRINTF_LEN];
-  if (!temp)
+  va_start(arg, formatP);
+  size_t len = vsnprintf_P(nullptr, 0, formatP, arg);
+  va_end(arg);
+
+  if (len == 0)
+    return 0;
+
+  char* buffer = new char[len + 1];
+
+  if (!buffer)
     return 0;
 
   va_start(arg, formatP);
-  size_t len = vsnprintf_P(temp, MAX_PRINTF_LEN, formatP, arg);
-  va_end(arg);
-  delete[] temp;
-
-  AsyncWebSocketSharedBuffer buffer = std::make_shared<std::vector<uint8_t>>(len + 1);
-
-  va_start(arg, formatP);
-  vsnprintf_P((char*)buffer->data(), len + 1, formatP, arg);
+  len = vsnprintf_P(buffer, len + 1, formatP, arg);
   va_end(arg);
 
-  textAll(buffer);
+  textAll(buffer, len);
+  delete[] buffer;
   return len;
 }
 #endif

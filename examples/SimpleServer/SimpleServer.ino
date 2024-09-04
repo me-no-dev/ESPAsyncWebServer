@@ -26,6 +26,7 @@
 
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
+AsyncWebSocket ws("/ws");
 
 const char* PARAM_MESSAGE PROGMEM = "message";
 const char* SSE_HTLM PROGMEM = R"(
@@ -195,7 +196,32 @@ void setup() {
     request->send(200, "text/html", SSE_HTLM);
   });
 
+  ws.onEvent([](AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
+    (void) len;
+    if (type == WS_EVT_CONNECT) {
+      Serial.println("ws connect");
+      client->setCloseClientOnQueueFull(false);
+      client->ping();
+    } else if (type == WS_EVT_DISCONNECT) {
+      Serial.println("ws disconnect");
+    } else if (type == WS_EVT_ERROR) {
+      Serial.println("ws error");
+    } else if (type == WS_EVT_PONG) {
+      Serial.println("ws pong");
+    } else if (type == WS_EVT_DATA) {
+      AwsFrameInfo* info = (AwsFrameInfo*)arg;
+      String msg = "";
+      if (info->final && info->index == 0 && info->len == len) {
+        if (info->opcode == WS_TEXT) {
+          data[len] = 0;
+          Serial.printf("ws text: %s\n", (char*)data);
+        }
+      }
+    }
+  });
+
   server.addHandler(&events);
+  server.addHandler(&ws);
   server.addHandler(jsonHandler);
   server.addHandler(msgPackHandler);
 
@@ -205,12 +231,19 @@ void setup() {
 }
 
 uint32_t lastSSE = 0;
-uint32_t delta = 5;
+uint32_t deltaSSE = 5;
+
+uint32_t lastWS = 0;
+uint32_t deltaWS = 100;
 
 void loop() {
   uint32_t now = millis();
-  if (now - lastSSE >= delta) {
+  if (now - lastSSE >= deltaSSE) {
     events.send(String("ping-") + now, "heartbeat", now);
     lastSSE = millis();
+  }
+  if (now - lastWS >= deltaWS) {
+    ws.printfAll("kp%.4f", (10.0 / 3.0));
+    lastWS = millis();
   }
 }
