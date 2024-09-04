@@ -23,7 +23,7 @@
 #include <Arduino.h>
 #if ESP_IDF_VERSION_MAJOR < 5
 
-#include "SHA1Builder.h"
+#include "BackPort_SHA1Builder.h"
 
 // 32-bit integer manipulation macros (big endian)
 
@@ -202,7 +202,7 @@ void SHA1Builder::process(const uint8_t *data) {
 
 // Public methods
 
-void SHA1Builder::begin(void) {
+void SHA1Builder::begin() {
   total[0] = 0;
   total[1] = 0;
 

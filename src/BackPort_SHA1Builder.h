@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <Arduino.h>
+#if ESP_IDF_VERSION_MAJOR < 5
+
 #ifndef SHA1Builder_h
 #define SHA1Builder_h
 
@@ -37,3 +40,5 @@ class SHA1Builder {
 };
 
 #endif // SHA1Builder_h
+
+#endif // ESP_IDF_VERSION_MAJOR < 5
