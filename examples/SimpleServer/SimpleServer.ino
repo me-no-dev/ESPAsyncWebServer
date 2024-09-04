@@ -142,7 +142,7 @@ void setup() {
 
   // receives JSON and sends JSON
   jsonHandler->onRequest([](AsyncWebServerRequest* request, JsonVariant& json) {
-    JsonObject jsonObj = json.as<JsonObject>();
+    // JsonObject jsonObj = json.as<JsonObject>();
     // ...
 
     AsyncJsonResponse* response = new AsyncJsonResponse();
@@ -165,7 +165,7 @@ void setup() {
 
   // receives MessagePack and sends MessagePack
   msgPackHandler->onRequest([](AsyncWebServerRequest* request, JsonVariant& json) {
-    JsonObject jsonObj = json.as<JsonObject>();
+    // JsonObject jsonObj = json.as<JsonObject>();
     // ...
 
     AsyncMessagePackResponse* response = new AsyncMessagePackResponse();

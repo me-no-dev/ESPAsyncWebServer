@@ -335,11 +335,15 @@ class AsyncWebServerRequest {
     void sendChunked(const char* contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr) { send(beginChunkedResponse(contentType, callback, templateCallback)); }
     void sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr) { send(beginChunkedResponse(contentType, callback, templateCallback)); }
 
+#ifndef ESP8266
     [[deprecated("Replaced by send(...)")]]
+#endif
     void send_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) {
       send(code, contentType, content, len, callback);
     }
+#ifndef ESP8266
     [[deprecated("Replaced by send(...)")]]
+#endif
     void send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) {
       send(code, contentType, content, callback);
     }
@@ -372,11 +376,15 @@ class AsyncWebServerRequest {
     AsyncResponseStream* beginResponseStream(const char* contentType, size_t bufferSize = 1460);
     AsyncResponseStream* beginResponseStream(const String& contentType, size_t bufferSize = 1460) { return beginResponseStream(contentType.c_str(), bufferSize); }
 
+#ifndef ESP8266
     [[deprecated("Replaced by beginResponse(...)")]]
+#endif
     AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) {
       return beginResponse(code, contentType.c_str(), content, len, callback);
     }
+#ifndef ESP8266
     [[deprecated("Replaced by beginResponse(...)")]]
+#endif
     AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) {
       return beginResponse(code, contentType.c_str(), content, callback);
     }
@@ -589,8 +597,10 @@ class AsyncWebServerResponse {
     bool addHeader(const String& name, long value, bool replaceExisting = true) { return addHeader(name.c_str(), value, replaceExisting); }
     virtual bool removeHeader(const char* name);
     virtual const AsyncWebHeader* getHeader(const char* name) const;
-    
+
+#ifndef ESP8266
     [[deprecated("Use instead: _assembleHead(String& buffer, uint8_t version)")]]
+#endif
     String _assembleHead(uint8_t version) {
       String buffer;
       _assembleHead(buffer, version);
