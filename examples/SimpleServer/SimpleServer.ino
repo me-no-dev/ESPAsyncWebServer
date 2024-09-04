@@ -205,10 +205,11 @@ void setup() {
 }
 
 uint32_t lastSSE = 0;
+uint32_t delta = 1;
 
 void loop() {
   uint32_t now = millis();
-  if (now - lastSSE > 2000) {
+  if (now - lastSSE >= delta) {
     events.send(String("ping-") + now, "heartbeat", now);
     lastSSE = millis();
   }
