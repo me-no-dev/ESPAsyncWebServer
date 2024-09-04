@@ -60,13 +60,14 @@ class AsyncEventSourceMessage {
     uint8_t* _data;
     size_t _len;
     size_t _sent;
-    // size_t _ack;
     size_t _acked;
 
   public:
     AsyncEventSourceMessage(const char* data, size_t len);
     ~AsyncEventSourceMessage();
-    size_t ack(size_t len, uint32_t time __attribute__((unused)));
+    [[deprecated("This function is deprecated and will be removed in future releases. Use ack(size_t len) instead")]]
+    size_t ack(size_t len, uint32_t time __attribute__((unused))) { return ack(len); }
+    size_t ack(size_t len);
     size_t send(AsyncClient* client);
     bool finished() { return _acked == _len; }
     bool sent() { return _sent == _len; }
