@@ -25,8 +25,39 @@
 #include <LittleFS.h>
 
 AsyncWebServer server(80);
+AsyncEventSource events("/events");
 
-const char* PARAM_MESSAGE = "message";
+const char* PARAM_MESSAGE PROGMEM = "message";
+const char* SSE_HTLM PROGMEM = R"(
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Server-Sent Events</title>
+  <script>
+    if (!!window.EventSource) {
+      var source = new EventSource('/events');
+      source.addEventListener('open', function(e) {
+        console.log("Events Connected");
+      }, false);
+      source.addEventListener('error', function(e) {
+        if (e.target.readyState != EventSource.OPEN) {
+          console.log("Events Disconnected");
+        }
+      }, false);
+      source.addEventListener('message', function(e) {
+        console.log("message", e.data);
+      }, false);
+      source.addEventListener('heartbeat', function(e) {
+        console.log("heartbeat", e.data);
+      }, false);
+    }
+  </script>
+</head>
+<body>
+  <h1>Open your browser console!</h1>
+</body>
+</html>
+)";
 
 void notFound(AsyncWebServerRequest* request) {
   request->send(404, "text/plain", "Not found");
@@ -69,7 +100,7 @@ void setup() {
     Connection: close
     Accept-Ranges: bytes
   */
- // Ref: https://github.com/mathieucarbou/ESPAsyncWebServer/pull/80
+  // Ref: https://github.com/mathieucarbou/ESPAsyncWebServer/pull/80
   server.on("/download", HTTP_HEAD | HTTP_GET, [](AsyncWebServerRequest* request) {
     if (request->method() == HTTP_HEAD) {
       AsyncWebServerResponse* response = request->beginResponse(200, "application/octet-stream");
@@ -153,6 +184,18 @@ void setup() {
     request->send(response);
   });
 
+  events.onConnect([](AsyncEventSourceClient* client) {
+    if (client->lastId()) {
+      Serial.printf("SSE Client reconnected! Last message ID that it gat is: %" PRIu32 "\n", client->lastId());
+    }
+    client->send("hello!", NULL, millis(), 1000);
+  });
+
+  server.on("/sse", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(200, "text/html", SSE_HTLM);
+  });
+
+  server.addHandler(&events);
   server.addHandler(jsonHandler);
   server.addHandler(msgPackHandler);
 
@@ -161,5 +204,12 @@ void setup() {
   server.begin();
 }
 
+uint32_t lastSSE = 0;
+
 void loop() {
+  uint32_t now = millis();
+  if (now - lastSSE > 2000) {
+    events.send(String("ping-") + now, "heartbeat", now);
+    lastSSE = millis();
+  }
 }
