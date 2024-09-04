@@ -128,7 +128,8 @@ AsyncEventSourceMessage::~AsyncEventSourceMessage() {
     free(_data);
 }
 
-size_t AsyncEventSourceMessage::ack(size_t len) {
+size_t AsyncEventSourceMessage::ack(size_t len, uint32_t time) {
+  (void)time;
   // If the whole message is now acked...
   if (_acked + len > _len) {
     // Return the number of extra bytes acked (they will be carried on to the next message)
