@@ -205,7 +205,7 @@ void setup() {
 }
 
 uint32_t lastSSE = 0;
-uint32_t delta = 1;
+uint32_t delta = 5;
 
 void loop() {
   uint32_t now = millis();
