@@ -81,6 +81,7 @@ jobs:
     name: "pio:${{ matrix.env }}:${{ matrix.board }}"
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - env: ci-arduino-2
