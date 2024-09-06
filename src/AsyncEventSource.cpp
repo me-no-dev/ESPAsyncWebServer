@@ -209,7 +209,7 @@ void AsyncEventSourceClient::_queueMessage(const char* message, size_t len) {
   }
 }
 
-void AsyncEventSourceClient::_onAck(size_t len, uint32_t time) {
+void AsyncEventSourceClient::_onAck(size_t len __attribute__((unused)), uint32_t time __attribute__((unused))) {
 #ifdef ESP32
   // Same here, acquiring the lock early
   std::lock_guard<std::mutex> lock(_lockmq);
