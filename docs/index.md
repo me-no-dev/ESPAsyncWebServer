@@ -31,33 +31,23 @@ Dependency:
 
 ## Changes in this fork
 
-- [@ayushsharma82](https://github.com/ayushsharma82) and [@mathieucarbou](https://github.com/mathieucarbou): Add RP2040 support ([#31](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/31))
-- [@mathieucarbou](https://github.com/mathieucarbou): `SSE_MAX_QUEUED_MESSAGES` to control the maximum number of messages that can be queued for a SSE client
-- [@mathieucarbou](https://github.com/mathieucarbou): `write()` function public in `AsyncEventSource.h`
-- [@mathieucarbou](https://github.com/mathieucarbou): `WS_MAX_QUEUED_MESSAGES`: control the maximum number of messages that can be queued for a Websocket client
-- [@mathieucarbou](https://github.com/mathieucarbou): Added `setAuthentication(const String& username, const String& password)`
-- [@mathieucarbou](https://github.com/mathieucarbou): Added `setCloseClientOnQueueFull(bool)` which can be set on a client to either close the connection or discard messages but not close the connection when the queue is full
-- [@mathieucarbou](https://github.com/mathieucarbou): Added `StreamConcat` example to show how to stream multiple files in one response
-- [@mathieucarbou](https://github.com/mathieucarbou): Added all flavors of `binary()`, `text()`, `binaryAll()` and `textAll()` in `AsyncWebSocket`
-- [@mathieucarbou](https://github.com/mathieucarbou): Arduino 3 / ESP-IDF 5.1 compatibility
-- [@mathieucarbou](https://github.com/mathieucarbou): Arduino Json 7 compatibility and backward compatible with 6 and 6 (changes in `AsyncJson.h`). The API to use Json has not changed. These are only internal changes.
-- [@mathieucarbou](https://github.com/mathieucarbou): CI
-- [@mathieucarbou](https://github.com/mathieucarbou): Depends on `mathieucarbou/AsyncTCP @ 3.2.5`
-- [@mathieucarbou](https://github.com/mathieucarbou): Deployed in PlatformIO registry and Arduino IDE library manager
-- [@mathieucarbou](https://github.com/mathieucarbou): Firmware size optimization: remove mbedtls dependency (accounts for 33KB in firmware)
-- [@mathieucarbou](https://github.com/mathieucarbou): Made DEFAULT_MAX_WS_CLIENTS customizable
-- [@mathieucarbou](https://github.com/mathieucarbou): MessagePack Support ([#62](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/62))
-- [@mathieucarbou](https://github.com/mathieucarbou): Remove filename after inline in Content-Disposition header according to RFC2183
-- [@mathieucarbou](https://github.com/mathieucarbou): Removed SPIFFSEditor to reduce library size and maintainance. SPIFF si also deprecated. If you need it, please copy the files from the original repository in your project. This fork focus on maintaining the server part and the SPIFFEditor is an application which has nothing to do inside a server library.
-- [@mathieucarbou](https://github.com/mathieucarbou): Resurrected `AsyncWebSocketMessageBuffer` and `makeBuffer()` in order to make the fork API-compatible with the original library from me-no-dev regarding WebSocket.
-- [@mathieucarbou](https://github.com/mathieucarbou): Some code cleanup
-- [@mathieucarbou](https://github.com/mathieucarbou): Use `-D DEFAULT_MAX_WS_CLIENTS` to change the number of allows WebSocket clients and use `cleanupClients()` to help cleanup resources about dead clients
-- [@nilo85](https://github.com/nilo85): Add support for Auth & GET requests in AsyncCallbackJsonWebHandler ([#14](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/14))
-- [@p0p-x](https://github.com/p0p-x): ESP IDF Compatibility (added back CMakeLists.txt) ([#32](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/32))
-- [@tueddy](https://github.com/tueddy): Compile with Arduino 3 (ESP-IDF 5.1) ([#13](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/13))
-- [@vortigont](https://github.com/vortigont): Set real "Last-Modified" header based on file's LastWrite time ([#5](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/5))
-- [@vortigont](https://github.com/vortigont): Some websocket code cleanup ([#29](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/29))
-- [@vortigont](https://github.com/vortigont): Refactor code - replace DYI structs with STL objects  ([#39](https://github.com/mathieucarbou/ESPAsyncWebServer/pull/39))
+- `char*` overloads to avoid using `String`
+- `DEFAULT_MAX_WS_CLIENTS` to change the number of allows WebSocket clients and use `cleanupClients()` to help cleanup resources about dead clients
+- `setCloseClientOnQueueFull(bool)` which can be set on a client to either close the connection or discard messages but not close the connection when the queue is full
+- `SSE_MAX_QUEUED_MESSAGES` to control the maximum number of messages that can be queued for a SSE client
+- `StreamConcat` example to show how to stream multiple files in one response
+- `WS_MAX_QUEUED_MESSAGES`: control the maximum number of messages that can be queued for a Websocket client
+- A lot of bug fixes
+- Arduino 3 / ESP-IDF 5 compatibility
+- Arduino Json 7 compatibility and backward compatible with 6
+- Better CI with a complete matrix of Arduino versions and boards
+- Code size improvements
+- Deployed in PlatformIO registry and Arduino IDE library manager
+- ESP32 / ESP8266 / RP2040 support
+- Lot of code cleanup and optimizations
+- Performance improvements in terms of memory, speed and size
+- Support overriding default response headers
+- Support resumable downloads using HEAD and bytes range
 
 ## Documentation
 
