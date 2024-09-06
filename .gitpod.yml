@@ -1,5 +1,5 @@
 tasks:
-  - command: pip install --upgrade pip && pip install -U platformio && platformio run -e arduino-3
+  - command: pip install --upgrade pip && pip install -U platformio && platformio run
 
 image:
   file: .gitpod.Dockerfile
