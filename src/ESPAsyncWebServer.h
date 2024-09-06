@@ -647,7 +647,7 @@ class AsyncWebServer {
 
     /**
      * @brief (compat) Add url rewrite rule by pointer
-     * a deep copy of the pounter object will be created,
+     * a deep copy of the pointer object will be created,
      * it is up to user to manage further lifetime of the object in argument
      *
      * @param rewrite pointer to rewrite object to copy setting from
