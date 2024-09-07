@@ -45,7 +45,9 @@ Dependency:
 - Deployed in PlatformIO registry and Arduino IDE library manager
 - ESP32 / ESP8266 / RP2040 support
 - Lot of code cleanup and optimizations
+- MessagePack support
 - Performance improvements in terms of memory, speed and size
+- Removed ESPIDF Editor (this is not the role of a web server library to do that - get the source files from the original repos if required)
 - Support overriding default response headers
 - Support resumable downloads using HEAD and bytes range
 
