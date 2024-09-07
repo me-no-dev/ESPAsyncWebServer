@@ -53,7 +53,7 @@ class AsyncEventSource;
 class AsyncEventSourceResponse;
 class AsyncEventSourceClient;
 using ArEventHandlerFunction = std::function<void(AsyncEventSourceClient* client)>;
-using ArAuthorizeConnectHandler = std::function<bool(AsyncWebServerRequest* request)>;
+using ArAuthorizeConnectHandler = ArAuthorizeFunction;
 
 class AsyncEventSourceMessage {
   private:
@@ -116,7 +116,6 @@ class AsyncEventSource : public AsyncWebHandler {
     mutable std::mutex _client_queue_lock;
 #endif
     ArEventHandlerFunction _connectcb{nullptr};
-    ArAuthorizeConnectHandler _authorizeConnectHandler;
 
   public:
     AsyncEventSource(const String& url) : _url(url) {};
@@ -125,7 +124,11 @@ class AsyncEventSource : public AsyncWebHandler {
     const char* url() const { return _url.c_str(); }
     void close();
     void onConnect(ArEventHandlerFunction cb);
-    void authorizeConnect(ArAuthorizeConnectHandler cb);
+    void authorizeConnect(ArAuthorizeConnectHandler cb) {
+      AuthorizationMiddleware* m = new AuthorizationMiddleware(401, cb);
+      m->_freeOnRemoval = true;
+      addMiddleware(m);
+    }
     void send(const String& message, const String& event, uint32_t id = 0, uint32_t reconnect = 0) { send(message.c_str(), event.c_str(), id, reconnect); }
     void send(const String& message, const char* event, uint32_t id = 0, uint32_t reconnect = 0) { send(message.c_str(), event, id, reconnect); }
     void send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);

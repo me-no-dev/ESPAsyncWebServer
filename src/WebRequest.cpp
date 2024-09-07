@@ -138,8 +138,7 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
       }
       if (_parsedLength == _contentLength) {
         _parseState = PARSE_REQ_END;
-        if (_handler)
-          _handler->handleRequest(this);
+        _server->_runChain(this, [this]() { return _handler ? _handler->_runChain(this, [this]() { _handler->handleRequest(this); }) : send(501); });
         if (!_sent) {
           if (!_response)
             send(501, T_text_plain, "Handler did not handle the request");
@@ -577,8 +576,7 @@ void AsyncWebServerRequest::_parseLine() {
         _parseState = PARSE_REQ_BODY;
       } else {
         _parseState = PARSE_REQ_END;
-        if (_handler)
-          _handler->handleRequest(this);
+        _server->_runChain(this, [this]() { return _handler ? _handler->_runChain(this, [this]() { _handler->handleRequest(this); }) : send(501); });
         if (!_sent) {
           if (!_response)
             send(501, T_text_plain, "Handler did not handle the request");

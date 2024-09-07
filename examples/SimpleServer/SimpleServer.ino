@@ -28,6 +28,45 @@ AsyncWebServer server(80);
 AsyncEventSource events("/events");
 AsyncWebSocket ws("/ws");
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// Middlewares
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// log incoming requests
+LoggingMiddleware requestLogger;
+
+// CORS
+CorsMiddleware cors;
+
+// maximum 5 requests per 10 seconds
+RateLimitMiddleware rateLimit;
+
+// filter out specific headers from the incoming request
+HeaderFilterMiddleware headerFilter;
+
+// remove all headers from the incoming request except the ones provided in the constructor
+HeaderFreeMiddleware headerFree;
+
+// simple digest authentication
+AuthenticationMiddleware simpleDigestAuth;
+
+// complex authentication which adds request attributes for the next middlewares and handler
+AsyncMiddlewareFunction complexAuth([](AsyncWebServerRequest* request, ArMiddlewareNext next) {
+  if (!request->authenticate("user", "password")) {
+    return request->requestAuthentication();
+  }
+  request->setAttribute("user", "Mathieu");
+  request->setAttribute("role", "staff");
+
+  next();
+
+  request->getResponse()->addHeader("X-Rate-Limit", "200");
+});
+
+AuthorizationMiddleware authz([](AsyncWebServerRequest* request) { return request->getAttribute("role") == "staff"; });
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 const char* PARAM_MESSAGE PROGMEM = "message";
 const char* SSE_HTLM PROGMEM = R"(
 <!DOCTYPE html>
@@ -126,6 +165,77 @@ void setup() {
 
     request->send(200);
   });
+
+  ///////////////////////////////////////////////////////////////////////
+  // Middlewares at server level (will apply to all requests)
+  ///////////////////////////////////////////////////////////////////////
+
+  requestLogger.setOutput(Serial);
+
+  simpleDigestAuth.setUsername("admin");
+  simpleDigestAuth.setPassword("admin");
+  simpleDigestAuth.setRealm("MyApp");
+
+  rateLimit.setMaxRequests(5);
+  rateLimit.setWindowSize(10);
+
+  headerFilter.filter("X-Remove-Me");
+  headerFree.keep("X-Keep-Me");
+  headerFree.keep("host");
+
+  // global middleware
+  server.addMiddleware(&requestLogger);
+  server.addMiddlewares({&rateLimit, &cors, &headerFilter});
+
+  cors.setOrigin("http://192.168.4.1");
+  cors.setMethods("POST, GET, OPTIONS, DELETE");
+  cors.setHeaders("X-Custom-Header");
+  cors.setAllowCredentials(false);
+  cors.setMaxAge(600);
+
+  // Test CORS preflight request
+  // curl -v -X OPTIONS -H "origin: http://192.168.4.1" http://192.168.4.1/middleware/cors
+  server.on("/middleware/cors", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(200, "text/plain", "Hello, world!");
+  });
+
+  // curl -v -X GET -H "x-remove-me: value" http://192.168.4.1/middleware/test-header-filter
+  // - requestLogger will log the incoming headers (including x-remove-me)
+  // - headerFilter will remove x-remove-me header
+  // - handler will log the remaining headers
+  server.on("/middleware/test-header-filter", HTTP_GET, [](AsyncWebServerRequest* request) {
+    for (auto& h : request->getHeaders())
+      Serial.printf("Request Header: %s = %s\n", h.name().c_str(), h.value().c_str());
+    request->send(200);
+  });
+
+  // curl -v -X GET -H "x-keep-me: value" http://192.168.4.1/middleware/test-header-free
+  // - requestLogger will log the incoming headers (including x-keep-me)
+  // - headerFree will remove all headers except x-keep-me and host
+  // - handler will log the remaining headers (x-keep-me and host)
+  server.on("/middleware/test-header-free", HTTP_GET, [](AsyncWebServerRequest* request) {
+          for (auto& h : request->getHeaders())
+            Serial.printf("Request Header: %s = %s\n", h.name().c_str(), h.value().c_str());
+          request->send(200);
+        })
+    .addMiddleware(&headerFree);
+
+  // simple digest authentication
+  // curl -v -X GET -H "x-remove-me: value" --digest -u admin:admin  http://192.168.4.1/middleware/auth-simple
+  server.on("/middleware/auth-simple", HTTP_GET, [](AsyncWebServerRequest* request) {
+          request->send(200, "text/plain", "Hello, world!");
+        })
+    .addMiddleware(&simpleDigestAuth);
+
+  // curl -v -X GET -H "x-remove-me: value" --digest -u user:password  http://192.168.4.1/middleware/auth-complex
+  server.on("/middleware/auth-complex", HTTP_GET, [](AsyncWebServerRequest* request) {
+          String buffer = "Hello ";
+          buffer.concat(request->getAttribute("user"));
+          buffer.concat(" with role: ");
+          buffer.concat(request->getAttribute("role"));
+          request->send(200, "text/plain", buffer);
+        })
+    .addMiddlewares({&complexAuth, &authz});
 
   ///////////////////////////////////////////////////////////////////////
 
