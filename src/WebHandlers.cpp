@@ -23,7 +23,6 @@
 
 using namespace asyncsrv;
 
-
 AsyncStaticWebHandler::AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control)
     : _fs(fs), _uri(uri), _path(path), _default_file(F("index.htm")), _cache_control(cache_control), _last_modified(), _callback(nullptr) {
   // Ensure leading '/'
@@ -94,18 +93,7 @@ bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest* request) {
   if (request->method() != HTTP_GET || !request->url().startsWith(_uri) || !request->isExpectedRequestedConnType(RCT_DEFAULT, RCT_HTTP)) {
     return false;
   }
-  if (_getFile(request)) {
-    // We interested in "If-Modified-Since" header to check if file was modified
-    if (_last_modified.length())
-      request->addInterestingHeader(F("If-Modified-Since"));
-
-    if (_cache_control.length())
-      request->addInterestingHeader(F("If-None-Match"));
-
-    return true;
-  }
-
-  return false;
+  return _getFile(request);
 }
 
 bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest* request) {

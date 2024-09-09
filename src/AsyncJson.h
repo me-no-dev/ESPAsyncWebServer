@@ -198,7 +198,6 @@ class AsyncCallbackJsonWebHandler : public AsyncWebHandler {
       if (request_method != HTTP_GET && !request->contentType().equalsIgnoreCase(JSON_MIMETYPE))
         return false;
 
-      request->addInterestingHeader("ANY");
       return true;
     }
 

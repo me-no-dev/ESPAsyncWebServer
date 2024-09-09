@@ -374,8 +374,6 @@ bool AsyncEventSource::canHandle(AsyncWebServerRequest* request) {
   if (request->method() != HTTP_GET || !request->url().equals(_url)) {
     return false;
   }
-  request->addInterestingHeader(T_Last_Event_ID);
-  request->addInterestingHeader(T_Cookie);
   return true;
 }
 

@@ -49,8 +49,6 @@ AsyncWebServerRequest::~AsyncWebServerRequest() {
 
   _pathParams.clear();
 
-  _interestingHeaders.clear();
-
   if (_response != NULL) {
     delete _response;
   }
@@ -149,20 +147,6 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
       }
     }
     break;
-  }
-}
-
-void AsyncWebServerRequest::_removeNotInterestingHeaders() {
-  if (std::any_of(std::begin(_interestingHeaders), std::end(_interestingHeaders), [](const String& str) { return str.equalsIgnoreCase(T_ANY); }))
-    return; // nothing to do
-
-  for (auto iter = std::begin(_headers); iter != std::end(_headers);) {
-    const auto name = iter->name();
-
-    if (std::none_of(std::begin(_interestingHeaders), std::end(_interestingHeaders), [&name](const String& str) { return str.equalsIgnoreCase(name); }))
-      iter = _headers.erase(iter);
-    else
-      iter++;
   }
 }
 
@@ -583,7 +567,6 @@ void AsyncWebServerRequest::_parseLine() {
       // end of headers
       _server->_rewriteRequest(this);
       _server->_attachHandler(this);
-      _removeNotInterestingHeaders();
       if (_expectingContinue) {
         String response(T_HTTP_100_CONT);
         _client->write(response.c_str(), response.length());
@@ -681,11 +664,6 @@ const AsyncWebParameter* AsyncWebServerRequest::getParam(size_t num) const {
   if (num >= _params.size())
     return nullptr;
   return &(*std::next(_params.cbegin(), num));
-}
-
-void AsyncWebServerRequest::addInterestingHeader(const char* name) {
-  if (std::none_of(std::begin(_interestingHeaders), std::end(_interestingHeaders), [&name](const String& str) { return str.equalsIgnoreCase(name); }))
-    _interestingHeaders.emplace_back(name);
 }
 
 AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const char* contentType, const char* content, AwsTemplateProcessor callback) {
