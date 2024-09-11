@@ -26,6 +26,7 @@
 #include "FS.h"
 #include <functional>
 #include <list>
+#include <unordered_map>
 #include <vector>
 
 #ifdef ESP32
@@ -216,6 +217,8 @@ class AsyncWebServerRequest {
     std::list<AsyncWebHeader> _headers;
     std::list<AsyncWebParameter> _params;
     std::vector<String> _pathParams;
+
+    std::unordered_map<const char*, String, std::hash<const char*>, std::equal_to<const char*>> _attributes;
 
     uint8_t _multiParseState;
     uint8_t _boundaryPosition;
@@ -468,6 +471,37 @@ class AsyncWebServerRequest {
 
     const String& header(size_t i) const;     // get request header value by number
     const String& headerName(size_t i) const; // get request header name by number
+
+    // REQUEST ATTRIBUTES
+
+    void setAttribute(const char* name, const char* value) { _attributes[name] = value; }
+    void setAttribute(const char* name, bool value) { _attributes[name] = value ? "1" : emptyString; }
+    void setAttribute(const char* name, long value) { _attributes[name] = String(value); }
+    void setAttribute(const char* name, float value, unsigned int decimalPlaces = 2) { _attributes[name] = String(value, decimalPlaces); }
+    void setAttribute(const char* name, double value, unsigned int decimalPlaces = 2) { _attributes[name] = String(value, decimalPlaces); }
+
+    bool hasAttribute(const char* name) const { return _attributes.find(name) != _attributes.end(); }
+
+    const String& getAttribute(const char* name, const String& defaultValue = emptyString) const {
+      auto it = _attributes.find(name);
+      return it != _attributes.end() ? it->second : defaultValue;
+    }
+    bool getAttribute(const char* name, bool defaultValue) const {
+      auto it = _attributes.find(name);
+      return it != _attributes.end() ? it->second == "1" : defaultValue;
+    }
+    long getAttribute(const char* name, long defaultValue) const {
+      auto it = _attributes.find(name);
+      return it != _attributes.end() ? it->second.toInt() : defaultValue;
+    }
+    float getAttribute(const char* name, float defaultValue) const {
+      auto it = _attributes.find(name);
+      return it != _attributes.end() ? it->second.toFloat() : defaultValue;
+    }
+    double getAttribute(const char* name, double defaultValue) const {
+      auto it = _attributes.find(name);
+      return it != _attributes.end() ? it->second.toDouble() : defaultValue;
+    }
 
     String urlDecode(const String& text) const;
 };
