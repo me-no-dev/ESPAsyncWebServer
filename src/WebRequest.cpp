@@ -340,7 +340,7 @@ void AsyncWebServerRequest::_parsePlainPostChar(uint8_t data) {
 void AsyncWebServerRequest::_handleUploadByte(uint8_t data, bool last) {
   _itemBuffer[_itemBufferIndex++] = data;
 
-  if (last || _itemBufferIndex == 1460) {
+  if (last || _itemBufferIndex == RESPONSE_STREAM_BUFFER_SIZE) {
     // check if authenticated before calling the upload
     if (_handler)
       _handler->handleUpload(this, _itemFilename, _itemSize - _itemBufferIndex, _itemBuffer, _itemBufferIndex, false);
@@ -444,7 +444,7 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last) {
         if (_itemIsFile) {
           if (_itemBuffer)
             free(_itemBuffer);
-          _itemBuffer = (uint8_t*)malloc(1460);
+          _itemBuffer = (uint8_t*)malloc(RESPONSE_STREAM_BUFFER_SIZE);
           if (_itemBuffer == NULL) {
             _multiParseState = PARSE_ERROR;
             return;

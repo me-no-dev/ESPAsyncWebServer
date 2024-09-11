@@ -101,6 +101,7 @@ namespace fs {
 
 // if this value is returned when asked for data, packet will not be sent and you will be asked for data again
 #define RESPONSE_TRY_AGAIN 0xFFFFFFFF
+#define RESPONSE_STREAM_BUFFER_SIZE 1460
 
 typedef uint8_t WebRequestMethodComposite;
 typedef std::function<void(void)> ArDisconnectHandler;
@@ -377,8 +378,8 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse* beginChunkedResponse(const char* contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
     AsyncWebServerResponse* beginChunkedResponse(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr);
 
-    AsyncResponseStream* beginResponseStream(const char* contentType, size_t bufferSize = 1460);
-    AsyncResponseStream* beginResponseStream(const String& contentType, size_t bufferSize = 1460) { return beginResponseStream(contentType.c_str(), bufferSize); }
+    AsyncResponseStream* beginResponseStream(const char* contentType, size_t bufferSize = RESPONSE_STREAM_BUFFER_SIZE);
+    AsyncResponseStream* beginResponseStream(const String& contentType, size_t bufferSize = RESPONSE_STREAM_BUFFER_SIZE) { return beginResponseStream(contentType.c_str(), bufferSize); }
 
 #ifndef ESP8266
     [[deprecated("Replaced by beginResponse(...)")]]
