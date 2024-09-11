@@ -772,16 +772,7 @@ class AsyncWebServer {
     bool removeHandler(AsyncWebHandler* handler);
 
     AsyncCallbackWebHandler& on(const char* uri, ArRequestHandlerFunction onRequest) { return on(uri, HTTP_ANY, onRequest); }
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload = nullptr, ArBodyHandlerFunction onBody = nullptr) {
-      AsyncCallbackWebHandler* handler = new AsyncCallbackWebHandler();
-      handler->setUri(uri);
-      handler->setMethod(method);
-      handler->onRequest(onRequest);
-      handler->onUpload(onUpload);
-      handler->onBody(onBody);
-      addHandler(handler);
-      return *handler;
-    }
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload = nullptr, ArBodyHandlerFunction onBody = nullptr);
 
     AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
 
