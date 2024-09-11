@@ -192,7 +192,6 @@ class AsyncWebServerRequest {
     AsyncWebServer* _server;
     AsyncWebHandler* _handler;
     AsyncWebServerResponse* _response;
-    std::vector<String> _interestingHeaders;
     ArDisconnectHandler _onDisconnectfn;
 
     String _temp;
@@ -206,7 +205,6 @@ class AsyncWebServerRequest {
     String _boundary;
     String _authorization;
     RequestedConnectionType _reqconntype;
-    void _removeNotInterestingHeaders();
     bool _isDigest;
     bool _isMultipart;
     bool _isPlainPost;
@@ -289,13 +287,16 @@ class AsyncWebServerRequest {
 
     void setHandler(AsyncWebHandler* handler) { _handler = handler; }
 
-    /**
-     * @brief add header to collect from a response
-     *
-     * @param name
-     */
-    void addInterestingHeader(const char* name);
-    void addInterestingHeader(const String& name) { return addInterestingHeader(name.c_str()); };
+#ifndef ESP8266
+    [[deprecated("All headers are now collected. Use removeHeadersExcept(name) if you really need to free some headers.")]]
+#endif
+    void addInterestingHeader(__unused const char* name) {
+    }
+#ifndef ESP8266
+    [[deprecated("All headers are now collected. Use removeHeadersExcept(name) if you really need to free some headers.")]]
+#endif
+    void addInterestingHeader(__unused const String& name) {
+    }
 
     /**
      * @brief issue 302 redirect response
@@ -411,6 +412,54 @@ class AsyncWebServerRequest {
     const AsyncWebHeader* getHeader(const __FlashStringHelper* data) const;
 #endif
     const AsyncWebHeader* getHeader(size_t num) const;
+    size_t getHeaderNames(std::vector<const char*>& names) const {
+      names.clear();
+      const size_t size = _headers.size();
+      names.reserve(size);
+      for (const auto& h : _headers) {
+        names.push_back(h.name().c_str());
+      }
+      return size;
+    }
+    const std::list<AsyncWebHeader>& getHeaders() const { return _headers; }
+    // Remove a header from the request.
+    // It will free the memory and prevent the header to be seen during request processing.
+    bool removeHeader(const char* name) {
+      const size_t size = _headers.size();
+      _headers.remove_if([&name](const AsyncWebHeader& header) { return header.name().equalsIgnoreCase(name); });
+      return size != _headers.size();
+    }
+    // Remove all request headers.
+    void removeHeaders() { _headers.clear(); }
+    // Remove all request headers with the given names.
+    void removeHeaders(std::vector<const char*>& namesToRemove) {
+      for (const char* name : namesToRemove)
+        removeHeader(name);
+    }
+    void removeHeaders(const char* names...) {
+      va_list args;
+      va_start(args, names);
+      for (const char* name = names; name != NULL; name = va_arg(args, const char*))
+        removeHeader(name);
+      va_end(args);
+    }
+    void removeHeadersExcept(std::vector<const char*>& namesToKeep) {
+      _headers.remove_if([&namesToKeep](const AsyncWebHeader& header) {
+        for (const char* name : namesToKeep)
+          if (header.name().equalsIgnoreCase(name))
+            return false;
+        return true;
+      });
+    }
+    void removeHeadersExcept(const char* names...) {
+      va_list args;
+      va_start(args, names);
+      std::vector<const char*> namesToKeep;
+      for (const char* name = names; name != NULL; name = va_arg(args, const char*))
+        namesToKeep.push_back(name);
+      va_end(args);
+      removeHeadersExcept(namesToKeep);
+    }
 
     size_t params() const; // get arguments count
     bool hasParam(const char* name, bool post = false, bool file = false) const;

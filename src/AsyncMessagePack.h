@@ -97,7 +97,6 @@ class AsyncCallbackMessagePackWebHandler : public AsyncWebHandler {
       if (request_method != HTTP_GET && !request->contentType().equalsIgnoreCase(asyncsrv::T_application_msgpack))
         return false;
 
-      request->addInterestingHeader("ANY");
       return true;
     }
 
