@@ -100,7 +100,7 @@ namespace fs {
 #endif
 
 // if this value is returned when asked for data, packet will not be sent and you will be asked for data again
-#define RESPONSE_TRY_AGAIN 0xFFFFFFFF
+#define RESPONSE_TRY_AGAIN          0xFFFFFFFF
 #define RESPONSE_STREAM_BUFFER_SIZE 1460
 
 typedef uint8_t WebRequestMethodComposite;
@@ -771,10 +771,17 @@ class AsyncWebServer {
     AsyncWebHandler& addHandler(AsyncWebHandler* handler);
     bool removeHandler(AsyncWebHandler* handler);
 
-    AsyncCallbackWebHandler& on(const char* uri, ArRequestHandlerFunction onRequest);
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest);
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
+    AsyncCallbackWebHandler& on(const char* uri, ArRequestHandlerFunction onRequest) { return on(uri, HTTP_ANY, onRequest); }
+    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload = nullptr, ArBodyHandlerFunction onBody = nullptr) {
+      AsyncCallbackWebHandler* handler = new AsyncCallbackWebHandler();
+      handler->setUri(uri);
+      handler->setMethod(method);
+      handler->onRequest(onRequest);
+      handler->onUpload(onUpload);
+      handler->onBody(onBody);
+      addHandler(handler);
+      return *handler;
+    }
 
     AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
 
