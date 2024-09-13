@@ -85,6 +85,27 @@ void setup() {
   WiFi.softAP("esp-captive");
 #endif
 
+  // Request header manipulations
+  // curl -v -X GET -H "x-remove-me: value" http://192.168.4.1/headers
+  server.on("/headers", HTTP_GET, [](AsyncWebServerRequest* request) {
+    Serial.printf("Request Headers:\n");
+    for (auto& h : request->getHeaders())
+      Serial.printf("Request Header: %s = %s\n", h.name().c_str(), h.value().c_str());
+
+    // remove x-remove-me header
+    request->removeHeader("x-remove-me");
+    Serial.printf("Request Headers:\n");
+    for (auto& h : request->getHeaders())
+      Serial.printf("Request Header: %s = %s\n", h.name().c_str(), h.value().c_str());
+
+    std::vector<const char*> headers;
+    request->getHeaderNames(headers);
+    for (auto& h : headers)
+      Serial.printf("Request Header Name: %s\n", h);
+
+    request->send(200);
+  });
+
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
     request->send(200, "text/plain", "Hello, world");
   });
@@ -197,7 +218,7 @@ void setup() {
   });
 
   ws.onEvent([](AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
-    (void) len;
+    (void)len;
     if (type == WS_EVT_CONNECT) {
       Serial.println("ws connect");
       client->setCloseClientOnQueueFull(false);

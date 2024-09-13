@@ -289,12 +289,12 @@ class AsyncWebServerRequest {
     void setHandler(AsyncWebHandler* handler) { _handler = handler; }
 
 #ifndef ESP8266
-    [[deprecated("All headers are now collected. Use removeHeadersExcept(name) if you really need to free some headers.")]]
+    [[deprecated("All headers are now collected. Use removeHeader(name) or HeaderFreeMiddleware if you really need to free some headers.")]]
 #endif
     void addInterestingHeader(__unused const char* name) {
     }
 #ifndef ESP8266
-    [[deprecated("All headers are now collected. Use removeHeadersExcept(name) if you really need to free some headers.")]]
+    [[deprecated("All headers are now collected. Use removeHeader(name) or HeaderFreeMiddleware if you really need to free some headers.")]]
 #endif
     void addInterestingHeader(__unused const String& name) {
     }
@@ -398,77 +398,6 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse* beginResponse(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr);
 #endif
 
-    size_t headers() const; // get header count
-
-    // check if header exists
-    bool hasHeader(const char* name) const;
-    bool hasHeader(const String& name) const { return hasHeader(name.c_str()); };
-#ifdef ESP8266
-    bool hasHeader(const __FlashStringHelper* data) const; // check if header exists
-#endif
-
-    const AsyncWebHeader* getHeader(const char* name) const;
-    const AsyncWebHeader* getHeader(const String& name) const { return getHeader(name.c_str()); };
-#ifdef ESP8266
-    const AsyncWebHeader* getHeader(const __FlashStringHelper* data) const;
-#endif
-    const AsyncWebHeader* getHeader(size_t num) const;
-    size_t getHeaderNames(std::vector<const char*>& names) const {
-      names.clear();
-      const size_t size = _headers.size();
-      names.reserve(size);
-      for (const auto& h : _headers) {
-        names.push_back(h.name().c_str());
-      }
-      return size;
-    }
-    const std::list<AsyncWebHeader>& getHeaders() const { return _headers; }
-    // Remove a header from the request.
-    // It will free the memory and prevent the header to be seen during request processing.
-    bool removeHeader(const char* name) {
-      const size_t size = _headers.size();
-      _headers.remove_if([&name](const AsyncWebHeader& header) { return header.name().equalsIgnoreCase(name); });
-      return size != _headers.size();
-    }
-    // Remove all request headers.
-    void removeHeaders() { _headers.clear(); }
-    // Remove all request headers with the given names.
-    void removeHeaders(std::vector<const char*>& namesToRemove) {
-      for (const char* name : namesToRemove)
-        removeHeader(name);
-    }
-    void removeHeaders(const char* names...) {
-      va_list args;
-      va_start(args, names);
-      for (const char* name = names; name != NULL; name = va_arg(args, const char*))
-        removeHeader(name);
-      va_end(args);
-    }
-    void removeHeadersExcept(std::vector<const char*>& namesToKeep) {
-      _headers.remove_if([&namesToKeep](const AsyncWebHeader& header) {
-        for (const char* name : namesToKeep)
-          if (header.name().equalsIgnoreCase(name))
-            return false;
-        return true;
-      });
-    }
-    void removeHeadersExcept(const char* names...) {
-      va_list args;
-      va_start(args, names);
-      std::vector<const char*> namesToKeep;
-      for (const char* name = names; name != NULL; name = va_arg(args, const char*))
-        namesToKeep.push_back(name);
-      va_end(args);
-      removeHeadersExcept(namesToKeep);
-    }
-
-    size_t params() const; // get arguments count
-    bool hasParam(const char* name, bool post = false, bool file = false) const;
-    bool hasParam(const String& name, bool post = false, bool file = false) const { return hasParam(name.c_str(), post, file); };
-#ifdef ESP8266
-    bool hasParam(const __FlashStringHelper* data, bool post = false, bool file = false) const { return hasParam(String(data).c_str(), post, file); };
-#endif
-
     /**
      * @brief Get the Request parameter by name
      *
@@ -521,6 +450,52 @@ class AsyncWebServerRequest {
 
     const String& header(size_t i) const;     // get request header value by number
     const String& headerName(size_t i) const; // get request header name by number
+
+    size_t headers() const; // get header count
+
+    // check if header exists
+    bool hasHeader(const char* name) const;
+    bool hasHeader(const String& name) const { return hasHeader(name.c_str()); };
+#ifdef ESP8266
+    bool hasHeader(const __FlashStringHelper* data) const; // check if header exists
+#endif
+
+    const AsyncWebHeader* getHeader(const char* name) const;
+    const AsyncWebHeader* getHeader(const String& name) const { return getHeader(name.c_str()); };
+#ifdef ESP8266
+    const AsyncWebHeader* getHeader(const __FlashStringHelper* data) const;
+#endif
+
+    const AsyncWebHeader* getHeader(size_t num) const;
+
+    const std::list<AsyncWebHeader>& getHeaders() const { return _headers; }
+
+    size_t getHeaderNames(std::vector<const char*>& names) const {
+      names.clear();
+      const size_t size = _headers.size();
+      names.reserve(size);
+      for (const auto& h : _headers) {
+        names.push_back(h.name().c_str());
+      }
+      return size;
+    }
+
+    // Remove a header from the request.
+    // It will free the memory and prevent the header to be seen during request processing.
+    bool removeHeader(const char* name) {
+      const size_t size = _headers.size();
+      _headers.remove_if([name](const AsyncWebHeader& header) { return header.name().equalsIgnoreCase(name); });
+      return size != _headers.size();
+    }
+    // Remove all request headers.
+    void removeHeaders() { _headers.clear(); }
+
+    size_t params() const; // get arguments count
+    bool hasParam(const char* name, bool post = false, bool file = false) const;
+    bool hasParam(const String& name, bool post = false, bool file = false) const { return hasParam(name.c_str(), post, file); };
+#ifdef ESP8266
+    bool hasParam(const __FlashStringHelper* data, bool post = false, bool file = false) const { return hasParam(String(data).c_str(), post, file); };
+#endif
 
     // REQUEST ATTRIBUTES
 
