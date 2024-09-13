@@ -85,7 +85,15 @@ void setup() {
   WiFi.softAP("esp-captive");
 #endif
 
+  // curl -v -X GET http://192.168.4.1/handler-not-sending-response
+  server.on("/handler-not-sending-response", HTTP_GET, [](AsyncWebServerRequest* request) {
+    // handler forgot to send a response to the client => 501 Not Implemented
+  });
+
+  ///////////////////////////////////////////////////////////////////////
   // Request header manipulations
+  ///////////////////////////////////////////////////////////////////////
+
   // curl -v -X GET -H "x-remove-me: value" http://192.168.4.1/headers
   server.on("/headers", HTTP_GET, [](AsyncWebServerRequest* request) {
     Serial.printf("Request Headers:\n");
@@ -105,6 +113,8 @@ void setup() {
 
     request->send(200);
   });
+
+  ///////////////////////////////////////////////////////////////////////
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
     request->send(200, "text/plain", "Hello, world");

@@ -195,6 +195,9 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse* _response;
     ArDisconnectHandler _onDisconnectfn;
 
+    // response is sent
+    bool _sent = false;
+
     String _temp;
     uint8_t _parseState;
 
@@ -308,6 +311,7 @@ class AsyncWebServerRequest {
     void redirect(const String& url) { return redirect(url.c_str()); };
 
     void send(AsyncWebServerResponse* response);
+    const AsyncWebServerResponse* sentResponse() const { return _response; }
 
     void send(int code, const char* contentType = asyncsrv::empty, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
     void send(int code, const String& contentType, const String& content = emptyString, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
@@ -647,6 +651,7 @@ class AsyncWebServerResponse {
     AsyncWebServerResponse();
     virtual ~AsyncWebServerResponse();
     virtual void setCode(int code);
+    int code() const { return _code; }
     virtual void setContentLength(size_t len);
     void setContentType(const String& type) { setContentType(type.c_str()); }
     virtual void setContentType(const char* type);
@@ -656,6 +661,7 @@ class AsyncWebServerResponse {
     bool addHeader(const String& name, long value, bool replaceExisting = true) { return addHeader(name.c_str(), value, replaceExisting); }
     virtual bool removeHeader(const char* name);
     virtual const AsyncWebHeader* getHeader(const char* name) const;
+    const std::list<AsyncWebHeader>& getHeaders() const { return _headers; }
 
 #ifndef ESP8266
     [[deprecated("Use instead: _assembleHead(String& buffer, uint8_t version)")]]

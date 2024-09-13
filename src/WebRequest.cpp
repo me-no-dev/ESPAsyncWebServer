@@ -123,7 +123,6 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
           }
         }
         if (!_isPlainPost) {
-          // check if authenticated before calling the body
           if (_handler)
             _handler->handleBody(this, (uint8_t*)buf, len, _parsedLength, _contentLength);
           _parsedLength += len;
@@ -139,11 +138,10 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
       }
       if (_parsedLength == _contentLength) {
         _parseState = PARSE_REQ_END;
-        // check if authenticated before calling handleRequest and request auth instead
         if (_handler)
           _handler->handleRequest(this);
-        else
-          send(501);
+        if (!_sent)
+          send(501, T_text_plain, "Handler did not handle the request");
       }
     }
     break;
@@ -498,7 +496,6 @@ void AsyncWebServerRequest::_parseMultipartPostByte(uint8_t data, bool last) {
         _params.emplace_back(_itemName, _itemValue, true);
       } else {
         if (_itemSize) {
-          // check if authenticated before calling the upload
           if (_handler)
             _handler->handleUpload(this, _itemFilename, _itemSize - _itemBufferIndex, _itemBuffer, _itemBufferIndex, true);
           _itemBufferIndex = 0;
@@ -571,15 +568,14 @@ void AsyncWebServerRequest::_parseLine() {
         String response(T_HTTP_100_CONT);
         _client->write(response.c_str(), response.length());
       }
-      // check handler for authentication
       if (_contentLength) {
         _parseState = PARSE_REQ_BODY;
       } else {
         _parseState = PARSE_REQ_END;
         if (_handler)
           _handler->handleRequest(this);
-        else
-          send(501);
+        if (!_sent)
+          send(501, T_text_plain, "Handler did not handle the request");
       }
     } else
       _parseReqHeader();
@@ -717,6 +713,7 @@ void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
   if (_response == NULL) {
     _client->close(true);
     _onDisconnect();
+    _sent = true;
     return;
   }
   if (!_response->_sourceValid()) {
@@ -726,6 +723,7 @@ void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
   } else {
     _client->setRxTimeout(0);
     _response->_respond(this);
+    _sent = true;
   }
 }
 
