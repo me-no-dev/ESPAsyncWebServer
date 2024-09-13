@@ -318,7 +318,6 @@ void AsyncWebServerResponse::_assembleHead(String& buffer, uint8_t version) {
     buffer.concat(header.value());
     buffer.concat(T_rn);
   }
-  _headers.clear();
 
   buffer.concat(T_rn);
   _headLength = buffer.length();

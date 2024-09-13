@@ -140,8 +140,13 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
         _parseState = PARSE_REQ_END;
         if (_handler)
           _handler->handleRequest(this);
-        if (!_sent)
-          send(501, T_text_plain, "Handler did not handle the request");
+        if (!_sent) {
+          if (!_response)
+            send(501, T_text_plain, "Handler did not handle the request");
+          _client->setRxTimeout(0);
+          _response->_respond(this);
+          _sent = true;
+        }
       }
     }
     break;
@@ -574,8 +579,13 @@ void AsyncWebServerRequest::_parseLine() {
         _parseState = PARSE_REQ_END;
         if (_handler)
           _handler->handleRequest(this);
-        if (!_sent)
-          send(501, T_text_plain, "Handler did not handle the request");
+        if (!_sent) {
+          if (!_response)
+            send(501, T_text_plain, "Handler did not handle the request");
+          _client->setRxTimeout(0);
+          _response->_respond(this);
+          _sent = true;
+        }
       }
     } else
       _parseReqHeader();
@@ -709,6 +719,10 @@ AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const Str
 #endif
 
 void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
+  if (_sent)
+    return;
+  if (_response)
+    delete _response;
   _response = response;
   if (_response == NULL) {
     _client->close(true);
@@ -716,15 +730,8 @@ void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
     _sent = true;
     return;
   }
-  if (!_response->_sourceValid()) {
-    delete response;
-    _response = NULL;
+  if (!_response->_sourceValid())
     send(500);
-  } else {
-    _client->setRxTimeout(0);
-    _response->_respond(this);
-    _sent = true;
-  }
 }
 
 void AsyncWebServerRequest::redirect(const char* url) {

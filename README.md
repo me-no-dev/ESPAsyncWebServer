@@ -121,3 +121,18 @@ If you have smaller messages, you can increase `WS_MAX_QUEUED_MESSAGES` to 128.
   -D CONFIG_ASYNC_TCP_STACK_SIZE=4096
   -D WS_MAX_QUEUED_MESSAGES=64
 ```
+
+## Replace response
+
+```c++
+  // It is possible to replace a response.
+  // The previous one will be deleted.
+  // Response sending happens when the handler returns.
+  server.on("/replace", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(200, "text/plain", "Hello, world");
+    // oups! finally we want to send a different response
+    request->send(400, "text/plain", "validation error");
+  });
+```
+
+This will send error 400 instead of 200.
