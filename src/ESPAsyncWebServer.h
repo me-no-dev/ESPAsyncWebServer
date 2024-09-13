@@ -311,7 +311,7 @@ class AsyncWebServerRequest {
     void redirect(const String& url) { return redirect(url.c_str()); };
 
     void send(AsyncWebServerResponse* response);
-    const AsyncWebServerResponse* sentResponse() const { return _response; }
+    AsyncWebServerResponse* getResponse() const { return _response; }
 
     void send(int code, const char* contentType = asyncsrv::empty, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
     void send(int code, const String& contentType, const String& content = emptyString, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }

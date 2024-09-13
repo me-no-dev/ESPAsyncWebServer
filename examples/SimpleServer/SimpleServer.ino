@@ -90,6 +90,19 @@ void setup() {
     // handler forgot to send a response to the client => 501 Not Implemented
   });
 
+  // This is possible to replace a response.
+  // the previous one will be deleted.
+  // response sending happens when the handler returns.
+  // curl -v -X GET http://192.168.4.1/replace
+  server.on("/replace", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(200, "text/plain", "Hello, world");
+    // oups! finally we want to send a different response
+    request->send(400, "text/plain", "validation error");
+#ifndef TARGET_RP2040
+    Serial.printf("Free heap: %" PRIu32 "\n", ESP.getFreeHeap());
+#endif
+  });
+
   ///////////////////////////////////////////////////////////////////////
   // Request header manipulations
   ///////////////////////////////////////////////////////////////////////
