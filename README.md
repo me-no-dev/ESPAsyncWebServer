@@ -50,8 +50,9 @@ Dependency:
 - Removed ESPIDF Editor (this is not the role of a web server library to do that - get the source files from the original repos if required)
 - Support overriding default response headers
 - Support resumable downloads using HEAD and bytes range
+- **Support for middleware**
 
-## Documentation
+## Original Documentation
 
 Usage and API stays the same as the original library.
 Please look at the original libraries for more examples and documentation.
@@ -136,3 +137,76 @@ If you have smaller messages, you can increase `WS_MAX_QUEUED_MESSAGES` to 128.
 ```
 
 This will send error 400 instead of 200.
+
+## Middleware
+
+Middleware is a way to intercept requests to perform some operations on them, like authentication, authorization, logging, etc and also act on the response headers.
+
+Middleware can either be attached to individual handlers, attached at the server level (thus applied to all handlers), or both.
+They will be executed in the order they are attached, and they can stop the request processing by sending a response themselves.
+
+You can have a look at the [SimpleServer.ino](https://github.com/mathieucarbou/ESPAsyncWebServer/blob/main/examples/SimpleServer/SimpleServer.ino) example for some use cases.
+
+For example, such middleware would handle authentication and set some attributes on the request to make them available for the next middleware and for the handler which will process the request.
+
+```c++
+AsyncMiddlewareFunction complexAuth([](AsyncWebServerRequest* request, ArMiddlewareNext next) {
+  if (!request->authenticate("user", "password")) {
+    return request->requestAuthentication();
+  }
+
+  request->setAttribute("user", "Mathieu");
+  request->setAttribute("role", "staff");
+
+  next(); // continue processing
+
+  // you can act one the response object
+  request->getResponse()->addHeader("X-Rate-Limit", "200");
+});
+```
+
+**Here are the list of available middlewares:**
+
+- `AsyncMiddlewareFunction`: can convert a lambda function (`ArMiddlewareCallback`) to a middleware
+- `AuthenticationMiddleware`: to handle basic/digest authentication globally or per handler
+- `AuthorizationMiddleware`: to handle authorization globally or per handler
+- `CorsMiddleware`: to handle CORS preflight request globally or per handler
+- `HeaderFilterMiddleware`: to filter out headers from the request
+- `HeaderFreeMiddleware`: to only keep some headers from the request, and remove the others
+- `LoggerMiddleware`: to log requests globally or per handler with the same pattern as curl. Will also record request processing time
+- `RateLimitMiddleware`: to limit the number of requests on a windows of time globally or per handler
+
+## How to use authentication with AuthenticationMiddleware
+
+Do not use the `setUsername()` and `setPassword()` methods on the hanlders anymore.
+They are deprecated.
+These methods were causing a copy of the username and password for each handler, which is not efficient.
+
+Now, you can use the `AuthenticationMiddleware` to handle authentication globally or per handler.
+
+```c++
+AuthenticationMiddleware authMiddleware;
+
+// [...]
+
+authMiddleware.setAuthType(AuthenticationMiddleware::AuthType::AUTH_DIGEST);
+authMiddleware.setRealm("My app name");
+authMiddleware.setUsername("admin");
+authMiddleware.setPassword("admin");
+
+// [...]
+
+server.addMiddleware(&authMiddleware); // globally add authentication to the server
+
+// [...]
+
+myHandler.addMiddleware(&authMiddleware); // add authentication to a specific handler
+```
+
+## Migration to Middleware to improve performance and memory usage
+
+- `AsyncEventSource.authorizeConnect(...)` => do not use this method anymore: add a common `AuthorizationMiddleware` to the handler or server, and make sure to add it AFTER the `AuthenticationMiddleware` if you use authentication.
+- `AsyncWebHandler.setAuthentication(...)` => do not use this method anymore: add a common `AuthenticationMiddleware` to the handler or server
+- `ArUploadHandlerFunction` and `ArBodyHandlerFunction` => these callbacks receiving body data and upload and not calling anymore the authentication code for performance reasons.
+  These callbacks can be called multiple times, so this is up to the user to now call the `AuthenticationMiddleware` if needed and ideally when the method is called for the first time.
+  These callbacks are also not triggering the whole middleware chain since they are not part of the request processing workflow (they are not the final handler).

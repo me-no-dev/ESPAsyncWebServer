@@ -109,6 +109,8 @@ const char* AsyncWebServerResponse::responseCodeToString(int code) {
       return T_HTTP_CODE_416;
     case 417:
       return T_HTTP_CODE_417;
+    case 429:
+      return T_HTTP_CODE_429;
     case 500:
       return T_HTTP_CODE_500;
     case 501:
@@ -196,6 +198,8 @@ const __FlashStringHelper* AsyncWebServerResponse::responseCodeToString(int code
       return FPSTR(T_HTTP_CODE_416);
     case 417:
       return FPSTR(T_HTTP_CODE_417);
+    case 429:
+      return FPSTR(T_HTTP_CODE_429);
     case 500:
       return FPSTR(T_HTTP_CODE_500);
     case 501:
@@ -491,7 +495,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest* request, size_t len, u
         free(buf);
         return 0;
       }
-      outLen = sprintf((char*)buf+headLen, "%04x", readLen) + headLen;
+      outLen = sprintf((char*)buf + headLen, "%04x", readLen) + headLen;
       buf[outLen++] = '\r';
       buf[outLen++] = '\n';
       outLen += readLen;

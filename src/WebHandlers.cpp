@@ -192,8 +192,6 @@ void AsyncStaticWebHandler::handleRequest(AsyncWebServerRequest* request) {
   String filename = String((char*)request->_tempObject);
   free(request->_tempObject);
   request->_tempObject = NULL;
-  if ((_username.length() && _password.length()) && !request->authenticate(_username.c_str(), _password.c_str()))
-    return request->requestAuthentication();
 
   if (request->_tempFile == true) {
     time_t lw = request->_tempFile.getLastWrite(); // get last file mod time (if supported by FS)

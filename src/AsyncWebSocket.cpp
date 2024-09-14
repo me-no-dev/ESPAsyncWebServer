@@ -1086,9 +1086,6 @@ void AsyncWebSocket::handleRequest(AsyncWebServerRequest* request) {
     request->send(400);
     return;
   }
-  if ((_username.length() && _password.length()) && !request->authenticate(_username.c_str(), _password.c_str())) {
-    return request->requestAuthentication();
-  }
   if (_handshakeHandler != nullptr) {
     if (!_handshakeHandler(request)) {
       request->send(401);

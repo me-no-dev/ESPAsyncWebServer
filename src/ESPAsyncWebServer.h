@@ -24,6 +24,7 @@
 #include "Arduino.h"
 
 #include "FS.h"
+#include <deque>
 #include <functional>
 #include <list>
 #include <unordered_map>
@@ -68,6 +69,7 @@ class AsyncWebHandler;
 class AsyncStaticWebHandler;
 class AsyncCallbackWebHandler;
 class AsyncResponseStream;
+class AsyncMiddlewareChain;
 
 #if defined(TARGET_RP2040)
 typedef enum http_method WebRequestMethod;
@@ -542,6 +544,247 @@ bool ON_STA_FILTER(AsyncWebServerRequest* request);
 bool ON_AP_FILTER(AsyncWebServerRequest* request);
 
 /*
+ * MIDDLEWARE :: Request interceptor, assigned to a AsyncWebHandler (or the server), which can be used:
+ * 1. to run some code before the final handler is executed (e.g. check authentication)
+ * 2. decide whether to proceed or not with the next handler
+ * */
+
+using ArMiddlewareNext = std::function<void(void)>;
+using ArMiddlewareCallback = std::function<void(AsyncWebServerRequest* request, ArMiddlewareNext next)>;
+
+// Middleware is a base class for all middleware
+class AsyncMiddleware {
+  public:
+    virtual ~AsyncMiddleware() {}
+    virtual void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+      return next();
+    };
+
+  private:
+    friend class AsyncWebHandler;
+    friend class AsyncEventSource;
+    friend class AsyncMiddlewareChain;
+    bool _freeOnRemoval = false;
+};
+
+// Create a custom middleware by providing an anonymous callback function
+class AsyncMiddlewareFunction : public AsyncMiddleware {
+  public:
+    AsyncMiddlewareFunction(ArMiddlewareCallback fn) : _fn(fn) {}
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) override { return _fn(request, next); };
+
+  private:
+    ArMiddlewareCallback _fn;
+};
+
+// For internal use only: super class to add/remove middleware to server or handlers
+class AsyncMiddlewareChain {
+  public:
+    virtual ~AsyncMiddlewareChain() {
+      for (AsyncMiddleware* m : _middlewares)
+        if (m->_freeOnRemoval)
+          delete m;
+    }
+    void addMiddleware(ArMiddlewareCallback fn) {
+      AsyncMiddlewareFunction* m = new AsyncMiddlewareFunction(fn);
+      m->_freeOnRemoval = true;
+      _middlewares.emplace_back(m);
+    }
+    void addMiddleware(AsyncMiddleware* middleware) { _middlewares.emplace_back(middleware); }
+    void addMiddlewares(std::vector<AsyncMiddleware*> middlewares) {
+      for (AsyncMiddleware* m : middlewares)
+        addMiddleware(m);
+    }
+    bool removeMiddleware(AsyncMiddleware* middleware) {
+      // remove all middlewares from _middlewares vector being equal to middleware, delete them having _freeOnRemoval flag to true and resize the vector.
+      const size_t size = _middlewares.size();
+      _middlewares.erase(std::remove_if(_middlewares.begin(), _middlewares.end(), [middleware](AsyncMiddleware* m) {
+                           if (m == middleware) {
+                             if (m->_freeOnRemoval)
+                               delete m;
+                             return true;
+                           }
+                           return false;
+                         }),
+                         _middlewares.end());
+      return size != _middlewares.size();
+    }
+    // For internal use only
+    void _runChain(AsyncWebServerRequest* request, ArMiddlewareNext finalizer) {
+      if (!_middlewares.size())
+        return finalizer();
+      ArMiddlewareNext next;
+      std::list<AsyncMiddleware*>::iterator it = _middlewares.begin();
+      next = [this, &next, &it, request, finalizer]() {
+        if (it == _middlewares.end())
+          return finalizer();
+        AsyncMiddleware* m = *it;
+        it++;
+        return m->run(request, next);
+      };
+      return next();
+    }
+
+  protected:
+    std::list<AsyncMiddleware*> _middlewares;
+};
+
+// AuthenticationMiddleware is a middleware that checks if the request is authenticated
+class AuthenticationMiddleware : public AsyncMiddleware {
+  public:
+    typedef enum {
+      AUTH_NONE,
+      AUTH_BASIC,
+      AUTH_DIGEST
+    } AuthType;
+
+    void setUsername(const char* username) { _username = username; }
+    void setPassword(const char* password) { _password = password; }
+    void setRealm(const char* realm) { _realm = realm; }
+    void setPasswordIsHash(bool passwordIsHash) { _hash = passwordIsHash; }
+    void setAuthType(AuthType authType) { _authType = authType; }
+
+    bool allowed(AsyncWebServerRequest* request) {
+      return _authType == AUTH_NONE || !_username.length() || !_password.length() || request->authenticate(_username.c_str(), _password.c_str(), _realm, _hash);
+    }
+
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+      return allowed(request) ? next() : request->requestAuthentication(_realm, _authType == AUTH_DIGEST);
+    }
+
+  private:
+    String _username;
+    String _password;
+    const char* _realm = nullptr;
+    bool _hash = false;
+    AuthType _authType = AUTH_DIGEST;
+};
+
+using ArAuthorizeFunction = std::function<bool(AsyncWebServerRequest* request)>;
+// AuthorizationMiddleware is a middleware that checks if the request is authorized
+class AuthorizationMiddleware : public AsyncMiddleware {
+  public:
+    AuthorizationMiddleware(ArAuthorizeFunction authorizeConnectHandler) : _code(403), _authz(authorizeConnectHandler) {}
+    AuthorizationMiddleware(int code, ArAuthorizeFunction authorizeConnectHandler) : _code(code), _authz(authorizeConnectHandler) {}
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+      if (_authz && !_authz(request))
+        return request->send(_code);
+      return next();
+    }
+
+  private:
+    int _code;
+    ArAuthorizeFunction _authz;
+};
+
+// remove all headers from the incoming request except the ones provided in the constructor
+class HeaderFreeMiddleware : public AsyncMiddleware {
+  public:
+    void keep(const char* name) { _toKeep.push_back(name); }
+    void unKeep(const char* name) { _toKeep.erase(std::remove(_toKeep.begin(), _toKeep.end(), name), _toKeep.end()); }
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+      std::vector<const char*> reqHeaders;
+      request->getHeaderNames(reqHeaders);
+      for (const char* h : reqHeaders) {
+        bool keep = false;
+        for (const char* k : _toKeep) {
+          if (strcasecmp(h, k) == 0) {
+            keep = true;
+            break;
+          }
+        }
+        if (!keep) {
+          request->removeHeader(h);
+        }
+      }
+      next();
+    }
+
+  private:
+    std::vector<const char*> _toKeep;
+};
+
+// filter out specific headers from the incoming request
+class HeaderFilterMiddleware : public AsyncMiddleware {
+  public:
+    void filter(const char* name) { _toRemove.push_back(name); }
+    void unFilter(const char* name) { _toRemove.erase(std::remove(_toRemove.begin(), _toRemove.end(), name), _toRemove.end()); }
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+      for (auto it = _toRemove.begin(); it != _toRemove.end(); ++it)
+        request->removeHeader(*it);
+      next();
+    }
+
+  private:
+    std::vector<const char*> _toRemove;
+};
+
+// curl-like logging of incoming requests
+class LoggingMiddleware : public AsyncMiddleware {
+  public:
+    void setOutput(Print& output) { _out = &output; }
+    void setEnabled(bool enabled) { _enabled = enabled; }
+    bool isEnabled() { return _enabled && _out; }
+
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
+
+  private:
+    Print* _out = nullptr;
+    bool _enabled = true;
+};
+
+// CORS Middleware
+class CorsMiddleware : public AsyncMiddleware {
+  public:
+    void setOrigin(const char* origin) { _origin = origin; }
+    void setMethods(const char* methods) { _methods = methods; }
+    void setHeaders(const char* headers) { _headers = headers; }
+    void setAllowCredentials(bool credentials) { _credentials = credentials; }
+    void setMaxAge(uint32_t seconds) { _maxAge = seconds; }
+
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
+
+  private:
+    String _origin = "*";
+    String _methods = "*";
+    String _headers = "*";
+    bool _credentials = true;
+    uint32_t _maxAge = 86400;
+};
+
+// Rate limit Middleware
+class RateLimitMiddleware : public AsyncMiddleware {
+  public:
+    void setMaxRequests(size_t maxRequests) { _maxRequests = maxRequests; }
+    void setWindowSize(uint32_t seconds) { _windowSizeMillis = seconds * 1000; }
+
+    bool isRequestAllowed(uint32_t& retryAfterSeconds) {
+      uint32_t now = millis();
+
+      while (!_requestTimes.empty() && _requestTimes.front() <= now - _windowSizeMillis)
+        _requestTimes.pop_front();
+
+      _requestTimes.push_back(now);
+
+      if (_requestTimes.size() > _maxRequests) {
+        _requestTimes.pop_front();
+        retryAfterSeconds = (_windowSizeMillis - (now - _requestTimes.front())) / 1000 + 1;
+        return false;
+      }
+
+      retryAfterSeconds = 0;
+      return true;
+    }
+
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
+
+  private:
+    size_t _maxRequests = 0;
+    uint32_t _windowSizeMillis = 0;
+    std::list<uint32_t> _requestTimes;
+};
+
+/*
  * REWRITE :: One instance can be handle any Request (done by the Server)
  * */
 
@@ -576,11 +819,9 @@ class AsyncWebRewrite {
  * HANDLER :: One instance can be attached to any Request (done by the Server)
  * */
 
-class AsyncWebHandler {
+class AsyncWebHandler : public AsyncMiddlewareChain {
   protected:
     ArRequestFilterFunction _filter{nullptr};
-    String _username;
-    String _password;
 
   public:
     AsyncWebHandler() {}
@@ -589,15 +830,16 @@ class AsyncWebHandler {
       return *this;
     }
     AsyncWebHandler& setAuthentication(const char* username, const char* password) {
-      _username = username;
-      _password = password;
+      if (username == nullptr || password == nullptr || strlen(username) == 0 || strlen(password) == 0)
+        return *this;
+      AuthenticationMiddleware* m = new AuthenticationMiddleware();
+      m->setUsername(username);
+      m->setPassword(password);
+      m->_freeOnRemoval = true;
+      addMiddleware(m);
       return *this;
     };
-    AsyncWebHandler& setAuthentication(const String& username, const String& password) {
-      _username = username;
-      _password = password;
-      return *this;
-    };
+    AsyncWebHandler& setAuthentication(const String& username, const String& password) { return setAuthentication(username.c_str(), password.c_str()); };
     bool filter(AsyncWebServerRequest* request) { return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler() {}
     virtual bool canHandle(AsyncWebServerRequest* request __attribute__((unused))) {
@@ -685,7 +927,7 @@ typedef std::function<void(AsyncWebServerRequest* request)> ArRequestHandlerFunc
 typedef std::function<void(AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final)> ArUploadHandlerFunction;
 typedef std::function<void(AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total)> ArBodyHandlerFunction;
 
-class AsyncWebServer {
+class AsyncWebServer : public AsyncMiddlewareChain {
   protected:
     AsyncServer _server;
     std::list<std::shared_ptr<AsyncWebRewrite>> _rewrites;
