@@ -314,7 +314,8 @@ class AsyncWebServerRequest {
     AsyncWebServerResponse* getResponse() const { return _response; }
 
     void send(int code, const char* contentType = asyncsrv::empty, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
-    void send(int code, const String& contentType, const String& content = emptyString, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
+    void send(int code, const String& contentType, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType.c_str(), content, callback)); }
+    void send(int code, const String& contentType, const String& content, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType.c_str(), content.c_str(), callback)); }
 
     void send(int code, const char* contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, len, callback)); }
     void send(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, len, callback)); }
@@ -345,24 +346,25 @@ class AsyncWebServerRequest {
     void sendChunked(const String& contentType, AwsResponseFiller callback, AwsTemplateProcessor templateCallback = nullptr) { send(beginChunkedResponse(contentType, callback, templateCallback)); }
 
 #ifndef ESP8266
-    [[deprecated("Replaced by send(...)")]]
+    [[deprecated("Replaced by send(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr)")]]
 #endif
     void send_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) {
       send(code, contentType, content, len, callback);
     }
 #ifndef ESP8266
-    [[deprecated("Replaced by send(...)")]]
-#endif
+    [[deprecated("Replaced by send(int code, const String& contentType, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr)")]]
     void send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) {
       send(code, contentType, content, callback);
     }
-
-#ifdef ESP8266
-    void send(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) { send(beginResponse(code, contentType, content, callback)); }
+#else
+    void send_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) {
+      send(beginResponse_P(code, contentType, content, callback));
+    }
 #endif
 
     AsyncWebServerResponse* beginResponse(int code, const char* contentType = asyncsrv::empty, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr);
-    AsyncWebServerResponse* beginResponse(int code, const String& contentType, const String& content = emptyString, AwsTemplateProcessor callback = nullptr) { return beginResponse(code, contentType.c_str(), content.c_str(), callback); }
+    AsyncWebServerResponse* beginResponse(int code, const String& contentType, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr) { return beginResponse(code, contentType.c_str(), content, callback); }
+    AsyncWebServerResponse* beginResponse(int code, const String& contentType, const String& content, AwsTemplateProcessor callback = nullptr) { return beginResponse(code, contentType.c_str(), content.c_str(), callback); }
 
     AsyncWebServerResponse* beginResponse(int code, const char* contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr);
     AsyncWebServerResponse* beginResponse(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) { return beginResponse(code, contentType.c_str(), content, len, callback); }
@@ -386,21 +388,15 @@ class AsyncWebServerRequest {
     AsyncResponseStream* beginResponseStream(const String& contentType, size_t bufferSize = RESPONSE_STREAM_BUFFER_SIZE) { return beginResponseStream(contentType.c_str(), bufferSize); }
 
 #ifndef ESP8266
-    [[deprecated("Replaced by beginResponse(...)")]]
+    [[deprecated("Replaced by beginResponse(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr)")]]
 #endif
     AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, const uint8_t* content, size_t len, AwsTemplateProcessor callback = nullptr) {
       return beginResponse(code, contentType.c_str(), content, len, callback);
     }
 #ifndef ESP8266
-    [[deprecated("Replaced by beginResponse(...)")]]
+    [[deprecated("Replaced by beginResponse(int code, const String& contentType, const char* content = asyncsrv::empty, AwsTemplateProcessor callback = nullptr)")]]
 #endif
-    AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr) {
-      return beginResponse(code, contentType.c_str(), content, callback);
-    }
-
-#ifdef ESP8266
-    AsyncWebServerResponse* beginResponse(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr);
-#endif
+    AsyncWebServerResponse* beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback = nullptr);
 
     /**
      * @brief Get the Request parameter by name
@@ -607,9 +603,9 @@ class AsyncWebHandler {
     virtual bool canHandle(AsyncWebServerRequest* request __attribute__((unused))) {
       return false;
     }
-    virtual void handleRequest(AsyncWebServerRequest* request) {}
-    virtual void handleUpload(AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {}
-    virtual void handleBody(AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) {}
+    virtual void handleRequest(__unused AsyncWebServerRequest* request) {}
+    virtual void handleUpload(__unused AsyncWebServerRequest* request, __unused const String& filename, __unused size_t index, __unused uint8_t* data, __unused size_t len, __unused bool final) {}
+    virtual void handleBody(__unused AsyncWebServerRequest* request, __unused uint8_t* data, __unused size_t len, __unused size_t index, __unused size_t total) {}
     virtual bool isRequestHandlerTrivial() { return true; }
 };
 

@@ -712,11 +712,9 @@ AsyncResponseStream* AsyncWebServerRequest::beginResponseStream(const char* cont
   return new AsyncResponseStream(contentType, bufferSize);
 }
 
-#ifdef ESP8266
-AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback) {
+AsyncWebServerResponse* AsyncWebServerRequest::beginResponse_P(int code, const String& contentType, PGM_P content, AwsTemplateProcessor callback) {
   return new AsyncProgmemResponse(code, contentType, (const uint8_t*)content, strlen_P(content), callback);
 }
-#endif
 
 void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
   if (_sent)
