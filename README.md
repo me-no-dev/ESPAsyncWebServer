@@ -208,5 +208,5 @@ myHandler.addMiddleware(&authMiddleware); // add authentication to a specific ha
 - `AsyncEventSource.authorizeConnect(...)` => do not use this method anymore: add a common `AuthorizationMiddleware` to the handler or server, and make sure to add it AFTER the `AuthenticationMiddleware` if you use authentication.
 - `AsyncWebHandler.setAuthentication(...)` => do not use this method anymore: add a common `AuthenticationMiddleware` to the handler or server
 - `ArUploadHandlerFunction` and `ArBodyHandlerFunction` => these callbacks receiving body data and upload and not calling anymore the authentication code for performance reasons.
-  These callbacks can be called multiple times, so this is up to the user to now call the `AuthenticationMiddleware` if needed and ideally when the method is called for the first time.
+  These callbacks can be called multiple times during request parsing, so this is up to the user to now call the `AuthenticationMiddleware.allowed(request)` if needed and ideally when the method is called for the first time.
   These callbacks are also not triggering the whole middleware chain since they are not part of the request processing workflow (they are not the final handler).
