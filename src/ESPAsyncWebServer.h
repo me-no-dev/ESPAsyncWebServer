@@ -556,7 +556,7 @@ using ArMiddlewareCallback = std::function<void(AsyncWebServerRequest* request, 
 class AsyncMiddleware {
   public:
     virtual ~AsyncMiddleware() {}
-    virtual void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+    virtual void run(__unused AsyncWebServerRequest* request, __unused ArMiddlewareNext next) {
       return next();
     };
 
