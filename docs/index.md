@@ -31,26 +31,28 @@ Dependency:
 
 ## Changes in this fork
 
-- `char*` overloads to avoid using `String`
-- `DEFAULT_MAX_WS_CLIENTS` to change the number of allows WebSocket clients and use `cleanupClients()` to help cleanup resources about dead clients
-- `setCloseClientOnQueueFull(bool)` which can be set on a client to either close the connection or discard messages but not close the connection when the queue is full
-- `SSE_MAX_QUEUED_MESSAGES` to control the maximum number of messages that can be queued for a SSE client
-- `StreamConcat` example to show how to stream multiple files in one response
-- `WS_MAX_QUEUED_MESSAGES`: control the maximum number of messages that can be queued for a Websocket client
-- A lot of bug fixes
-- Arduino 3 / ESP-IDF 5 compatibility
-- Arduino Json 7 compatibility and backward compatible with 6
-- Better CI with a complete matrix of Arduino versions and boards
-- Code size improvements
-- Deployed in PlatformIO registry and Arduino IDE library manager
-- ESP32 / ESP8266 / RP2040 support
-- Lot of code cleanup and optimizations
-- MessagePack support
-- Performance improvements in terms of memory, speed and size
-- Removed ESPIDF Editor (this is not the role of a web server library to do that - get the source files from the original repos if required)
-- Support overriding default response headers
-- Support resumable downloads using HEAD and bytes range
-- **Support for middleware**
+- (bug) A lot of bug fixes
+- (ci) Better CI with a complete matrix of Arduino versions and boards
+- (ci) Deployed in PlatformIO registry and Arduino IDE library manager
+- (feat) **Arduino 3 / ESP-IDF 5** compatibility
+- (feat) **ArduinoJson 7** compatibility
+- (feat) **ESP32 / ESP8266 / RP2040** support
+- (feat) **MessagePack** support
+- (feat) **Middleware** support with pre-built middlewares for authentication, authorization, rate limiting, logging, cors, etc.
+- (feat) **Request attributes** to store data on the request object
+- (feat) **Response header** control and override
+- (feat) **Response override**: support the ability to replace a previously sent response by another one
+- (feat) **Resumable download** support using HEAD and bytes range
+- (feat) `StreamConcat` example to show how to stream multiple files in one response
+- (feat) Removed ESPIDF Editor (this is not the role of a web server library to do that - get the source files from the original repos if required)
+- (perf) `char*` overloads to avoid using `String`
+- (perf) `DEFAULT_MAX_WS_CLIENTS` to change the number of allows WebSocket clients and use `cleanupClients()` to help cleanup resources about dead clients
+- (perf) `setCloseClientOnQueueFull(bool)` which can be set on a client to either close the connection or discard messages but not close the connection when the queue is full
+- (perf) `SSE_MAX_QUEUED_MESSAGES` to control the maximum number of messages that can be queued for a SSE client
+- (perf) `WS_MAX_QUEUED_MESSAGES`: control the maximum number of messages that can be queued for a Websocket client
+- (perf) Code size improvements
+- (perf) Lot of code cleanup and optimizations
+- (perf) Performance improvements in terms of memory, speed and size
 
 ## Original Documentation
 
