@@ -590,7 +590,10 @@ class AsyncMiddlewareChain {
       m->_freeOnRemoval = true;
       _middlewares.emplace_back(m);
     }
-    void addMiddleware(AsyncMiddleware* middleware) { _middlewares.emplace_back(middleware); }
+    void addMiddleware(AsyncMiddleware* middleware) {
+      if (middleware)
+        _middlewares.emplace_back(middleware);
+    }
     void addMiddlewares(std::vector<AsyncMiddleware*> middlewares) {
       for (AsyncMiddleware* m : middlewares)
         addMiddleware(m);
