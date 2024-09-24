@@ -745,6 +745,8 @@ class CorsMiddleware : public AsyncMiddleware {
     void setAllowCredentials(bool credentials) { _credentials = credentials; }
     void setMaxAge(uint32_t seconds) { _maxAge = seconds; }
 
+    void addCORSHeaders(AsyncWebServerResponse* response);
+
     void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
 
   private:
