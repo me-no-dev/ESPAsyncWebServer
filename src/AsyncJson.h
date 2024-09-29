@@ -36,10 +36,15 @@
 #define ASYNC_JSON_H_
 
 #if __has_include("ArduinoJson.h")
-
-  #define ASYNC_JSON_SUPPORT 1
-
   #include <ArduinoJson.h>
+  #if ARDUINOJSON_VERSION_MAJOR >= 5
+    #define ASYNC_JSON_SUPPORT 1
+  #else
+    #define ASYNC_JSON_SUPPORT 0
+  #endif // ARDUINOJSON_VERSION_MAJOR >= 5
+#endif   // __has_include("ArduinoJson.h")
+
+#if ASYNC_JSON_SUPPORT == 1
   #include <ESPAsyncWebServer.h>
 
   #include "ChunkPrint.h"
@@ -49,12 +54,6 @@
       #define DYNAMIC_JSON_DOCUMENT_SIZE 1024
     #endif
   #endif
-
-constexpr const char* JSON_MIMETYPE = "application/json";
-
-/*
- * Json Response
- * */
 
 class AsyncJsonResponse : public AsyncAbstractResponse {
   protected:
@@ -127,8 +126,6 @@ class AsyncCallbackJsonWebHandler : public AsyncWebHandler {
     virtual bool isRequestHandlerTrivial() override final { return !_onRequest; }
 };
 
-#else // __has_include("ArduinoJson.h")
-  #define ASYNC_JSON_SUPPORT 0
-#endif // __has_include("ArduinoJson.h")
+#endif // ASYNC_JSON_SUPPORT == 1
 
-#endif
+#endif // ASYNC_JSON_H_

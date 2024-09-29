@@ -5,7 +5,7 @@
   #if ARDUINOJSON_VERSION_MAJOR == 5
 AsyncJsonResponse::AsyncJsonResponse(bool isArray) : _isValid{false} {
   _code = 200;
-  _contentType = JSON_MIMETYPE;
+  _contentType = asyncsrv::T_application_json;
   if (isArray)
     _root = _jsonBuffer.createArray();
   else
@@ -14,7 +14,7 @@ AsyncJsonResponse::AsyncJsonResponse(bool isArray) : _isValid{false} {
   #elif ARDUINOJSON_VERSION_MAJOR == 6
 AsyncJsonResponse::AsyncJsonResponse(bool isArray, size_t maxJsonBufferSize) : _jsonBuffer(maxJsonBufferSize), _isValid{false} {
   _code = 200;
-  _contentType = JSON_MIMETYPE;
+  _contentType = asyncsrv::T_application_json;
   if (isArray)
     _root = _jsonBuffer.createNestedArray();
   else
@@ -23,7 +23,7 @@ AsyncJsonResponse::AsyncJsonResponse(bool isArray, size_t maxJsonBufferSize) : _
   #else
 AsyncJsonResponse::AsyncJsonResponse(bool isArray) : _isValid{false} {
   _code = 200;
-  _contentType = JSON_MIMETYPE;
+  _contentType = asyncsrv::T_application_json;
   if (isArray)
     _root = _jsonBuffer.add<JsonArray>();
   else
@@ -100,7 +100,7 @@ bool AsyncCallbackJsonWebHandler::canHandle(AsyncWebServerRequest* request) {
   if (_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri + "/")))
     return false;
 
-  if (request_method != HTTP_GET && !request->contentType().equalsIgnoreCase(JSON_MIMETYPE))
+  if (request_method != HTTP_GET && !request->contentType().equalsIgnoreCase(asyncsrv::T_application_json))
     return false;
 
   return true;
