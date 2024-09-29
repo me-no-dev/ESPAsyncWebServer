@@ -19,9 +19,12 @@
 
 #include <ESPAsyncWebServer.h>
 
-#include <ArduinoJson.h>
-#include <AsyncJson.h>
-#include <AsyncMessagePack.h>
+#if ASYNC_JSON_SUPPORT == 1
+  #include <ArduinoJson.h>
+  #include <AsyncJson.h>
+  #include <AsyncMessagePack.h>
+#endif
+
 #include <LittleFS.h>
 
 AsyncWebServer server(80);
@@ -103,8 +106,10 @@ void notFound(AsyncWebServerRequest* request) {
   request->send(404, "text/plain", "Not found");
 }
 
+#if ASYNC_JSON_SUPPORT == 1
 AsyncCallbackJsonWebHandler* jsonHandler = new AsyncCallbackJsonWebHandler("/json2");
 AsyncCallbackMessagePackWebHandler* msgPackHandler = new AsyncCallbackMessagePackWebHandler("/msgpack2");
+#endif
 
 void setup() {
 
@@ -293,6 +298,7 @@ void setup() {
     request->send(200, "text/plain", "Hello, POST: " + message);
   });
 
+#if ASYNC_JSON_SUPPORT == 1
   // JSON
 
   // receives JSON and sends JSON
@@ -338,6 +344,7 @@ void setup() {
     response->setLength();
     request->send(response);
   });
+#endif
 
   events.onConnect([](AsyncEventSourceClient* client) {
     if (client->lastId()) {
@@ -376,8 +383,11 @@ void setup() {
 
   server.addHandler(&events);
   server.addHandler(&ws);
+
+#if ASYNC_JSON_SUPPORT == 1
   server.addHandler(jsonHandler);
   server.addHandler(msgPackHandler);
+#endif
 
   server.onNotFound(notFound);
 

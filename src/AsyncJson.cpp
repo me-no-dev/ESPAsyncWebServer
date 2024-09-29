@@ -1,6 +1,8 @@
 #include "AsyncJson.h"
 
-#if ARDUINOJSON_VERSION_MAJOR == 5
+#if ASYNC_JSON_SUPPORT == 1
+
+  #if ARDUINOJSON_VERSION_MAJOR == 5
 AsyncJsonResponse::AsyncJsonResponse(bool isArray) : _isValid{false} {
   _code = 200;
   _contentType = JSON_MIMETYPE;
@@ -9,7 +11,7 @@ AsyncJsonResponse::AsyncJsonResponse(bool isArray) : _isValid{false} {
   else
     _root = _jsonBuffer.createObject();
 }
-#elif ARDUINOJSON_VERSION_MAJOR == 6
+  #elif ARDUINOJSON_VERSION_MAJOR == 6
 AsyncJsonResponse::AsyncJsonResponse(bool isArray, size_t maxJsonBufferSize) : _jsonBuffer(maxJsonBufferSize), _isValid{false} {
   _code = 200;
   _contentType = JSON_MIMETYPE;
@@ -18,7 +20,7 @@ AsyncJsonResponse::AsyncJsonResponse(bool isArray, size_t maxJsonBufferSize) : _
   else
     _root = _jsonBuffer.createNestedObject();
 }
-#else
+  #else
 AsyncJsonResponse::AsyncJsonResponse(bool isArray) : _isValid{false} {
   _code = 200;
   _contentType = JSON_MIMETYPE;
@@ -27,14 +29,14 @@ AsyncJsonResponse::AsyncJsonResponse(bool isArray) : _isValid{false} {
   else
     _root = _jsonBuffer.add<JsonObject>();
 }
-#endif
+  #endif
 
 size_t AsyncJsonResponse::setLength() {
-#if ARDUINOJSON_VERSION_MAJOR == 5
+  #if ARDUINOJSON_VERSION_MAJOR == 5
   _contentLength = _root.measureLength();
-#else
+  #else
   _contentLength = measureJson(_root);
-#endif
+  #endif
   if (_contentLength) {
     _isValid = true;
   }
@@ -43,26 +45,26 @@ size_t AsyncJsonResponse::setLength() {
 
 size_t AsyncJsonResponse::_fillBuffer(uint8_t* data, size_t len) {
   ChunkPrint dest(data, _sentLength, len);
-#if ARDUINOJSON_VERSION_MAJOR == 5
+  #if ARDUINOJSON_VERSION_MAJOR == 5
   _root.printTo(dest);
-#else
+  #else
   serializeJson(_root, dest);
-#endif
+  #endif
   return len;
 }
 
-#if ARDUINOJSON_VERSION_MAJOR == 6
+  #if ARDUINOJSON_VERSION_MAJOR == 6
 PrettyAsyncJsonResponse::PrettyAsyncJsonResponse(bool isArray, size_t maxJsonBufferSize) : AsyncJsonResponse{isArray, maxJsonBufferSize} {}
-#else
+  #else
 PrettyAsyncJsonResponse::PrettyAsyncJsonResponse(bool isArray) : AsyncJsonResponse{isArray} {}
-#endif
+  #endif
 
 size_t PrettyAsyncJsonResponse::setLength() {
-#if ARDUINOJSON_VERSION_MAJOR == 5
+  #if ARDUINOJSON_VERSION_MAJOR == 5
   _contentLength = _root.measurePrettyLength();
-#else
+  #else
   _contentLength = measureJsonPretty(_root);
-#endif
+  #endif
   if (_contentLength) {
     _isValid = true;
   }
@@ -71,21 +73,21 @@ size_t PrettyAsyncJsonResponse::setLength() {
 
 size_t PrettyAsyncJsonResponse::_fillBuffer(uint8_t* data, size_t len) {
   ChunkPrint dest(data, _sentLength, len);
-#if ARDUINOJSON_VERSION_MAJOR == 5
+  #if ARDUINOJSON_VERSION_MAJOR == 5
   _root.prettyPrintTo(dest);
-#else
+  #else
   serializeJsonPretty(_root, dest);
-#endif
+  #endif
   return len;
 }
 
-#if ARDUINOJSON_VERSION_MAJOR == 6
+  #if ARDUINOJSON_VERSION_MAJOR == 6
 AsyncCallbackJsonWebHandler::AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest, size_t maxJsonBufferSize)
     : _uri(uri), _method(HTTP_GET | HTTP_POST | HTTP_PUT | HTTP_PATCH), _onRequest(onRequest), maxJsonBufferSize(maxJsonBufferSize), _maxContentLength(16384) {}
-#else
+  #else
 AsyncCallbackJsonWebHandler::AsyncCallbackJsonWebHandler(const String& uri, ArJsonRequestHandlerFunction onRequest)
     : _uri(uri), _method(HTTP_GET | HTTP_POST | HTTP_PUT | HTTP_PATCH), _onRequest(onRequest), _maxContentLength(16384) {}
-#endif
+  #endif
 
 bool AsyncCallbackJsonWebHandler::canHandle(AsyncWebServerRequest* request) {
   if (!_onRequest)
@@ -112,21 +114,21 @@ void AsyncCallbackJsonWebHandler::handleRequest(AsyncWebServerRequest* request) 
       return;
     } else if (request->_tempObject != NULL) {
 
-#if ARDUINOJSON_VERSION_MAJOR == 5
+  #if ARDUINOJSON_VERSION_MAJOR == 5
       DynamicJsonBuffer jsonBuffer;
       JsonVariant json = jsonBuffer.parse((uint8_t*)(request->_tempObject));
       if (json.success()) {
-#elif ARDUINOJSON_VERSION_MAJOR == 6
+  #elif ARDUINOJSON_VERSION_MAJOR == 6
       DynamicJsonDocument jsonBuffer(this->maxJsonBufferSize);
       DeserializationError error = deserializeJson(jsonBuffer, (uint8_t*)(request->_tempObject));
       if (!error) {
         JsonVariant json = jsonBuffer.as<JsonVariant>();
-#else
+  #else
       JsonDocument jsonBuffer;
       DeserializationError error = deserializeJson(jsonBuffer, (uint8_t*)(request->_tempObject));
       if (!error) {
         JsonVariant json = jsonBuffer.as<JsonVariant>();
-#endif
+  #endif
 
         _onRequest(request, json);
         return;
@@ -149,3 +151,5 @@ void AsyncCallbackJsonWebHandler::handleBody(AsyncWebServerRequest* request, uin
     }
   }
 }
+
+#endif // ASYNC_JSON_SUPPORT

@@ -106,6 +106,9 @@ jobs:
           - env: ci-arduino-3
             board: esp32-h2-devkitm-1
 
+          - env: ci-arduino-3-no-json
+            board: esp32dev
+
           - env: ci-arduino-310rc1
             board: esp32dev
           - env: ci-arduino-310rc1

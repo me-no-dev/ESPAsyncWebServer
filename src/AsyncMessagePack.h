@@ -21,10 +21,14 @@
   server.addHandler(handler);
 */
 
-#include <ArduinoJson.h>
-#include <ESPAsyncWebServer.h>
+#if __has_include("ArduinoJson.h")
 
-#include "ChunkPrint.h"
+  #define ASYNC_MSG_PACK_SUPPORT 1
+
+  #include <ArduinoJson.h>
+  #include <ESPAsyncWebServer.h>
+
+  #include "ChunkPrint.h"
 
 class AsyncMessagePackResponse : public AsyncAbstractResponse {
   protected:
@@ -65,3 +69,7 @@ class AsyncCallbackMessagePackWebHandler : public AsyncWebHandler {
     virtual void handleBody(AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) override final;
     virtual bool isRequestHandlerTrivial() override final { return _onRequest ? false : true; }
 };
+
+#else // __has_include("ArduinoJson.h")
+  #define ASYNC_MSG_PACK_SUPPORT 0
+#endif // __has_include("ArduinoJson.h")

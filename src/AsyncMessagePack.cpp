@@ -1,5 +1,7 @@
 #include "AsyncMessagePack.h"
 
+#if ASYNC_MSG_PACK_SUPPORT == 1
+
 AsyncMessagePackResponse::AsyncMessagePackResponse(bool isArray) : _isValid{false} {
   _code = 200;
   _contentType = asyncsrv::T_application_msgpack;
@@ -77,3 +79,5 @@ void AsyncCallbackMessagePackWebHandler::handleBody(AsyncWebServerRequest* reque
     }
   }
 }
+
+#endif // ASYNC_MSG_PACK_SUPPORT
