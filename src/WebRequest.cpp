@@ -636,6 +636,22 @@ const AsyncWebHeader* AsyncWebServerRequest::getHeader(size_t num) const {
   return &(*std::next(_headers.cbegin(), num));
 }
 
+size_t AsyncWebServerRequest::getHeaderNames(std::vector<const char*>& names) const {
+  names.clear();
+  const size_t size = _headers.size();
+  names.reserve(size);
+  for (const auto& h : _headers) {
+    names.push_back(h.name().c_str());
+  }
+  return size;
+}
+
+bool AsyncWebServerRequest::removeHeader(const char* name) {
+  const size_t size = _headers.size();
+  _headers.remove_if([name](const AsyncWebHeader& header) { return header.name().equalsIgnoreCase(name); });
+  return size != _headers.size();
+}
+
 size_t AsyncWebServerRequest::params() const {
   return _params.size();
 }
@@ -668,6 +684,27 @@ const AsyncWebParameter* AsyncWebServerRequest::getParam(size_t num) const {
   if (num >= _params.size())
     return nullptr;
   return &(*std::next(_params.cbegin(), num));
+}
+
+const String& AsyncWebServerRequest::getAttribute(const char* name, const String& defaultValue) const {
+  auto it = _attributes.find(name);
+  return it != _attributes.end() ? it->second : defaultValue;
+}
+bool AsyncWebServerRequest::getAttribute(const char* name, bool defaultValue) const {
+  auto it = _attributes.find(name);
+  return it != _attributes.end() ? it->second == "1" : defaultValue;
+}
+long AsyncWebServerRequest::getAttribute(const char* name, long defaultValue) const {
+  auto it = _attributes.find(name);
+  return it != _attributes.end() ? it->second.toInt() : defaultValue;
+}
+float AsyncWebServerRequest::getAttribute(const char* name, float defaultValue) const {
+  auto it = _attributes.find(name);
+  return it != _attributes.end() ? it->second.toFloat() : defaultValue;
+}
+double AsyncWebServerRequest::getAttribute(const char* name, double defaultValue) const {
+  auto it = _attributes.find(name);
+  return it != _attributes.end() ? it->second.toDouble() : defaultValue;
 }
 
 AsyncWebServerResponse* AsyncWebServerRequest::beginResponse(int code, const char* contentType, const char* content, AwsTemplateProcessor callback) {

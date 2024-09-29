@@ -1,4 +1,80 @@
-#include "ESPAsyncWebServer.h"
+#include <ESPAsyncWebServer.h>
+
+AsyncMiddlewareChain::~AsyncMiddlewareChain() {
+  for (AsyncMiddleware* m : _middlewares)
+    if (m->_freeOnRemoval)
+      delete m;
+}
+
+void AsyncMiddlewareChain::addMiddleware(ArMiddlewareCallback fn) {
+  AsyncMiddlewareFunction* m = new AsyncMiddlewareFunction(fn);
+  m->_freeOnRemoval = true;
+  _middlewares.emplace_back(m);
+}
+
+void AsyncMiddlewareChain::addMiddleware(AsyncMiddleware* middleware) {
+  if (middleware)
+    _middlewares.emplace_back(middleware);
+}
+
+void AsyncMiddlewareChain::addMiddlewares(std::vector<AsyncMiddleware*> middlewares) {
+  for (AsyncMiddleware* m : middlewares)
+    addMiddleware(m);
+}
+
+bool AsyncMiddlewareChain::removeMiddleware(AsyncMiddleware* middleware) {
+  // remove all middlewares from _middlewares vector being equal to middleware, delete them having _freeOnRemoval flag to true and resize the vector.
+  const size_t size = _middlewares.size();
+  _middlewares.erase(std::remove_if(_middlewares.begin(), _middlewares.end(), [middleware](AsyncMiddleware* m) {
+                       if (m == middleware) {
+                         if (m->_freeOnRemoval)
+                           delete m;
+                         return true;
+                       }
+                       return false;
+                     }),
+                     _middlewares.end());
+  return size != _middlewares.size();
+}
+
+void AsyncMiddlewareChain::_runChain(AsyncWebServerRequest* request, ArMiddlewareNext finalizer) {
+  if (!_middlewares.size())
+    return finalizer();
+  ArMiddlewareNext next;
+  std::list<AsyncMiddleware*>::iterator it = _middlewares.begin();
+  next = [this, &next, &it, request, finalizer]() {
+    if (it == _middlewares.end())
+      return finalizer();
+    AsyncMiddleware* m = *it;
+    it++;
+    return m->run(request, next);
+  };
+  return next();
+}
+
+void HeaderFreeMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+  std::vector<const char*> reqHeaders;
+  request->getHeaderNames(reqHeaders);
+  for (const char* h : reqHeaders) {
+    bool keep = false;
+    for (const char* k : _toKeep) {
+      if (strcasecmp(h, k) == 0) {
+        keep = true;
+        break;
+      }
+    }
+    if (!keep) {
+      request->removeHeader(h);
+    }
+  }
+  next();
+}
+
+void HeaderFilterMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+  for (auto it = _toRemove.begin(); it != _toRemove.end(); ++it)
+    request->removeHeader(*it);
+  next();
+}
 
 void LoggingMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
   if (!isEnabled()) {
@@ -88,6 +164,24 @@ void CorsMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext next) 
     // NO Origin header => no CORS handling
     next();
   }
+}
+
+bool RateLimitMiddleware::isRequestAllowed(uint32_t& retryAfterSeconds) {
+  uint32_t now = millis();
+
+  while (!_requestTimes.empty() && _requestTimes.front() <= now - _windowSizeMillis)
+    _requestTimes.pop_front();
+
+  _requestTimes.push_back(now);
+
+  if (_requestTimes.size() > _maxRequests) {
+    _requestTimes.pop_front();
+    retryAfterSeconds = (_windowSizeMillis - (now - _requestTimes.front())) / 1000 + 1;
+    return false;
+  }
+
+  retryAfterSeconds = 0;
+  return true;
 }
 
 void RateLimitMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext next) {

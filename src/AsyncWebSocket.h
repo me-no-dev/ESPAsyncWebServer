@@ -281,7 +281,7 @@ class AsyncWebSocket : public AsyncWebHandler {
   public:
     explicit AsyncWebSocket(const char* url) : _url(url), _cNextId(1), _enabled(true) {}
     AsyncWebSocket(const String& url) : _url(url), _cNextId(1), _enabled(true) {}
-    ~AsyncWebSocket(){};
+    ~AsyncWebSocket() {};
     const char* url() const { return _url.c_str(); }
     void enable(bool e) { _enabled = e; }
     bool enabled() const { return _enabled; }
@@ -339,15 +339,8 @@ class AsyncWebSocket : public AsyncWebHandler {
     size_t printfAll_P(PGM_P formatP, ...) __attribute__((format(printf, 2, 3)));
 #endif
 
-    // event listener
-    void onEvent(AwsEventHandler handler) {
-      _eventHandler = handler;
-    }
-
-    // Handshake Handler
-    void handleHandshake(AwsHandshakeHandler handler) {
-      _handshakeHandler = handler;
-    }
+    void onEvent(AwsEventHandler handler) { _eventHandler = handler; }
+    void handleHandshake(AwsHandshakeHandler handler) { _handshakeHandler = handler; }
 
     // system callbacks (do not call)
     uint32_t _getNextId() { return _cNextId++; }

@@ -24,6 +24,7 @@
 #include "Arduino.h"
 
 #include "FS.h"
+#include <algorithm>
 #include <deque>
 #include <functional>
 #include <list>
@@ -141,33 +142,15 @@ class AsyncWebHeader {
   public:
     AsyncWebHeader() = default;
     AsyncWebHeader(const AsyncWebHeader&) = default;
-
     AsyncWebHeader(const char* name, const char* value) : _name(name), _value(value) {}
     AsyncWebHeader(const String& name, const String& value) : _name(name), _value(value) {}
-    AsyncWebHeader(const String& data) {
-      if (!data)
-        return;
-      int index = data.indexOf(':');
-      if (index < 0)
-        return;
-      _name = data.substring(0, index);
-      _value = data.substring(index + 2);
-    }
+    AsyncWebHeader(const String& data);
 
     AsyncWebHeader& operator=(const AsyncWebHeader&) = default;
 
     const String& name() const { return _name; }
     const String& value() const { return _value; }
-    String toString() const {
-      String str;
-      str.reserve(_name.length() + _value.length() + 2);
-      str.concat(_name);
-      str.concat((char)0x3a);
-      str.concat((char)0x20);
-      str.concat(_value);
-      str.concat(asyncsrv::T_rn);
-      return str;
-    }
+    String toString() const;
 };
 
 /*
@@ -472,23 +455,11 @@ class AsyncWebServerRequest {
 
     const std::list<AsyncWebHeader>& getHeaders() const { return _headers; }
 
-    size_t getHeaderNames(std::vector<const char*>& names) const {
-      names.clear();
-      const size_t size = _headers.size();
-      names.reserve(size);
-      for (const auto& h : _headers) {
-        names.push_back(h.name().c_str());
-      }
-      return size;
-    }
+    size_t getHeaderNames(std::vector<const char*>& names) const;
 
     // Remove a header from the request.
     // It will free the memory and prevent the header to be seen during request processing.
-    bool removeHeader(const char* name) {
-      const size_t size = _headers.size();
-      _headers.remove_if([name](const AsyncWebHeader& header) { return header.name().equalsIgnoreCase(name); });
-      return size != _headers.size();
-    }
+    bool removeHeader(const char* name);
     // Remove all request headers.
     void removeHeaders() { _headers.clear(); }
 
@@ -509,26 +480,11 @@ class AsyncWebServerRequest {
 
     bool hasAttribute(const char* name) const { return _attributes.find(name) != _attributes.end(); }
 
-    const String& getAttribute(const char* name, const String& defaultValue = emptyString) const {
-      auto it = _attributes.find(name);
-      return it != _attributes.end() ? it->second : defaultValue;
-    }
-    bool getAttribute(const char* name, bool defaultValue) const {
-      auto it = _attributes.find(name);
-      return it != _attributes.end() ? it->second == "1" : defaultValue;
-    }
-    long getAttribute(const char* name, long defaultValue) const {
-      auto it = _attributes.find(name);
-      return it != _attributes.end() ? it->second.toInt() : defaultValue;
-    }
-    float getAttribute(const char* name, float defaultValue) const {
-      auto it = _attributes.find(name);
-      return it != _attributes.end() ? it->second.toFloat() : defaultValue;
-    }
-    double getAttribute(const char* name, double defaultValue) const {
-      auto it = _attributes.find(name);
-      return it != _attributes.end() ? it->second.toDouble() : defaultValue;
-    }
+    const String& getAttribute(const char* name, const String& defaultValue = emptyString) const;
+    bool getAttribute(const char* name, bool defaultValue) const;
+    long getAttribute(const char* name, long defaultValue) const;
+    float getAttribute(const char* name, float defaultValue) const;
+    double getAttribute(const char* name, double defaultValue) const;
 
     String urlDecode(const String& text) const;
 };
@@ -580,53 +536,15 @@ class AsyncMiddlewareFunction : public AsyncMiddleware {
 // For internal use only: super class to add/remove middleware to server or handlers
 class AsyncMiddlewareChain {
   public:
-    virtual ~AsyncMiddlewareChain() {
-      for (AsyncMiddleware* m : _middlewares)
-        if (m->_freeOnRemoval)
-          delete m;
-    }
-    void addMiddleware(ArMiddlewareCallback fn) {
-      AsyncMiddlewareFunction* m = new AsyncMiddlewareFunction(fn);
-      m->_freeOnRemoval = true;
-      _middlewares.emplace_back(m);
-    }
-    void addMiddleware(AsyncMiddleware* middleware) {
-      if (middleware)
-        _middlewares.emplace_back(middleware);
-    }
-    void addMiddlewares(std::vector<AsyncMiddleware*> middlewares) {
-      for (AsyncMiddleware* m : middlewares)
-        addMiddleware(m);
-    }
-    bool removeMiddleware(AsyncMiddleware* middleware) {
-      // remove all middlewares from _middlewares vector being equal to middleware, delete them having _freeOnRemoval flag to true and resize the vector.
-      const size_t size = _middlewares.size();
-      _middlewares.erase(std::remove_if(_middlewares.begin(), _middlewares.end(), [middleware](AsyncMiddleware* m) {
-                           if (m == middleware) {
-                             if (m->_freeOnRemoval)
-                               delete m;
-                             return true;
-                           }
-                           return false;
-                         }),
-                         _middlewares.end());
-      return size != _middlewares.size();
-    }
+    virtual ~AsyncMiddlewareChain();
+
+    void addMiddleware(ArMiddlewareCallback fn);
+    void addMiddleware(AsyncMiddleware* middleware);
+    void addMiddlewares(std::vector<AsyncMiddleware*> middlewares);
+    bool removeMiddleware(AsyncMiddleware* middleware);
+
     // For internal use only
-    void _runChain(AsyncWebServerRequest* request, ArMiddlewareNext finalizer) {
-      if (!_middlewares.size())
-        return finalizer();
-      ArMiddlewareNext next;
-      std::list<AsyncMiddleware*>::iterator it = _middlewares.begin();
-      next = [this, &next, &it, request, finalizer]() {
-        if (it == _middlewares.end())
-          return finalizer();
-        AsyncMiddleware* m = *it;
-        it++;
-        return m->run(request, next);
-      };
-      return next();
-    }
+    void _runChain(AsyncWebServerRequest* request, ArMiddlewareNext finalizer);
 
   protected:
     std::list<AsyncMiddleware*> _middlewares;
@@ -647,13 +565,9 @@ class AuthenticationMiddleware : public AsyncMiddleware {
     void setPasswordIsHash(bool passwordIsHash) { _hash = passwordIsHash; }
     void setAuthType(AuthType authType) { _authType = authType; }
 
-    bool allowed(AsyncWebServerRequest* request) {
-      return _authType == AUTH_NONE || !_username.length() || !_password.length() || request->authenticate(_username.c_str(), _password.c_str(), _realm, _hash);
-    }
+    bool allowed(AsyncWebServerRequest* request) { return _authType == AUTH_NONE || !_username.length() || !_password.length() || request->authenticate(_username.c_str(), _password.c_str(), _realm, _hash); }
 
-    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
-      return allowed(request) ? next() : request->requestAuthentication(_realm, _authType == AUTH_DIGEST);
-    }
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) { return allowed(request) ? next() : request->requestAuthentication(_realm, _authType == AUTH_DIGEST); }
 
   private:
     String _username;
@@ -669,11 +583,8 @@ class AuthorizationMiddleware : public AsyncMiddleware {
   public:
     AuthorizationMiddleware(ArAuthorizeFunction authorizeConnectHandler) : _code(403), _authz(authorizeConnectHandler) {}
     AuthorizationMiddleware(int code, ArAuthorizeFunction authorizeConnectHandler) : _code(code), _authz(authorizeConnectHandler) {}
-    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
-      if (_authz && !_authz(request))
-        return request->send(_code);
-      return next();
-    }
+
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) { return _authz && !_authz(request) ? request->send(_code) : next(); }
 
   private:
     int _code;
@@ -685,23 +596,8 @@ class HeaderFreeMiddleware : public AsyncMiddleware {
   public:
     void keep(const char* name) { _toKeep.push_back(name); }
     void unKeep(const char* name) { _toKeep.erase(std::remove(_toKeep.begin(), _toKeep.end(), name), _toKeep.end()); }
-    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
-      std::vector<const char*> reqHeaders;
-      request->getHeaderNames(reqHeaders);
-      for (const char* h : reqHeaders) {
-        bool keep = false;
-        for (const char* k : _toKeep) {
-          if (strcasecmp(h, k) == 0) {
-            keep = true;
-            break;
-          }
-        }
-        if (!keep) {
-          request->removeHeader(h);
-        }
-      }
-      next();
-    }
+
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
 
   private:
     std::vector<const char*> _toKeep;
@@ -712,11 +608,8 @@ class HeaderFilterMiddleware : public AsyncMiddleware {
   public:
     void filter(const char* name) { _toRemove.push_back(name); }
     void unFilter(const char* name) { _toRemove.erase(std::remove(_toRemove.begin(), _toRemove.end(), name), _toRemove.end()); }
-    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
-      for (auto it = _toRemove.begin(); it != _toRemove.end(); ++it)
-        request->removeHeader(*it);
-      next();
-    }
+
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
 
   private:
     std::vector<const char*> _toRemove;
@@ -763,23 +656,7 @@ class RateLimitMiddleware : public AsyncMiddleware {
     void setMaxRequests(size_t maxRequests) { _maxRequests = maxRequests; }
     void setWindowSize(uint32_t seconds) { _windowSizeMillis = seconds * 1000; }
 
-    bool isRequestAllowed(uint32_t& retryAfterSeconds) {
-      uint32_t now = millis();
-
-      while (!_requestTimes.empty() && _requestTimes.front() <= now - _windowSizeMillis)
-        _requestTimes.pop_front();
-
-      _requestTimes.push_back(now);
-
-      if (_requestTimes.size() > _maxRequests) {
-        _requestTimes.pop_front();
-        retryAfterSeconds = (_windowSizeMillis - (now - _requestTimes.front())) / 1000 + 1;
-        return false;
-      }
-
-      retryAfterSeconds = 0;
-      return true;
-    }
+    bool isRequestAllowed(uint32_t& retryAfterSeconds);
 
     void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
 
@@ -830,20 +707,8 @@ class AsyncWebHandler : public AsyncMiddlewareChain {
 
   public:
     AsyncWebHandler() {}
-    AsyncWebHandler& setFilter(ArRequestFilterFunction fn) {
-      _filter = fn;
-      return *this;
-    }
-    AsyncWebHandler& setAuthentication(const char* username, const char* password) {
-      if (username == nullptr || password == nullptr || strlen(username) == 0 || strlen(password) == 0)
-        return *this;
-      AuthenticationMiddleware* m = new AuthenticationMiddleware();
-      m->setUsername(username);
-      m->setPassword(password);
-      m->_freeOnRemoval = true;
-      addMiddleware(m);
-      return *this;
-    };
+    AsyncWebHandler& setFilter(ArRequestFilterFunction fn);
+    AsyncWebHandler& setAuthentication(const char* username, const char* password);
     AsyncWebHandler& setAuthentication(const String& username, const String& password) { return setAuthentication(username.c_str(), password.c_str()); };
     bool filter(AsyncWebServerRequest* request) { return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler() {}
