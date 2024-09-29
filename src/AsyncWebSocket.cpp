@@ -381,7 +381,7 @@ size_t AsyncWebSocketClient::queueLen() const {
   std::lock_guard<std::mutex> lock(_lock);
 #endif
 
-  return _messageQueue.size() + _controlQueue.size();
+  return _messageQueue.size();
 }
 
 bool AsyncWebSocketClient::canSend() const {
