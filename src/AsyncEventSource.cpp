@@ -22,7 +22,6 @@
   #include <rom/ets_sys.h>
 #endif
 #include "AsyncEventSource.h"
-#include "literals.h"
 
 using namespace asyncsrv;
 
@@ -286,6 +285,12 @@ void AsyncEventSourceClient::_runQueue() {
 // Handler
 void AsyncEventSource::onConnect(ArEventHandlerFunction cb) {
   _connectcb = cb;
+}
+
+void AsyncEventSource::authorizeConnect(ArAuthorizeConnectHandler cb) {
+  AuthorizationMiddleware* m = new AuthorizationMiddleware(401, cb);
+  m->_freeOnRemoval = true;
+  addMiddleware(m);
 }
 
 void AsyncEventSource::_addClient(AsyncEventSourceClient* client) {

@@ -124,11 +124,7 @@ class AsyncEventSource : public AsyncWebHandler {
     const char* url() const { return _url.c_str(); }
     void close();
     void onConnect(ArEventHandlerFunction cb);
-    void authorizeConnect(ArAuthorizeConnectHandler cb) {
-      AuthorizationMiddleware* m = new AuthorizationMiddleware(401, cb);
-      m->_freeOnRemoval = true;
-      addMiddleware(m);
-    }
+    void authorizeConnect(ArAuthorizeConnectHandler cb);
     void send(const String& message, const String& event, uint32_t id = 0, uint32_t reconnect = 0) { send(message.c_str(), event.c_str(), id, reconnect); }
     void send(const String& message, const char* event, uint32_t id = 0, uint32_t reconnect = 0) { send(message.c_str(), event, id, reconnect); }
     void send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);
