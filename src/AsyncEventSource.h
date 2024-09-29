@@ -21,7 +21,6 @@
 #define ASYNCEVENTSOURCE_H_
 
 #include <Arduino.h>
-#include <list>
 #ifdef ESP32
   #include <AsyncTCP.h>
   #include <mutex>

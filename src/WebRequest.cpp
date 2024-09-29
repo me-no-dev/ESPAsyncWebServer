@@ -637,7 +637,6 @@ const AsyncWebHeader* AsyncWebServerRequest::getHeader(size_t num) const {
 }
 
 size_t AsyncWebServerRequest::getHeaderNames(std::vector<const char*>& names) const {
-  names.clear();
   const size_t size = _headers.size();
   names.reserve(size);
   for (const auto& h : _headers) {

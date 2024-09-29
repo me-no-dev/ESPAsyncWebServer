@@ -42,8 +42,6 @@
 
 #include <ESPAsyncWebServer.h>
 
-#include <deque>
-#include <list>
 #include <memory>
 
 #ifdef ESP8266
