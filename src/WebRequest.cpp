@@ -766,8 +766,8 @@ void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
     send(500);
 }
 
-void AsyncWebServerRequest::redirect(const char* url) {
-  AsyncWebServerResponse* response = beginResponse(302);
+void AsyncWebServerRequest::redirect(const char* url, int code) {
+  AsyncWebServerResponse* response = beginResponse(code);
   response->addHeader(T_LOCATION, url);
   send(response);
 }
