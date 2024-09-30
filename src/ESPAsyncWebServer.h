@@ -288,12 +288,13 @@ class AsyncWebServerRequest {
     }
 
     /**
-     * @brief issue 302 redirect response
+     * @brief issue HTTP redirect responce with Location header
      *
-     * @param url
+     * @param url - url to redirect to
+     * @param code - responce code, default is 302 : temporary redirect
      */
-    void redirect(const char* url);
-    void redirect(const String& url) { return redirect(url.c_str()); };
+    void redirect(const char* url, int code = 302);
+    void redirect(const String& url, int code = 302) { return redirect(url.c_str(), code); };
 
     void send(AsyncWebServerResponse* response);
     AsyncWebServerResponse* getResponse() const { return _response; }
