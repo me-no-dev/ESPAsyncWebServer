@@ -193,10 +193,12 @@ AuthenticationMiddleware authMiddleware;
 
 // [...]
 
-authMiddleware.setAuthType(AuthenticationMiddleware::AuthType::AUTH_DIGEST);
+authMiddleware.setAuthType(AsyncAuthType::AUTH_DIGEST);
 authMiddleware.setRealm("My app name");
 authMiddleware.setUsername("admin");
 authMiddleware.setPassword("admin");
+authMiddleware.setAuthFailureMessage("Authentication failed");
+authMiddleware.generateHash(); // optimization to avoid generating the hash at each request
 
 // [...]
 

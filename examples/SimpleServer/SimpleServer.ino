@@ -50,8 +50,13 @@ HeaderFilterMiddleware headerFilter;
 // remove all headers from the incoming request except the ones provided in the constructor
 HeaderFreeMiddleware headerFree;
 
+// basicAuth
+AuthenticationMiddleware basicAuth;
+AuthenticationMiddleware basicAuthHash;
+
 // simple digest authentication
-AuthenticationMiddleware simpleDigestAuth;
+AuthenticationMiddleware digestAuth;
+AuthenticationMiddleware digestAuthHash;
 
 // complex authentication which adds request attributes for the next middlewares and handler
 AsyncMiddlewareFunction complexAuth([](AsyncWebServerRequest* request, ArMiddlewareNext next) {
@@ -177,9 +182,31 @@ void setup() {
 
   requestLogger.setOutput(Serial);
 
-  simpleDigestAuth.setUsername("admin");
-  simpleDigestAuth.setPassword("admin");
-  simpleDigestAuth.setRealm("MyApp");
+  basicAuth.setUsername("admin");
+  basicAuth.setPassword("admin");
+  basicAuth.setRealm("MyApp");
+  basicAuth.setAuthFailureMessage("Authentication failed");
+  basicAuth.setAuthType(AsyncAuthType::AUTH_BASIC);
+  basicAuth.generateHash();
+
+  basicAuthHash.setUsername("admin");
+  basicAuthHash.setPasswordHash("YWRtaW46YWRtaW4="); // BASE64(admin:admin)
+  basicAuthHash.setRealm("MyApp");
+  basicAuthHash.setAuthFailureMessage("Authentication failed");
+  basicAuthHash.setAuthType(AsyncAuthType::AUTH_BASIC);
+
+  digestAuth.setUsername("admin");
+  digestAuth.setPassword("admin");
+  digestAuth.setRealm("MyApp");
+  digestAuth.setAuthFailureMessage("Authentication failed");
+  digestAuth.setAuthType(AsyncAuthType::AUTH_DIGEST);
+  digestAuth.generateHash();
+
+  digestAuthHash.setUsername("admin");
+  digestAuthHash.setPasswordHash("f499b71f9a36d838b79268e145e132f7"); // MD5(user:realm:pass)
+  digestAuthHash.setRealm("MyApp");
+  digestAuthHash.setAuthFailureMessage("Authentication failed");
+  digestAuthHash.setAuthType(AsyncAuthType::AUTH_DIGEST);
 
   rateLimit.setMaxRequests(5);
   rateLimit.setWindowSize(10);
@@ -225,15 +252,37 @@ void setup() {
         })
     .addMiddleware(&headerFree);
 
-  // simple digest authentication
-  // curl -v -X GET -H "x-remove-me: value" --digest -u admin:admin  http://192.168.4.1/middleware/auth-simple
-  server.on("/middleware/auth-simple", HTTP_GET, [](AsyncWebServerRequest* request) {
+  // basic authentication method
+  // curl -v -X GET -H "origin: http://192.168.4.1" -u admin:admin  http://192.168.4.1/middleware/auth-basic
+  server.on("/middleware/auth-basic", HTTP_GET, [](AsyncWebServerRequest* request) {
           request->send(200, "text/plain", "Hello, world!");
         })
-    .addMiddleware(&simpleDigestAuth);
+    .addMiddleware(&basicAuth);
 
-  // curl -v -X GET -H "x-remove-me: value" --digest -u user:password  http://192.168.4.1/middleware/auth-complex
-  server.on("/middleware/auth-complex", HTTP_GET, [](AsyncWebServerRequest* request) {
+  // basic authentication method with hash
+  // curl -v -X GET -H "origin: http://192.168.4.1" -u admin:admin  http://192.168.4.1/middleware/auth-basic-hash
+  server.on("/middleware/auth-basic-hash", HTTP_GET, [](AsyncWebServerRequest* request) {
+          request->send(200, "text/plain", "Hello, world!");
+        })
+    .addMiddleware(&basicAuthHash);
+
+  // digest authentication
+  // curl -v -X GET -H "origin: http://192.168.4.1" -u admin:admin --digest  http://192.168.4.1/middleware/auth-digest
+  server.on("/middleware/auth-digest", HTTP_GET, [](AsyncWebServerRequest* request) {
+          request->send(200, "text/plain", "Hello, world!");
+        })
+    .addMiddleware(&digestAuth);
+
+  // digest authentication with hash
+  // curl -v -X GET -H "origin: http://192.168.4.1" -u admin:admin --digest  http://192.168.4.1/middleware/auth-digest-hash
+  server.on("/middleware/auth-digest-hash", HTTP_GET, [](AsyncWebServerRequest* request) {
+          request->send(200, "text/plain", "Hello, world!");
+        })
+    .addMiddleware(&digestAuthHash);
+
+  // test digest auth with cors
+  // curl -v -X GET -H "origin: http://192.168.4.1" --digest -u user:password  http://192.168.4.1/middleware/auth-custom
+  server.on("/middleware/auth-custom", HTTP_GET, [](AsyncWebServerRequest* request) {
           String buffer = "Hello ";
           buffer.concat(request->getAttribute("user"));
           buffer.concat(" with role: ");
@@ -243,6 +292,12 @@ void setup() {
     .addMiddlewares({&complexAuth, &authz});
 
   ///////////////////////////////////////////////////////////////////////
+
+  // curl -v -X GET -H "origin: http://192.168.4.1" http://192.168.4.1/redirect
+  // curl -v -X POST -H "origin: http://192.168.4.1" http://192.168.4.1/redirect
+  server.on("/redirect", HTTP_GET | HTTP_POST, [](AsyncWebServerRequest* request) {
+    request->redirect("/");
+  });
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
     request->send(200, "text/plain", "Hello, world");

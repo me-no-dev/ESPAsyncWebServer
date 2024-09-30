@@ -164,6 +164,15 @@ typedef enum { RCT_NOT_USED = -1,
                RCT_EVENT,
                RCT_MAX } RequestedConnectionType;
 
+// this enum is similar to Arduino WebServer's AsyncAuthType and PsychicHttp
+typedef enum {
+  AUTH_NONE = 0,
+  AUTH_BASIC,
+  AUTH_DIGEST,
+  AUTH_BEARER,
+  AUTH_OTHER,
+} AsyncAuthType;
+
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
 typedef std::function<String(const String&)> AwsTemplateProcessor;
 
@@ -194,7 +203,7 @@ class AsyncWebServerRequest {
     String _boundary;
     String _authorization;
     RequestedConnectionType _reqconntype;
-    bool _isDigest;
+    AsyncAuthType _authMethod = AsyncAuthType::AUTH_NONE;
     bool _isMultipart;
     bool _isPlainPost;
     bool _expectingContinue;
@@ -271,8 +280,9 @@ class AsyncWebServerRequest {
     //  base64(user:pass) for basic or
     //  user:realm:md5(user:realm:pass) for digest
     bool authenticate(const char* hash);
-    bool authenticate(const char* username, const char* password, const char* realm = NULL, bool passwordIsHash = false);
-    void requestAuthentication(const char* realm = NULL, bool isDigest = true);
+    bool authenticate(const char* username, const char* credentials, const char* realm = NULL, bool isHash = false);
+    void requestAuthentication(const char* realm = nullptr, bool isDigest = true) { requestAuthentication(isDigest ? AsyncAuthType::AUTH_DIGEST : AsyncAuthType::AUTH_BASIC, realm); }
+    void requestAuthentication(AsyncAuthType method, const char* realm = nullptr, const char* _authFailMsg = nullptr);
 
     void setHandler(AsyncWebHandler* handler) { _handler = handler; }
 
@@ -554,28 +564,31 @@ class AsyncMiddlewareChain {
 // AuthenticationMiddleware is a middleware that checks if the request is authenticated
 class AuthenticationMiddleware : public AsyncMiddleware {
   public:
-    typedef enum {
-      AUTH_NONE,
-      AUTH_BASIC,
-      AUTH_DIGEST
-    } AuthType;
+    void setUsername(const char* username);
+    void setPassword(const char* password);
+    void setPasswordHash(const char* hash);
 
-    void setUsername(const char* username) { _username = username; }
-    void setPassword(const char* password) { _password = password; }
     void setRealm(const char* realm) { _realm = realm; }
-    void setPasswordIsHash(bool passwordIsHash) { _hash = passwordIsHash; }
-    void setAuthType(AuthType authType) { _authType = authType; }
+    void setAuthFailureMessage(const char* message) { _authFailMsg = message; }
+    void setAuthType(AsyncAuthType authMethod) { _authMethod = authMethod; }
 
-    bool allowed(AsyncWebServerRequest* request) { return _authType == AUTH_NONE || !_username.length() || !_password.length() || request->authenticate(_username.c_str(), _password.c_str(), _realm, _hash); }
+    // precompute and store the hash value based on the username, realm, and authMethod
+    // returns true if the hash was successfully generated and replaced
+    bool generateHash();
 
-    void run(AsyncWebServerRequest* request, ArMiddlewareNext next) { return allowed(request) ? next() : request->requestAuthentication(_realm, _authType == AUTH_DIGEST); }
+    bool allowed(AsyncWebServerRequest* request);
+
+    void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
 
   private:
     String _username;
-    String _password;
-    const char* _realm = nullptr;
+    String _credentials;
     bool _hash = false;
-    AuthType _authType = AUTH_DIGEST;
+
+    String _realm = asyncsrv::T_LOGIN_REQ;
+    AsyncAuthType _authMethod = AsyncAuthType::AUTH_NONE;
+    String _authFailMsg;
+    bool _hasCreds = false;
 };
 
 using ArAuthorizeFunction = std::function<bool(AsyncWebServerRequest* request)>;

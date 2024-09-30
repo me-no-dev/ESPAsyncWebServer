@@ -35,7 +35,7 @@ enum { PARSE_REQ_START,
        PARSE_REQ_FAIL };
 
 AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
-    : _client(c), _server(s), _handler(NULL), _response(NULL), _temp(), _parseState(0), _version(0), _method(HTTP_ANY), _url(), _host(), _contentType(), _boundary(), _authorization(), _reqconntype(RCT_HTTP), _isDigest(false), _isMultipart(false), _isPlainPost(false), _expectingContinue(false), _contentLength(0), _parsedLength(0), _multiParseState(0), _boundaryPosition(0), _itemStartIndex(0), _itemSize(0), _itemName(), _itemFilename(), _itemType(), _itemValue(), _itemBuffer(0), _itemBufferIndex(0), _itemIsFile(false), _tempObject(NULL) {
+    : _client(c), _server(s), _handler(NULL), _response(NULL), _temp(), _parseState(0), _version(0), _method(HTTP_ANY), _url(), _host(), _contentType(), _boundary(), _authorization(), _reqconntype(RCT_HTTP), _authMethod(AsyncAuthType::AUTH_NONE), _isMultipart(false), _isPlainPost(false), _expectingContinue(false), _contentLength(0), _parsedLength(0), _multiParseState(0), _boundaryPosition(0), _itemStartIndex(0), _itemSize(0), _itemName(), _itemFilename(), _itemType(), _itemValue(), _itemBuffer(0), _itemBufferIndex(0), _itemIsFile(false), _tempObject(NULL) {
   c->onError([](void* r, AsyncClient* c, int8_t error) { (void)c; AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onError(error); }, this);
   c->onAck([](void* r, AsyncClient* c, size_t len, uint32_t time) { (void)c; AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onAck(len, time); }, this);
   c->onDisconnect([](void* r, AsyncClient* c) { AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onDisconnect(); delete c; }, this);
@@ -285,9 +285,16 @@ bool AsyncWebServerRequest::_parseReqHeader() {
     } else if (name.equalsIgnoreCase(T_AUTH)) {
       if (value.length() > 5 && value.substring(0, 5).equalsIgnoreCase(T_BASIC)) {
         _authorization = value.substring(6);
+        _authMethod = AsyncAuthType::AUTH_BASIC;
       } else if (value.length() > 6 && value.substring(0, 6).equalsIgnoreCase(T_DIGEST)) {
-        _isDigest = true;
+        _authMethod = AsyncAuthType::AUTH_DIGEST;
         _authorization = value.substring(7);
+      } else if (value.length() > 6 && value.substring(0, 6).equalsIgnoreCase(T_BEARER)) {
+        _authMethod = AsyncAuthType::AUTH_BEARER;
+        _authorization = value.substring(7);
+      } else {
+        _authorization = value;
+        _authMethod = AsyncAuthType::AUTH_OTHER;
       }
     } else {
       if (name.equalsIgnoreCase(T_UPGRADE) && value.equalsIgnoreCase(T_WS)) {
@@ -774,7 +781,7 @@ void AsyncWebServerRequest::redirect(const char* url, int code) {
 
 bool AsyncWebServerRequest::authenticate(const char* username, const char* password, const char* realm, bool passwordIsHash) {
   if (_authorization.length()) {
-    if (_isDigest)
+    if (_authMethod == AsyncAuthType::AUTH_DIGEST)
       return checkDigestAuthentication(_authorization.c_str(), methodToString(), username, password, realm, passwordIsHash, NULL, NULL, NULL);
     else if (!passwordIsHash)
       return checkBasicAuthentication(_authorization.c_str(), username, password);
@@ -788,7 +795,7 @@ bool AsyncWebServerRequest::authenticate(const char* hash) {
   if (!_authorization.length() || hash == NULL)
     return false;
 
-  if (_isDigest) {
+  if (_authMethod == AsyncAuthType::AUTH_DIGEST) {
     String hStr = String(hash);
     int separator = hStr.indexOf(':');
     if (separator <= 0)
@@ -803,23 +810,45 @@ bool AsyncWebServerRequest::authenticate(const char* hash) {
     return checkDigestAuthentication(_authorization.c_str(), methodToString(), username.c_str(), hStr.c_str(), realm.c_str(), true, NULL, NULL, NULL);
   }
 
+  // Basic Auth, Bearer Auth, or other
   return (_authorization.equals(hash));
 }
 
-void AsyncWebServerRequest::requestAuthentication(const char* realm, bool isDigest) {
-  AsyncWebServerResponse* r = beginResponse(401);
-  if (!isDigest && realm == NULL) {
-    r->addHeader(T_WWW_AUTH, T_BASIC_REALM_LOGIN_REQ);
-  } else if (!isDigest) {
-    String header(T_BASIC_REALM);
-    header.concat(realm);
-    header += '"';
-    r->addHeader(T_WWW_AUTH, header.c_str());
-  } else {
-    String header(T_DIGEST_);
-    header.concat(requestDigestAuthentication(realm));
-    r->addHeader(T_WWW_AUTH, header.c_str());
+void AsyncWebServerRequest::requestAuthentication(AsyncAuthType method, const char* realm, const char* _authFailMsg) {
+  if (!realm)
+    realm = T_LOGIN_REQ;
+
+  AsyncWebServerResponse* r = _authFailMsg ? beginResponse(401, T_text_html, _authFailMsg) : beginResponse(401);
+
+  switch (method) {
+    case AsyncAuthType::AUTH_BASIC: {
+      String header;
+      header.reserve(strlen(T_BASIC_REALM) + strlen(realm) + 1);
+      header.concat(T_BASIC_REALM);
+      header.concat(realm);
+      header.concat('"');
+      r->addHeader(T_WWW_AUTH, header.c_str());
+      break;
+    }
+    case AsyncAuthType::AUTH_DIGEST: {
+      constexpr size_t len = strlen(T_DIGEST_) + strlen(T_realm__) + strlen(T_auth_nonce) + 32 + strlen(T__opaque) + 32 + 1;
+      String header;
+      header.reserve(len + strlen(realm));
+      header.concat(T_DIGEST_);
+      header.concat(T_realm__);
+      header.concat(realm);
+      header.concat(T_auth_nonce);
+      header.concat(genRandomMD5());
+      header.concat(T__opaque);
+      header.concat(genRandomMD5());
+      header.concat((char)0x22); // '"'
+      r->addHeader(T_WWW_AUTH, header.c_str());
+      break;
+    }
+    default:
+      break;
   }
+
   send(r);
 }
 
