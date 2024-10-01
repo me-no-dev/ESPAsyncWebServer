@@ -99,12 +99,12 @@ typedef std::function<void(AsyncWebServerRequest* request, JsonVariant& json)> A
 
 class AsyncCallbackJsonWebHandler : public AsyncWebHandler {
   protected:
-    const String _uri;
+    String _uri;
     WebRequestMethodComposite _method;
     ArJsonRequestHandlerFunction _onRequest;
     size_t _contentLength;
   #if ARDUINOJSON_VERSION_MAJOR == 6
-    const size_t maxJsonBufferSize;
+    size_t maxJsonBufferSize;
   #endif
     size_t _maxContentLength;
 
