@@ -463,6 +463,10 @@ void loop() {
   }
   if (now - lastWS >= deltaWS) {
     ws.printfAll("kp%.4f", (10.0 / 3.0));
+    // ws.getClients
+    for (auto& client : ws.getClients()) {
+      client.text("kp%.4f", (10.0 / 3.0));
+    }
     lastWS = millis();
   }
 }

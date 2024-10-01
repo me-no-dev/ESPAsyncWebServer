@@ -351,7 +351,7 @@ class AsyncWebSocket : public AsyncWebHandler {
     AsyncWebSocketMessageBuffer* makeBuffer(size_t size = 0);
     AsyncWebSocketMessageBuffer* makeBuffer(const uint8_t* data, size_t size);
 
-    const std::list<AsyncWebSocketClient>& getClients() const { return _clients; }
+    std::list<AsyncWebSocketClient>& getClients() { return _clients; }
 };
 
 // WebServer response to authenticate the socket and detach the tcp client from the web server request
