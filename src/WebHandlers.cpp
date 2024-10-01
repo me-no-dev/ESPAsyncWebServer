@@ -28,13 +28,13 @@ AsyncWebHandler& AsyncWebHandler::setFilter(ArRequestFilterFunction fn) {
   return *this;
 }
 AsyncWebHandler& AsyncWebHandler::setAuthentication(const char* username, const char* password) {
-  if (username == nullptr || password == nullptr || strlen(username) == 0 || strlen(password) == 0)
-    return *this;
-  AuthenticationMiddleware* m = new AuthenticationMiddleware();
-  m->setUsername(username);
-  m->setPassword(password);
-  m->_freeOnRemoval = true;
-  addMiddleware(m);
+  if (!_authMiddleware) {
+    _authMiddleware = new AuthenticationMiddleware();
+    _authMiddleware->_freeOnRemoval = true;
+    addMiddleware(_authMiddleware);
+  }
+  _authMiddleware->setUsername(username);
+  _authMiddleware->setPassword(password);
   return *this;
 };
 

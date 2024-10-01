@@ -717,7 +717,8 @@ class AsyncWebRewrite {
 
 class AsyncWebHandler : public AsyncMiddlewareChain {
   protected:
-    ArRequestFilterFunction _filter{nullptr};
+    ArRequestFilterFunction _filter = nullptr;
+    AuthenticationMiddleware* _authMiddleware = nullptr;
 
   public:
     AsyncWebHandler() {}
