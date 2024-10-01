@@ -1,3 +1,4 @@
+#include "WebAuthentication.h"
 #include <ESPAsyncWebServer.h>
 
 AsyncMiddlewareChain::~AsyncMiddlewareChain() {
@@ -50,6 +51,62 @@ void AsyncMiddlewareChain::_runChain(AsyncWebServerRequest* request, ArMiddlewar
     return m->run(request, next);
   };
   return next();
+}
+
+void AuthenticationMiddleware::setUsername(const char* username) {
+  _username = username;
+  _hasCreds = _username.length() && _credentials.length();
+}
+
+void AuthenticationMiddleware::setPassword(const char* password) {
+  _credentials = password;
+  _hash = false;
+  _hasCreds = _username.length() && _credentials.length();
+}
+
+void AuthenticationMiddleware::setPasswordHash(const char* hash) {
+  _credentials = hash;
+  _hash = true;
+  _hasCreds = _username.length() && _credentials.length();
+}
+
+bool AuthenticationMiddleware::generateHash() {
+  // ensure we have all the necessary data
+  if (!_hasCreds)
+    return false;
+
+  // if we already have a hash, do nothing
+  if (_hash)
+    return false;
+
+  switch (_authMethod) {
+    case AsyncAuthType::AUTH_DIGEST:
+      _credentials = generateDigestHash(_username.c_str(), _credentials.c_str(), _realm.c_str());
+      _hash = true;
+      return true;
+
+    case AsyncAuthType::AUTH_BASIC:
+      _credentials = generateBasicHash(_username.c_str(), _credentials.c_str());
+      _hash = true;
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+bool AuthenticationMiddleware::allowed(AsyncWebServerRequest* request) {
+  if (_authMethod == AsyncAuthType::AUTH_NONE)
+    return true;
+
+  if (!_hasCreds)
+    return false;
+
+  return request->authenticate(_username.c_str(), _credentials.c_str(), _realm.c_str(), _hash);
+}
+
+void AuthenticationMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+  return allowed(request) ? next() : request->requestAuthentication(_authMethod, _realm.c_str(), _authFailMsg.c_str());
 }
 
 void HeaderFreeMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext next) {

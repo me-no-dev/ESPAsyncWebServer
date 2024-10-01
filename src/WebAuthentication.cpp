@@ -34,36 +34,34 @@ using namespace asyncsrv;
 bool checkBasicAuthentication(const char* hash, const char* username, const char* password) {
   if (username == NULL || password == NULL || hash == NULL)
     return false;
+  return generateBasicHash(username, password).equalsIgnoreCase(hash);
+}
+
+String generateBasicHash(const char* username, const char* password) {
+  if (username == NULL || password == NULL)
+    return emptyString;
 
   size_t toencodeLen = strlen(username) + strlen(password) + 1;
-  size_t encodedLen = base64_encode_expected_len(toencodeLen);
-  if (strlen(hash) != encodedLen)
-// Fix from https://github.com/me-no-dev/ESPAsyncWebServer/issues/667
-#ifdef ARDUINO_ARCH_ESP32
-    if (strlen(hash) != encodedLen)
-#else
-    if (strlen(hash) != encodedLen - 1)
-#endif
-      return false;
 
   char* toencode = new char[toencodeLen + 1];
   if (toencode == NULL) {
-    return false;
+    return emptyString;
   }
   char* encoded = new char[base64_encode_expected_len(toencodeLen) + 1];
   if (encoded == NULL) {
     delete[] toencode;
-    return false;
+    return emptyString;
   }
   sprintf_P(toencode, PSTR("%s:%s"), username, password);
-  if (base64_encode_chars(toencode, toencodeLen, encoded) > 0 && memcmp(hash, encoded, encodedLen) == 0) {
+  if (base64_encode_chars(toencode, toencodeLen, encoded) > 0) {
+    String res = String(encoded);
     delete[] toencode;
     delete[] encoded;
-    return true;
+    return res;
   }
   delete[] toencode;
   delete[] encoded;
-  return false;
+  return emptyString;
 }
 
 static bool getMD5(uint8_t* data, uint16_t len, char* output) { // 33 bytes or more
@@ -94,7 +92,7 @@ static bool getMD5(uint8_t* data, uint16_t len, char* output) { // 33 bytes or m
   return true;
 }
 
-static String genRandomMD5() {
+String genRandomMD5() {
 #ifdef ESP8266
   uint32_t r = RANDOM_REG32;
 #else
@@ -122,31 +120,21 @@ String generateDigestHash(const char* username, const char* password, const char
     return emptyString;
   }
   char* out = (char*)malloc(33);
-  String res = String(username);
-  res += ':';
-  res.concat(realm);
-  res += ':';
-  String in = res;
+
+  String in;
+  in.reserve(strlen(username) + strlen(realm) + strlen(password) + 2);
+  in.concat(username);
+  in.concat(':');
+  in.concat(realm);
+  in.concat(':');
   in.concat(password);
+
   if (out == NULL || !getMD5((uint8_t*)(in.c_str()), in.length(), out))
     return emptyString;
-  res.concat(out);
-  free(out);
-  return res;
-}
 
-String requestDigestAuthentication(const char* realm) {
-  String header(T_realm__);
-  if (realm == NULL)
-    header.concat(T_asyncesp);
-  else
-    header.concat(realm);
-  header.concat(T_auth_nonce);
-  header.concat(genRandomMD5());
-  header.concat(T__opaque);
-  header.concat(genRandomMD5());
-  header += (char)0x22; // '"'
-  return header;
+  in = String(out);
+  free(out);
+  return in;
 }
 
 #ifndef ESP8266
@@ -235,9 +223,9 @@ bool checkDigestAuthentication(const char* header, const __FlashStringHelper* me
     }
   } while (nextBreak > 0);
 
-  String ha1 = (passwordIsHash) ? String(password) : stringMD5(myUsername + ':' + myRealm + ':' + password);
-  String ha2 = String(method) + ':' + myUri;
-  String response = ha1 + ':' + myNonce + ':' + myNc + ':' + myCnonce + ':' + myQop + ':' + stringMD5(ha2);
+  String ha1 = passwordIsHash ? password : stringMD5(myUsername + ':' + myRealm + ':' + password).c_str();
+  String ha2 = stringMD5(String(method) + ':' + myUri);
+  String response = ha1 + ':' + myNonce + ':' + myNc + ':' + myCnonce + ':' + myQop + ':' + ha2;
 
   if (myResponse.equals(stringMD5(response))) {
     // os_printf("AUTH SUCCESS\n");
