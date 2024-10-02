@@ -308,6 +308,23 @@ void setup() {
   });
 
   /*
+    Chunked encoding test: sends 16k of characters.
+    ❯ curl -N -v -X GET -H "origin: http://192.168.4.1" http://192.168.4.1/chunk
+  */
+  static const char characters[] = "1234567890";
+  static size_t charactersIndex = 0;
+  server.on("/chunk", HTTP_HEAD | HTTP_GET, [](AsyncWebServerRequest* request) {
+    AsyncWebServerResponse* response = request->beginChunkedResponse("text/html", [](uint8_t* buffer, size_t maxLen, size_t index) -> size_t {
+      if (index >= 16384)
+        return 0;
+      memset(buffer, characters[charactersIndex], maxLen);
+      charactersIndex = (charactersIndex + 1) % 10;
+      return maxLen;
+    });
+    request->send(response);
+  });
+
+  /*
     ❯ curl -I -X HEAD http://192.168.4.1/download
     HTTP/1.1 200 OK
     Content-Length: 1024
