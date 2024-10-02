@@ -166,11 +166,12 @@ typedef enum { RCT_NOT_USED = -1,
 
 // this enum is similar to Arduino WebServer's AsyncAuthType and PsychicHttp
 typedef enum {
-  AUTH_NONE = 0,
-  AUTH_BASIC,
-  AUTH_DIGEST,
-  AUTH_BEARER,
-  AUTH_OTHER,
+  AUTH_NONE = 0, // always allow
+  AUTH_BASIC = 1,
+  AUTH_DIGEST = 2,
+  AUTH_BEARER = 3,
+  AUTH_OTHER = 4,
+  AUTH_DENIED = 255, // always returns 401
 } AsyncAuthType;
 
 typedef std::function<size_t(uint8_t*, size_t, size_t)> AwsResponseFiller;
@@ -570,11 +571,24 @@ class AuthenticationMiddleware : public AsyncMiddleware {
 
     void setRealm(const char* realm) { _realm = realm; }
     void setAuthFailureMessage(const char* message) { _authFailMsg = message; }
+
+    // set the authentication method to use
+    // default is AUTH_NONE: no authentication required
+    // AUTH_BASIC: basic authentication
+    // AUTH_DIGEST: digest authentication
+    // AUTH_BEARER: bearer token authentication
+    // AUTH_OTHER: other authentication method
+    // AUTH_DENIED: always return 401 Unauthorized
+    // if a method is set but no username or password is set, authentication will be ignored
     void setAuthType(AsyncAuthType authMethod) { _authMethod = authMethod; }
 
-    // precompute and store the hash value based on the username, realm, and authMethod
+    // precompute and store the hash value based on the username, password, realm.
+    // can be used for DIGEST and BASIC to avoid recomputing the hash for each request.
     // returns true if the hash was successfully generated and replaced
     bool generateHash();
+
+    // returns true if the username and password (or hash) are set
+    bool hasCredentials() { return _hasCreds; }
 
     bool allowed(AsyncWebServerRequest* request);
 
