@@ -116,9 +116,26 @@ AsyncCallbackJsonWebHandler* jsonHandler = new AsyncCallbackJsonWebHandler("/jso
 AsyncCallbackMessagePackWebHandler* msgPackHandler = new AsyncCallbackMessagePackWebHandler("/msgpack2");
 #endif
 
+static const char characters[] = "0123456789ABCDEF";
+static size_t charactersIndex = 0;
+
 void setup() {
 
   Serial.begin(115200);
+
+  assert(LittleFS.begin());
+
+  if (!LittleFS.exists("/index.txt")) {
+    File f = LittleFS.open("/index.txt", "w");
+    if (f) {
+      for (size_t c = 0; c < sizeof(characters); c++) {
+        for (size_t i = 0; i < 1024; i++) {
+          f.print(characters[c]);
+        }
+      }
+      f.close();
+    }
+  }
 
 #ifndef CONFIG_IDF_TARGET_ESP32H2
   // WiFi.mode(WIFI_STA);
@@ -217,7 +234,7 @@ void setup() {
 
   // global middleware
   server.addMiddleware(&requestLogger);
-  server.addMiddlewares({&rateLimit, &cors, &headerFilter});
+  // server.addMiddlewares({&rateLimit, &cors, &headerFilter});
 
   cors.setOrigin("http://192.168.4.1");
   cors.setMethods("POST, GET, OPTIONS, DELETE");
@@ -304,21 +321,29 @@ void setup() {
   });
 
   server.on("/file", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send(LittleFS, "/index.html");
+    request->send(LittleFS, "/index.txt");
+  });
+
+  // Issue #14: assert failed: tcp_update_rcv_ann_wnd (needs help to test fix)
+  // > curl -v http://192.168.4.1/issue-14
+  pinMode(4, OUTPUT);
+  server.on("/issue-14", HTTP_GET, [](AsyncWebServerRequest* request) {
+    digitalWrite(4, HIGH);
+    request->send(LittleFS, "/index.txt", "text/pain");
+    delay(500);
+    digitalWrite(4, LOW);
   });
 
   /*
     Chunked encoding test: sends 16k of characters.
     ❯ curl -N -v -X GET -H "origin: http://192.168.4.1" http://192.168.4.1/chunk
   */
-  static const char characters[] = "1234567890";
-  static size_t charactersIndex = 0;
   server.on("/chunk", HTTP_HEAD | HTTP_GET, [](AsyncWebServerRequest* request) {
     AsyncWebServerResponse* response = request->beginChunkedResponse("text/html", [](uint8_t* buffer, size_t maxLen, size_t index) -> size_t {
       if (index >= 16384)
         return 0;
       memset(buffer, characters[charactersIndex], maxLen);
-      charactersIndex = (charactersIndex + 1) % 10;
+      charactersIndex = (charactersIndex + 1) % sizeof(characters);
       return maxLen;
     });
     request->send(response);
