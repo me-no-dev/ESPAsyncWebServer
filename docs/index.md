@@ -29,11 +29,15 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 
 **WARNING** The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations.
 
-```
-mathieucarbou/ESPAsyncWebServer @ 3.3.7
+**PlatformIO / pioarduino:**
+
+```ini
+lib_compat_mode = strict
+lib_ldf_mode = chain
+lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.7
 ```
 
-Dependency:
+**Dependencies:**
 
 - **ESP32**: `mathieucarbou/AsyncTCP @ 3.2.5` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.5](https://github.com/mathieucarbou/AsyncTCP/releases))
 - **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0` (Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0))
