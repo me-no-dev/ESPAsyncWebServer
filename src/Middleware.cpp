@@ -100,7 +100,7 @@ bool AuthenticationMiddleware::allowed(AsyncWebServerRequest* request) {
     return true;
 
   if (_authMethod == AsyncAuthType::AUTH_DENIED)
-    return true;
+    return false;
 
   if (!_hasCreds)
     return true;
