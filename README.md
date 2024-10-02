@@ -34,7 +34,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 ```ini
 lib_compat_mode = strict
 lib_ldf_mode = chain
-lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.7
+lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.8
 ```
 
 **Dependencies:**
