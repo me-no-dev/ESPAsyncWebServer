@@ -39,7 +39,7 @@ lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.7
 
 **Dependencies:**
 
-- **ESP32**: `mathieucarbou/AsyncTCP @ 3.2.5` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.5](https://github.com/mathieucarbou/AsyncTCP/releases))
+- **ESP32**: `mathieucarbou/AsyncTCP @ 3.2.6` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.6](https://github.com/mathieucarbou/AsyncTCP/releases))
 - **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0` (Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0))
 - **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0` (Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0))
 
