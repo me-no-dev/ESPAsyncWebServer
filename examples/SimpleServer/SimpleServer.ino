@@ -123,7 +123,11 @@ void setup() {
 
   Serial.begin(115200);
 
-  assert(LittleFS.begin());
+#ifdef ESP32
+  LittleFS.begin(true);
+#else
+  LittleFS.begin();
+#endif
 
   if (!LittleFS.exists("/index.txt")) {
     File f = LittleFS.open("/index.txt", "w");
@@ -478,7 +482,10 @@ void setup() {
     }
   });
 
+  // go to http://192.168.4.1/sse
   server.addHandler(&events);
+
+  // Run: websocat ws://192.168.4.1/ws
   server.addHandler(&ws);
 
 #if ASYNC_JSON_SUPPORT == 1
@@ -507,7 +514,7 @@ void loop() {
     ws.printfAll("kp%.4f", (10.0 / 3.0));
     // ws.getClients
     for (auto& client : ws.getClients()) {
-      client.text("kp%.4f", (10.0 / 3.0));
+      client.printf("kp%.4f", (10.0 / 3.0));
     }
     lastWS = millis();
   }

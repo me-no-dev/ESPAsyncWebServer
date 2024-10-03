@@ -3,8 +3,7 @@ name: Bug report
 about: Create a report to help us improve
 title: "[BUG]"
 labels: triage
-assignees: ''
-
+assignees: ""
 ---
 
 **Please make sure to go through the recommendations before opening a bug report:**
@@ -13,15 +12,13 @@ assignees: ''
 
 **Description**
 
-A clear and concise description of what the bug is.
+_A clear and concise description of what the bug is._
 
-**Board**
+**Link:** _A link to your source code where the issue happens_
 
-esp32dev, esp32s3, etc
+**Board**: _esp32dev, esp32s3, ?_
 
-**Ethernet adapter used ?**
-
-If yes, please specify which one
+**Ethernet adapter used ?** _If yes, please specify which one_
 
 **Stack trace**
 
