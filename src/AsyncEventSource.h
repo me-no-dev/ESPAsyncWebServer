@@ -81,7 +81,7 @@ class AsyncEventSourceClient {
 #ifdef ESP32
     mutable std::mutex _lockmq;
 #endif
-    void _queueMessage(const char* message, size_t len);
+    bool _queueMessage(const char* message, size_t len);
     void _runQueue();
 
   public:
@@ -90,10 +90,10 @@ class AsyncEventSourceClient {
 
     AsyncClient* client() { return _client; }
     void close();
-    void write(const char* message, size_t len);
-    void send(const String& message, const String& event, uint32_t id = 0, uint32_t reconnect = 0) { send(message.c_str(), event.c_str(), id, reconnect); }
-    void send(const String& message, const char* event, uint32_t id = 0, uint32_t reconnect = 0) { send(message.c_str(), event, id, reconnect); }
-    void send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);
+    bool write(const char* message, size_t len);
+    bool send(const String& message, const String& event, uint32_t id = 0, uint32_t reconnect = 0) { return send(message.c_str(), event.c_str(), id, reconnect); }
+    bool send(const String& message, const char* event, uint32_t id = 0, uint32_t reconnect = 0) { return send(message.c_str(), event, id, reconnect); }
+    bool send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);
     bool connected() const { return (_client != NULL) && _client->connected(); }
     uint32_t lastId() const { return _lastId; }
     size_t packetsWaiting() const;
@@ -114,19 +114,27 @@ class AsyncEventSource : public AsyncWebHandler {
     // since simultaneous access from different tasks is possible
     mutable std::mutex _client_queue_lock;
 #endif
-    ArEventHandlerFunction _connectcb{nullptr};
+    ArEventHandlerFunction _connectcb = nullptr;
+    ArEventHandlerFunction _disconnectcb = nullptr;
 
   public:
+    typedef enum {
+      NOT_SENT = 0,       // sent to no client
+      FULLY_SENT = 1,     // sent to all clients
+      PARTIALLY_SEND = 2, // sent to some clients
+    } SendStatus;
+
     AsyncEventSource(const String& url) : _url(url) {};
     ~AsyncEventSource() { close(); };
 
     const char* url() const { return _url.c_str(); }
     void close();
-    void onConnect(ArEventHandlerFunction cb);
+    void onConnect(ArEventHandlerFunction cb) { _connectcb = cb; }
+    void onDisconnect(ArEventHandlerFunction cb) { _disconnectcb = cb; }
     void authorizeConnect(ArAuthorizeConnectHandler cb);
-    void send(const String& message, const String& event, uint32_t id = 0, uint32_t reconnect = 0) { send(message.c_str(), event.c_str(), id, reconnect); }
-    void send(const String& message, const char* event, uint32_t id = 0, uint32_t reconnect = 0) { send(message.c_str(), event, id, reconnect); }
-    void send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);
+    SendStatus send(const String& message, const String& event, uint32_t id = 0, uint32_t reconnect = 0) { return send(message.c_str(), event.c_str(), id, reconnect); }
+    SendStatus send(const String& message, const char* event, uint32_t id = 0, uint32_t reconnect = 0) { return send(message.c_str(), event, id, reconnect); }
+    SendStatus send(const char* message, const char* event = NULL, uint32_t id = 0, uint32_t reconnect = 0);
     // number of clients connected
     size_t count() const;
     size_t avgPacketsWaiting() const;
