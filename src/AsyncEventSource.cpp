@@ -141,6 +141,9 @@ size_t AsyncEventSourceMessage::ack(size_t len, __attribute__((unused)) uint32_t
 }
 
 size_t AsyncEventSourceMessage::write(AsyncClient* client) {
+  if(!client)
+    return 0;
+
   if (_sent >= _len || !client->canSend()) {
     return 0;
   }
@@ -187,6 +190,9 @@ AsyncEventSourceClient::~AsyncEventSourceClient() {
 }
 
 bool AsyncEventSourceClient::_queueMessage(const char* message, size_t len) {
+  if (!_client)
+    return false;
+
 #ifdef ESP32
   // length() is not thread-safe, thus acquiring the lock before this call..
   std::lock_guard<std::mutex> lock(_lockmq);
@@ -229,16 +235,19 @@ void AsyncEventSourceClient::_onPoll() {
 }
 
 void AsyncEventSourceClient::_onTimeout(uint32_t time __attribute__((unused))) {
-  _client->close(true);
+  if (_client)
+    _client->close(true);
 }
 
 void AsyncEventSourceClient::_onDisconnect() {
-  _client = NULL;
+  if (!_client)
+    return;
+  _client = nullptr;
   _server->_handleDisconnect(this);
 }
 
 void AsyncEventSourceClient::close() {
-  if (_client != NULL)
+  if (_client)
     _client->close();
 }
 
@@ -261,6 +270,9 @@ size_t AsyncEventSourceClient::packetsWaiting() const {
 }
 
 void AsyncEventSourceClient::_runQueue() {
+  if(!_client)
+    return;
+
   size_t total_bytes_written = 0;
   for (auto i = _messageQueue.begin(); i != _messageQueue.end(); ++i) {
     if (!i->sent()) {
@@ -270,6 +282,7 @@ void AsyncEventSourceClient::_runQueue() {
         break;
     }
   }
+
   if (total_bytes_written > 0)
     _client->send();
 

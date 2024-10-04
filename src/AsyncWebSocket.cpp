@@ -39,7 +39,7 @@
 using namespace asyncsrv;
 
 size_t webSocketSendFrameWindow(AsyncClient* client) {
-  if (!client->canSend())
+  if (!client || !client->canSend())
     return 0;
   size_t space = client->space();
   if (space < 9)
@@ -48,7 +48,7 @@ size_t webSocketSendFrameWindow(AsyncClient* client) {
 }
 
 size_t webSocketSendFrame(AsyncClient* client, bool final, uint8_t opcode, bool mask, uint8_t* data, size_t len) {
-  if (!client->canSend()) {
+  if (!client || !client->canSend()) {
     // Serial.println("SF 1");
     return 0;
   }
@@ -219,6 +219,9 @@ void AsyncWebSocketMessage::ack(size_t len, uint32_t time) {
 }
 
 size_t AsyncWebSocketMessage::send(AsyncClient* client) {
+  if (!client)
+    return 0;
+
   if (_status != WS_MSG_SENDING)
     return 0;
   if (_acked < _ack) {
@@ -343,7 +346,7 @@ void AsyncWebSocketClient::_onPoll() {
 #ifdef ESP32
   std::unique_lock<std::mutex> lock(_lock);
 #endif
-  if (_client->canSend() && (!_controlQueue.empty() || !_messageQueue.empty())) {
+  if (_client && _client->canSend() && (!_controlQueue.empty() || !_messageQueue.empty())) {
     _runQueue();
   } else if (_keepAlivePeriod > 0 && (millis() - _lastMessageTime) >= _keepAlivePeriod && (_controlQueue.empty() && _messageQueue.empty())) {
 #ifdef ESP32
@@ -371,16 +374,13 @@ bool AsyncWebSocketClient::queueIsFull() const {
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_lock);
 #endif
-  size_t size = _messageQueue.size();
-  ;
-  return (size >= WS_MAX_QUEUED_MESSAGES) || (_status != WS_CONNECTED);
+  return (_messageQueue.size() >= WS_MAX_QUEUED_MESSAGES) || (_status != WS_CONNECTED);
 }
 
 size_t AsyncWebSocketClient::queueLen() const {
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_lock);
 #endif
-
   return _messageQueue.size();
 }
 
@@ -395,12 +395,11 @@ void AsyncWebSocketClient::_queueControl(uint8_t opcode, const uint8_t* data, si
   if (!_client)
     return;
 
-  {
 #ifdef ESP32
-    std::lock_guard<std::mutex> lock(_lock);
+  std::lock_guard<std::mutex> lock(_lock);
 #endif
-    _controlQueue.emplace_back(opcode, data, len, mask);
-  }
+
+  _controlQueue.emplace_back(opcode, data, len, mask);
 
   if (_client && _client->canSend())
     _runQueue();
@@ -413,16 +412,20 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketSharedBuffer buffer, uint
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_lock);
 #endif
+
   if (_messageQueue.size() >= WS_MAX_QUEUED_MESSAGES) {
     if (closeWhenFull) {
+      _status = WS_DISCONNECTED;
+
+      if (_client)
+        _client->close(true);
+
 #ifdef ESP8266
       ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: closing connection\n");
 #elif defined(ESP32)
       log_e("Too many messages queued: closing connection");
 #endif
-      _status = WS_DISCONNECTED;
-      if (_client)
-        _client->close(true);
+
     } else {
 #ifdef ESP8266
       ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: discarding new message\n");
@@ -430,7 +433,9 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketSharedBuffer buffer, uint
       log_e("Too many messages queued: discarding new message");
 #endif
     }
+
     return;
+
   } else {
     _messageQueue.emplace_back(buffer, opcode, mask);
   }
@@ -476,6 +481,8 @@ void AsyncWebSocketClient::_onError(int8_t) {
 }
 
 void AsyncWebSocketClient::_onTimeout(uint32_t time) {
+  if (!_client)
+    return;
   // Serial.println("onTime");
   (void)time;
   _client->close(true);
@@ -483,7 +490,7 @@ void AsyncWebSocketClient::_onTimeout(uint32_t time) {
 
 void AsyncWebSocketClient::_onDisconnect() {
   // Serial.println("onDis");
-  _client = NULL;
+  _client = nullptr;
 }
 
 void AsyncWebSocketClient::_onData(void* pbuf, size_t plen) {
@@ -550,10 +557,12 @@ void AsyncWebSocketClient::_onData(void* pbuf, size_t plen) {
         }
         if (_status == WS_DISCONNECTING) {
           _status = WS_DISCONNECTED;
-          _client->close(true);
+          if (_client)
+            _client->close(true);
         } else {
           _status = WS_DISCONNECTING;
-          _client->ackLater();
+          if (_client)
+            _client->ackLater();
           _queueControl(WS_DISCONNECT, data, datalen);
         }
       } else if (_pinfo.opcode == WS_PING) {
