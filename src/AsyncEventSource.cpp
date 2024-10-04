@@ -370,7 +370,7 @@ AsyncEventSource::SendStatus AsyncEventSource::send(
     else
       ++miss;
   }
-  return hits == 0 ? NOT_SENT : (miss == 0 ? FULLY_SENT : PARTIALLY_SEND);
+  return hits == 0 ? DISCARDED : (miss == 0 ? ENQUEUED : PARTIALLY_ENQUEUED);
 }
 
 size_t AsyncEventSource::count() const {

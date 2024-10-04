@@ -119,9 +119,9 @@ class AsyncEventSource : public AsyncWebHandler {
 
   public:
     typedef enum {
-      NOT_SENT = 0,       // sent to no client
-      FULLY_SENT = 1,     // sent to all clients
-      PARTIALLY_SEND = 2, // sent to some clients
+      DISCARDED = 0,       // sent to no client
+      ENQUEUED = 1,     // sent to all clients
+      PARTIALLY_ENQUEUED = 2, // sent to some clients
     } SendStatus;
 
     AsyncEventSource(const String& url) : _url(url) {};
