@@ -371,16 +371,13 @@ bool AsyncWebSocketClient::queueIsFull() const {
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_lock);
 #endif
-  size_t size = _messageQueue.size();
-  ;
-  return (size >= WS_MAX_QUEUED_MESSAGES) || (_status != WS_CONNECTED);
+  return (_messageQueue.size() >= WS_MAX_QUEUED_MESSAGES) || (_status != WS_CONNECTED);
 }
 
 size_t AsyncWebSocketClient::queueLen() const {
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_lock);
 #endif
-
   return _messageQueue.size();
 }
 
@@ -395,12 +392,11 @@ void AsyncWebSocketClient::_queueControl(uint8_t opcode, const uint8_t* data, si
   if (!_client)
     return;
 
-  {
 #ifdef ESP32
-    std::lock_guard<std::mutex> lock(_lock);
+  std::lock_guard<std::mutex> lock(_lock);
 #endif
-    _controlQueue.emplace_back(opcode, data, len, mask);
-  }
+
+  _controlQueue.emplace_back(opcode, data, len, mask);
 
   if (_client && _client->canSend())
     _runQueue();
@@ -413,16 +409,20 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketSharedBuffer buffer, uint
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_lock);
 #endif
+
   if (_messageQueue.size() >= WS_MAX_QUEUED_MESSAGES) {
     if (closeWhenFull) {
+      _status = WS_DISCONNECTED;
+
+      if (_client)
+        _client->close(true);
+
 #ifdef ESP8266
       ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: closing connection\n");
 #elif defined(ESP32)
       log_e("Too many messages queued: closing connection");
 #endif
-      _status = WS_DISCONNECTED;
-      if (_client)
-        _client->close(true);
+
     } else {
 #ifdef ESP8266
       ets_printf("AsyncWebSocketClient::_queueMessage: Too many messages queued: discarding new message\n");
@@ -430,7 +430,9 @@ void AsyncWebSocketClient::_queueMessage(AsyncWebSocketSharedBuffer buffer, uint
       log_e("Too many messages queued: discarding new message");
 #endif
     }
+
     return;
+
   } else {
     _messageQueue.emplace_back(buffer, opcode, mask);
   }
