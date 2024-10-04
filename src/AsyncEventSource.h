@@ -130,6 +130,7 @@ class AsyncEventSource : public AsyncWebHandler {
     const char* url() const { return _url.c_str(); }
     void close();
     void onConnect(ArEventHandlerFunction cb) { _connectcb = cb; }
+    // The client pointer sent to the callback is only for reference purposes. DO NOT CALL ANY METHOD ON IT !
     void onDisconnect(ArEventHandlerFunction cb) { _disconnectcb = cb; }
     void authorizeConnect(ArAuthorizeConnectHandler cb);
     SendStatus send(const String& message, const String& event, uint32_t id = 0, uint32_t reconnect = 0) { return send(message.c_str(), event.c_str(), id, reconnect); }
