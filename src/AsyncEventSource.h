@@ -119,9 +119,9 @@ class AsyncEventSource : public AsyncWebHandler {
 
   public:
     typedef enum {
-      NOT_SENT = 0,       // sent to no client
-      FULLY_SENT = 1,     // sent to all clients
-      PARTIALLY_SEND = 2, // sent to some clients
+      DISCARDED = 0,       // sent to no client
+      ENQUEUED = 1,     // sent to all clients
+      PARTIALLY_ENQUEUED = 2, // sent to some clients
     } SendStatus;
 
     AsyncEventSource(const String& url) : _url(url) {};
@@ -130,6 +130,7 @@ class AsyncEventSource : public AsyncWebHandler {
     const char* url() const { return _url.c_str(); }
     void close();
     void onConnect(ArEventHandlerFunction cb) { _connectcb = cb; }
+    // The client pointer sent to the callback is only for reference purposes. DO NOT CALL ANY METHOD ON IT !
     void onDisconnect(ArEventHandlerFunction cb) { _disconnectcb = cb; }
     void authorizeConnect(ArAuthorizeConnectHandler cb);
     SendStatus send(const String& message, const String& event, uint32_t id = 0, uint32_t reconnect = 0) { return send(message.c_str(), event.c_str(), id, reconnect); }
