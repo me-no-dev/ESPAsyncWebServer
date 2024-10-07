@@ -28,7 +28,7 @@
     {
       "owner": "mathieucarbou",
       "name": "AsyncTCP",
-      "version": "^3.2.7",
+      "version": "^3.2.8",
       "platforms": "espressif32"
     },
     {
