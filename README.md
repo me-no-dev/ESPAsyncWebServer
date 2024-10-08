@@ -76,7 +76,7 @@ Here are some recommendations to avoid them.
 1. Set the running core to be on the same core of your application (usually core 1) `-D CONFIG_ASYNC_TCP_RUNNING_CORE=1`
 2. Set the stack size appropriately with `-D CONFIG_ASYNC_TCP_STACK_SIZE=16384`.
    The default value of `16384` might be too much for your project.
-   You can look at the [MycilaTaskMonitor](https://oss.carbou.me/MycilaTaskMonitor) project to monitor the stack usage.
+   You can look at the [MycilaTaskMonitor](https://mathieu.carbou.me/MycilaTaskMonitor) project to monitor the stack usage.
 3. You can change **if you know what you are doing** the task priority with `-D CONFIG_ASYNC_TCP_PRIORITY=10`.
    Default is `10`.
 4. You can increase the queue size with `-D CONFIG_ASYNC_TCP_QUEUE_SIZE=128`.
