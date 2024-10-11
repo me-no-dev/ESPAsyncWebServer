@@ -278,9 +278,9 @@ class AsyncWebSocket : public AsyncWebHandler {
 
   public:
     typedef enum {
-      DISCARDED = 0,       // sent to no client
-      ENQUEUED = 1,     // sent to all clients
-      PARTIALLY_ENQUEUED = 2, // sent to some clients
+      DISCARDED = 0,
+      ENQUEUED = 1,
+      PARTIALLY_ENQUEUED = 2,
     } SendStatus;
 
     explicit AsyncWebSocket(const char* url) : _url(url), _cNextId(1), _enabled(true) {}
