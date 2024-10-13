@@ -95,16 +95,18 @@ lib_ignore =
 
 ## Performance
 
+Performance of `mathieucarbou/ESPAsyncWebServer @ 3.3.14`:
+
 ```bash
 > brew install autocannon
 > autocannon -c 10 -w 10 -d 20 http://192.168.4.1
 ```
 
-Here is a capture of the `perf-test-AsyncTCP` PIO environment running with `mathieucarbou/AsyncTCP @ 3.2.10` and `mathieucarbou/ESPAsyncWebServer @ 3.3.14`:
+With `mathieucarbou/AsyncTCP @ 3.2.10`
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
 
-Here is a capture of the `perf-test-AsyncTCPSock` PIO environment running with `mathieucarbou/AsyncTCPSock @ v1.0.3-dev` and `mathieucarbou/ESPAsyncWebServer @ 3.3.14`:
+With `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`:
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)
 
