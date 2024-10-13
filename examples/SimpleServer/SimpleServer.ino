@@ -27,6 +27,66 @@
 
 #include <LittleFS.h>
 
+const char* htmlContent = R"(
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sample HTML</title>
+</head>
+<body>
+    <h1>Hello, World!</h1>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin euismod, purus a euismod
+    rhoncus, urna ipsum cursus massa, eu dictum tellus justo ac justo. Quisque ullamcorper
+    arcu nec tortor ullamcorper, vel fermentum justo fermentum. Vivamus sed velit ut elit
+    accumsan congue ut ut enim. Ut eu justo eu lacus varius gravida ut a tellus. Nulla facilisi.
+    Integer auctor consectetur ultricies. Fusce feugiat, mi sit amet bibendum viverra, orci leo
+    dapibus elit, id varius sem dui id lacus.</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin euismod, purus a euismod
+    rhoncus, urna ipsum cursus massa, eu dictum tellus justo ac justo. Quisque ullamcorper
+    arcu nec tortor ullamcorper, vel fermentum justo fermentum. Vivamus sed velit ut elit
+    accumsan congue ut ut enim. Ut eu justo eu lacus varius gravida ut a tellus. Nulla facilisi.
+    Integer auctor consectetur ultricies. Fusce feugiat, mi sit amet bibendum viverra, orci leo
+    dapibus elit, id varius sem dui id lacus.</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin euismod, purus a euismod
+    rhoncus, urna ipsum cursus massa, eu dictum tellus justo ac justo. Quisque ullamcorper
+    arcu nec tortor ullamcorper, vel fermentum justo fermentum. Vivamus sed velit ut elit
+    accumsan congue ut ut enim. Ut eu justo eu lacus varius gravida ut a tellus. Nulla facilisi.
+    Integer auctor consectetur ultricies. Fusce feugiat, mi sit amet bibendum viverra, orci leo
+    dapibus elit, id varius sem dui id lacus.</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin euismod, purus a euismod
+    rhoncus, urna ipsum cursus massa, eu dictum tellus justo ac justo. Quisque ullamcorper
+    arcu nec tortor ullamcorper, vel fermentum justo fermentum. Vivamus sed velit ut elit
+    accumsan congue ut ut enim. Ut eu justo eu lacus varius gravida ut a tellus. Nulla facilisi.
+    Integer auctor consectetur ultricies. Fusce feugiat, mi sit amet bibendum viverra, orci leo
+    dapibus elit, id varius sem dui id lacus.</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin euismod, purus a euismod
+    rhoncus, urna ipsum cursus massa, eu dictum tellus justo ac justo. Quisque ullamcorper
+    arcu nec tortor ullamcorper, vel fermentum justo fermentum. Vivamus sed velit ut elit
+    accumsan congue ut ut enim. Ut eu justo eu lacus varius gravida ut a tellus. Nulla facilisi.
+    Integer auctor consectetur ultricies. Fusce feugiat, mi sit amet bibendum viverra, orci leo
+    dapibus elit, id varius sem dui id lacus.</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin euismod, purus a euismod
+    rhoncus, urna ipsum cursus massa, eu dictum tellus justo ac justo. Quisque ullamcorper
+    arcu nec tortor ullamcorper, vel fermentum justo fermentum. Vivamus sed velit ut elit
+    accumsan congue ut ut enim. Ut eu justo eu lacus varius gravida ut a tellus. Nulla facilisi.
+    Integer auctor consectetur ultricies. Fusce feugiat, mi sit amet bibendum viverra, orci leo
+    dapibus elit, id varius sem dui id lacus.</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin euismod, purus a euismod
+    rhoncus, urna ipsum cursus massa, eu dictum tellus justo ac justo. Quisque ullamcorper
+    arcu nec tortor ullamcorper, vel fermentum justo fermentum. Vivamus sed velit ut elit
+    accumsan congue ut ut enim. Ut eu justo eu lacus varius gravida ut a tellus. Nulla facilisi.
+    Integer auctor consectetur ultricies. Fusce feugiat, mi sit amet bibendum viverra, orci leo
+    dapibus elit, id varius sem dui id lacus.</p>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin euismod, purus a euismod
+    rhoncus, urna ipsum cursus massa, eu dictum tellus justo ac justo. Quisque ullamcorper
+    arcu nec tortor ullamcorper, vel fermentum justo fermentum. Vivamus sed velit ut elit
+    accumsan congue ut ut enim. Ut eu justo eu lacus varius gravida ut a tellus. Nulla facilisi.
+    Integer auctor consectetur ultricies. Fusce feugiat, mi sit amet bibendum viverra, orci leo
+    dapibus elit, id varius sem dui id lacus.</p>
+</body>
+</html>
+)";
+
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
 AsyncWebSocket ws("/ws");
@@ -236,15 +296,17 @@ void setup() {
   headerFree.keep("X-Keep-Me");
   headerFree.keep("host");
 
-  // global middleware
-  server.addMiddleware(&requestLogger);
-  // server.addMiddlewares({&rateLimit, &cors, &headerFilter});
-
   cors.setOrigin("http://192.168.4.1");
   cors.setMethods("POST, GET, OPTIONS, DELETE");
   cors.setHeaders("X-Custom-Header");
   cors.setAllowCredentials(false);
   cors.setMaxAge(600);
+
+#ifndef PERF_TEST
+  // global middleware
+  server.addMiddleware(&requestLogger);
+  server.addMiddlewares({&rateLimit, &cors, &headerFilter});
+#endif
 
   // Test CORS preflight request
   // curl -v -X OPTIONS -H "origin: http://192.168.4.1" http://192.168.4.1/middleware/cors
@@ -320,8 +382,11 @@ void setup() {
     request->redirect("/");
   });
 
+  // PERF TEST:
+  // > brew install autocannon
+  // > autocannon -c 10 -w 10 -d 20 http://192.168.4.1
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send(200, "text/plain", "Hello, world");
+    request->send(200, "text/html", htmlContent);
   });
 
   server.on("/file", HTTP_GET, [](AsyncWebServerRequest* request) {

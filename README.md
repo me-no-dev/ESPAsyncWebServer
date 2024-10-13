@@ -23,6 +23,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [How to use Middleware](#how-to-use-middleware)
 - [How to use authentication with AuthenticationMiddleware](#how-to-use-authentication-with-authenticationmiddleware)
 - [Migration to Middleware to improve performance and memory usage](#migration-to-middleware-to-improve-performance-and-memory-usage)
+- [Performance](#performance)
 - [Original Documentation](#original-documentation)
 
 ## Coordinate and dependencies
@@ -220,6 +221,17 @@ myHandler.addMiddleware(&authMiddleware); // add authentication to a specific ha
 - `ArUploadHandlerFunction` and `ArBodyHandlerFunction` => these callbacks receiving body data and upload and not calling anymore the authentication code for performance reasons.
   These callbacks can be called multiple times during request parsing, so this is up to the user to now call the `AuthenticationMiddleware.allowed(request)` if needed and ideally when the method is called for the first time.
   These callbacks are also not triggering the whole middleware chain since they are not part of the request processing workflow (they are not the final handler).
+
+## Performance
+
+With the `perf-test` PIO environment:
+
+```bash
+> brew install autocannon
+> autocannon -c 10 -w 10 -d 20 http://192.168.4.1
+```
+
+[![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
 
 ## Original Documentation
 
