@@ -66,10 +66,16 @@ lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.14
 
 **Dependencies:**
 
-- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.10` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.10](https://github.com/mathieucarbou/AsyncTCP/releases))
-- **ESP32 with AsyncTCPSock**: `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.2-dev.zip`
-- **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0` (Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0))
-- **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0` (Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0))
+- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.10`
+  Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.10](https://github.com/mathieucarbou/AsyncTCP/releases)
+
+- **ESP32 with AsyncTCPSock**: `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`
+
+- **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0`
+  Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0)
+
+- **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0`
+  Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0)
 
 **AsyncTCPSock**
 
@@ -80,7 +86,7 @@ lib_compat_mode = strict
 lib_ldf_mode = chain
 lib_deps =
   ; mathieucarbou/AsyncTCP @ 3.2.10
-  https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.2-dev.zip
+  https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip
   mathieucarbou/ESPAsyncWebServer @ 3.3.14
 lib_ignore =
   AsyncTCP
@@ -98,7 +104,7 @@ Here is a capture of the `perf-test-AsyncTCP` PIO environment running with `math
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
 
-Here is a capture of the `perf-test-AsyncTCPSock` PIO environment running with `mathieucarbou/AsyncTCPSock @ v1.0.2-dev` and `mathieucarbou/ESPAsyncWebServer @ 3.3.14`:
+Here is a capture of the `perf-test-AsyncTCPSock` PIO environment running with `mathieucarbou/AsyncTCPSock @ v1.0.3-dev` and `mathieucarbou/ESPAsyncWebServer @ 3.3.14`:
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)
 
