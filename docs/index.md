@@ -17,18 +17,18 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 
 - [Coordinate and dependencies](#coordinate-and-dependencies)
 - [Changes in this fork](#changes-in-this-fork)
+- [Performance](#performance)
 - [Important recommendations](#important-recommendations)
 - [`AsyncWebSocketMessageBuffer` and `makeBuffer()`](#asyncwebsocketmessagebuffer-and-makebuffer)
 - [How to replace a response](#how-to-replace-a-response)
 - [How to use Middleware](#how-to-use-middleware)
 - [How to use authentication with AuthenticationMiddleware](#how-to-use-authentication-with-authenticationmiddleware)
 - [Migration to Middleware to improve performance and memory usage](#migration-to-middleware-to-improve-performance-and-memory-usage)
-- [Performance](#performance)
 - [Original Documentation](#original-documentation)
 
 ## Coordinate and dependencies
 
-**WARNING** The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations.
+**WARNING** The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations, but its name had to stay `ESP Async WebServer` in Arduino Registry.
 
 **PlatformIO / pioarduino:**
 
@@ -40,7 +40,7 @@ lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.14
 
 **Dependencies:**
 
-- **ESP32**: `mathieucarbou/AsyncTCP @ 3.2.10` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.10](https://github.com/mathieucarbou/AsyncTCP/releases))
+- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.10` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.10](https://github.com/mathieucarbou/AsyncTCP/releases))
 - **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0` (Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0))
 - **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0` (Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0))
 
@@ -68,6 +68,21 @@ lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.14
 - (perf) Code size improvements
 - (perf) Lot of code cleanup and optimizations
 - (perf) Performance improvements in terms of memory, speed and size
+
+## Performance
+
+```bash
+> brew install autocannon
+> autocannon -c 10 -w 10 -d 20 http://192.168.4.1
+```
+
+Here is a capture of the `perf-test-AsyncTCP` PIO environment running with `mathieucarbou/AsyncTCP @ 3.2.10` and `mathieucarbou/ESPAsyncWebServer @ 3.3.14`:
+
+[![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
+
+Here is a capture of the `perf-test-AsyncTCPSock` PIO environment running with `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.1-dev.zip` and `mathieucarbou/ESPAsyncWebServer @ 3.3.14`:
+
+[![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)
 
 ## Important recommendations
 
@@ -221,17 +236,6 @@ myHandler.addMiddleware(&authMiddleware); // add authentication to a specific ha
 - `ArUploadHandlerFunction` and `ArBodyHandlerFunction` => these callbacks receiving body data and upload and not calling anymore the authentication code for performance reasons.
   These callbacks can be called multiple times during request parsing, so this is up to the user to now call the `AuthenticationMiddleware.allowed(request)` if needed and ideally when the method is called for the first time.
   These callbacks are also not triggering the whole middleware chain since they are not part of the request processing workflow (they are not the final handler).
-
-## Performance
-
-With the `perf-test` PIO environment:
-
-```bash
-> brew install autocannon
-> autocannon -c 10 -w 10 -d 20 http://192.168.4.1
-```
-
-[![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
 
 ## Original Documentation
 
