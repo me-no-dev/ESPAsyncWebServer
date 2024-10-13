@@ -15,8 +15,8 @@ Supports: WebSocket, SSE, Authentication, Arduino Json 7, File Upload, Static Fi
 
 This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubox-node-org/ESPAsyncWebServer) and includes all the concurrency fixes.
 
-- [Coordinate and dependencies](#coordinate-and-dependencies)
 - [Changes in this fork](#changes-in-this-fork)
+- [Dependencies](#dependencies)
 - [Performance](#performance)
 - [Important recommendations](#important-recommendations)
 - [`AsyncWebSocketMessageBuffer` and `makeBuffer()`](#asyncwebsocketmessagebuffer-and-makebuffer)
@@ -25,24 +25,6 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [How to use authentication with AuthenticationMiddleware](#how-to-use-authentication-with-authenticationmiddleware)
 - [Migration to Middleware to improve performance and memory usage](#migration-to-middleware-to-improve-performance-and-memory-usage)
 - [Original Documentation](#original-documentation)
-
-## Coordinate and dependencies
-
-**WARNING** The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations, but its name had to stay `ESP Async WebServer` in Arduino Registry.
-
-**PlatformIO / pioarduino:**
-
-```ini
-lib_compat_mode = strict
-lib_ldf_mode = chain
-lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.14
-```
-
-**Dependencies:**
-
-- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.10` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.10](https://github.com/mathieucarbou/AsyncTCP/releases))
-- **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0` (Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0))
-- **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0` (Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0))
 
 ## Changes in this fork
 
@@ -60,6 +42,7 @@ lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.14
 - (feat) **Resumable download** support using HEAD and bytes range
 - (feat) `StreamConcat` example to show how to stream multiple files in one response
 - (feat) Removed ESPIDF Editor (this is not the role of a web server library to do that - get the source files from the original repos if required)
+- (perf) [AsyncTCPSock](https://github.com/mathieucarbou/AsyncTCPSock) support: AsyncTCP can be ignored and AsyncTCPSock used instead
 - (perf) `char*` overloads to avoid using `String`
 - (perf) `DEFAULT_MAX_WS_CLIENTS` to change the number of allows WebSocket clients and use `cleanupClients()` to help cleanup resources about dead clients
 - (perf) `setCloseClientOnQueueFull(bool)` which can be set on a client to either close the connection or discard messages but not close the connection when the queue is full
@@ -68,6 +51,41 @@ lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.14
 - (perf) Code size improvements
 - (perf) Lot of code cleanup and optimizations
 - (perf) Performance improvements in terms of memory, speed and size
+
+## Dependencies
+
+**WARNING** The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations, but its name had to stay `ESP Async WebServer` in Arduino Registry.
+
+**PlatformIO / pioarduino:**
+
+```ini
+lib_compat_mode = strict
+lib_ldf_mode = chain
+lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.14
+```
+
+**Dependencies:**
+
+- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.10` (Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.10](https://github.com/mathieucarbou/AsyncTCP/releases))
+- **ESP32 with AsyncTCPSock**: `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.2-dev.zip`
+- **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0` (Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0))
+- **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0` (Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0))
+
+**AsyncTCPSock**
+
+AsyncTCPSock can be used instead of AsyncTCP by excluding AsyncTCP from the library dependencies and adding AsyncTCPSock instead:
+
+```ini
+lib_compat_mode = strict
+lib_ldf_mode = chain
+lib_deps =
+  ; mathieucarbou/AsyncTCP @ 3.2.10
+  https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.2-dev.zip
+  mathieucarbou/ESPAsyncWebServer @ 3.3.14
+lib_ignore =
+  AsyncTCP
+  mathieucarbou/AsyncTCP
+```
 
 ## Performance
 
@@ -80,7 +98,7 @@ Here is a capture of the `perf-test-AsyncTCP` PIO environment running with `math
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
 
-Here is a capture of the `perf-test-AsyncTCPSock` PIO environment running with `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.1-dev.zip` and `mathieucarbou/ESPAsyncWebServer @ 3.3.14`:
+Here is a capture of the `perf-test-AsyncTCPSock` PIO environment running with `mathieucarbou/AsyncTCPSock @ v1.0.2-dev` and `mathieucarbou/ESPAsyncWebServer @ 3.3.14`:
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)
 
