@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Arduino Lint
-        uses: arduino/arduino-lint-action@v1
+        uses: arduino/arduino-lint-action@v2
         with:
           library-manager: update
 
