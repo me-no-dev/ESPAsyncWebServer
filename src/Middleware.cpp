@@ -195,16 +195,16 @@ void LoggingMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext nex
 }
 
 void CorsMiddleware::addCORSHeaders(AsyncWebServerResponse* response) {
-  response->addHeader(F("Access-Control-Allow-Origin"), _origin.c_str());
-  response->addHeader(F("Access-Control-Allow-Methods"), _methods.c_str());
-  response->addHeader(F("Access-Control-Allow-Headers"), _headers.c_str());
-  response->addHeader(F("Access-Control-Allow-Credentials"), _credentials ? F("true") : F("false"));
-  response->addHeader(F("Access-Control-Max-Age"), String(_maxAge).c_str());
+  response->addHeader(asyncsrv::T_CORS_ACAO, _origin.c_str());
+  response->addHeader(asyncsrv::T_CORS_ACAM, _methods.c_str());
+  response->addHeader(asyncsrv::T_CORS_ACAH, _headers.c_str());
+  response->addHeader(asyncsrv::T_CORS_ACAC, _credentials ? asyncsrv::T_TRUE : asyncsrv::T_FALSE);
+  response->addHeader(asyncsrv::T_CORS_ACMA, String(_maxAge).c_str());
 }
 
 void CorsMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext next) {
   // Origin header ? => CORS handling
-  if (request->hasHeader(F("Origin"))) {
+  if (request->hasHeader(asyncsrv::T_CORS_O)) {
     // check if this is a preflight request => handle it and return
     if (request->method() == HTTP_OPTIONS) {
       AsyncWebServerResponse* response = request->beginResponse(200);
@@ -250,7 +250,7 @@ void RateLimitMiddleware::run(AsyncWebServerRequest* request, ArMiddlewareNext n
     next();
   } else {
     AsyncWebServerResponse* response = request->beginResponse(429);
-    response->addHeader(F("Retry-After"), retryAfterSeconds);
+    response->addHeader(asyncsrv::T_retry_after, retryAfterSeconds);
     request->send(response);
   }
 }
