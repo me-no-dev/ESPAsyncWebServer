@@ -280,38 +280,40 @@ bool AsyncWebServerRequest::_parseReqHeader() {
       }
     } else if (name.equalsIgnoreCase(T_Content_Length)) {
       _contentLength = atoi(value.c_str());
-    } else if (name.equalsIgnoreCase(T_EXPECT) && value == T_100_CONTINUE) {
+    } else if (name.equalsIgnoreCase(T_EXPECT) && value.equalsIgnoreCase(T_100_CONTINUE)) {
       _expectingContinue = true;
     } else if (name.equalsIgnoreCase(T_AUTH)) {
-      if (value.length() > 5 && value.substring(0, 5).equalsIgnoreCase(T_BASIC)) {
-        _authorization = value.substring(6);
-        _authMethod = AsyncAuthType::AUTH_BASIC;
-      } else if (value.length() > 6 && value.substring(0, 6).equalsIgnoreCase(T_DIGEST)) {
-        _authMethod = AsyncAuthType::AUTH_DIGEST;
-        _authorization = value.substring(7);
-      } else if (value.length() > 6 && value.substring(0, 6).equalsIgnoreCase(T_BEARER)) {
-        _authMethod = AsyncAuthType::AUTH_BEARER;
-        _authorization = value.substring(7);
-      } else {
+      int space = value.indexOf(' ');
+      if (space == -1) {
         _authorization = value;
         _authMethod = AsyncAuthType::AUTH_OTHER;
-      }
-    } else {
-      if (name.equalsIgnoreCase(T_UPGRADE) && value.equalsIgnoreCase(T_WS)) {
-        // WebSocket request can be uniquely identified by header: [Upgrade: websocket]
-        _reqconntype = RCT_WS;
-      } else if (name.equalsIgnoreCase(T_ACCEPT)) {
-        String lowcase(value);
-        lowcase.toLowerCase();
-#ifndef ESP8266
-        const char* substr = std::strstr(lowcase.c_str(), T_text_event_stream);
-#else
-        const char* substr = std::strstr(lowcase.c_str(), String(T_text_event_stream).c_str());
-#endif
-        if (substr != NULL) {
-          // WebEvent request can be uniquely identified by header:  [Accept: text/event-stream]
-          _reqconntype = RCT_EVENT;
+      } else {
+        String method = value.substring(0, space);
+        if (method.equalsIgnoreCase(T_BASIC)) {
+          _authMethod = AsyncAuthType::AUTH_BASIC;
+        } else if (method.equalsIgnoreCase(T_DIGEST)) {
+          _authMethod = AsyncAuthType::AUTH_DIGEST;
+        } else if (method.equalsIgnoreCase(T_BEARER)) {
+          _authMethod = AsyncAuthType::AUTH_BEARER;
+        } else {
+          _authMethod = AsyncAuthType::AUTH_OTHER;
         }
+        _authorization = value.substring(space + 1);
+      }
+    } else if (name.equalsIgnoreCase(T_UPGRADE) && value.equalsIgnoreCase(T_WS)) {
+      // WebSocket request can be uniquely identified by header: [Upgrade: websocket]
+      _reqconntype = RCT_WS;
+    } else if (name.equalsIgnoreCase(T_ACCEPT)) {
+      String lowcase(value);
+      lowcase.toLowerCase();
+#ifndef ESP8266
+      const char* substr = std::strstr(lowcase.c_str(), T_text_event_stream);
+#else
+      const char* substr = std::strstr(lowcase.c_str(), String(T_text_event_stream).c_str());
+#endif
+      if (substr != NULL) {
+        // WebEvent request can be uniquely identified by header:  [Accept: text/event-stream]
+        _reqconntype = RCT_EVENT;
       }
     }
     _headers.emplace_back(name, value);
@@ -831,7 +833,7 @@ void AsyncWebServerRequest::requestAuthentication(AsyncAuthType method, const ch
       break;
     }
     case AsyncAuthType::AUTH_DIGEST: {
-      constexpr size_t len = strlen(T_DIGEST_) + strlen(T_realm__) + strlen(T_auth_nonce) + 32 + strlen(T__opaque) + 32 + 1;
+      size_t len = strlen(T_DIGEST_) + strlen(T_realm__) + strlen(T_auth_nonce) + 32 + strlen(T__opaque) + 32 + 1;
       String header;
       header.reserve(len + strlen(realm));
       header.concat(T_DIGEST_);

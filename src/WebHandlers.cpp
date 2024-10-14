@@ -146,7 +146,7 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest* request, const St
   bool fileFound = false;
   bool gzipFound = false;
 
-  String gzip = path + F(".gz");
+  String gzip = path + T__gz;
 
   if (_gzipFirst) {
     if (_fs.exists(gzip)) {
