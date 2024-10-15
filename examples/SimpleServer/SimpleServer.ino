@@ -27,7 +27,7 @@
 
 #include <LittleFS.h>
 
-const char* htmlContent = R"(
+const char* htmlContent PROGMEM = R"(
 <!DOCTYPE html>
 <html>
 <head>
@@ -86,6 +86,8 @@ const char* htmlContent = R"(
 </body>
 </html>
 )";
+
+const size_t htmlContentLen = strlen_P(htmlContent);
 
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
@@ -386,7 +388,7 @@ void setup() {
   // > brew install autocannon
   // > autocannon -c 10 -w 10 -d 20 http://192.168.4.1
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send(200, "text/html", htmlContent);
+    request->send(200, "text/html", (uint8_t*)htmlContent, htmlContentLen);
   });
 
   server.on("/file", HTTP_GET, [](AsyncWebServerRequest* request) {
