@@ -87,8 +87,6 @@ const char* htmlContent PROGMEM = R"(
 </html>
 )";
 
-const size_t htmlContentLen = strlen_P(htmlContent);
-
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
 AsyncWebSocket ws("/ws");
@@ -388,7 +386,7 @@ void setup() {
   // > brew install autocannon
   // > autocannon -c 10 -w 10 -d 20 http://192.168.4.1
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send(200, "text/html", (uint8_t*)htmlContent, htmlContentLen);
+    request->send(200, "text/html", htmlContent);
   });
 
   server.on("/file", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -579,7 +577,6 @@ void loop() {
   }
   if (now - lastWS >= deltaWS) {
     ws.printfAll("kp%.4f", (10.0 / 3.0));
-    // ws.getClients
     for (auto& client : ws.getClients()) {
       client.printf("kp%.4f", (10.0 / 3.0));
     }
