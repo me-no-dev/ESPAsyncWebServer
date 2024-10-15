@@ -4,7 +4,7 @@ namespace asyncsrv {
 
 static constexpr const char* empty = "";
 
-#ifndef ESP8266
+#ifndef ESP8622
 static constexpr const char* T__opaque          = "\", opaque=\"";
 static constexpr const char* T_100_CONTINUE     = "100-continue";
 static constexpr const char* T_13               = "13";
@@ -180,7 +180,7 @@ static constexpr const char* T_HTTP_CODE_504 = "Gateway Time-out";
 static constexpr const char* T_HTTP_CODE_505 = "HTTP Version not supported";
 static constexpr const char* T_HTTP_CODE_ANY = "Unknown code";
 
-#else   // ESP8266
+#else   // ESP8622
 
 static const char T__opaque[] PROGMEM = "\", opaque=\"";
 static const char T_100_CONTINUE[] PROGMEM = "100-continue";
@@ -356,6 +356,6 @@ static const char T_HTTP_CODE_504[] PROGMEM = "Gateway Time-out";
 static const char T_HTTP_CODE_505[] PROGMEM = "HTTP Version not supported";
 static const char T_HTTP_CODE_ANY[] PROGMEM = "Unknown code";
 
-#endif  // ESP8266
+#endif  // ESP8622
 
 }   // namespace asyncsrv {}
