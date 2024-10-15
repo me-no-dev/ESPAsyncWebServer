@@ -61,7 +61,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 ```ini
 lib_compat_mode = strict
 lib_ldf_mode = chain
-lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.15
+lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.16
 ```
 
 **Dependencies:**
@@ -87,7 +87,7 @@ lib_ldf_mode = chain
 lib_deps =
   ; mathieucarbou/AsyncTCP @ 3.2.10
   https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip
-  mathieucarbou/ESPAsyncWebServer @ 3.3.15
+  mathieucarbou/ESPAsyncWebServer @ 3.3.16
 lib_ignore =
   AsyncTCP
   mathieucarbou/AsyncTCP
@@ -95,7 +95,7 @@ lib_ignore =
 
 ## Performance
 
-Performance of `mathieucarbou/ESPAsyncWebServer @ 3.3.15`:
+Performance of `mathieucarbou/ESPAsyncWebServer @ 3.3.16`:
 
 ```bash
 > brew install autocannon
