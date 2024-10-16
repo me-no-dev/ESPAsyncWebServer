@@ -1,3 +1,10 @@
+/**
+ *
+ * Connect to AP and run in bash:
+ *
+ * > while true; do echo "PING"; sleep 0.1; done | websocat ws://192.168.4.1/ws
+ *
+ */
 #include <Arduino.h>
 #ifdef ESP8266
   #include <ESP8266WiFi.h>
@@ -6,6 +13,12 @@
   #include <WiFi.h>
 #endif
 #include <ESPAsyncWebServer.h>
+
+#include <list>
+
+size_t msgCount = 0;
+size_t window = 100;
+std::list<uint32_t> times;
 
 void connect_wifi() {
   WiFi.mode(WIFI_AP);
@@ -48,9 +61,18 @@ void printStackSize() {
 }
 
 void onWsEventEmpty(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
+  msgCount++;
+  Serial.printf("count: %d\n", msgCount);
+
+  times.push_back(millis());
+  while (times.size() > window)
+    times.pop_front();
+  if (times.size() == window)
+    Serial.printf("%f req/s\n", 1000.0 * window / (times.back() - times.front()));
+
   printStackSize();
-  // Just answer
-  client->text("PONGTEST");
+
+  client->text("PONG");
 }
 
 void serve_upload(AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
@@ -88,21 +110,18 @@ void setup() {
 String msg = "";
 uint32_t count = 0;
 void loop() {
-
-  ws.cleanupClients();
-
-  count += 1;
-
-  // Concatenate some string, and clear it after some time
-  static unsigned long millis_string = millis();
-  if (millis() - millis_string > 1) {
-    millis_string += 100;
-    if (count % 100 == 0) {
-      // printStackSize();
-      // Serial.print(msg);
-      msg = String();
-    } else {
-      msg += 'T';
-    }
-  }
+  // ws.cleanupClients();
+  // count += 1;
+  // // Concatenate some string, and clear it after some time
+  // static unsigned long millis_string = millis();
+  // if (millis() - millis_string > 1) {
+  //   millis_string += 100;
+  //   if (count % 100 == 0) {
+  //     // printStackSize();
+  //     // Serial.print(msg);
+  //     msg = String();
+  //   } else {
+  //     msg += 'T';
+  //   }
+  // }
 }
