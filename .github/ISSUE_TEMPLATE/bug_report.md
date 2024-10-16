@@ -1,10 +1,12 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Only for bugs founds in the library! Otherwise, please go to the discussions section!
 title: "[BUG]"
 labels: triage
 assignees: ""
 ---
+
+**Only for bugs found in the library! Otherwise, please go to the [discussions section](https://github.com/mathieucarbou/ESPAsyncWebServer/discussions)!**
 
 **Please make sure to go through the recommendations before opening a bug report:**
 
@@ -22,7 +24,7 @@ _A clear and concise description of what the bug is._
 
 **Stack trace**
 
-Please provide the stack trace here taken with `monitor_filters = esp32_exception_decoder`.
+Please provide a **decoded stack trace** taken with `monitor_filters = esp32_exception_decoder`.
 **Any issue opened with a non readable stack trace will be ignored because not helpful at all.**
 
 As an alternative, you can use [https://maximeborges.github.io/esp-stacktrace-decoder/](https://maximeborges.github.io/esp-stacktrace-decoder/).
