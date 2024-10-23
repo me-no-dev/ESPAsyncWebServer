@@ -95,7 +95,7 @@ bool AuthenticationMiddleware::generateHash() {
   }
 }
 
-bool AuthenticationMiddleware::allowed(AsyncWebServerRequest* request) {
+bool AuthenticationMiddleware::allowed(AsyncWebServerRequest* request) const {
   if (_authMethod == AsyncAuthType::AUTH_NONE)
     return true;
 

@@ -119,11 +119,11 @@ class AsyncCallbackJsonWebHandler : public AsyncWebHandler {
     void setMaxContentLength(int maxContentLength) { _maxContentLength = maxContentLength; }
     void onRequest(ArJsonRequestHandlerFunction fn) { _onRequest = fn; }
 
-    virtual bool canHandle(AsyncWebServerRequest* request) override final;
+    virtual bool canHandle(AsyncWebServerRequest* request) const override final;
     virtual void handleRequest(AsyncWebServerRequest* request) override final;
     virtual void handleUpload(__unused AsyncWebServerRequest* request, __unused const String& filename, __unused size_t index, __unused uint8_t* data, __unused size_t len, __unused bool final) override final {}
     virtual void handleBody(AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) override final;
-    virtual bool isRequestHandlerTrivial() override final { return !_onRequest; }
+    virtual bool isRequestHandlerTrivial() const override final { return !_onRequest; }
 };
 
 #endif // ASYNC_JSON_SUPPORT == 1

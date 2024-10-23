@@ -89,7 +89,7 @@ AsyncCallbackJsonWebHandler::AsyncCallbackJsonWebHandler(const String& uri, ArJs
     : _uri(uri), _method(HTTP_GET | HTTP_POST | HTTP_PUT | HTTP_PATCH), _onRequest(onRequest), _maxContentLength(16384) {}
   #endif
 
-bool AsyncCallbackJsonWebHandler::canHandle(AsyncWebServerRequest* request) {
+bool AsyncCallbackJsonWebHandler::canHandle(AsyncWebServerRequest* request) const {
   if (!_onRequest)
     return false;
 

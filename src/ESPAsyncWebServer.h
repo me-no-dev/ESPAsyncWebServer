@@ -274,14 +274,14 @@ class AsyncWebServerRequest {
 #endif
 
     RequestedConnectionType requestedConnType() const { return _reqconntype; }
-    bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED);
+    bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED) const;
     void onDisconnect(ArDisconnectHandler fn);
 
     // hash is the string representation of:
     //  base64(user:pass) for basic or
     //  user:realm:md5(user:realm:pass) for digest
-    bool authenticate(const char* hash);
-    bool authenticate(const char* username, const char* credentials, const char* realm = NULL, bool isHash = false);
+    bool authenticate(const char* hash) const;
+    bool authenticate(const char* username, const char* credentials, const char* realm = NULL, bool isHash = false) const;
     void requestAuthentication(const char* realm = nullptr, bool isDigest = true) { requestAuthentication(isDigest ? AsyncAuthType::AUTH_DIGEST : AsyncAuthType::AUTH_BASIC, realm); }
     void requestAuthentication(AsyncAuthType method, const char* realm = nullptr, const char* _authFailMsg = nullptr);
 
@@ -588,9 +588,9 @@ class AuthenticationMiddleware : public AsyncMiddleware {
     bool generateHash();
 
     // returns true if the username and password (or hash) are set
-    bool hasCredentials() { return _hasCreds; }
+    bool hasCredentials() const { return _hasCreds; }
 
-    bool allowed(AsyncWebServerRequest* request);
+    bool allowed(AsyncWebServerRequest* request) const;
 
     void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
 
@@ -648,7 +648,7 @@ class LoggingMiddleware : public AsyncMiddleware {
   public:
     void setOutput(Print& output) { _out = &output; }
     void setEnabled(bool enabled) { _enabled = enabled; }
-    bool isEnabled() { return _enabled && _out; }
+    bool isEnabled() const { return _enabled && _out; }
 
     void run(AsyncWebServerRequest* request, ArMiddlewareNext next);
 
@@ -722,7 +722,7 @@ class AsyncWebRewrite {
     const String& from(void) const { return _from; }
     const String& toUrl(void) const { return _toUrl; }
     const String& params(void) const { return _params; }
-    virtual bool match(AsyncWebServerRequest* request) { return from() == request->url() && filter(request); }
+    virtual bool match(AsyncWebServerRequest* request) const { return from() == request->url() && filter(request); }
 };
 
 /*
@@ -741,13 +741,13 @@ class AsyncWebHandler : public AsyncMiddlewareChain {
     AsyncWebHandler& setAuthentication(const String& username, const String& password) { return setAuthentication(username.c_str(), password.c_str()); };
     bool filter(AsyncWebServerRequest* request) { return _filter == NULL || _filter(request); }
     virtual ~AsyncWebHandler() {}
-    virtual bool canHandle(AsyncWebServerRequest* request __attribute__((unused))) {
+    virtual bool canHandle(AsyncWebServerRequest* request __attribute__((unused))) const {
       return false;
     }
     virtual void handleRequest(__unused AsyncWebServerRequest* request) {}
     virtual void handleUpload(__unused AsyncWebServerRequest* request, __unused const String& filename, __unused size_t index, __unused uint8_t* data, __unused size_t len, __unused bool final) {}
     virtual void handleBody(__unused AsyncWebServerRequest* request, __unused uint8_t* data, __unused size_t len, __unused size_t index, __unused size_t total) {}
-    virtual bool isRequestHandlerTrivial() { return true; }
+    virtual bool isRequestHandlerTrivial() const { return true; }
 };
 
 /*

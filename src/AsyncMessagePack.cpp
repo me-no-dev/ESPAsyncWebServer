@@ -44,7 +44,7 @@ AsyncCallbackMessagePackWebHandler::AsyncCallbackMessagePackWebHandler(const Str
     : _uri(uri), _method(HTTP_GET | HTTP_POST | HTTP_PUT | HTTP_PATCH), _onRequest(onRequest), _maxContentLength(16384) {}
   #endif
 
-bool AsyncCallbackMessagePackWebHandler::canHandle(AsyncWebServerRequest* request) {
+bool AsyncCallbackMessagePackWebHandler::canHandle(AsyncWebServerRequest* request) const {
   if (!_onRequest)
     return false;
 

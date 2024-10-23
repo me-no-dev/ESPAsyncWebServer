@@ -34,7 +34,7 @@ class AsyncStaticWebHandler : public AsyncWebHandler {
     using FS = fs::FS;
 
   private:
-    bool _getFile(AsyncWebServerRequest* request);
+    bool _getFile(AsyncWebServerRequest* request) const;
     bool _fileExists(AsyncWebServerRequest* request, const String& path);
     uint8_t _countBits(const uint8_t value) const;
 
@@ -52,7 +52,7 @@ class AsyncStaticWebHandler : public AsyncWebHandler {
 
   public:
     AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
-    virtual bool canHandle(AsyncWebServerRequest* request) override final;
+    virtual bool canHandle(AsyncWebServerRequest* request) const override final;
     virtual void handleRequest(AsyncWebServerRequest* request) override final;
     AsyncStaticWebHandler& setIsDir(bool isDir);
     AsyncStaticWebHandler& setDefaultFile(const char* filename);
@@ -84,11 +84,11 @@ class AsyncCallbackWebHandler : public AsyncWebHandler {
     void onUpload(ArUploadHandlerFunction fn) { _onUpload = fn; }
     void onBody(ArBodyHandlerFunction fn) { _onBody = fn; }
 
-    virtual bool canHandle(AsyncWebServerRequest* request) override final;
+    virtual bool canHandle(AsyncWebServerRequest* request) const override final;
     virtual void handleRequest(AsyncWebServerRequest* request) override final;
     virtual void handleUpload(AsyncWebServerRequest* request, const String& filename, size_t index, uint8_t* data, size_t len, bool final) override final;
     virtual void handleBody(AsyncWebServerRequest* request, uint8_t* data, size_t len, size_t index, size_t total) override final;
-    virtual bool isRequestHandlerTrivial() override final { return !_onRequest; }
+    virtual bool isRequestHandlerTrivial() const override final { return !_onRequest; }
 };
 
 #endif /* ASYNCWEBSERVERHANDLERIMPL_H_ */

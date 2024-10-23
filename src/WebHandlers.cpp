@@ -104,14 +104,14 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified() {
   return setLastModified(last_modified);
 }
 #endif
-bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest* request) {
+bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest* request) const {
   if (request->method() != HTTP_GET || !request->url().startsWith(_uri) || !request->isExpectedRequestedConnType(RCT_DEFAULT, RCT_HTTP)) {
     return false;
   }
   return _getFile(request);
 }
 
-bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest* request) {
+bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest* request) const {
   // Remove the found uri
   String path = request->url().substring(_uri.length());
 
@@ -121,7 +121,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest* request) {
   path = _path + path;
 
   // Do we have a file or .gz file
-  if (!canSkipFileCheck && _fileExists(request, path))
+  if (!canSkipFileCheck && const_cast<AsyncStaticWebHandler*>(this)->_fileExists(request, path))
     return true;
 
   // Can't handle if not default file
@@ -133,7 +133,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest* request) {
     path += String('/');
   path += _default_file;
 
-  return _fileExists(request, path);
+  return const_cast<AsyncStaticWebHandler*>(this)->_fileExists(request, path);
 }
 
 #ifdef ESP32
@@ -260,7 +260,7 @@ void AsyncCallbackWebHandler::setUri(const String& uri) {
   _isRegex = uri.startsWith("^") && uri.endsWith("$");
 }
 
-bool AsyncCallbackWebHandler::canHandle(AsyncWebServerRequest* request) {
+bool AsyncCallbackWebHandler::canHandle(AsyncWebServerRequest* request) const {
   if (!_onRequest)
     return false;
 

@@ -350,7 +350,7 @@ class AsyncWebSocket : public AsyncWebHandler {
     uint32_t _getNextId() { return _cNextId++; }
     AsyncWebSocketClient* _newClient(AsyncWebServerRequest* request);
     void _handleEvent(AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
-    virtual bool canHandle(AsyncWebServerRequest* request) override final;
+    virtual bool canHandle(AsyncWebServerRequest* request) const override final;
     virtual void handleRequest(AsyncWebServerRequest* request) override final;
 
     //  messagebuffer functions/objects.

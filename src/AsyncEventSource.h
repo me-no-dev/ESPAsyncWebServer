@@ -143,7 +143,7 @@ class AsyncEventSource : public AsyncWebHandler {
     // system callbacks (do not call)
     void _addClient(AsyncEventSourceClient* client);
     void _handleDisconnect(AsyncEventSourceClient* client);
-    virtual bool canHandle(AsyncWebServerRequest* request) override final;
+    virtual bool canHandle(AsyncWebServerRequest* request) const override final;
     virtual void handleRequest(AsyncWebServerRequest* request) override final;
 };
 

@@ -1121,7 +1121,7 @@ const char __WS_STR_UUID[] PROGMEM = {"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"};
 #define WS_STR_ACCEPT     FPSTR(__WS_STR_ACCEPT)
 #define WS_STR_UUID       FPSTR(__WS_STR_UUID)
 
-bool AsyncWebSocket::canHandle(AsyncWebServerRequest* request) {
+bool AsyncWebSocket::canHandle(AsyncWebServerRequest* request) const {
   if (!_enabled)
     return false;
 

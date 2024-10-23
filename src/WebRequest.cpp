@@ -781,7 +781,7 @@ void AsyncWebServerRequest::redirect(const char* url, int code) {
   send(response);
 }
 
-bool AsyncWebServerRequest::authenticate(const char* username, const char* password, const char* realm, bool passwordIsHash) {
+bool AsyncWebServerRequest::authenticate(const char* username, const char* password, const char* realm, bool passwordIsHash) const {
   if (_authorization.length()) {
     if (_authMethod == AsyncAuthType::AUTH_DIGEST)
       return checkDigestAuthentication(_authorization.c_str(), methodToString(), username, password, realm, passwordIsHash, NULL, NULL, NULL);
@@ -793,7 +793,7 @@ bool AsyncWebServerRequest::authenticate(const char* username, const char* passw
   return false;
 }
 
-bool AsyncWebServerRequest::authenticate(const char* hash) {
+bool AsyncWebServerRequest::authenticate(const char* hash) const {
   if (!_authorization.length() || hash == NULL)
     return false;
 
@@ -1018,13 +1018,8 @@ const __FlashStringHelper* AsyncWebServerRequest::requestedConnTypeToString() co
 }
 #endif // ESP8266
 
-bool AsyncWebServerRequest::isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2, RequestedConnectionType erct3) {
-  bool res = false;
-  if ((erct1 != RCT_NOT_USED) && (erct1 == _reqconntype))
-    res = true;
-  if ((erct2 != RCT_NOT_USED) && (erct2 == _reqconntype))
-    res = true;
-  if ((erct3 != RCT_NOT_USED) && (erct3 == _reqconntype))
-    res = true;
-  return res;
+bool AsyncWebServerRequest::isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2, RequestedConnectionType erct3) const {
+  return ((erct1 != RCT_NOT_USED) && (erct1 == _reqconntype)) ||
+         ((erct2 != RCT_NOT_USED) && (erct2 == _reqconntype)) ||
+         ((erct3 != RCT_NOT_USED) && (erct3 == _reqconntype));
 }
