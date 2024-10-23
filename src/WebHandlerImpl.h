@@ -47,13 +47,13 @@ class AsyncStaticWebHandler : public AsyncWebHandler {
     String _last_modified;
     AwsTemplateProcessor _callback;
     bool _isDir;
-    bool _gzipFirst;
-    uint8_t _gzipStats;
+    bool _tryGzipFirst = true;
 
   public:
     AsyncStaticWebHandler(const char* uri, FS& fs, const char* path, const char* cache_control);
     virtual bool canHandle(AsyncWebServerRequest* request) const override final;
     virtual void handleRequest(AsyncWebServerRequest* request) override final;
+    AsyncStaticWebHandler& setTryGzipFirst(bool value);
     AsyncStaticWebHandler& setIsDir(bool isDir);
     AsyncStaticWebHandler& setDefaultFile(const char* filename);
     AsyncStaticWebHandler& setCacheControl(const char* cache_control);

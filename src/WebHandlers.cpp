@@ -56,10 +56,11 @@ AsyncStaticWebHandler::AsyncStaticWebHandler(const char* uri, FS& fs, const char
     _uri = _uri.substring(0, _uri.length() - 1);
   if (_path[_path.length() - 1] == '/')
     _path = _path.substring(0, _path.length() - 1);
+}
 
-  // Reset stats
-  _gzipFirst = false;
-  _gzipStats = 0xF8;
+AsyncStaticWebHandler& AsyncStaticWebHandler::setTryGzipFirst(bool value) {
+  _tryGzipFirst = value;
+  return *this;
 }
 
 AsyncStaticWebHandler& AsyncStaticWebHandler::setIsDir(bool isDir) {
@@ -148,7 +149,7 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest* request, const St
 
   String gzip = path + T__gz;
 
-  if (_gzipFirst) {
+  if (_tryGzipFirst) {
     if (_fs.exists(gzip)) {
       request->_tempFile = _fs.open(gzip, fs::FileOpenMode::read);
       gzipFound = FILE_IS_REAL(request->_tempFile);
@@ -180,15 +181,6 @@ bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest* request, const St
     char* _tempPath = (char*)malloc(pathLen + 1);
     snprintf_P(_tempPath, pathLen + 1, PSTR("%s"), path.c_str());
     request->_tempObject = (void*)_tempPath;
-
-    // Calculate gzip statistic
-    _gzipStats = (_gzipStats << 1) + (gzipFound ? 1 : 0);
-    if (_gzipStats == 0x00)
-      _gzipFirst = false; // All files are not gzip
-    else if (_gzipStats == 0xFF)
-      _gzipFirst = true; // All files are gzip
-    else
-      _gzipFirst = _countBits(_gzipStats) > 4; // IF we have more gzip files - try gzip first
   }
 
   return found;
