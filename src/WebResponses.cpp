@@ -225,8 +225,6 @@ AsyncWebServerResponse::AsyncWebServerResponse()
   }
 }
 
-AsyncWebServerResponse::~AsyncWebServerResponse() = default;
-
 void AsyncWebServerResponse::setCode(int code) {
   if (_state == RESPONSE_SETUP)
     _code = code;
@@ -871,7 +869,7 @@ AsyncResponseStream::AsyncResponseStream(const char* contentType, size_t bufferS
   _content = std::unique_ptr<cbuf>(new cbuf(bufferSize)); // std::make_unique<cbuf>(bufferSize);
 }
 
-AsyncResponseStream::~AsyncResponseStream() = default;
+AsyncResponseStream::~AsyncResponseStream() {};
 
 size_t AsyncResponseStream::_fillBuffer(uint8_t* buf, size_t maxLen) {
   return _content->read((char*)buf, maxLen);

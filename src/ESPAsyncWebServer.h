@@ -140,7 +140,6 @@ class AsyncWebHeader {
     String _value;
 
   public:
-    AsyncWebHeader() = default;
     AsyncWebHeader(const AsyncWebHeader&) = default;
     AsyncWebHeader(const char* name, const char* value) : _name(name), _value(value) {}
     AsyncWebHeader(const String& name, const String& value) : _name(name), _value(value) {}
@@ -739,14 +738,12 @@ class AsyncWebHandler : public AsyncMiddlewareChain {
 
   public:
     AsyncWebHandler() {}
+    virtual ~AsyncWebHandler() {}
     AsyncWebHandler& setFilter(ArRequestFilterFunction fn);
     AsyncWebHandler& setAuthentication(const char* username, const char* password);
     AsyncWebHandler& setAuthentication(const String& username, const String& password) { return setAuthentication(username.c_str(), password.c_str()); };
     bool filter(AsyncWebServerRequest* request) { return _filter == NULL || _filter(request); }
-    virtual ~AsyncWebHandler() {}
-    virtual bool canHandle(AsyncWebServerRequest* request __attribute__((unused))) const {
-      return false;
-    }
+    virtual bool canHandle(AsyncWebServerRequest* request __attribute__((unused))) const { return false; }
     virtual void handleRequest(__unused AsyncWebServerRequest* request) {}
     virtual void handleUpload(__unused AsyncWebServerRequest* request, __unused const String& filename, __unused size_t index, __unused uint8_t* data, __unused size_t len, __unused bool final) {}
     virtual void handleBody(__unused AsyncWebServerRequest* request, __unused uint8_t* data, __unused size_t len, __unused size_t index, __unused size_t total) {}
@@ -789,18 +786,18 @@ class AsyncWebServerResponse {
 
   public:
     AsyncWebServerResponse();
-    virtual ~AsyncWebServerResponse();
-    virtual void setCode(int code);
+    virtual ~AsyncWebServerResponse() {}
+    void setCode(int code);
     int code() const { return _code; }
-    virtual void setContentLength(size_t len);
+    void setContentLength(size_t len);
     void setContentType(const String& type) { setContentType(type.c_str()); }
-    virtual void setContentType(const char* type);
-    virtual bool addHeader(const char* name, const char* value, bool replaceExisting = true);
+    void setContentType(const char* type);
+    bool addHeader(const char* name, const char* value, bool replaceExisting = true);
     bool addHeader(const String& name, const String& value, bool replaceExisting = true) { return addHeader(name.c_str(), value.c_str(), replaceExisting); }
     bool addHeader(const char* name, long value, bool replaceExisting = true) { return addHeader(name, String(value), replaceExisting); }
     bool addHeader(const String& name, long value, bool replaceExisting = true) { return addHeader(name.c_str(), value, replaceExisting); }
-    virtual bool removeHeader(const char* name);
-    virtual const AsyncWebHeader* getHeader(const char* name) const;
+    bool removeHeader(const char* name);
+    const AsyncWebHeader* getHeader(const char* name) const;
     const std::list<AsyncWebHeader>& getHeaders() const { return _headers; }
 
 #ifndef ESP8266
@@ -811,7 +808,7 @@ class AsyncWebServerResponse {
       _assembleHead(buffer, version);
       return buffer;
     }
-    virtual void _assembleHead(String& buffer, uint8_t version);
+    void _assembleHead(String& buffer, uint8_t version);
 
     virtual bool _started() const;
     virtual bool _finished() const;

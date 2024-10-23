@@ -49,7 +49,7 @@ AsyncWebServerRequest::~AsyncWebServerRequest() {
 
   _pathParams.clear();
 
-  AsyncWebServerResponse* r = _response
+  AsyncWebServerResponse* r = _response;
   _response = NULL;
   delete r;
 
