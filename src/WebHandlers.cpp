@@ -106,10 +106,7 @@ AsyncStaticWebHandler& AsyncStaticWebHandler::setLastModified() {
 }
 #endif
 bool AsyncStaticWebHandler::canHandle(AsyncWebServerRequest* request) const {
-  if (request->method() != HTTP_GET || !request->url().startsWith(_uri) || !request->isExpectedRequestedConnType(RCT_DEFAULT, RCT_HTTP)) {
-    return false;
-  }
-  return _getFile(request);
+  return request->isHTTP() && request->method() == HTTP_GET && request->url().startsWith(_uri) && _getFile(request);
 }
 
 bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest* request) const {
@@ -253,10 +250,7 @@ void AsyncCallbackWebHandler::setUri(const String& uri) {
 }
 
 bool AsyncCallbackWebHandler::canHandle(AsyncWebServerRequest* request) const {
-  if (!_onRequest)
-    return false;
-
-  if (!(_method & request->method()))
+  if (!_onRequest || !request->isHTTP() || !(_method & request->method()))
     return false;
 
 #ifdef ASYNCWEBSERVER_REGEX

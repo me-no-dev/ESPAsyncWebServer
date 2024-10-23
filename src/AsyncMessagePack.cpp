@@ -45,17 +45,13 @@ AsyncCallbackMessagePackWebHandler::AsyncCallbackMessagePackWebHandler(const Str
   #endif
 
 bool AsyncCallbackMessagePackWebHandler::canHandle(AsyncWebServerRequest* request) const {
-  if (!_onRequest)
-    return false;
-
-  WebRequestMethodComposite request_method = request->method();
-  if (!(_method & request_method))
+  if (!_onRequest || !request->isHTTP() || !(_method & request->method()))
     return false;
 
   if (_uri.length() && (_uri != request->url() && !request->url().startsWith(_uri + "/")))
     return false;
 
-  if (request_method != HTTP_GET && !request->contentType().equalsIgnoreCase(asyncsrv::T_application_msgpack))
+  if (request->method() != HTTP_GET && !request->contentType().equalsIgnoreCase(asyncsrv::T_application_msgpack))
     return false;
 
   return true;

@@ -386,10 +386,7 @@ size_t AsyncEventSource::count() const {
 }
 
 bool AsyncEventSource::canHandle(AsyncWebServerRequest* request) const {
-  if (request->method() != HTTP_GET || !request->url().equals(_url)) {
-    return false;
-  }
-  return true;
+  return request->isSSE() && request->url().equals(_url);
 }
 
 void AsyncEventSource::handleRequest(AsyncWebServerRequest* request) {

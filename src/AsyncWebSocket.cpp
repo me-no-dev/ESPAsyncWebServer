@@ -1122,13 +1122,7 @@ const char __WS_STR_UUID[] PROGMEM = {"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"};
 #define WS_STR_UUID       FPSTR(__WS_STR_UUID)
 
 bool AsyncWebSocket::canHandle(AsyncWebServerRequest* request) const {
-  if (!_enabled)
-    return false;
-
-  if (request->method() != HTTP_GET || !request->url().equals(_url) || !request->isExpectedRequestedConnType(RCT_WS))
-    return false;
-
-  return true;
+  return _enabled && request->isWebSocketUpgrade() && request->url().equals(_url);
 }
 
 void AsyncWebSocket::handleRequest(AsyncWebServerRequest* request) {
