@@ -35,7 +35,7 @@ class AsyncStaticWebHandler : public AsyncWebHandler {
 
   private:
     bool _getFile(AsyncWebServerRequest* request) const;
-    bool _fileExists(AsyncWebServerRequest* request, const String& path);
+    bool _searchFile(AsyncWebServerRequest* request, const String& path);
     uint8_t _countBits(const uint8_t value) const;
 
   protected:

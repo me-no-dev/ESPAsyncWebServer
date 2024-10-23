@@ -122,7 +122,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest* request) const {
   path = _path + path;
 
   // Do we have a file or .gz file
-  if (!canSkipFileCheck && const_cast<AsyncStaticWebHandler*>(this)->_fileExists(request, path))
+  if (!canSkipFileCheck && const_cast<AsyncStaticWebHandler*>(this)->_searchFile(request, path))
     return true;
 
   // Can't handle if not default file
@@ -134,7 +134,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest* request) const {
     path += String('/');
   path += _default_file;
 
-  return const_cast<AsyncStaticWebHandler*>(this)->_fileExists(request, path);
+  return const_cast<AsyncStaticWebHandler*>(this)->_searchFile(request, path);
 }
 
 #ifdef ESP32
@@ -143,7 +143,7 @@ bool AsyncStaticWebHandler::_getFile(AsyncWebServerRequest* request) const {
   #define FILE_IS_REAL(f) (f == true)
 #endif
 
-bool AsyncStaticWebHandler::_fileExists(AsyncWebServerRequest* request, const String& path) {
+bool AsyncStaticWebHandler::_searchFile(AsyncWebServerRequest* request, const String& path) {
   bool fileFound = false;
   bool gzipFound = false;
 
