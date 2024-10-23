@@ -183,6 +183,20 @@ void setup() {
 
   Serial.begin(115200);
 
+#ifndef CONFIG_IDF_TARGET_ESP32H2
+  // WiFi.mode(WIFI_STA);
+  // WiFi.begin("YOUR_SSID", "YOUR_PASSWORD");
+  // if (WiFi.waitForConnectResult() != WL_CONNECTED) {
+  //   Serial.printf("WiFi Failed!\n");
+  //   return;
+  // }
+  // Serial.print("IP Address: ");
+  // Serial.println(WiFi.localIP());
+
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("esp-captive");
+#endif
+
 #ifdef ESP32
   LittleFS.begin(true);
 #else
@@ -200,20 +214,6 @@ void setup() {
       f.close();
     }
   }
-
-#ifndef CONFIG_IDF_TARGET_ESP32H2
-  // WiFi.mode(WIFI_STA);
-  // WiFi.begin("YOUR_SSID", "YOUR_PASSWORD");
-  // if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-  //   Serial.printf("WiFi Failed!\n");
-  //   return;
-  // }
-  // Serial.print("IP Address: ");
-  // Serial.println(WiFi.localIP());
-
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP("esp-captive");
-#endif
 
   // curl -v -X GET http://192.168.4.1/handler-not-sending-response
   server.on("/handler-not-sending-response", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -389,9 +389,8 @@ void setup() {
     request->send(200, "text/html", htmlContent);
   });
 
-  server.on("/file", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send(LittleFS, "/index.txt");
-  });
+  // curl -v -X GET http://192.168.4.1/index.txt
+  server.serveStatic("/index.txt", LittleFS, "/index.txt");
 
   // Issue #14: assert failed: tcp_update_rcv_ann_wnd (needs help to test fix)
   // > curl -v http://192.168.4.1/issue-14
