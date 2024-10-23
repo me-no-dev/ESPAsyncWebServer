@@ -368,6 +368,7 @@ class AsyncWebSocketResponse : public AsyncWebServerResponse {
 
   public:
     AsyncWebSocketResponse(const String& key, AsyncWebSocket* server);
+    virtual ~AsyncWebSocketResponse() {}
     void _respond(AsyncWebServerRequest* request);
     size_t _ack(AsyncWebServerRequest* request, size_t len, uint32_t time);
     bool _sourceValid() const { return true; }

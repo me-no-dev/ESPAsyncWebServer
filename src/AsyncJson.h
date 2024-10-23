@@ -74,6 +74,7 @@ class AsyncJsonResponse : public AsyncAbstractResponse {
   #else
     AsyncJsonResponse(bool isArray = false);
   #endif
+    virtual ~AsyncJsonResponse() {}
     JsonVariant& getRoot() { return _root; }
     bool _sourceValid() const { return _isValid; }
     size_t setLength();

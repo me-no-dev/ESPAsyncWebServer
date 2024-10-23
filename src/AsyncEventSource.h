@@ -154,6 +154,7 @@ class AsyncEventSourceResponse : public AsyncWebServerResponse {
 
   public:
     AsyncEventSourceResponse(AsyncEventSource* server);
+    virtual ~AsyncEventSourceResponse() {};
     void _respond(AsyncWebServerRequest* request);
     size_t _ack(AsyncWebServerRequest* request, size_t len, uint32_t time);
     bool _sourceValid() const { return true; }

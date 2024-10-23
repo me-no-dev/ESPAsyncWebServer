@@ -58,6 +58,7 @@ class AsyncMessagePackResponse : public AsyncAbstractResponse {
   #else
     AsyncMessagePackResponse(bool isArray = false);
   #endif
+    virtual ~AsyncMessagePackResponse() {}
     JsonVariant& getRoot() { return _root; }
     bool _sourceValid() const { return _isValid; }
     size_t setLength();

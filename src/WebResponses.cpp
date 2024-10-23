@@ -647,8 +647,7 @@ size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size
  * */
 
 AsyncFileResponse::~AsyncFileResponse() {
-  if (_content)
-    _content.close();
+  _content.close();
 }
 
 void AsyncFileResponse::_setContentTypeFromPath(const String& path) {
@@ -868,8 +867,6 @@ AsyncResponseStream::AsyncResponseStream(const char* contentType, size_t bufferS
   _contentType = contentType;
   _content = std::unique_ptr<cbuf>(new cbuf(bufferSize)); // std::make_unique<cbuf>(bufferSize);
 }
-
-AsyncResponseStream::~AsyncResponseStream() {};
 
 size_t AsyncResponseStream::_fillBuffer(uint8_t* buf, size_t maxLen) {
   return _content->read((char*)buf, maxLen);
