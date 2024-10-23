@@ -137,11 +137,7 @@ String generateDigestHash(const char* username, const char* password, const char
   return in;
 }
 
-#ifndef ESP8266
 bool checkDigestAuthentication(const char* header, const char* method, const char* username, const char* password, const char* realm, bool passwordIsHash, const char* nonce, const char* opaque, const char* uri)
-#else
-bool checkDigestAuthentication(const char* header, const __FlashStringHelper* method, const char* username, const char* password, const char* realm, bool passwordIsHash, const char* nonce, const char* opaque, const char* uri)
-#endif
 {
   if (username == NULL || password == NULL || header == NULL || method == NULL) {
     // os_printf("AUTH FAIL: missing requred fields\n");

@@ -185,12 +185,12 @@ class AsyncWebSocketControl {
         _data = NULL;
     }
 
-    virtual ~AsyncWebSocketControl() {
+    ~AsyncWebSocketControl() {
       if (_data != NULL)
         free(_data);
     }
 
-    virtual bool finished() const { return _finished; }
+    bool finished() const { return _finished; }
     uint8_t opcode() { return _opcode; }
     uint8_t len() { return _len + 2; }
     size_t send(AsyncClient* client) {

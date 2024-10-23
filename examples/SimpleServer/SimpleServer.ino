@@ -19,7 +19,7 @@
 
 #include <ESPAsyncWebServer.h>
 
-#if ASYNC_JSON_SUPPORT == 1
+#if __has_include("ArduinoJson.h")
   #include <ArduinoJson.h>
   #include <AsyncJson.h>
   #include <AsyncMessagePack.h>
@@ -171,7 +171,7 @@ void notFound(AsyncWebServerRequest* request) {
   request->send(404, "text/plain", "Not found");
 }
 
-#if ASYNC_JSON_SUPPORT == 1
+#if __has_include("ArduinoJson.h")
 AsyncCallbackJsonWebHandler* jsonHandler = new AsyncCallbackJsonWebHandler("/json2");
 AsyncCallbackMessagePackWebHandler* msgPackHandler = new AsyncCallbackMessagePackWebHandler("/msgpack2");
 #endif
@@ -463,7 +463,7 @@ void setup() {
     request->send(200, "text/plain", "Hello, POST: " + message);
   });
 
-#if ASYNC_JSON_SUPPORT == 1
+#if __has_include("ArduinoJson.h")
   // JSON
 
   // receives JSON and sends JSON
@@ -479,11 +479,22 @@ void setup() {
   });
 
   // sends JSON
+  // curl -v -X GET http://192.168.4.1/json1
   server.on("/json1", HTTP_GET, [](AsyncWebServerRequest* request) {
     AsyncJsonResponse* response = new AsyncJsonResponse();
     JsonObject root = response->getRoot().to<JsonObject>();
     root["hello"] = "world";
     response->setLength();
+    request->send(response);
+  });
+
+  // curl -v -X GET http://192.168.4.1/json2
+  server.on("/json2", HTTP_GET, [](AsyncWebServerRequest* request) {
+    AsyncResponseStream* response = request->beginResponseStream("application/json");
+    JsonDocument doc;
+    JsonObject root = doc.to<JsonObject>();
+    root["hello"] = "world";
+    serializeJson(root, *response);
     request->send(response);
   });
 
@@ -552,7 +563,7 @@ void setup() {
   // Run: websocat ws://192.168.4.1/ws
   server.addHandler(&ws);
 
-#if ASYNC_JSON_SUPPORT == 1
+#if __has_include("ArduinoJson.h")
   server.addHandler(jsonHandler);
   server.addHandler(msgPackHandler);
 #endif

@@ -350,8 +350,8 @@ class AsyncWebSocket : public AsyncWebHandler {
     uint32_t _getNextId() { return _cNextId++; }
     AsyncWebSocketClient* _newClient(AsyncWebServerRequest* request);
     void _handleEvent(AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
-    virtual bool canHandle(AsyncWebServerRequest* request) const override final;
-    virtual void handleRequest(AsyncWebServerRequest* request) override final;
+    bool canHandle(AsyncWebServerRequest* request) const override final;
+    void handleRequest(AsyncWebServerRequest* request) override final;
 
     //  messagebuffer functions/objects.
     AsyncWebSocketMessageBuffer* makeBuffer(size_t size = 0);
@@ -368,7 +368,6 @@ class AsyncWebSocketResponse : public AsyncWebServerResponse {
 
   public:
     AsyncWebSocketResponse(const String& key, AsyncWebSocket* server);
-    virtual ~AsyncWebSocketResponse() {}
     void _respond(AsyncWebServerRequest* request);
     size_t _ack(AsyncWebServerRequest* request, size_t len, uint32_t time);
     bool _sourceValid() const { return true; }

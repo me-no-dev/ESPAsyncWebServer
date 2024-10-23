@@ -940,7 +940,6 @@ String AsyncWebServerRequest::urlDecode(const String& text) const {
   return decoded;
 }
 
-#ifndef ESP8266
 const char* AsyncWebServerRequest::methodToString() const {
   if (_method == HTTP_ANY)
     return T_ANY;
@@ -960,29 +959,7 @@ const char* AsyncWebServerRequest::methodToString() const {
     return T_OPTIONS;
   return T_UNKNOWN;
 }
-#else  // ESP8266
-const __FlashStringHelper* AsyncWebServerRequest::methodToString() const {
-  if (_method == HTTP_ANY)
-    return FPSTR(T_ANY);
-  if (_method & HTTP_GET)
-    return FPSTR(T_GET);
-  if (_method & HTTP_POST)
-    return FPSTR(T_POST);
-  if (_method & HTTP_DELETE)
-    return FPSTR(T_DELETE);
-  if (_method & HTTP_PUT)
-    return FPSTR(T_PUT);
-  if (_method & HTTP_PATCH)
-    return FPSTR(T_PATCH);
-  if (_method & HTTP_HEAD)
-    return FPSTR(T_HEAD);
-  if (_method & HTTP_OPTIONS)
-    return FPSTR(T_OPTIONS);
-  return FPSTR(T_UNKNOWN);
-}
-#endif // ESP8266
 
-#ifndef ESP8266
 const char* AsyncWebServerRequest::requestedConnTypeToString() const {
   switch (_reqconntype) {
     case RCT_NOT_USED:
@@ -999,24 +976,6 @@ const char* AsyncWebServerRequest::requestedConnTypeToString() const {
       return T_ERROR;
   }
 }
-#else  // ESP8266
-const __FlashStringHelper* AsyncWebServerRequest::requestedConnTypeToString() const {
-  switch (_reqconntype) {
-    case RCT_NOT_USED:
-      return FPSTR(T_RCT_NOT_USED);
-    case RCT_DEFAULT:
-      return FPSTR(T_RCT_DEFAULT);
-    case RCT_HTTP:
-      return FPSTR(T_RCT_HTTP);
-    case RCT_WS:
-      return FPSTR(T_RCT_WS);
-    case RCT_EVENT:
-      return FPSTR(T_RCT_EVENT);
-    default:
-      return FPSTR(T_ERROR);
-  }
-}
-#endif // ESP8266
 
 bool AsyncWebServerRequest::isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2, RequestedConnectionType erct3) const {
   return ((erct1 != RCT_NOT_USED) && (erct1 == _reqconntype)) ||

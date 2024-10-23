@@ -12,7 +12,6 @@ class ChunkPrint : public Print {
 
   public:
     ChunkPrint(uint8_t* destination, size_t from, size_t len);
-    virtual ~ChunkPrint() {}
     size_t write(uint8_t c);
     size_t write(const uint8_t* buffer, size_t size) { return this->Print::write(buffer, size); }
 };

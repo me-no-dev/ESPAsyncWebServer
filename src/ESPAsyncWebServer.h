@@ -264,13 +264,8 @@ class AsyncWebServerRequest {
     size_t contentLength() const { return _contentLength; }
     bool multipart() const { return _isMultipart; }
 
-#ifndef ESP8266
     const char* methodToString() const;
     const char* requestedConnTypeToString() const;
-#else
-    const __FlashStringHelper* methodToString() const;
-    const __FlashStringHelper* requestedConnTypeToString() const;
-#endif
 
     RequestedConnectionType requestedConnType() const { return _reqconntype; }
     bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED) const;
@@ -526,9 +521,7 @@ using ArMiddlewareCallback = std::function<void(AsyncWebServerRequest* request, 
 class AsyncMiddleware {
   public:
     virtual ~AsyncMiddleware() {}
-    virtual void run(__unused AsyncWebServerRequest* request, __unused ArMiddlewareNext next) {
-      return next();
-    };
+    virtual void run(__unused AsyncWebServerRequest* request, __unused ArMiddlewareNext next) { return next(); };
 
   private:
     friend class AsyncWebHandler;
@@ -550,7 +543,7 @@ class AsyncMiddlewareFunction : public AsyncMiddleware {
 // For internal use only: super class to add/remove middleware to server or handlers
 class AsyncMiddlewareChain {
   public:
-    virtual ~AsyncMiddlewareChain();
+    ~AsyncMiddlewareChain();
 
     void addMiddleware(ArMiddlewareCallback fn);
     void addMiddleware(AsyncMiddleware* middleware);
@@ -778,11 +771,7 @@ class AsyncWebServerResponse {
     WebResponseState _state;
 
   public:
-#ifndef ESP8266
     static const char* responseCodeToString(int code);
-#else
-    static const __FlashStringHelper* responseCodeToString(int code);
-#endif
 
   public:
     AsyncWebServerResponse();
