@@ -275,6 +275,9 @@ class AsyncWebServerRequest {
 
     RequestedConnectionType requestedConnType() const { return _reqconntype; }
     bool isExpectedRequestedConnType(RequestedConnectionType erct1, RequestedConnectionType erct2 = RCT_NOT_USED, RequestedConnectionType erct3 = RCT_NOT_USED) const;
+    bool isWebSocketUpgrade() const { return _method == HTTP_GET && isExpectedRequestedConnType(RCT_WS); }
+    bool isSSE() const { return _method == HTTP_GET && isExpectedRequestedConnType(RCT_EVENT); }
+    bool isHTTP() const { return isExpectedRequestedConnType(RCT_DEFAULT, RCT_HTTP); }
     void onDisconnect(ArDisconnectHandler fn);
 
     // hash is the string representation of:
