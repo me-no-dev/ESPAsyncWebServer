@@ -49,9 +49,9 @@ AsyncWebServerRequest::~AsyncWebServerRequest() {
 
   _pathParams.clear();
 
-  if (_response != NULL) {
-    delete _response;
-  }
+  AsyncWebServerResponse* r = _response
+  _response = NULL;
+  delete r;
 
   if (_tempObject != NULL) {
     free(_tempObject);
