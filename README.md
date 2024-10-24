@@ -1261,7 +1261,7 @@ class OneParamRewrite : public AsyncWebRewrite
       _paramsBackup = _params;
   }
 
-  bool match(AsyncWebServerRequest *request) override {
+  bool match(AsyncWebServerRequest *request) const override {
     if(request->url().startsWith(_urlPrefix)) {
       if(_paramIndex >= 0) {
         _params = _paramsBackup + request->url().substring(_paramIndex);
