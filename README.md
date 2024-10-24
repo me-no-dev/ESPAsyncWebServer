@@ -1232,7 +1232,7 @@ For actual serving the file.
 
 ### Param Rewrite With Matching
 
-It is possible to rewrite the request url with parameter matchg. Here is an example with one parameter:
+It is possible to rewrite the request url with parameter match. Here is an example with one parameter:
 Rewrite for example "/radio/{frequence}" -> "/radio?f={frequence}"
 
 ```cpp
@@ -1261,7 +1261,7 @@ class OneParamRewrite : public AsyncWebRewrite
       _paramsBackup = _params;
   }
 
-  bool match(AsyncWebServerRequest *request) const override {
+  bool match(AsyncWebServerRequest *request) override {
     if(request->url().startsWith(_urlPrefix)) {
       if(_paramIndex >= 0) {
         _params = _paramsBackup + request->url().substring(_paramIndex);

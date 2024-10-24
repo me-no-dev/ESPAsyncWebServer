@@ -717,7 +717,7 @@ class AsyncWebRewrite {
     const String& from(void) const { return _from; }
     const String& toUrl(void) const { return _toUrl; }
     const String& params(void) const { return _params; }
-    virtual bool match(AsyncWebServerRequest* request) const { return from() == request->url() && filter(request); }
+    virtual bool match(AsyncWebServerRequest* request) { return from() == request->url() && filter(request); }
 };
 
 /*
