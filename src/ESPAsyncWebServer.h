@@ -403,6 +403,7 @@ class AsyncWebServer {
 
   public:
     AsyncWebServer(uint16_t port);
+    AsyncWebServer(IPAddress addr, uint16_t port);
     ~AsyncWebServer();
 
     void begin();
