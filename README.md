@@ -66,8 +66,8 @@ lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.20
 
 **Dependencies:**
 
-- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.11`
-  Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.11](https://github.com/mathieucarbou/AsyncTCP/releases)
+- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.12`
+  Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.12](https://github.com/mathieucarbou/AsyncTCP/releases)
 
 - **ESP32 with AsyncTCPSock**: `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`
 
@@ -85,7 +85,7 @@ AsyncTCPSock can be used instead of AsyncTCP by excluding AsyncTCP from the libr
 lib_compat_mode = strict
 lib_ldf_mode = chain
 lib_deps =
-  ; mathieucarbou/AsyncTCP @ 3.2.11
+  ; mathieucarbou/AsyncTCP @ 3.2.12
   https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip
   mathieucarbou/ESPAsyncWebServer @ 3.3.20
 lib_ignore =
@@ -102,7 +102,7 @@ Performance of `mathieucarbou/ESPAsyncWebServer @ 3.3.20`:
 > autocannon -c 10 -w 10 -d 20 http://192.168.4.1
 ```
 
-With `mathieucarbou/AsyncTCP @ 3.2.11`
+With `mathieucarbou/AsyncTCP @ 3.2.12`
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
 
