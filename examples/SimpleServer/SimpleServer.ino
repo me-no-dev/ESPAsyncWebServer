@@ -87,6 +87,18 @@ const char* htmlContent PROGMEM = R"(
 </html>
 )";
 
+const char* staticContent PROGMEM = R"(
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sample HTML</title>
+</head>
+<body>
+    <h1>Hello, %IP%</h1>
+</body>
+</html>
+)";
+
 AsyncWebServer server(80);
 AsyncEventSource events("/events");
 AsyncWebSocket ws("/ws");
@@ -203,7 +215,7 @@ void setup() {
   LittleFS.begin();
 #endif
 
-  if (!LittleFS.exists("/index.txt")) {
+  {
     File f = LittleFS.open("/index.txt", "w");
     if (f) {
       for (size_t c = 0; c < sizeof(characters); c++) {
@@ -211,6 +223,14 @@ void setup() {
           f.print(characters[c]);
         }
       }
+      f.close();
+    }
+  }
+
+  {
+    File f = LittleFS.open("/index.html", "w");
+    if (f) {
+      f.print(staticContent);
       f.close();
     }
   }
@@ -391,6 +411,29 @@ void setup() {
 
   // curl -v -X GET http://192.168.4.1/index.txt
   server.serveStatic("/index.txt", LittleFS, "/index.txt");
+
+  // ServeStatic static is used to serve static output which never changes over time.
+  // This special endpoints automatyically adds caching headers.
+  // If a template processor is used, it must enure that the outputed content will always be the ame over time and never changes.
+  // Otherwise, do not use serveStatic.
+  // Example below: IP never changes.
+  // curl -v -X GET http://192.168.4.1/index-static.html
+  server.serveStatic("/index-static.html", LittleFS, "/index.html").setTemplateProcessor([](const String& var) -> String {
+    if (var == "IP")
+      return WiFi.localIP().toString();
+    return emptyString;
+  });
+
+  // to serve a template with dynamic content (output changes over time), use normal
+  // Example below: content changes over tinme do not use serveStatic.
+  // curl -v -X GET http://192.168.4.1/index-dynamic.html
+  server.on("/index-dynamic.html", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->send(LittleFS, "/index.html", "text/html", false, [](const String& var) -> String {
+      if (var == "IP")
+        return String(random(0, 1000));
+      return emptyString;
+    });
+  });
 
   // Issue #14: assert failed: tcp_update_rcv_ann_wnd (needs help to test fix)
   // > curl -v http://192.168.4.1/issue-14
