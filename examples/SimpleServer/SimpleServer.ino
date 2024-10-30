@@ -419,8 +419,12 @@ void setup() {
   // Example below: IP never changes.
   // curl -v -X GET http://192.168.4.1/index-static.html
   server.serveStatic("/index-static.html", LittleFS, "/index.html").setTemplateProcessor([](const String& var) -> String {
-    if (var == "IP")
-      return WiFi.localIP().toString();
+    if (var == "IP") {
+      // for CI, commented out since H2 board doesn ot support WiFi
+      // return WiFi.localIP().toString();
+      // return WiFi.softAPIP().toString();
+      return "127.0.0..1";
+    }
     return emptyString;
   });
 
