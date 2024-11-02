@@ -59,21 +59,29 @@ class AsyncResponseStream;
 
 #ifndef WEBSERVER_H
 typedef enum {
-  HTTP_GET     = 0b00000001,
-  HTTP_POST    = 0b00000010,
-  HTTP_DELETE  = 0b00000100,
-  HTTP_PUT     = 0b00001000,
-  HTTP_PATCH   = 0b00010000,
-  HTTP_HEAD    = 0b00100000,
-  HTTP_OPTIONS = 0b01000000,
-  HTTP_ANY     = 0b01111111,
+  HTTP_GET       = 0b0000000000000001,
+  HTTP_POST      = 0b0000000000000010,
+  HTTP_DELETE    = 0b0000000000000100,
+  HTTP_PUT       = 0b0000000000001000,
+  HTTP_PATCH     = 0b0000000000010000,
+  HTTP_HEAD      = 0b0000000000100000,
+  HTTP_OPTIONS   = 0b0000000001000000,
+  HTTP_PROPFIND  = 0b0000000010000000,
+  HTTP_LOCK      = 0b0000000100000000,
+  HTTP_UNLOCK    = 0b0000001000000000,
+  HTTP_PROPPATCH = 0b0000010000000000,
+  HTTP_MKCOL     = 0b0000100000000000,
+  HTTP_MOVE      = 0b0001000000000000,
+  HTTP_COPY      = 0b0010000000000000,
+  HTTP_RESERVED  = 0b0100000000000000,
+  HTTP_ANY       = 0b0111111111111111,
 } WebRequestMethod;
 #endif
 
 //if this value is returned when asked for data, packet will not be sent and you will be asked for data again
 #define RESPONSE_TRY_AGAIN 0xFFFFFFFF
 
-typedef uint8_t WebRequestMethodComposite;
+typedef uint16_t WebRequestMethodComposite;
 typedef std::function<void(void)> ArDisconnectHandler;
 
 /*
