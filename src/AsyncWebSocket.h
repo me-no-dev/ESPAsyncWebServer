@@ -166,8 +166,9 @@ class AsyncWebSocketClient {
 
     uint8_t _pstate;
     AwsFrameInfo _pinfo;
-
+public:
     uint32_t _lastMessageTime;
+private:
     uint32_t _keepAlivePeriod;
 
     void _queueMessage(AsyncWebSocketMessage *dataMessage);
