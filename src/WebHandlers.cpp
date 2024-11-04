@@ -27,7 +27,7 @@ AsyncWebHandler& AsyncWebHandler::setFilter(ArRequestFilterFunction fn) {
   _filter = fn;
   return *this;
 }
-AsyncWebHandler& AsyncWebHandler::setAuthentication(const char* username, const char* password) {
+AsyncWebHandler& AsyncWebHandler::setAuthentication(const char* username, const char* password, AsyncAuthType authMethod) {
   if (!_authMiddleware) {
     _authMiddleware = new AuthenticationMiddleware();
     _authMiddleware->_freeOnRemoval = true;
@@ -35,6 +35,7 @@ AsyncWebHandler& AsyncWebHandler::setAuthentication(const char* username, const 
   }
   _authMiddleware->setUsername(username);
   _authMiddleware->setPassword(password);
+  _authMiddleware->setAuthType(authMethod);
   return *this;
 };
 
