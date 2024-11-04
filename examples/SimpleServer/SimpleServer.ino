@@ -412,6 +412,9 @@ void setup() {
   // curl -v -X GET http://192.168.4.1/index.txt
   server.serveStatic("/index.txt", LittleFS, "/index.txt");
 
+  // curl -v -X GET http://192.168.4.1/index-private.txt
+  server.serveStatic("/index-private.txt", LittleFS, "/index.txt").setAuthentication("admin", "admin");
+
   // ServeStatic static is used to serve static output which never changes over time.
   // This special endpoints automatyically adds caching headers.
   // If a template processor is used, it must enure that the outputed content will always be the ame over time and never changes.
