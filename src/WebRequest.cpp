@@ -75,6 +75,7 @@ AsyncWebServerRequest::AsyncWebServerRequest(AsyncWebServer* s, AsyncClient* c)
   c->onTimeout([](void *r, AsyncClient* c, uint32_t time){ (void)c; AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onTimeout(time); }, this);
   c->onData([](void *r, AsyncClient* c, void *buf, size_t len){ (void)c; AsyncWebServerRequest *req = (AsyncWebServerRequest*)r; req->_onData(buf, len); }, this);
   c->onPoll([](void *r, AsyncClient* c){ (void)c; AsyncWebServerRequest *req = ( AsyncWebServerRequest*)r; req->_onPoll(); }, this);
+  _server->numOfRequests++;
 }
 
 AsyncWebServerRequest::~AsyncWebServerRequest(){
@@ -96,6 +97,8 @@ AsyncWebServerRequest::~AsyncWebServerRequest(){
   if(_tempFile){
     _tempFile.close();
   }
+  
+  if(_server->numOfRequests>0) _server->numOfRequests--;
 }
 
 void AsyncWebServerRequest::_onData(void *buf, size_t len){
@@ -224,7 +227,7 @@ void AsyncWebServerRequest::onDisconnect (ArDisconnectHandler fn){
 void AsyncWebServerRequest::_onDisconnect(){
   //os_printf("d\n");
   if(_onDisconnectfn) {
-      _onDisconnectfn();
+      _onDisconnectfn(this);
     }
   _server->_handleDisconnect(this);
 }

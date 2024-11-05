@@ -74,7 +74,7 @@ typedef enum {
 #define RESPONSE_TRY_AGAIN 0xFFFFFFFF
 
 typedef uint8_t WebRequestMethodComposite;
-typedef std::function<void(void)> ArDisconnectHandler;
+typedef std::function<void(AsyncWebServerRequest*)> ArDisconnectHandler;
 
 /*
  * PARAMETER :: Chainable object to hold GET/POST and FILE parameters
@@ -408,6 +408,7 @@ class AsyncWebServer {
     void begin();
     void end();
 
+    int numOfRequests = 0;
 #if ASYNC_TCP_SSL_ENABLED
     void onSslFileRequest(AcSSlFileHandler cb, void* arg);
     void beginSecure(const char *cert, const char *private_key_file, const char *password);
@@ -436,6 +437,7 @@ class AsyncWebServer {
     void _handleDisconnect(AsyncWebServerRequest *request);
     void _attachHandler(AsyncWebServerRequest *request);
     void _rewriteRequest(AsyncWebServerRequest *request);
+    void _freeClient(AsyncClient* c);
 };
 
 class DefaultHeaders {
