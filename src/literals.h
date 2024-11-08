@@ -65,6 +65,7 @@ namespace asyncsrv {
   static constexpr const char* T_response = "response";
   static constexpr const char* T_retry_ = "retry: ";
   static constexpr const char* T_retry_after = "retry-after";
+  static constexpr const char* T_nn = "\n\n";
   static constexpr const char* T_rn = "\r\n";
   static constexpr const char* T_rnrn = "\r\n\r\n";
   static constexpr const char* T_Transfer_Encoding = "transfer-encoding";
