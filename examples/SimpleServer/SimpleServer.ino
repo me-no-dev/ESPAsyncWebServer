@@ -87,6 +87,8 @@ const char* htmlContent PROGMEM = R"(
 </html>
 )";
 
+const size_t htmlContentLength = strlen_P(htmlContent);
+
 const char* staticContent PROGMEM = R"(
 <!DOCTYPE html>
 <html>
@@ -464,6 +466,40 @@ void setup() {
       charactersIndex = (charactersIndex + 1) % sizeof(characters);
       return maxLen;
     });
+    request->send(response);
+  });
+
+  // curl -N -v -X GET http://192.168.4.1/chunked.html --output -
+  // curl -N -v -X GET -H "if-none-match: 4272" http://192.168.4.1/chunked.html --output -
+  server.on("/chunked.html", HTTP_GET, [](AsyncWebServerRequest* request) {
+    String len = String(htmlContentLength);
+
+    if (request->header(asyncsrv::T_INM) == len) {
+      request->send(304);
+      return;
+    }
+
+    AsyncWebServerResponse* response = request->beginChunkedResponse("text/html", [](uint8_t* buffer, size_t maxLen, size_t index) -> size_t {
+      Serial.printf("%u / %u\n", index, htmlContentLength);
+
+      // finished ?
+      if (htmlContentLength <= index) {
+        Serial.println("finished");
+        return 0;
+      }
+
+      // serve a maximum of 1024 or maxLen bytes of the remaining content
+      const int chunkSize = min((size_t)1024, min(maxLen, htmlContentLength - index));
+      Serial.printf("sending: %u\n", chunkSize);
+
+      memcpy(buffer, htmlContent + index, chunkSize);
+
+      return chunkSize;
+    });
+
+    response->addHeader(asyncsrv::T_Cache_Control, "public,max-age=60");
+    response->addHeader(asyncsrv::T_ETag, len);
+
     request->send(response);
   });
 
