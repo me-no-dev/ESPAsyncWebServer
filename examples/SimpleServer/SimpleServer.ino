@@ -607,7 +607,63 @@ void setup() {
     }
   });
 
+  // SSS endpoints
+  // sends a message every 10 ms
+  //
   // go to http://192.168.4.1/sse
+  // > curl -v -N -H "Accept: text/event-stream" http://192.168.4.1/events
+  //
+  // some perf tests:
+  // launch 16 concurrent workers for 30 seconds
+  // > for i in {1..16}; do ( count=$(gtimeout 30 curl -s -N -H "Accept: text/event-stream" http://192.168.4.1/events 2>&1 | grep -c "^data:"); echo "Total: $count events, $(echo "$count / 4" | bc -l) events / second" ) & done;
+  //
+  // With AsyncTCP, with 16 workers: a lot of Too many messages queued: deleting message
+  //
+  // Total: 119 events, 29.75000000000000000000 events / second
+  // Total: 727 events, 181.75000000000000000000 events / second
+  // Total: 1386 events, 346.50000000000000000000 events / second
+  // Total: 1385 events, 346.25000000000000000000 events / second
+  // Total: 1276 events, 319.00000000000000000000 events / second
+  // Total: 1411 events, 352.75000000000000000000 events / second
+  // Total: 1276 events, 319.00000000000000000000 events / second
+  // Total: 1333 events, 333.25000000000000000000 events / second
+  // Total: 1250 events, 312.50000000000000000000 events / second
+  // Total: 1275 events, 318.75000000000000000000 events / second
+  // Total: 1271 events, 317.75000000000000000000 events / second
+  // Total: 1271 events, 317.75000000000000000000 events / second
+  // Total: 1254 events, 313.50000000000000000000 events / second
+  // Total: 1251 events, 312.75000000000000000000 events / second
+  // Total: 1254 events, 313.50000000000000000000 events / second
+  // Total: 1262 events, 315.50000000000000000000 events / second
+  //
+  // With AsyncTCP, with 10 workers:
+  //
+  // Total: 1875 events, 468.75000000000000000000 events / second
+  // Total: 1870 events, 467.50000000000000000000 events / second
+  // Total: 1871 events, 467.75000000000000000000 events / second
+  // Total: 1875 events, 468.75000000000000000000 events / second
+  // Total: 1871 events, 467.75000000000000000000 events / second
+  // Total: 1805 events, 451.25000000000000000000 events / second
+  // Total: 1803 events, 450.75000000000000000000 events / second
+  // Total: 1873 events, 468.25000000000000000000 events / second
+  // Total: 1872 events, 468.00000000000000000000 events / second
+  // Total: 1805 events, 451.25000000000000000000 events / second
+  //
+  // With AsyncTCPSock, with 16 workers: ESP32 CRASH !!!
+  //
+  // With AsyncTCPSock, with 10 workers:
+  //
+  // Total: 1242 events, 310.50000000000000000000 events / second
+  // Total: 1242 events, 310.50000000000000000000 events / second
+  // Total: 1242 events, 310.50000000000000000000 events / second
+  // Total: 1242 events, 310.50000000000000000000 events / second
+  // Total: 1181 events, 295.25000000000000000000 events / second
+  // Total: 1182 events, 295.50000000000000000000 events / second
+  // Total: 1240 events, 310.00000000000000000000 events / second
+  // Total: 1181 events, 295.25000000000000000000 events / second
+  // Total: 1181 events, 295.25000000000000000000 events / second
+  // Total: 1183 events, 295.75000000000000000000 events / second
+  //
   server.addHandler(&events);
 
   // Run: websocat ws://192.168.4.1/ws
@@ -624,7 +680,7 @@ void setup() {
 }
 
 uint32_t lastSSE = 0;
-uint32_t deltaSSE = 5;
+uint32_t deltaSSE = 10;
 
 uint32_t lastWS = 0;
 uint32_t deltaWS = 100;
