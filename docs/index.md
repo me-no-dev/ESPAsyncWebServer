@@ -52,9 +52,9 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - (perf) Lot of code cleanup and optimizations
 - (perf) Performance improvements in terms of memory, speed and size
 
------
-WARNING: Important notes about future version 4.x
------
+---
+
+## WARNING: Important notes about future version 4.x
 
 This ESPAsyncWebServer fork is now at version 3.x.
 
@@ -123,6 +123,40 @@ With `mathieucarbou/AsyncTCP @ 3.2.12`
 With `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`:
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)
+
+**SSE performance**
+
+In the example, there is an endpoint `/events` with some comments showing how these metrics are calculated.
+
+Test is running for 20 seconds with 10 connections.
+
+```
+// With AsyncTCP, with 10 workers: no message discarded from the queue
+//
+// Total: 1875 events, 468.75000000000000000000 events / second
+// Total: 1870 events, 467.50000000000000000000 events / second
+// Total: 1871 events, 467.75000000000000000000 events / second
+// Total: 1875 events, 468.75000000000000000000 events / second
+// Total: 1871 events, 467.75000000000000000000 events / second
+// Total: 1805 events, 451.25000000000000000000 events / second
+// Total: 1803 events, 450.75000000000000000000 events / second
+// Total: 1873 events, 468.25000000000000000000 events / second
+// Total: 1872 events, 468.00000000000000000000 events / second
+// Total: 1805 events, 451.25000000000000000000 events / second
+//
+// With AsyncTCPSock, with 10 workers: no message discarded from the queue
+//
+// Total: 1242 events, 310.50000000000000000000 events / second
+// Total: 1242 events, 310.50000000000000000000 events / second
+// Total: 1242 events, 310.50000000000000000000 events / second
+// Total: 1242 events, 310.50000000000000000000 events / second
+// Total: 1181 events, 295.25000000000000000000 events / second
+// Total: 1182 events, 295.50000000000000000000 events / second
+// Total: 1240 events, 310.00000000000000000000 events / second
+// Total: 1181 events, 295.25000000000000000000 events / second
+// Total: 1181 events, 295.25000000000000000000 events / second
+// Total: 1183 events, 295.75000000000000000000 events / second
+```
 
 ## Important recommendations
 
