@@ -552,18 +552,6 @@ void setup() {
 #if __has_include("ArduinoJson.h")
   // JSON
 
-  // receives JSON and sends JSON
-  jsonHandler->onRequest([](AsyncWebServerRequest* request, JsonVariant& json) {
-    // JsonObject jsonObj = json.as<JsonObject>();
-    // ...
-
-    AsyncJsonResponse* response = new AsyncJsonResponse();
-    JsonObject root = response->getRoot().to<JsonObject>();
-    root["hello"] = "world";
-    response->setLength();
-    request->send(response);
-  });
-
   // sends JSON
   // curl -v -X GET http://192.168.4.1/json1
   server.on("/json1", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -579,8 +567,20 @@ void setup() {
     AsyncResponseStream* response = request->beginResponseStream("application/json");
     JsonDocument doc;
     JsonObject root = doc.to<JsonObject>();
-    root["hello"] = "world";
+    root["foo"] = "bar";
     serializeJson(root, *response);
+    request->send(response);
+  });
+
+  // curl -v -X POST -H 'Content-Type: application/json' -d '{"name":"You"}' http://192.168.4.1/json2
+  // curl -v -X PUT -H 'Content-Type: application/json' -d '{"name":"You"}' http://192.168.4.1/json2
+  jsonHandler->setMethod(HTTP_POST | HTTP_PUT);
+  jsonHandler->onRequest([](AsyncWebServerRequest* request, JsonVariant& json) {
+    serializeJson(json, Serial);
+    AsyncJsonResponse* response = new AsyncJsonResponse();
+    JsonObject root = response->getRoot().to<JsonObject>();
+    root["hello"] = json.as<JsonObject>()["name"];
+    response->setLength();
     request->send(response);
   });
 
