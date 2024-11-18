@@ -179,8 +179,17 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
 }
 
 void AsyncWebServerRequest::_removeNotInterestingHeaders(){
-  if (_interestingHeaders.containsIgnoreCase("ANY")) return; // nothing to do
-  for(const auto& header: _headers){
+  if (_interestingHeaders.containsIgnoreCase("ANY")) {
+    return; // nothing to do
+  }
+  // When removing items from the list, we must increase the iterator first
+  // before removing the current item, otherwise the iterator is invalidated
+  // So, no for(;;) loop can be used, see: https://stackoverflow.com/q/596162
+  auto i_header = _headers.begin();
+  const auto i_end = _headers.end();
+  while (i_header != i_end){
+      const auto header = *i_header;
+      ++i_header;
       if(!_interestingHeaders.containsIgnoreCase(header->name().c_str())){
         _headers.remove(header);
       }
