@@ -23,6 +23,10 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
     Serial.printf("Client #%" PRIu32 " connected.\n", client->id());
   } else if (type == WS_EVT_DISCONNECT) {
     Serial.printf("Client #%" PRIu32 " disconnected.\n", client->id());
+  } else if (type == WS_EVT_ERROR) {
+    Serial.printf("Client #%" PRIu32 " error.\n", client->id());
+  } else if (type == WS_EVT_DATA) {
+    Serial.printf("Client #%" PRIu32 " data: %.*s\n", client->id(), len, data);
   }
 }
 
