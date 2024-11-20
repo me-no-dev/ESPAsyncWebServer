@@ -27,6 +27,10 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
     Serial.printf("Client #%" PRIu32 " error.\n", client->id());
   } else if (type == WS_EVT_DATA) {
     Serial.printf("Client #%" PRIu32 " len: %u\n", client->id(), len);
+  } else if (type == WS_EVT_PONG) {
+    Serial.printf("Client #%" PRIu32 " pong.\n", client->id());
+  } else if (type == WS_EVT_PING) {
+    Serial.printf("Client #%" PRIu32 " ping.\n", client->id());
   }
 }
 
