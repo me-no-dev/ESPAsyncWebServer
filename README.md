@@ -55,6 +55,7 @@ To use this library you might need to have the latest git versions of [ESP32](ht
     - [Respond with content using a callback and extra headers](#respond-with-content-using-a-callback-and-extra-headers)
     - [Respond with content using a callback containing templates](#respond-with-content-using-a-callback-containing-templates)
     - [Respond with content using a callback containing templates and extra headers](#respond-with-content-using-a-callback-containing-templates-and-extra-headers)
+    - [Respond with content using a stateful callback containing templates and extra headers](#Respond-with-content-using-a-stateful-callback-containing-templates-and-extra-headers)
     - [Chunked Response](#chunked-response)
     - [Chunked Response containing templates](#chunked-response-containing-templates)
     - [Print to response](#print-to-response)
@@ -647,6 +648,71 @@ AsyncWebServerResponse *response = request->beginResponse("text/plain", 128, [](
 response->addHeader("Server","ESP Async Web Server");
 request->send(response);
 ```
+
+
+### Respond with content using a stateful callback containing templates and extra headers
+
+The callback interface allows you to work with request-specific instances of this class and provides a hook for resource freing via the deconstructor.
+Instances of this class are freed after the response is closed.
+
+```cpp
+String processor(const String& var)
+{
+  if(var == "HELLO_FROM_TEMPLATE")
+    return F("Hello world!");
+  return String();
+}
+
+class FileWithResponseModificationOptionDataSource : public AwsResponseDataSource
+{
+private:
+    fs::File _content;
+public:
+    FileWithLogBufferResponseDataSource(fs::FS &fs, const String &path)
+    {
+        _content = fs.open(path, "r");
+    }
+
+    /**
+     * Provide next chunk of data to write to the response.
+     * If no more data is available, return 0.
+     * You will be asked for more data till method returns 0.
+     * 
+     * If you need another request, return RESPONSE_TRY_AGAIN but better try to avoid that.
+     * 
+     * @param buf buffer to fill with data, at most maxLen bytes
+     * @param maxLen maximum number of bytes to write at *buf
+     * @param index number of bytes (of this data source instance aka response, excluding header) already written
+     * @return number of bytes written to *buf
+     */
+    virtual size_t fillBuffer(uint8_t *buf, size_t maxLen, size_t index)
+    {
+        // modify returned content here...
+        return _content.read(buf, maxLen);
+    }
+
+    virtual ~FileWithLogBufferResponseDataSource()
+    {
+        if (_content)
+            _content.close();
+    }
+};
+
+// ...
+
+//send 128 bytes as plain text
+AsyncWebServerResponse *response = request->beginStatefulResponse(
+            "text/html", 0, new FileWithResponseModificationOptionDataSource(SPIFFS, "/log.html"), placeholderProcessor);
+    response->addHeader(F("Cache-Control"), F("no-cache, must-revalidate"));
+    response->addHeader(F("Pragma"), F("no-cache"));
+    request->send(response);
+```
+
+
+
+
+
+
 
 ### Chunked Response
 Used when content length is unknown. Works best if the client supports HTTP/1.1
