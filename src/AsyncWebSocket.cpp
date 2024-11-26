@@ -478,6 +478,7 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest *request, Async
   _clientId = _server->_getNextId();
   _status = WS_CONNECTED;
   _pstate = 0;
+  memset(&_pinfo,0,sizeof(_pinfo));
   _lastMessageTime = millis();
   _keepAlivePeriod = 0;
   _client->setRxTimeout(0);
@@ -657,9 +658,9 @@ void AsyncWebSocketClient::_onData(void *pbuf, size_t plen){
         if(_pinfo.opcode){
           _pinfo.message_opcode = _pinfo.opcode;
           _pinfo.num = 0;
-        } else _pinfo.num += 1;
+        }
       }
-      _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, (uint8_t*)data, datalen);
+      if (datalen > 0) _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, (uint8_t*)data, datalen);
 
       _pinfo.index += datalen;
     } else if((datalen + _pinfo.index) == _pinfo.len){
@@ -687,6 +688,8 @@ void AsyncWebSocketClient::_onData(void *pbuf, size_t plen){
           _server->_handleEvent(this, WS_EVT_PONG, NULL, data, datalen);
       } else if(_pinfo.opcode < 8){//continuation or text/binary frame
         _server->_handleEvent(this, WS_EVT_DATA, (void *)&_pinfo, data, datalen);
+        if (_pinfo.final) _pinfo.num = 0;
+        else _pinfo.num += 1;
       }
     } else {
       //os_printf("frame error: len: %u, index: %llu, total: %llu\n", datalen, _pinfo.index, _pinfo.len);
@@ -1005,13 +1008,29 @@ void AsyncWebSocket::messageAll(AsyncWebSocketMultiMessage *message){
   _cleanBuffers(); 
 }
 
-size_t AsyncWebSocket::printf(uint32_t id, const char *format, ...){
+size_t AsyncWebSocket::printf(uint32_t id, const char *format, ...) {
   AsyncWebSocketClient * c = client(id);
   if(c){
     va_list arg;
+    char* temp = new char[MAX_PRINTF_LEN];
+    if(!temp){
+      return 0;
+    }
     va_start(arg, format);
-    size_t len = c->printf(format, arg);
+    size_t len = vsnprintf(temp, MAX_PRINTF_LEN, format, arg);
     va_end(arg);
+    delete[] temp;
+
+    AsyncWebSocketMessageBuffer * buffer = makeBuffer(len);
+    if (!buffer) {
+      return 0;
+    }
+
+    va_start(arg, format);
+    vsnprintf( (char *)buffer->get(), len + 1, format, arg);
+    va_end(arg);
+
+    c->text(buffer);
     return len;
   }
   return 0;
@@ -1046,9 +1065,25 @@ size_t AsyncWebSocket::printf_P(uint32_t id, PGM_P formatP, ...){
   AsyncWebSocketClient * c = client(id);
   if(c != NULL){
     va_list arg;
+    char* temp = new char[MAX_PRINTF_LEN];
+    if(!temp){
+      return 0;
+    }
     va_start(arg, formatP);
-    size_t len = c->printf_P(formatP, arg);
+    size_t len = vsnprintf_P(temp, MAX_PRINTF_LEN, formatP, arg);
     va_end(arg);
+    delete[] temp;
+
+    AsyncWebSocketMessageBuffer * buffer = makeBuffer(len + 1);
+    if (!buffer) {
+      return 0;
+    }
+
+    va_start(arg, formatP);
+    vsnprintf_P((char *)buffer->get(), len + 1, formatP, arg);
+    va_end(arg);
+
+    c->text(buffer);
     return len;
   }
   return 0;
