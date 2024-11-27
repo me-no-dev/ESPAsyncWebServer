@@ -313,7 +313,8 @@ bool AsyncWebServerRequest::_parseReqHeader(){
   int index = _temp.indexOf(':');
   if(index){
     String name = _temp.substring(0, index);
-    String value = _temp.substring(index + 2);
+    String value = _temp.substring(index + 1);
+    value.trim();
     if(name.equalsIgnoreCase("Host")){
       _host = value;
     } else if(name.equalsIgnoreCase("Content-Type")){
