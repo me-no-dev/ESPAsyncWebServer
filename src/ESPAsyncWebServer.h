@@ -57,7 +57,7 @@ class AsyncStaticWebHandler;
 class AsyncCallbackWebHandler;
 class AsyncResponseStream;
 
-#ifndef WEBSERVER_H
+#if !defined(ESP8266WEBSERVER_H) && !defined(WEBSERVER_H)
 typedef enum {
   HTTP_GET     = 0b00000001,
   HTTP_POST    = 0b00000010,
