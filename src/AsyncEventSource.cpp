@@ -334,7 +334,7 @@ size_t AsyncEventSource::count() const {
 }
 
 bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
-  if(request->method() != HTTP_GET || !request->url().equals(_url)) {
+  if(request->method() != AsyncWebServerMethods::HTTP_GET || !request->url().equals(_url)) {
     return false;
   }
   request->addInterestingHeader("Last-Event-ID");
