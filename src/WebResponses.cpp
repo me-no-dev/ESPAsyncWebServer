@@ -494,6 +494,10 @@ void AsyncFileResponse::_setContentType(const String& path){
   else if (path.endsWith(".jpg")) _contentType = "image/jpeg";
   else if (path.endsWith(".ico")) _contentType = "image/x-icon";
   else if (path.endsWith(".svg")) _contentType = "image/svg+xml";
+  else if (path.endsWith(".svgz")){
+    _contentType = "image/svg+xml";
+    addHeader("Content-Encoding", "gzip");
+  }
   else if (path.endsWith(".eot")) _contentType = "font/eot";
   else if (path.endsWith(".woff")) _contentType = "font/woff";
   else if (path.endsWith(".woff2")) _contentType = "font/woff2";
