@@ -24,6 +24,8 @@
 #include "stddef.h"
 #include "WString.h"
 
+namespace stringarray {
+
 template <typename T>
 class LinkedListNode {
     T _value;
@@ -171,11 +173,12 @@ class LinkedList {
     }
 };
 
+}
 
-class StringArray : public LinkedList<String> {
+class StringArray : public stringarray::LinkedList<String> {
 public:
   
-  StringArray() : LinkedList(nullptr) {}
+  StringArray() : stringarray::LinkedList<String>(nullptr) {}
   
   bool containsIgnoreCase(const String& str){
     for (const auto& s : *this) {
@@ -186,7 +189,6 @@ public:
     return false;
   }
 };
-
 
 
 

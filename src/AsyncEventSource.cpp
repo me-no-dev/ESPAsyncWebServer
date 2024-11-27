@@ -25,6 +25,8 @@
 #endif
 #endif
 
+using namespace stringarray;
+
 static String generateEventMessage(const char *message, const char *event, uint32_t id, uint32_t reconnect){
   String ev = "";
 
