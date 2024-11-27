@@ -73,7 +73,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
     ArBodyHandlerFunction _onBody;
     bool _isRegex;
   public:
-    AsyncCallbackWebHandler() : _uri(), _method(HTTP_ANY), _onRequest(NULL), _onUpload(NULL), _onBody(NULL), _isRegex(false) {}
+    AsyncCallbackWebHandler() : _uri(), _method(static_cast<uint8_t>(WebRequestMethod::HTTP_ANY)), _onRequest(NULL), _onUpload(NULL), _onBody(NULL), _isRegex(false) {}
     void setUri(const String& uri){ 
       _uri = uri; 
       _isRegex = uri.startsWith("^") && uri.endsWith("$");
@@ -88,7 +88,7 @@ class AsyncCallbackWebHandler: public AsyncWebHandler {
       if(!_onRequest)
         return false;
 
-      if(!(_method & request->method()))
+      if(!(_method & static_cast<uint8_t>(request->method())))
         return false;
 
 #ifdef ASYNCWEBSERVER_REGEX
