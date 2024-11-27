@@ -151,7 +151,7 @@ size_t AsyncEventSourceMessage::send(AsyncClient *client) {
   if(client->canSend())
     client->send();
   _sent += sent;
-  return sent; 
+  return sent;
 }
 
 // Client
@@ -164,7 +164,7 @@ AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, A
   _lastId = 0;
   if(request->hasHeader("Last-Event-ID"))
     _lastId = atoi(request->getHeader("Last-Event-ID")->value().c_str());
-    
+
   _client->setRxTimeout(0);
   _client->onError(NULL, NULL);
   _client->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ (void)c; ((AsyncEventSourceClient*)(r))->_onAck(len, time); }, this);
@@ -258,6 +258,7 @@ AsyncEventSource::AsyncEventSource(const String& url)
   : _url(url)
   , _clients(LinkedList<AsyncEventSourceClient *>([](AsyncEventSourceClient *c){ delete c; }))
   , _connectcb(NULL)
+  , _responsecb(NULL)
 {}
 
 AsyncEventSource::~AsyncEventSource(){
@@ -266,6 +267,9 @@ AsyncEventSource::~AsyncEventSource(){
 
 void AsyncEventSource::onConnect(ArEventHandlerFunction cb){
   _connectcb = cb;
+}
+void AsyncEventSource::onResponse(ArOnResponseFunction cb){
+  _responsecb = cb;
 }
 
 void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
@@ -281,7 +285,7 @@ void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
     client->write((const char *)temp, 2053);
     free(temp);
   }*/
-  
+
   _clients.add(client);
   if(_connectcb)
     _connectcb(client);
@@ -302,10 +306,10 @@ void AsyncEventSource::close(){
 size_t AsyncEventSource::avgPacketsWaiting() const {
   if(_clients.isEmpty())
     return 0;
-  
+
   size_t    aql=0;
   uint32_t  nConnectedClients=0;
-  
+
   for(const auto &c: _clients){
     if(c->connected()) {
       aql+=c->packetsWaiting();
@@ -344,18 +348,20 @@ bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
 void AsyncEventSource::handleRequest(AsyncWebServerRequest *request){
   if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
     return request->requestAuthentication();
-  request->send(new AsyncEventSourceResponse(this));
+  request->send(new AsyncEventSourceResponse(this, _responsecb));
 }
 
 // Response
 
-AsyncEventSourceResponse::AsyncEventSourceResponse(AsyncEventSource *server){
+AsyncEventSourceResponse::AsyncEventSourceResponse(AsyncEventSource *server, ArOnResponseFunction responsecb){
   _server = server;
   _code = 200;
   _contentType = "text/event-stream";
   _sendContentLength = false;
   addHeader("Cache-Control", "no-cache");
   addHeader("Connection","keep-alive");
+  if (responsecb)
+    responsecb(this);
 }
 
 void AsyncEventSourceResponse::_respond(AsyncWebServerRequest *request){
