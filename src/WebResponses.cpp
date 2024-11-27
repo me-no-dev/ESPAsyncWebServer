@@ -384,6 +384,7 @@ size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size
   if(!_callback)
     return _fillBuffer(data, len);
 
+  const char* illegalChars = " .:<>{}/',;\"\\";
   const size_t originalLen = len;
   len = _readDataFromCacheOrContent(data, len);
   // Now we've read 'len' bytes, either from cache or from file
@@ -397,11 +398,14 @@ size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size
     // If closing placeholder is found:
     if(pTemplateEnd) {
       // prepare argument to callback
-      const size_t paramNameLength = std::min(sizeof(buf) - 1, (unsigned int)(pTemplateEnd - pTemplateStart - 1));
+      const size_t paramNameLength = (unsigned int)(pTemplateEnd - pTemplateStart - 1);
       if(paramNameLength) {
-        memcpy(buf, pTemplateStart + 1, paramNameLength);
-        buf[paramNameLength] = 0;
-        paramName = String(reinterpret_cast<char*>(buf));
+        if(paramNameLength <= TEMPLATE_PARAM_NAME_LENGTH) {
+          memcpy(buf, pTemplateStart + 1, paramNameLength);
+          buf[paramNameLength] = 0;
+          if (strcspn((char*)buf, illegalChars) < paramNameLength) ++pTemplateStart; // invalid paramName, includes illagal characters, store found percent symbol as is and advance to the next position
+          else paramName = String(reinterpret_cast<char*>(buf));
+        } else ++pTemplateStart;  // invalid paramName, it is too long, store found percent symbol as is and advance to the next position
       } else { // double percent sign encountered, this is single percent sign escaped.
         // remove the 2nd percent sign
         memmove(pTemplateEnd, pTemplateEnd + 1, &data[len] - pTemplateEnd - 1);
@@ -416,10 +420,13 @@ size_t AsyncAbstractResponse::_fillBufferAndProcessTemplates(uint8_t* data, size
         if(pTemplateEnd) {
           // prepare argument to callback
           *pTemplateEnd = 0;
-          paramName = String(reinterpret_cast<char*>(buf));
-          // Copy remaining read-ahead data into cache
-          _cache.insert(_cache.begin(), pTemplateEnd + 1, buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
-          pTemplateEnd = &data[len - 1];
+          if (strcspn((char*)buf, illegalChars) < (pTemplateEnd - pTemplateStart - 1)) ++pTemplateStart; // invalid paramName, includes illagal characters, store found percent symbol as is and advance to the next position
+          else {
+            paramName = String(reinterpret_cast<char*>(buf));
+            // Copy remaining read-ahead data into cache
+            _cache.insert(_cache.begin(), pTemplateEnd + 1, buf + (&data[len - 1] - pTemplateStart) + readFromCacheOrContent);
+            pTemplateEnd = &data[len - 1];
+          }
         }
         else // closing placeholder not found in file data, store found percent symbol as is and advance to the next position
         {
