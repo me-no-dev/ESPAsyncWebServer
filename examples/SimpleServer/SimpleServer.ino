@@ -702,8 +702,23 @@ void setup() {
   //
   server.addHandler(&events);
 
-  // Run: websocat ws://192.168.4.1/ws
-  server.addHandler(&ws);
+  // Run in terminal 1: websocat ws://192.168.4.1/ws => stream data
+  // Run in terminal 2: websocat ws://192.168.4.1/ws => stream data
+  // Run in terminal 3: websocat ws://192.168.4.1/ws => should fail:
+  /*
+❯  websocat ws://192.168.4.1/ws
+websocat: WebSocketError: WebSocketError: Received unexpected status code (503 Service Unavailable)
+websocat: error running
+  */
+  server.addHandler(&ws).addMiddleware([](AsyncWebServerRequest* request, ArMiddlewareNext next) {
+    if (ws.count() > 2) {
+      // too many clients - answer back immediately and stop processing next middlewares and handler
+      request->send(503, "text/plain", "Server is busy");
+    } else {
+      // process next middleware and at the end the handler
+      next();
+    }
+  });
 
 #if __has_include("ArduinoJson.h")
   server.addHandler(jsonHandler);
@@ -729,9 +744,9 @@ void loop() {
   }
   if (now - lastWS >= deltaWS) {
     ws.printfAll("kp%.4f", (10.0 / 3.0));
-    for (auto& client : ws.getClients()) {
-      client.printf("kp%.4f", (10.0 / 3.0));
-    }
+    // for (auto& client : ws.getClients()) {
+    //   client.printf("kp%.4f", (10.0 / 3.0));
+    // }
     lastWS = millis();
   }
 }
