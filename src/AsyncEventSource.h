@@ -21,7 +21,7 @@
 #define ASYNCEVENTSOURCE_H_
 
 #include <Arduino.h>
-#include <string>
+
 #ifdef ESP32
   #include <AsyncTCP.h>
   #include <mutex>
@@ -61,7 +61,7 @@ class AsyncEventSourceClient;
 using ArEventHandlerFunction = std::function<void(AsyncEventSourceClient* client)>;
 using ArAuthorizeConnectHandler = ArAuthorizeFunction;
 // shared message object container
-using AsyncEvent_SharedData_t = std::shared_ptr<std::string>;
+using AsyncEvent_SharedData_t = std::shared_ptr<String>;
 
 /**
  * @brief Async Event Message container with shared message content data
@@ -76,7 +76,12 @@ class AsyncEventSourceMessage {
 
   public:
     AsyncEventSourceMessage(AsyncEvent_SharedData_t data) : _data(data) {};
-    AsyncEventSourceMessage(const char* data, size_t len) : _data(std::make_shared<std::string>(data, len)) {};
+#ifdef ESP32
+    AsyncEventSourceMessage(const char* data, size_t len) : _data(std::make_shared<String>(data, len)) {};
+#else
+    // esp8266's String does not have constructor with data/length arguments. Use a concat method here
+    AsyncEventSourceMessage(const char* data, size_t len) { _data->concat(data, len); };
+#endif
 
     /**
      * @brief acknowledge sending len bytes of data

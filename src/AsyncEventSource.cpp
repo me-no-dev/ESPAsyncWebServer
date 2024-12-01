@@ -25,8 +25,8 @@
 
 using namespace asyncsrv;
 
-static std::string generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect) {
-  std::string str;
+static String generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect) {
+  String str;
   size_t len{0};
   if (message)
     len += strlen(message);
@@ -96,7 +96,7 @@ static std::string generateEventMessage(const char* message, const char* event, 
     }
 
     str += T_data_;
-    str.append(lineStart, lineEnd - lineStart);
+    str.concat(lineStart, lineEnd - lineStart);
     str += 0xa; // \n
 
     lineStart = nextLine;
@@ -112,10 +112,10 @@ static std::string generateEventMessage(const char* message, const char* event, 
 
 size_t AsyncEventSourceMessage::ack(size_t len, __attribute__((unused)) uint32_t time) {
   // If the whole message is now acked...
-  if (_acked + len > _data->size()) {
+  if (_acked + len > _data->length()) {
     // Return the number of extra bytes acked (they will be carried on to the next message)
-    const size_t extra = _acked + len - _data->size();
-    _acked = _data->size();
+    const size_t extra = _acked + len - _data->length();
+    _acked = _data->length();
     return extra;
   }
   // Return that no extra bytes left.
@@ -127,11 +127,11 @@ size_t AsyncEventSourceMessage::write(AsyncClient* client) {
   if (!client)
     return 0;
 
-  if (_sent >= _data->size() || !client->canSend()) {
+  if (_sent >= _data->length() || !client->canSend()) {
     return 0;
   }
 
-  size_t len = std::min(_data->size() - _sent, client->space());
+  size_t len = std::min(_data->length() - _sent, client->space());
   /*
     add() would call lwip's tcp_write() under the AsyncTCP hood with apiflags argument.
     By default apiflags=ASYNC_WRITE_FLAG_COPY
@@ -143,7 +143,7 @@ size_t AsyncEventSourceMessage::write(AsyncClient* client) {
 
     So let's just keep it enforced ASYNC_WRITE_FLAG_COPY and keep in mind that there is no zero-copy
   */
-  size_t written = client->add(_data->data() + _sent, len, ASYNC_WRITE_FLAG_COPY); //  ASYNC_WRITE_FLAG_MORE
+  size_t written = client->add(_data->c_str() + _sent, len, ASYNC_WRITE_FLAG_COPY); //  ASYNC_WRITE_FLAG_MORE
   _sent += written;
   return written;
 }
@@ -298,7 +298,7 @@ void AsyncEventSourceClient::close() {
 bool AsyncEventSourceClient::send(const char* message, const char* event, uint32_t id, uint32_t reconnect) {
   if (!connected())
     return false;
-  return _queueMessage(std::make_shared<std::string>(generateEventMessage(message, event, id, reconnect)));
+  return _queueMessage(std::make_shared<String>(generateEventMessage(message, event, id, reconnect)));
 }
 
 void AsyncEventSourceClient::_runQueue() {
@@ -397,7 +397,7 @@ size_t AsyncEventSource::avgPacketsWaiting() const {
 
 AsyncEventSource::SendStatus AsyncEventSource::send(
   const char* message, const char* event, uint32_t id, uint32_t reconnect) {
-  AsyncEvent_SharedData_t shared_msg = std::make_shared<std::string>(generateEventMessage(message, event, id, reconnect));
+  AsyncEvent_SharedData_t shared_msg = std::make_shared<String>(generateEventMessage(message, event, id, reconnect));
 #ifdef ESP32
   std::lock_guard<std::mutex> lock(_client_queue_lock);
 #endif
