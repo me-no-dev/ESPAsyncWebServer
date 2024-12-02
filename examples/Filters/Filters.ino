@@ -18,11 +18,11 @@ AsyncWebServer server(80);
 
 class CaptiveRequestHandler : public AsyncWebHandler {
   public:
-    bool canHandle(__unused AsyncWebServerRequest* request) {
+    bool canHandle(__unused AsyncWebServerRequest* request) const override {
       return true;
     }
 
-    void handleRequest(AsyncWebServerRequest* request) {
+    void handleRequest(AsyncWebServerRequest* request) override {
       AsyncResponseStream* response = request->beginResponseStream("text/html");
       response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
       response->print("<p>This is out captive portal front page.</p>");

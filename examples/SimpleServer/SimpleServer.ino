@@ -87,6 +87,8 @@ const char* htmlContent PROGMEM = R"(
 </html>
 )";
 
+const size_t htmlContentLength = strlen_P(htmlContent);
+
 const char* staticContent PROGMEM = R"(
 <!DOCTYPE html>
 <html>
@@ -467,6 +469,40 @@ void setup() {
     request->send(response);
   });
 
+  // curl -N -v -X GET http://192.168.4.1/chunked.html --output -
+  // curl -N -v -X GET -H "if-none-match: 4272" http://192.168.4.1/chunked.html --output -
+  server.on("/chunked.html", HTTP_GET, [](AsyncWebServerRequest* request) {
+    String len = String(htmlContentLength);
+
+    if (request->header(asyncsrv::T_INM) == len) {
+      request->send(304);
+      return;
+    }
+
+    AsyncWebServerResponse* response = request->beginChunkedResponse("text/html", [](uint8_t* buffer, size_t maxLen, size_t index) -> size_t {
+      Serial.printf("%u / %u\n", index, htmlContentLength);
+
+      // finished ?
+      if (htmlContentLength <= index) {
+        Serial.println("finished");
+        return 0;
+      }
+
+      // serve a maximum of 1024 or maxLen bytes of the remaining content
+      const int chunkSize = min((size_t)1024, min(maxLen, htmlContentLength - index));
+      Serial.printf("sending: %u\n", chunkSize);
+
+      memcpy(buffer, htmlContent + index, chunkSize);
+
+      return chunkSize;
+    });
+
+    response->addHeader(asyncsrv::T_Cache_Control, "public,max-age=60");
+    response->addHeader(asyncsrv::T_ETag, len);
+
+    request->send(response);
+  });
+
   /*
     ❯ curl -I -X HEAD http://192.168.4.1/download
     HTTP/1.1 200 OK
@@ -516,18 +552,6 @@ void setup() {
 #if __has_include("ArduinoJson.h")
   // JSON
 
-  // receives JSON and sends JSON
-  jsonHandler->onRequest([](AsyncWebServerRequest* request, JsonVariant& json) {
-    // JsonObject jsonObj = json.as<JsonObject>();
-    // ...
-
-    AsyncJsonResponse* response = new AsyncJsonResponse();
-    JsonObject root = response->getRoot().to<JsonObject>();
-    root["hello"] = "world";
-    response->setLength();
-    request->send(response);
-  });
-
   // sends JSON
   // curl -v -X GET http://192.168.4.1/json1
   server.on("/json1", HTTP_GET, [](AsyncWebServerRequest* request) {
@@ -543,8 +567,20 @@ void setup() {
     AsyncResponseStream* response = request->beginResponseStream("application/json");
     JsonDocument doc;
     JsonObject root = doc.to<JsonObject>();
-    root["hello"] = "world";
+    root["foo"] = "bar";
     serializeJson(root, *response);
+    request->send(response);
+  });
+
+  // curl -v -X POST -H 'Content-Type: application/json' -d '{"name":"You"}' http://192.168.4.1/json2
+  // curl -v -X PUT -H 'Content-Type: application/json' -d '{"name":"You"}' http://192.168.4.1/json2
+  jsonHandler->setMethod(HTTP_POST | HTTP_PUT);
+  jsonHandler->onRequest([](AsyncWebServerRequest* request, JsonVariant& json) {
+    serializeJson(json, Serial);
+    AsyncJsonResponse* response = new AsyncJsonResponse();
+    JsonObject root = response->getRoot().to<JsonObject>();
+    root["hello"] = json.as<JsonObject>()["name"];
+    response->setLength();
     request->send(response);
   });
 
@@ -607,11 +643,82 @@ void setup() {
     }
   });
 
+  // SSS endpoints
+  // sends a message every 10 ms
+  //
   // go to http://192.168.4.1/sse
+  // > curl -v -N -H "Accept: text/event-stream" http://192.168.4.1/events
+  //
+  // some perf tests:
+  // launch 16 concurrent workers for 30 seconds
+  // > for i in {1..16}; do ( count=$(gtimeout 30 curl -s -N -H "Accept: text/event-stream" http://192.168.4.1/events 2>&1 | grep -c "^data:"); echo "Total: $count events, $(echo "$count / 4" | bc -l) events / second" ) & done;
+  //
+  // With AsyncTCP, with 16 workers: a lot of Too many messages queued: deleting message
+  //
+  // Total: 119 events, 29.75000000000000000000 events / second
+  // Total: 727 events, 181.75000000000000000000 events / second
+  // Total: 1386 events, 346.50000000000000000000 events / second
+  // Total: 1385 events, 346.25000000000000000000 events / second
+  // Total: 1276 events, 319.00000000000000000000 events / second
+  // Total: 1411 events, 352.75000000000000000000 events / second
+  // Total: 1276 events, 319.00000000000000000000 events / second
+  // Total: 1333 events, 333.25000000000000000000 events / second
+  // Total: 1250 events, 312.50000000000000000000 events / second
+  // Total: 1275 events, 318.75000000000000000000 events / second
+  // Total: 1271 events, 317.75000000000000000000 events / second
+  // Total: 1271 events, 317.75000000000000000000 events / second
+  // Total: 1254 events, 313.50000000000000000000 events / second
+  // Total: 1251 events, 312.75000000000000000000 events / second
+  // Total: 1254 events, 313.50000000000000000000 events / second
+  // Total: 1262 events, 315.50000000000000000000 events / second
+  //
+  // With AsyncTCP, with 10 workers:
+  //
+  // Total: 1875 events, 468.75000000000000000000 events / second
+  // Total: 1870 events, 467.50000000000000000000 events / second
+  // Total: 1871 events, 467.75000000000000000000 events / second
+  // Total: 1875 events, 468.75000000000000000000 events / second
+  // Total: 1871 events, 467.75000000000000000000 events / second
+  // Total: 1805 events, 451.25000000000000000000 events / second
+  // Total: 1803 events, 450.75000000000000000000 events / second
+  // Total: 1873 events, 468.25000000000000000000 events / second
+  // Total: 1872 events, 468.00000000000000000000 events / second
+  // Total: 1805 events, 451.25000000000000000000 events / second
+  //
+  // With AsyncTCPSock, with 16 workers: ESP32 CRASH !!!
+  //
+  // With AsyncTCPSock, with 10 workers:
+  //
+  // Total: 1242 events, 310.50000000000000000000 events / second
+  // Total: 1242 events, 310.50000000000000000000 events / second
+  // Total: 1242 events, 310.50000000000000000000 events / second
+  // Total: 1242 events, 310.50000000000000000000 events / second
+  // Total: 1181 events, 295.25000000000000000000 events / second
+  // Total: 1182 events, 295.50000000000000000000 events / second
+  // Total: 1240 events, 310.00000000000000000000 events / second
+  // Total: 1181 events, 295.25000000000000000000 events / second
+  // Total: 1181 events, 295.25000000000000000000 events / second
+  // Total: 1183 events, 295.75000000000000000000 events / second
+  //
   server.addHandler(&events);
 
-  // Run: websocat ws://192.168.4.1/ws
-  server.addHandler(&ws);
+  // Run in terminal 1: websocat ws://192.168.4.1/ws => stream data
+  // Run in terminal 2: websocat ws://192.168.4.1/ws => stream data
+  // Run in terminal 3: websocat ws://192.168.4.1/ws => should fail:
+  /*
+❯  websocat ws://192.168.4.1/ws
+websocat: WebSocketError: WebSocketError: Received unexpected status code (503 Service Unavailable)
+websocat: error running
+  */
+  server.addHandler(&ws).addMiddleware([](AsyncWebServerRequest* request, ArMiddlewareNext next) {
+    if (ws.count() > 2) {
+      // too many clients - answer back immediately and stop processing next middlewares and handler
+      request->send(503, "text/plain", "Server is busy");
+    } else {
+      // process next middleware and at the end the handler
+      next();
+    }
+  });
 
 #if __has_include("ArduinoJson.h")
   server.addHandler(jsonHandler);
@@ -624,7 +731,7 @@ void setup() {
 }
 
 uint32_t lastSSE = 0;
-uint32_t deltaSSE = 5;
+uint32_t deltaSSE = 10;
 
 uint32_t lastWS = 0;
 uint32_t deltaWS = 100;
@@ -637,9 +744,9 @@ void loop() {
   }
   if (now - lastWS >= deltaWS) {
     ws.printfAll("kp%.4f", (10.0 / 3.0));
-    for (auto& client : ws.getClients()) {
-      client.printf("kp%.4f", (10.0 / 3.0));
-    }
+    // for (auto& client : ws.getClients()) {
+    //   client.printf("kp%.4f", (10.0 / 3.0));
+    // }
     lastWS = millis();
   }
 }

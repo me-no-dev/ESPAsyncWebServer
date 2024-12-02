@@ -544,7 +544,7 @@ void AsyncWebSocketClient::_onData(void* pbuf, size_t plen) {
         }
       }
       if (datalen > 0)
-        _server->_handleEvent(this, WS_EVT_DATA, (void*)&_pinfo, (uint8_t*)data, datalen);
+        _server->_handleEvent(this, WS_EVT_DATA, (void*)&_pinfo, data, datalen);
 
       _pinfo.index += datalen;
     } else if ((datalen + _pinfo.index) == _pinfo.len) {
@@ -568,11 +568,12 @@ void AsyncWebSocketClient::_onData(void* pbuf, size_t plen) {
           _queueControl(WS_DISCONNECT, data, datalen);
         }
       } else if (_pinfo.opcode == WS_PING) {
+        _server->_handleEvent(this, WS_EVT_PING, NULL, NULL, 0);
         _queueControl(WS_PONG, data, datalen);
       } else if (_pinfo.opcode == WS_PONG) {
         if (datalen != AWSC_PING_PAYLOAD_LEN || memcmp(AWSC_PING_PAYLOAD, data, AWSC_PING_PAYLOAD_LEN) != 0)
-          _server->_handleEvent(this, WS_EVT_PONG, NULL, data, datalen);
-      } else if (_pinfo.opcode < 8) { // continuation or text/binary frame
+          _server->_handleEvent(this, WS_EVT_PONG, NULL, NULL, 0);
+      } else if (_pinfo.opcode < WS_DISCONNECT) { // continuation or text/binary frame
         _server->_handleEvent(this, WS_EVT_DATA, (void*)&_pinfo, data, datalen);
         if (_pinfo.final)
           _pinfo.num = 0;
@@ -586,7 +587,7 @@ void AsyncWebSocketClient::_onData(void* pbuf, size_t plen) {
     }
 
     // restore byte as _handleEvent may have added a null terminator i.e., data[len] = 0;
-    if (datalen > 0)
+    if (datalen)
       data[datalen] = datalast;
 
     data += datalen;

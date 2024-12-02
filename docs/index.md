@@ -52,6 +52,20 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - (perf) Lot of code cleanup and optimizations
 - (perf) Performance improvements in terms of memory, speed and size
 
+---
+
+## WARNING: Important notes about future version 4.x
+
+This ESPAsyncWebServer fork is now at version 3.x.
+
+Next version 4.x will:
+
+1. Drop support for ESP8266, which goes EOL in a few years. All ESP8266 boards can be replaced by equivalent ESP32 boards.
+2. Drop support for Arduino 2.x and ESP-IDF 4.x. The library will be compatible with Arduino 3.x and ESP-IDF 5.x.
+3. Drop support for ArduinoJson 5.x and 6.x. The library will be compatible with ArduinoJson 7.x.
+
+So if you need one of these feature, you will have to stick with 3.x or another fork.
+
 ## Dependencies
 
 **WARNING** The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations, but its name had to stay `ESP Async WebServer` in Arduino Registry.
@@ -61,13 +75,13 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 ```ini
 lib_compat_mode = strict
 lib_ldf_mode = chain
-lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.22
+lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.3.23
 ```
 
 **Dependencies:**
 
-- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.12`
-  Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.12](https://github.com/mathieucarbou/AsyncTCP/releases)
+- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.14`
+  Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.14](https://github.com/mathieucarbou/AsyncTCP/releases)
 
 - **ESP32 with AsyncTCPSock**: `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`
 
@@ -85,9 +99,9 @@ AsyncTCPSock can be used instead of AsyncTCP by excluding AsyncTCP from the libr
 lib_compat_mode = strict
 lib_ldf_mode = chain
 lib_deps =
-  ; mathieucarbou/AsyncTCP @ 3.2.12
+  ; mathieucarbou/AsyncTCP @ 3.2.14
   https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip
-  mathieucarbou/ESPAsyncWebServer @ 3.3.22
+  mathieucarbou/ESPAsyncWebServer @ 3.3.23
 lib_ignore =
   AsyncTCP
   mathieucarbou/AsyncTCP
@@ -95,20 +109,54 @@ lib_ignore =
 
 ## Performance
 
-Performance of `mathieucarbou/ESPAsyncWebServer @ 3.3.22`:
+Performance of `mathieucarbou/ESPAsyncWebServer @ 3.3.23`:
 
 ```bash
 > brew install autocannon
 > autocannon -c 10 -w 10 -d 20 http://192.168.4.1
 ```
 
-With `mathieucarbou/AsyncTCP @ 3.2.12`
+With `mathieucarbou/AsyncTCP @ 3.2.14`
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
 
 With `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`:
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)
+
+**SSE performance**
+
+In the example, there is an endpoint `/events` with some comments showing how these metrics are calculated.
+
+Test is running for 20 seconds with 10 connections.
+
+```
+// With AsyncTCP, with 10 workers: no message discarded from the queue
+//
+// Total: 1875 events, 468.75000000000000000000 events / second
+// Total: 1870 events, 467.50000000000000000000 events / second
+// Total: 1871 events, 467.75000000000000000000 events / second
+// Total: 1875 events, 468.75000000000000000000 events / second
+// Total: 1871 events, 467.75000000000000000000 events / second
+// Total: 1805 events, 451.25000000000000000000 events / second
+// Total: 1803 events, 450.75000000000000000000 events / second
+// Total: 1873 events, 468.25000000000000000000 events / second
+// Total: 1872 events, 468.00000000000000000000 events / second
+// Total: 1805 events, 451.25000000000000000000 events / second
+//
+// With AsyncTCPSock, with 10 workers: no message discarded from the queue
+//
+// Total: 1242 events, 310.50000000000000000000 events / second
+// Total: 1242 events, 310.50000000000000000000 events / second
+// Total: 1242 events, 310.50000000000000000000 events / second
+// Total: 1242 events, 310.50000000000000000000 events / second
+// Total: 1181 events, 295.25000000000000000000 events / second
+// Total: 1182 events, 295.50000000000000000000 events / second
+// Total: 1240 events, 310.00000000000000000000 events / second
+// Total: 1181 events, 295.25000000000000000000 events / second
+// Total: 1181 events, 295.25000000000000000000 events / second
+// Total: 1183 events, 295.75000000000000000000 events / second
+```
 
 ## Important recommendations
 
@@ -1232,7 +1280,7 @@ For actual serving the file.
 
 ### Param Rewrite With Matching
 
-It is possible to rewrite the request url with parameter matchg. Here is an example with one parameter:
+It is possible to rewrite the request url with parameter match. Here is an example with one parameter:
 Rewrite for example "/radio/{frequence}" -> "/radio?f={frequence}"
 
 ```cpp
