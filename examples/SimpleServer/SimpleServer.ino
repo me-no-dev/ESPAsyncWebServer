@@ -503,6 +503,27 @@ void setup() {
     request->send(response);
   });
 
+  // time curl -N -v -X GET http://192.168.4.1/slow.html --output -
+  server.on("/slow.html", HTTP_GET, [](AsyncWebServerRequest* request) {
+    request->client()->setRxTimeout(2000);
+    AsyncWebServerResponse* response = request->beginChunkedResponse("text/html", [](uint8_t* buffer, size_t maxLen, size_t index) -> size_t {
+      Serial.printf("%u\n", index);
+      // finished ?
+      if (index >= 160000)
+        return 0;
+
+      // slow down the task by 2 seconds
+      // to simulate some heavy processing, like SD card reading
+      delay(100);
+
+      memset(buffer, characters[charactersIndex], 256);
+      charactersIndex = (charactersIndex + 1) % sizeof(characters);
+      return 256;
+    });
+
+    request->send(response);
+  });
+
   /*
     ❯ curl -I -X HEAD http://192.168.4.1/download
     HTTP/1.1 200 OK
