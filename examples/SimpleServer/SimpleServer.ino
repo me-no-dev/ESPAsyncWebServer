@@ -509,7 +509,7 @@ void setup() {
     uint32_t l = request->getParam("l")->value().toInt();
     Serial.printf("d = %" PRIu32 ", l = %" PRIu32 "\n", d, l);
     AsyncWebServerResponse* response = request->beginChunkedResponse("text/html", [d, l](uint8_t* buffer, size_t maxLen, size_t index) -> size_t {
-      Serial.printf("%" PRIu32 "\n", index);
+      Serial.printf("%u\n", index);
       // finished ?
       if (index >= l)
         return 0;
