@@ -46,9 +46,7 @@ static String generateEventMessage(const char* message, const char* event, uint3
 
   if (id) {
     str += T_id__;
-    char buff[16];
-    snprintf ( buff, 16, "%u", id );
-    str += buff;
+    str += id;
     str += (char)0xa; // '\n'
   }
 
