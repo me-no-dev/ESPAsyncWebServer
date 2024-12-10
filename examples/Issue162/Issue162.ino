@@ -56,13 +56,23 @@ void setup() {
         <head></head>
         <script> 
             let ws = new WebSocket("ws://" + window.location.host + "/ws");
+
+            ws.addEventListener("open", (e) => {
+                console.log("WebSocket connected", e);
+            });
+
+            ws.addEventListener("error", (e) => {
+                console.log("WebSocket error", e);
+            });
+
+            ws.addEventListener("close", (e) => {
+                console.log("WebSocket close", e);
+            });
+
+            ws.addEventListener("message", (e) => {
+                console.log("WebSocket message", e);
+            });
                     
-            document.addEventListener("DOMContentLoaded", function () {
-                ws.onopen = function () {
-                    console.log("WebSocket connected");
-                    };
-                });
-                        
             function closeAllWsClients() {
               fetch("/close_all_ws_clients", {
                   method : "POST",
@@ -79,6 +89,11 @@ void setup() {
   server.begin();
 }
 
+uint32_t lastTime = 0;
 void loop() {
-  vTaskDelete(NULL);
+  if (millis() - lastTime > 5000) {
+    lastTime = millis();
+    Serial.printf("Client count: %u\n", ws.count());
+  }
+  ws.cleanupClients();
 }
