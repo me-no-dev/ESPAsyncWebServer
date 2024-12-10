@@ -41,7 +41,7 @@ static String generateEventMessage(const char* message, const char* event, uint3
   if (reconnect) {
     str += T_retry_;
     str += reconnect;
-    str += 0xa; // '\n'
+    str += (char)0xa; // '\n'
   }
 
   if (id) {
@@ -49,13 +49,13 @@ static String generateEventMessage(const char* message, const char* event, uint3
     char buff[16];
     snprintf ( buff, 16, "%u", id );
     str += buff;
-    str += 0xa; // '\n'
+    str += (char)0xa; // '\n'
   }
 
   if (event != NULL) {
     str += T_event_;
     str += event;
-    str += 0xa; // '\n'
+    str += (char)0xa; // '\n'
   }
 
   if (!message)
