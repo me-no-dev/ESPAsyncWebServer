@@ -180,11 +180,11 @@ void AsyncWebServerRequest::_onData(void *buf, size_t len){
 
 void AsyncWebServerRequest::_removeNotInterestingHeaders(){
   if (_interestingHeaders.containsIgnoreCase("ANY")) return; // nothing to do
-  for(const auto& header: _headers){
-      if(!_interestingHeaders.containsIgnoreCase(header->name().c_str())){
-        _headers.remove(header);
-      }
-  }
+  StringArray *a = &_interestingHeaders;
+  auto cmpr = LinkedList<AsyncWebHeader*>::Predicate{[&a](AsyncWebHeader* h) {
+    return !a->containsIgnoreCase(h->name().c_str());
+  }};
+  while (_headers.remove_first(cmpr)){}
 }
 
 void AsyncWebServerRequest::_onPoll(){
@@ -606,15 +606,15 @@ bool AsyncWebServerRequest::hasHeader(const __FlashStringHelper * data) const {
       n += 1;
   }
   char * name = (char*) malloc(n+1);
-  name[n] = 0; 
+  name[n] = 0;
   if (name) {
     for(size_t b=0; b<n; b++)
-      name[b] = pgm_read_byte(p++);    
-    bool result = hasHeader( String(name) ); 
-    free(name); 
-    return result; 
+      name[b] = pgm_read_byte(p++);
+    bool result = hasHeader( String(name) );
+    free(name);
+    return result;
   } else {
-    return false; 
+    return false;
   }
 }
 
@@ -629,15 +629,15 @@ AsyncWebHeader* AsyncWebServerRequest::getHeader(const String& name) const {
 
 AsyncWebHeader* AsyncWebServerRequest::getHeader(const __FlashStringHelper * data) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = strlen_P(p); 
+  size_t n = strlen_P(p);
   char * name = (char*) malloc(n+1);
   if (name) {
-    strcpy_P(name, p); 
-    AsyncWebHeader* result = getHeader( String(name)); 
-    free(name); 
-    return result; 
+    strcpy_P(name, p);
+    AsyncWebHeader* result = getHeader( String(name));
+    free(name);
+    return result;
   } else {
-    return nullptr; 
+    return nullptr;
   }
 }
 
@@ -664,14 +664,14 @@ bool AsyncWebServerRequest::hasParam(const __FlashStringHelper * data, bool post
   size_t n = strlen_P(p);
 
   char * name = (char*) malloc(n+1);
-  name[n] = 0; 
+  name[n] = 0;
   if (name) {
-    strcpy_P(name,p);    
-    bool result = hasParam( name, post, file); 
-    free(name); 
-    return result; 
+    strcpy_P(name,p);
+    bool result = hasParam( name, post, file);
+    free(name);
+    return result;
   } else {
-    return false; 
+    return false;
   }
 }
 
@@ -689,12 +689,12 @@ AsyncWebParameter* AsyncWebServerRequest::getParam(const __FlashStringHelper * d
   size_t n = strlen_P(p);
   char * name = (char*) malloc(n+1);
   if (name) {
-    strcpy_P(name, p);   
-    AsyncWebParameter* result = getParam(name, post, file); 
-    free(name); 
-    return result; 
+    strcpy_P(name, p);
+    AsyncWebParameter* result = getParam(name, post, file);
+    free(name);
+    return result;
   } else {
-    return nullptr; 
+    return nullptr;
   }
 }
 
@@ -872,15 +872,15 @@ bool AsyncWebServerRequest::hasArg(const char* name) const {
 
 bool AsyncWebServerRequest::hasArg(const __FlashStringHelper * data) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = strlen_P(p); 
+  size_t n = strlen_P(p);
   char * name = (char*) malloc(n+1);
   if (name) {
-    strcpy_P(name, p);    
-    bool result = hasArg( name ); 
-    free(name); 
-    return result; 
+    strcpy_P(name, p);
+    bool result = hasArg( name );
+    free(name);
+    return result;
   } else {
-    return false; 
+    return false;
   }
 }
 
@@ -900,9 +900,9 @@ const String& AsyncWebServerRequest::arg(const __FlashStringHelper * data) const
   char * name = (char*) malloc(n+1);
   if (name) {
     strcpy_P(name, p);
-    const String & result = arg( String(name) ); 
-    free(name); 
-    return result; 
+    const String & result = arg( String(name) );
+    free(name);
+    return result;
   } else {
     return SharedEmptyString;
   }
@@ -929,17 +929,17 @@ const String& AsyncWebServerRequest::header(const char* name) const {
 
 const String& AsyncWebServerRequest::header(const __FlashStringHelper * data) const {
   PGM_P p = reinterpret_cast<PGM_P>(data);
-  size_t n = strlen_P(p); 
+  size_t n = strlen_P(p);
   char * name = (char*) malloc(n+1);
   if (name) {
-    strcpy_P(name, p);  
-    const String & result = header( (const char *)name ); 
-    free(name); 
-    return result; 
+    strcpy_P(name, p);
+    const String & result = header( (const char *)name );
+    free(name);
+    return result;
   } else {
-    return SharedEmptyString; 
+    return SharedEmptyString;
   }
-};  
+};
 
 
 const String& AsyncWebServerRequest::header(size_t i) const {
