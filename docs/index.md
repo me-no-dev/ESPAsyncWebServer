@@ -75,7 +75,7 @@ So if you need one of these feature, you will have to stick with 3.x or another 
 ```ini
 lib_compat_mode = strict
 lib_ldf_mode = chain
-lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.4.0
+lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.4.1
 ```
 
 **Dependencies:**
@@ -101,7 +101,7 @@ lib_ldf_mode = chain
 lib_deps =
   ; mathieucarbou/AsyncTCP @ 3.3.0
   https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip
-  mathieucarbou/ESPAsyncWebServer @ 3.4.0
+  mathieucarbou/ESPAsyncWebServer @ 3.4.1
 lib_ignore =
   AsyncTCP
   mathieucarbou/AsyncTCP
@@ -109,7 +109,7 @@ lib_ignore =
 
 ## Performance
 
-Performance of `mathieucarbou/ESPAsyncWebServer @ 3.4.0`:
+Performance of `mathieucarbou/ESPAsyncWebServer @ 3.4.1`:
 
 ```bash
 > brew install autocannon
