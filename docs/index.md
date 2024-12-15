@@ -80,8 +80,8 @@ lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.4.0
 
 **Dependencies:**
 
-- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.14`
-  Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.14](https://github.com/mathieucarbou/AsyncTCP/releases)
+- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.2.15`
+  Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.2.15](https://github.com/mathieucarbou/AsyncTCP/releases)
 
 - **ESP32 with AsyncTCPSock**: `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`
 
@@ -99,7 +99,7 @@ AsyncTCPSock can be used instead of AsyncTCP by excluding AsyncTCP from the libr
 lib_compat_mode = strict
 lib_ldf_mode = chain
 lib_deps =
-  ; mathieucarbou/AsyncTCP @ 3.2.14
+  ; mathieucarbou/AsyncTCP @ 3.2.15
   https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip
   mathieucarbou/ESPAsyncWebServer @ 3.4.0
 lib_ignore =
@@ -116,7 +116,7 @@ Performance of `mathieucarbou/ESPAsyncWebServer @ 3.4.0`:
 > autocannon -c 10 -w 10 -d 20 http://192.168.4.1
 ```
 
-With `mathieucarbou/AsyncTCP @ 3.2.14`
+With `mathieucarbou/AsyncTCP @ 3.2.15`
 
 [![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
 
@@ -133,29 +133,29 @@ Test is running for 20 seconds with 10 connections.
 ```
 // With AsyncTCP, with 10 workers: no message discarded from the queue
 //
-// Total: 1875 events, 468.75000000000000000000 events / second
-// Total: 1870 events, 467.50000000000000000000 events / second
-// Total: 1871 events, 467.75000000000000000000 events / second
-// Total: 1875 events, 468.75000000000000000000 events / second
-// Total: 1871 events, 467.75000000000000000000 events / second
-// Total: 1805 events, 451.25000000000000000000 events / second
-// Total: 1803 events, 450.75000000000000000000 events / second
-// Total: 1873 events, 468.25000000000000000000 events / second
-// Total: 1872 events, 468.00000000000000000000 events / second
-// Total: 1805 events, 451.25000000000000000000 events / second
+// Total: 2038 events, 509.50 events / second
+// Total: 2120 events, 530.00 events / second
+// Total: 2119 events, 529.75 events / second
+// Total: 2038 events, 509.50 events / second
+// Total: 2037 events, 509.25 events / second
+// Total: 2119 events, 529.75 events / second
+// Total: 2119 events, 529.75 events / second
+// Total: 2120 events, 530.00 events / second
+// Total: 2038 events, 509.50 events / second
+// Total: 2038 events, 509.50 events / second
 //
 // With AsyncTCPSock, with 10 workers: no message discarded from the queue
 //
-// Total: 1242 events, 310.50000000000000000000 events / second
-// Total: 1242 events, 310.50000000000000000000 events / second
-// Total: 1242 events, 310.50000000000000000000 events / second
-// Total: 1242 events, 310.50000000000000000000 events / second
-// Total: 1181 events, 295.25000000000000000000 events / second
-// Total: 1182 events, 295.50000000000000000000 events / second
-// Total: 1240 events, 310.00000000000000000000 events / second
-// Total: 1181 events, 295.25000000000000000000 events / second
-// Total: 1181 events, 295.25000000000000000000 events / second
-// Total: 1183 events, 295.75000000000000000000 events / second
+// Total: 2038 events, 509.50 events / second
+// Total: 2120 events, 530.00 events / second
+// Total: 2119 events, 529.75 events / second
+// Total: 2038 events, 509.50 events / second
+// Total: 2037 events, 509.25 events / second
+// Total: 2119 events, 529.75 events / second
+// Total: 2119 events, 529.75 events / second
+// Total: 2120 events, 530.00 events / second
+// Total: 2038 events, 509.50 events / second
+// Total: 2038 events, 509.50 events / second
 ```
 
 ## Important recommendations
@@ -163,27 +163,14 @@ Test is running for 20 seconds with 10 connections.
 Most of the crashes are caused by improper configuration of the library for the project.
 Here are some recommendations to avoid them.
 
-1. Set the running core to be on the same core of your application (usually core 1) `-D CONFIG_ASYNC_TCP_RUNNING_CORE=1`
-2. Set the stack size appropriately with `-D CONFIG_ASYNC_TCP_STACK_SIZE=16384`.
-   The default value of `16384` might be too much for your project.
-   You can look at the [MycilaTaskMonitor](https://mathieu.carbou.me/MycilaTaskMonitor) project to monitor the stack usage.
-3. You can change **if you know what you are doing** the task priority with `-D CONFIG_ASYNC_TCP_PRIORITY=10`.
-   Default is `10`.
-4. You can increase the queue size with `-D CONFIG_ASYNC_TCP_QUEUE_SIZE=128`.
-   Default is `64`.
-5. You can decrease the maximum ack time `-D CONFIG_ASYNC_TCP_MAX_ACK_TIME=3000`.
-   Default is `5000`.
-
-I personally use the following configuration in my projects because my WS messages can be big (up to 4k).
-If you have smaller messages, you can increase `WS_MAX_QUEUED_MESSAGES` to 128.
+I personally use the following configuration in my projects:
 
 ```c++
-  -D CONFIG_ASYNC_TCP_MAX_ACK_TIME=3000
-  -D CONFIG_ASYNC_TCP_PRIORITY=10
-  -D CONFIG_ASYNC_TCP_QUEUE_SIZE=128
-  -D CONFIG_ASYNC_TCP_RUNNING_CORE=1
-  -D CONFIG_ASYNC_TCP_STACK_SIZE=4096
-  -D WS_MAX_QUEUED_MESSAGES=64
+  -D CONFIG_ASYNC_TCP_MAX_ACK_TIME=5000 // (keep default)
+  -D CONFIG_ASYNC_TCP_PRIORITY=10 // (keep default)
+  -D CONFIG_ASYNC_TCP_QUEUE_SIZE=64 // (keep default)
+  -D CONFIG_ASYNC_TCP_RUNNING_CORE=1 // force async_tcp task to be on same core as the app (default is core 0)
+  -D CONFIG_ASYNC_TCP_STACK_SIZE=4096 // reduce the stack size (default is 16K)
 ```
 
 ## `AsyncWebSocketMessageBuffer` and `makeBuffer()`
@@ -622,7 +609,7 @@ Endpoints which consume JSON can use a special handler to get ready to use JSON 
 #include "ArduinoJson.h"
 
 AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/rest/endpoint", [](AsyncWebServerRequest *request, JsonVariant &json) {
-  JsonObject& jsonObj = json.as<JsonObject>();
+  JsonObject jsonObj = json.as<JsonObject>();
   // ...
 });
 server.addHandler(handler);
