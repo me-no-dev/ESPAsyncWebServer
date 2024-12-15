@@ -357,7 +357,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest* request, size_t len, u
     ++_in_flight_credit;
 
   // for chunked responses ignore acks if there are no _in_flight_credits left
-  if (_chunked && !_in_flight_credit){
+  if (_chunked && !_in_flight_credit) {
 #ifdef ESP32
     log_d("(chunk) out of in-flight credits");
 #endif
@@ -379,7 +379,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest* request, size_t len, u
       _head = _head.substring(space);
       _writtenLength += request->client()->write(out.c_str(), out.length());
       _in_flight += out.length();
-      --_in_flight_credit;  // take a credit
+      --_in_flight_credit; // take a credit
       return out.length();
     }
   }
@@ -389,9 +389,9 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest* request, size_t len, u
     // but flood asynctcp's queue and fragment socket buffer space for large responses.
     // Let's ignore polled acks and acks in case when we have more in-flight data then the available socket buff space.
     // That way we could balance on having half the buffer in-flight while another half is filling up, while minimizing events in asynctcp q
-    if (_in_flight > space){
-      //log_d("defer user call %u/%u", _in_flight, space);
-      // take the credit back since we are ignoring this ack and rely on other inflight data
+    if (_in_flight > space) {
+      // log_d("defer user call %u/%u", _in_flight, space);
+      //  take the credit back since we are ignoring this ack and rely on other inflight data
       if (len)
         --_in_flight_credit;
       return 0;
@@ -452,7 +452,7 @@ size_t AsyncAbstractResponse::_ack(AsyncWebServerRequest* request, size_t len, u
     if (outLen) {
       _writtenLength += request->client()->write((const char*)buf, outLen);
       _in_flight += outLen;
-      --_in_flight_credit;  // take a credit
+      --_in_flight_credit; // take a credit
     }
 
     if (_chunked) {
