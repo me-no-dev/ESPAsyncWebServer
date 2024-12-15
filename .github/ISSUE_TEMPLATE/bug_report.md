@@ -32,3 +32,9 @@ As an alternative, you can use [https://maximeborges.github.io/esp-stacktrace-de
 **Additional notes**
 
 Add any other context about the problem here.
+
+# WARNING
+
+**ANY ISSUE POSTED WITH AN ENCODED STACK TRACE WILL BE CLOSED !**
+
+**PLEASE MAKE THE EFFORT TO DECODE YOUR STACK TRACE**
