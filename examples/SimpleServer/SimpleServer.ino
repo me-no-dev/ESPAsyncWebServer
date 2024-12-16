@@ -407,6 +407,7 @@ void setup() {
   // PERF TEST:
   // > brew install autocannon
   // > autocannon -c 10 -w 10 -d 20 http://192.168.4.1
+  // > autocannon -c 16 -w 16 -d 20 http://192.168.4.1
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
     request->send(200, "text/html", htmlContent);
   });
@@ -674,6 +675,7 @@ void setup() {
   //
   // some perf tests:
   // launch 16 concurrent workers for 30 seconds
+  // > for i in {1..10}; do ( count=$(gtimeout 30 curl -s -N -H "Accept: text/event-stream" http://192.168.4.1/events 2>&1 | grep -c "^data:"); echo "Total: $count events, $(echo "$count / 4" | bc -l) events / second" ) & done;
   // > for i in {1..16}; do ( count=$(gtimeout 30 curl -s -N -H "Accept: text/event-stream" http://192.168.4.1/events 2>&1 | grep -c "^data:"); echo "Total: $count events, $(echo "$count / 4" | bc -l) events / second" ) & done;
   //
   // With AsyncTCP, with 16 workers: a lot of "Event message queue overflow: discard message", no crash
