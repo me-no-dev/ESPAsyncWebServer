@@ -147,6 +147,8 @@ AsyncMiddlewareFunction complexAuth([](AsyncWebServerRequest* request, ArMiddlew
 
 AuthorizationMiddleware authz([](AsyncWebServerRequest* request) { return request->getAttribute("role") == "staff"; });
 
+int wsClients = 0;
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const char* PARAM_MESSAGE PROGMEM = "message";
@@ -646,10 +648,14 @@ void setup() {
   ws.onEvent([](AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
     (void)len;
     if (type == WS_EVT_CONNECT) {
+      wsClients++;
+      ws.textAll("new client connected");
       Serial.println("ws connect");
       client->setCloseClientOnQueueFull(false);
       client->ping();
     } else if (type == WS_EVT_DISCONNECT) {
+      wsClients--;
+      ws.textAll("client disconnected");
       Serial.println("ws disconnect");
     } else if (type == WS_EVT_ERROR) {
       Serial.println("ws error");
