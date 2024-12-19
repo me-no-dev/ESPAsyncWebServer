@@ -89,7 +89,7 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
         // Check for null characters in header
         if (!str[i]) {
           _parseState = PARSE_REQ_FAIL;
-          _client->close(true);
+          _client->abort();
           return;
         }
         if (str[i] == '\n') {
@@ -160,6 +160,8 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
         if (!_sent) {
           if (!_response)
             send(501, T_text_plain, "Handler did not handle the request");
+          else if (!_response->_sourceValid())
+            send(500, T_text_plain, "Invalid data in handler");
           _client->setRxTimeout(0);
           _response->_respond(this);
           _sent = true;
@@ -587,13 +589,13 @@ void AsyncWebServerRequest::_parseLine() {
   if (_parseState == PARSE_REQ_START) {
     if (!_temp.length()) {
       _parseState = PARSE_REQ_FAIL;
-      _client->close();
+      _client->abort();
     } else {
       if (_parseReqHead()) {
         _parseState = PARSE_REQ_HEADERS;
       } else {
         _parseState = PARSE_REQ_FAIL;
-        _client->close();
+        _client->abort();
       }
     }
     return;
@@ -616,6 +618,8 @@ void AsyncWebServerRequest::_parseLine() {
         if (!_sent) {
           if (!_response)
             send(501, T_text_plain, "Handler did not handle the request");
+          else if (!_response->_sourceValid())
+            send(500, T_text_plain, "Invalid data in handler");
           _client->setRxTimeout(0);
           _response->_respond(this);
           _sent = true;
@@ -792,14 +796,6 @@ void AsyncWebServerRequest::send(AsyncWebServerResponse* response) {
   if (_response)
     delete _response;
   _response = response;
-  if (_response == NULL) {
-    _client->close(true);
-    _onDisconnect();
-    _sent = true;
-    return;
-  }
-  if (!_response->_sourceValid())
-    send(500);
 }
 
 void AsyncWebServerRequest::redirect(const char* url, int code) {

@@ -750,6 +750,10 @@ websocat: error running
     }
   });
 
+  // Reset connection on HTTP request:
+  // for i in {1..20}; do curl -v -X GET https://192.168.4.1:80; done;
+  // The heap size should not decrease over time.
+
 #if __has_include("ArduinoJson.h")
   server.addHandler(jsonHandler);
   server.addHandler(msgPackHandler);
