@@ -766,6 +766,8 @@ uint32_t deltaSSE = 10;
 uint32_t lastWS = 0;
 uint32_t deltaWS = 100;
 
+uint32_t lastHeap = 0;
+
 void loop() {
   uint32_t now = millis();
   if (now - lastSSE >= deltaSSE) {
@@ -778,5 +780,9 @@ void loop() {
     //   client.printf("kp%.4f", (10.0 / 3.0));
     // }
     lastWS = millis();
+  }
+  if(now - lastHeap >= 2000) {
+    Serial.printf("Free heap: %" PRIu32 "\n", ESP.getFreeHeap());
+    lastHeap = now;
   }
 }
