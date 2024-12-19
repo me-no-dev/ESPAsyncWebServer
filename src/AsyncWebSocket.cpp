@@ -287,7 +287,6 @@ AsyncWebSocketClient::AsyncWebSocketClient(AsyncWebServerRequest* request, Async
   _client->onTimeout([](void* r, AsyncClient* c, uint32_t time) { (void)c; ((AsyncWebSocketClient*)(r))->_onTimeout(time); }, this);
   _client->onData([](void* r, AsyncClient* c, void* buf, size_t len) { (void)c; ((AsyncWebSocketClient*)(r))->_onData(buf, len); }, this);
   _client->onPoll([](void* r, AsyncClient* c) { (void)c; ((AsyncWebSocketClient*)(r))->_onPoll(); }, this);
-  _server->_handleEvent(this, WS_EVT_CONNECT, request, NULL, 0);
   delete request;
   memset(&_pinfo, 0, sizeof(_pinfo));
 }
@@ -781,6 +780,7 @@ void AsyncWebSocket::_handleEvent(AsyncWebSocketClient* client, AwsEventType typ
 
 AsyncWebSocketClient* AsyncWebSocket::_newClient(AsyncWebServerRequest* request) {
   _clients.emplace_back(request, this);
+  _handleEvent(&_clients.back(), WS_EVT_CONNECT, request, NULL, 0);
   return &_clients.back();
 }
 
