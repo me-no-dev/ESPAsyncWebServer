@@ -71,10 +71,10 @@ void AsyncWebServerRequest::_onData(void* buf, size_t len) {
 #ifndef ASYNC_TCP_SSL_ENABLED
   if (_parseState == PARSE_REQ_START && len && ((uint8_t*)buf)[0] == 0x16) { // 0x16 indicates a Handshake message (SSL/TLS).
   #ifdef ESP32
-    log_d("SSL/TLS handshake detected: closing connection");
+    log_d("SSL/TLS handshake detected: resetting connection");
   #endif
     _parseState = PARSE_REQ_FAIL;
-    _client->close();
+    _client->abort();
     return;
   }
 #endif
