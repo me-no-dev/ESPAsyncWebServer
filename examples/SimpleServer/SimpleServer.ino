@@ -781,8 +781,10 @@ void loop() {
     // }
     lastWS = millis();
   }
-  if(now - lastHeap >= 2000) {
+#ifdef ESP32
+  if (now - lastHeap >= 2000) {
     Serial.printf("Free heap: %" PRIu32 "\n", ESP.getFreeHeap());
     lastHeap = now;
   }
+#endif
 }
