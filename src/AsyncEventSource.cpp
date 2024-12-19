@@ -23,6 +23,8 @@
 #endif
 #include "AsyncEventSource.h"
 
+#define ASYNC_SSE_NEW_LINE_CHAR (char)0xa
+
 using namespace asyncsrv;
 
 static String generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect) {
@@ -41,19 +43,19 @@ static String generateEventMessage(const char* message, const char* event, uint3
   if (reconnect) {
     str += T_retry_;
     str += reconnect;
-    str += (char)0xa; // '\n'
+    str += ASYNC_SSE_NEW_LINE_CHAR; // '\n'
   }
 
   if (id) {
     str += T_id__;
     str += id;
-    str += (char)0xa; // '\n'
+    str += ASYNC_SSE_NEW_LINE_CHAR; // '\n'
   }
 
   if (event != NULL) {
     str += T_event_;
     str += event;
-    str += (char)0xa; // '\n'
+    str += ASYNC_SSE_NEW_LINE_CHAR; // '\n'
   }
 
   if (!message)
@@ -95,13 +97,13 @@ static String generateEventMessage(const char* message, const char* event, uint3
 
     str += T_data_;
     str.concat(lineStart, lineEnd - lineStart);
-    str += 0xa; // \n
+    str += ASYNC_SSE_NEW_LINE_CHAR; // \n
 
     lineStart = nextLine;
   } while (lineStart < ((char*)message + messageLen));
 
   // append another \n to terminate message
-  str += 0xa; // '\n'
+  str += ASYNC_SSE_NEW_LINE_CHAR; // '\n'
 
   return str;
 }
