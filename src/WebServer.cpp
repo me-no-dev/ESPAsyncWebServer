@@ -56,8 +56,7 @@ AsyncWebServer::AsyncWebServer(uint16_t port)
     c->setRxTimeout(3);
     AsyncWebServerRequest* r = new AsyncWebServerRequest((AsyncWebServer*)s, c);
     if (r == NULL) {
-      c->close(true);
-      c->free();
+      c->abort();
       delete c;
     }
   },
