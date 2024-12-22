@@ -18,7 +18,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [Changes in this fork](#changes-in-this-fork)
 - [Dependencies](#dependencies)
 - [Performance](#performance)
-- [Important recommendations](#important-recommendations)
+- [Important recommendations for build options](#important-recommendations-for-build-options)
 - [`AsyncWebSocketMessageBuffer` and `makeBuffer()`](#asyncwebsocketmessagebuffer-and-makebuffer)
 - [How to replace a response](#how-to-replace-a-response)
 - [How to use Middleware](#how-to-use-middleware)
@@ -48,6 +48,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - (perf) `setCloseClientOnQueueFull(bool)` which can be set on a client to either close the connection or discard messages but not close the connection when the queue is full
 - (perf) `SSE_MAX_QUEUED_MESSAGES` to control the maximum number of messages that can be queued for a SSE client
 - (perf) `WS_MAX_QUEUED_MESSAGES`: control the maximum number of messages that can be queued for a Websocket client
+- (perf) in-flight buffer control and queue congestion avoidance to help to improve parallel connections handling, high volume data transfers and mitigate poor implemeneted slow user-code callbacks delayes on connctions handling
 - (perf) Code size improvements
 - (perf) Lot of code cleanup and optimizations
 - (perf) Performance improvements in terms of memory, speed and size
@@ -56,7 +57,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 
 ## WARNING: Important notes about future version 4.x
 
-This ESPAsyncWebServer fork is now at version 3.x.
+This ESPAsyncWebServer fork is now at version 3.x, where we try to keep the API compatibility with original project as much as possible.
 
 Next version 4.x will:
 
@@ -68,7 +69,8 @@ So if you need one of these feature, you will have to stick with 3.x or another 
 
 ## Dependencies
 
-**WARNING** The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations, but its name had to stay `ESP Async WebServer` in Arduino Registry.
+> [!WARNING]
+> The library name was changed from `ESP Async WebServer` to `ESPAsyncWebServer` as per the Arduino Lint recommendations, but its name had to stay `ESP Async WebServer` in Arduino Registry.
 
 **PlatformIO / pioarduino:**
 
@@ -158,26 +160,41 @@ Test is running for 20 seconds with 10 connections.
 // Total: 2038 events, 509.50 events / second
 ```
 
-## Important recommendations
+## Important recommendations for build options
 
-Most of the crashes are caused by improper configuration of the library for the project.
-Here are some recommendations to avoid them.
+Most of the crashes are caused by improper use or configuration of the AsyncTCP library used for the project.
+Here are some recommendations to avoid them and build-time flags you can change.
+
+`CONFIG_ASYNC_TCP_MAX_ACK_TIME` - defines a timeout for TCP connection to be considered alive when waiting for data.
+In some bad network conditions you might consider increasing it.
+
+`CONFIG_ASYNC_TCP_QUEUE_SIZE` - defines the length of the queue for events related to connections handling.
+Both the server and AsyncTCP library in this fork were optimized to control the queue automatically. Do NOT try blindly increasing the queue size, it does not help you in a way you might think it is. If you receive debug messages about queue throttling, try to optimize your server callbaks code to execute as fast as possible.
+Read #165 thread, it might give you some hints.
+
+`CONFIG_ASYNC_TCP_RUNNING_CORE` - CPU core thread affinity that runs the queue events handling and executes server callbacks. Default is ANY core, so it means that for dualcore SoCs both cores could handle server activities. If your server's code is too heavy and unoptimized or you see that sometimes
+server might affect other network activities, you might consider to bind it to the same core that runs Arduino code (1) to minimize affect on radio part. Otherwise you can leave the default to let RTOS decide where to run the thread based on priority
+
+`CONFIG_ASYNC_TCP_STACK_SIZE` - stack size for the thread that runs sever events and callbacks. Default is 16k that is a way too much waste for well-defined short async code or  simple static file handling. You might want to cosider reducing it to 4-8k to same RAM usage. If you do not know what this is or not sure about your callback code demands - leave it as default, should be enough even for very hungry callbacks in most cases.
+
+> [!NOTE]
+> This relates to ESP32 only, ESP8266 uses different ESPAsyncTCP lib that does not has this build options              
 
 I personally use the following configuration in my projects:
 
 ```c++
-  -D CONFIG_ASYNC_TCP_MAX_ACK_TIME=5000 // (keep default)
-  -D CONFIG_ASYNC_TCP_PRIORITY=10 // (keep default)
-  -D CONFIG_ASYNC_TCP_QUEUE_SIZE=64 // (keep default)
-  -D CONFIG_ASYNC_TCP_RUNNING_CORE=1 // force async_tcp task to be on same core as the app (default is core 0)
-  -D CONFIG_ASYNC_TCP_STACK_SIZE=4096 // reduce the stack size (default is 16K)
+  -D CONFIG_ASYNC_TCP_MAX_ACK_TIME=5000   // (keep default)
+  -D CONFIG_ASYNC_TCP_PRIORITY=10         // (keep default)
+  -D CONFIG_ASYNC_TCP_QUEUE_SIZE=64       // (keep default)
+  -D CONFIG_ASYNC_TCP_RUNNING_CORE=1      // force async_tcp task to be on same core as Arduino app (default is any core)
+  -D CONFIG_ASYNC_TCP_STACK_SIZE=4096     // reduce the stack size (default is 16K)
 ```
 
 ## `AsyncWebSocketMessageBuffer` and `makeBuffer()`
 
-The fork from `yubox-node-org` introduces some breaking API changes compared to the original library, especially regarding the use of `std::shared_ptr<std::vector<uint8_t>>` for WebSocket.
+The fork from [yubox-node-org](https://github.com/yubox-node-org/ESPAsyncWebServer) introduces some breaking API changes compared to the original library, especially regarding the use of `std::shared_ptr<std::vector<uint8_t>>` for WebSocket.
 
-This fork is compatible with the original library from `me-no-dev` regarding WebSocket, and wraps the optimizations done by `yubox-node-org` in the `AsyncWebSocketMessageBuffer` class.
+This fork is compatible with the original library from [me-no-dev](https://github.com/me-no-dev/ESPAsyncWebServer) regarding WebSocket, and wraps the optimizations done by `yubox-node-org` in the `AsyncWebSocketMessageBuffer` class.
 So you have the choice of which API to use.
 
 Here are examples for serializing a Json document in a websocket message buffer:
@@ -298,8 +315,17 @@ myHandler.addMiddleware(&authMiddleware); // add authentication to a specific ha
   These callbacks can be called multiple times during request parsing, so this is up to the user to now call the `AuthenticationMiddleware.allowed(request)` if needed and ideally when the method is called for the first time.
   These callbacks are also not triggering the whole middleware chain since they are not part of the request processing workflow (they are not the final handler).
 
-## Original Documentation
 
+## Maintainers
+This fork of ESPAsyncWebServer and dependend libs are maintained as an opensource project at best effort level.
+ - [Mathieu Carbou](https://github.com/mathieucarbou)
+ - [Emil Muratov](https://github.com/vortigont)
+
+Thanks to all who contributed by providing PRs, testing and reporting issues.
+
+
+## Original Documentation
+<!-- no toc -->
 - [Why should you care](#why-should-you-care)
 - [Important things to remember](#important-things-to-remember)
 - [Principles of operation](#principles-of-operation)
