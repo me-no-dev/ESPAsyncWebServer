@@ -11,6 +11,8 @@ To use this library you might need to have the latest git versions of [ESP8266](
 For ESP32 it requires [AsyncTCP](https://github.com/me-no-dev/AsyncTCP) to work
 To use this library you might need to have the latest git versions of [ESP32](https://github.com/espressif/arduino-esp32) Arduino Core
 
+Local modified WebRequest.cpp to prevent exception that reboots ESP32
+
 ## Table of contents
 - [ESPAsyncWebServer](#espasyncwebserver)
   - [Table of contents](#table-of-contents)
