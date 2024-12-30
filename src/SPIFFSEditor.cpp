@@ -505,7 +505,10 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
     } else
       request->send(404);
   } else if(request->method() == HTTP_POST){
-    if(request->hasParam("data", true, true) && _fs.exists(request->getParam("data", true, true)->value()))
+    // /*SF-begin*/ Add an optional parameter path to control the filename (for example add the /)
+    if (request->hasParam("data", true, true) && request->hasParam("path", true, true) && _fs.exists(request->getParam("path", true, true)->value())) {
+      request->send(200, "", "UPLOADED: "+request->getParam("path", true, true)->value());
+    } else /*SF-end*/ if(request->hasParam("data", true, true) && _fs.exists(request->getParam("data", true, true)->value()))
       request->send(200, "", "UPLOADED: "+request->getParam("data", true, true)->value());
     else
       request->send(500);
