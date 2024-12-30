@@ -463,7 +463,11 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
         output += "{\"type\":\"";
         output += "file";
         output += "\",\"name\":\"";
+#ifdef ESP32
+        output += String(entry.path());
+#else
         output += String(entry.name());
+#endif
         output += "\",\"size\":";
         output += String(entry.size());
         output += "}";
@@ -501,8 +505,12 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
     } else
       request->send(404);
   } else if(request->method() == HTTP_POST){
-    if(request->hasParam("data", true, true) && _fs.exists(request->getParam("data", true, true)->value()))
+    if(request->hasParam("data", true, true) && (_fs.exists(request->getParam("data", true, true)->value())))
       request->send(200, "", "UPLOADED: "+request->getParam("data", true, true)->value());
+    /*SF-begin*/ // add an / if needed
+    else if (request->hasParam("data", true, true) && (_fs.exists('/' + request->getParam("data", true, true)->value())))
+      request->send(200, "", "UPLOADED: /"+request->getParam("data", true, true)->value());
+    /*SF-end*/
     else
       request->send(500);
   } else if(request->method() == HTTP_PUT){
@@ -527,9 +535,16 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
 
 void SPIFFSEditor::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
   if(!index){
+    /*SF-begin*/
+    String filePath = filename;  // Initial filename
+    if (!filePath.startsWith("/")) { // Check if filename starts with '/', if not, prepend '/'
+      filePath = "/" + filePath;  // Prepend '/' if not present
+    }
+    /*SF-end*/
     if(!_username.length() || request->authenticate(_username.c_str(),_password.c_str())){
       _authenticated = true;
-      request->_tempFile = _fs.open(filename, "w");
+      //request->_tempFile = _fs.open(filename, "w");
+      request->_tempFile = _fs.open(filePath, "w"); /*SF-begin*/
       _startTime = millis();
     }
   }
