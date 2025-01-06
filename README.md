@@ -211,8 +211,8 @@ lib_deps = https://github.com/me-no-dev/ESPAsyncWebServer.git
 - [Sattrack](https://github.com/Hopperpop/Sattrack) - Track the ISS with ESP8266
 - [ESP Radio](https://github.com/Edzelf/Esp-radio) - Icecast radio based on ESP8266 and VS1053
 - [VZero](https://github.com/andig/vzero) - the Wireless zero-config controller for volkszaehler.org
-- [ESPurna](https://bitbucket.org/xoseperez/espurna) - ESPurna ("spark" in Catalan) is a custom C firmware for ESP8266 based smart switches. It was originally developed with the ITead Sonoff in mind.
-- [fauxmoESP](https://bitbucket.org/xoseperez/fauxmoesp) - Belkin WeMo emulator library for ESP8266.
+- [ESPurna](https://github.com/xoseperez/espurna) - ESPurna ("spark" in Catalan) is a custom C firmware for ESP8266 based smart switches. It was originally developed with the ITead Sonoff in mind.
+- [FauxmoESP](https://github.com/vintlabs/fauxmoESP) - Belkin WeMo emulator library for ESP8266.
 - [ESP-RFID](https://github.com/omersiar/esp-rfid) - MFRC522 RFID Access Control Management project for ESP8266.
 
 ## Request Variables
