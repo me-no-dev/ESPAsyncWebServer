@@ -57,12 +57,19 @@ class AsyncStaticWebHandler : public AsyncWebHandler {
     AsyncStaticWebHandler& setIsDir(bool isDir);
     AsyncStaticWebHandler& setDefaultFile(const char* filename);
     AsyncStaticWebHandler& setCacheControl(const char* cache_control);
+
+    /**
+     * @brief Set the Last-Modified time for the object
+     * 
+     * @param last_modified 
+     * @return AsyncStaticWebHandler& 
+     */
     AsyncStaticWebHandler& setLastModified(const char* last_modified);
     AsyncStaticWebHandler& setLastModified(struct tm* last_modified);
-#ifdef ESP8266
     AsyncStaticWebHandler& setLastModified(time_t last_modified);
-    AsyncStaticWebHandler& setLastModified(); // sets to current time. Make sure sntp is runing and time is updated
-#endif
+    // sets to current time. Make sure sntp is runing and time is updated
+    AsyncStaticWebHandler& setLastModified();
+
     AsyncStaticWebHandler& setTemplateProcessor(AwsTemplateProcessor newCallback);
 };
 
