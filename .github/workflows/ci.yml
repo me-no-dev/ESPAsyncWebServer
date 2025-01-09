@@ -127,8 +127,8 @@ jobs:
           - env: ci-esp8266
             board: d1_mini
 
-          # - env: ci-raspberrypi
-          #   board: rpipicow
+          - env: ci-raspberrypi
+            board: rpipicow
     steps:
       - name: Checkout
         uses: actions/checkout@v4
