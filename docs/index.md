@@ -22,7 +22,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - [`AsyncWebSocketMessageBuffer` and `makeBuffer()`](#asyncwebsocketmessagebuffer-and-makebuffer)
 - [How to replace a response](#how-to-replace-a-response)
 - [How to use Middleware](#how-to-use-middleware)
-- [How to use authentication with AuthenticationMiddleware](#how-to-use-authentication-with-authenticationmiddleware)
+- [How to use authentication with AsyncAuthenticationMiddleware](#how-to-use-authentication-with-authenticationmiddleware)
 - [Migration to Middleware to improve performance and memory usage](#migration-to-middleware-to-improve-performance-and-memory-usage)
 - [Original Documentation](#original-documentation)
 
@@ -270,24 +270,24 @@ AsyncMiddlewareFunction complexAuth([](AsyncWebServerRequest* request, ArMiddlew
 **Here are the list of available middlewares:**
 
 - `AsyncMiddlewareFunction`: can convert a lambda function (`ArMiddlewareCallback`) to a middleware
-- `AuthenticationMiddleware`: to handle basic/digest authentication globally or per handler
-- `AuthorizationMiddleware`: to handle authorization globally or per handler
-- `CorsMiddleware`: to handle CORS preflight request globally or per handler
-- `HeaderFilterMiddleware`: to filter out headers from the request
-- `HeaderFreeMiddleware`: to only keep some headers from the request, and remove the others
+- `AsyncAuthenticationMiddleware`: to handle basic/digest authentication globally or per handler
+- `AsyncAuthorizationMiddleware`: to handle authorization globally or per handler
+- `AsyncCorsMiddleware`: to handle CORS preflight request globally or per handler
+- `AsyncHeaderFilterMiddleware`: to filter out headers from the request
+- `AsyncHeaderFreeMiddleware`: to only keep some headers from the request, and remove the others
 - `LoggerMiddleware`: to log requests globally or per handler with the same pattern as curl. Will also record request processing time
-- `RateLimitMiddleware`: to limit the number of requests on a windows of time globally or per handler
+- `AsyncRateLimitMiddleware`: to limit the number of requests on a windows of time globally or per handler
 
-## How to use authentication with AuthenticationMiddleware
+## How to use authentication with AsyncAuthenticationMiddleware
 
 Do not use the `setUsername()` and `setPassword()` methods on the hanlders anymore.
 They are deprecated.
 These methods were causing a copy of the username and password for each handler, which is not efficient.
 
-Now, you can use the `AuthenticationMiddleware` to handle authentication globally or per handler.
+Now, you can use the `AsyncAuthenticationMiddleware` to handle authentication globally or per handler.
 
 ```c++
-AuthenticationMiddleware authMiddleware;
+AsyncAuthenticationMiddleware authMiddleware;
 
 // [...]
 
@@ -309,10 +309,10 @@ myHandler.addMiddleware(&authMiddleware); // add authentication to a specific ha
 
 ## Migration to Middleware to improve performance and memory usage
 
-- `AsyncEventSource.authorizeConnect(...)` => do not use this method anymore: add a common `AuthorizationMiddleware` to the handler or server, and make sure to add it AFTER the `AuthenticationMiddleware` if you use authentication.
-- `AsyncWebHandler.setAuthentication(...)` => do not use this method anymore: add a common `AuthenticationMiddleware` to the handler or server
+- `AsyncEventSource.authorizeConnect(...)` => do not use this method anymore: add a common `AsyncAuthorizationMiddleware` to the handler or server, and make sure to add it AFTER the `AsyncAuthenticationMiddleware` if you use authentication.
+- `AsyncWebHandler.setAuthentication(...)` => do not use this method anymore: add a common `AsyncAuthenticationMiddleware` to the handler or server
 - `ArUploadHandlerFunction` and `ArBodyHandlerFunction` => these callbacks receiving body data and upload and not calling anymore the authentication code for performance reasons.
-  These callbacks can be called multiple times during request parsing, so this is up to the user to now call the `AuthenticationMiddleware.allowed(request)` if needed and ideally when the method is called for the first time.
+  These callbacks can be called multiple times during request parsing, so this is up to the user to now call the `AsyncAuthenticationMiddleware.allowed(request)` if needed and ideally when the method is called for the first time.
   These callbacks are also not triggering the whole middleware chain since they are not part of the request processing workflow (they are not the final handler).
 
 

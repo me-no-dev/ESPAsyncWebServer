@@ -332,7 +332,7 @@ void AsyncEventSourceClient::set_max_inflight_bytes(size_t value) {
 /*  AsyncEventSource  */
 
 void AsyncEventSource::authorizeConnect(ArAuthorizeConnectHandler cb) {
-  AuthorizationMiddleware* m = new AuthorizationMiddleware(401, cb);
+  AsyncAuthorizationMiddleware* m = new AsyncAuthorizationMiddleware(401, cb);
   m->_freeOnRemoval = true;
   addMiddleware(m);
 }
