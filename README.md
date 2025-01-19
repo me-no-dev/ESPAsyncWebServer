@@ -59,13 +59,19 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 
 This ESPAsyncWebServer fork is now at version 3.x, where we try to keep the API compatibility with original project as much as possible.
 
-Next version 4.x will:
+We plan on creating a next major 4.x version that will:
 
-1. Drop support for ESP8266, which goes EOL in a few years. All ESP8266 boards can be replaced by equivalent ESP32 boards.
-2. Drop support for Arduino 2.x and ESP-IDF 4.x. The library will be compatible with Arduino 3.x and ESP-IDF 5.x.
-3. Drop support for ArduinoJson 5.x and 6.x. The library will be compatible with ArduinoJson 7.x.
+1. Drop support for ESP8266, which goes EOL in a few years
+2. Drop support for Arduino 2.x and ESP-IDF 4.x. The library will be compatible with latest Arduino and ESP-IDF
+3. Drop support for ArduinoJson 5.x and 6.x. The library will be compatible with latest ArduinoJson
 
-So if you need one of these feature, you will have to stick with 3.x or another fork.
+So if you need one of these feature, you will have to stick with the current 3.x.
+All releases we do will not cease to exist: all 3.x releases will stay in the release page. 
+That is why we have tags and a release cycle.
+
+Maintaining a library for ESP8266 and RP2040 has a real cost and clearly what we see is that most users helping are on ESP32.
+
+If you are an ESP8266 user and want to help improve current 3.x, you are more than welcomed to contribute to this community effort.
 
 ## Dependencies
 
