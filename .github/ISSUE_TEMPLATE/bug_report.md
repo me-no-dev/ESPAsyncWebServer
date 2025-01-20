@@ -6,11 +6,11 @@ labels: triage
 assignees: ""
 ---
 
-**Only for bugs found in the library! Otherwise, please go to the [discussions section](https://github.com/mathieucarbou/ESPAsyncWebServer/discussions)!**
+**Only for bugs found in the library! Otherwise, please go to the [discussions section](https://github.com/ESP32Async/ESPAsyncWebServer/discussions)!**
 
 **Please make sure to go through the recommendations before opening a bug report:**
 
-[https://github.com/mathieucarbou/ESPAsyncWebServer?tab=readme-ov-file#important-recommendations](https://github.com/mathieucarbou/ESPAsyncWebServer?tab=readme-ov-file#important-recommendations)
+[https://github.com/ESP32Async/ESPAsyncWebServer?tab=readme-ov-file#important-recommendations](https://github.com/ESP32Async/ESPAsyncWebServer?tab=readme-ov-file#important-recommendations)
 
 **Description**
 

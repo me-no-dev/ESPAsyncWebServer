@@ -55,11 +55,11 @@ jobs:
 
       - name: Install AsyncTCP (ESP32)
         if: ${{ matrix.core == 'esp32:esp32' }}
-        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/AsyncTCP#v3.3.2
+        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/ESP32Async/AsyncTCP#v3.3.2
 
       - name: Install ESPAsyncTCP (ESP8266)
         if: ${{ matrix.core == 'esp8266:esp8266' }}
-        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0
+        run: ARDUINO_LIBRARY_ENABLE_UNSAFE_INSTALL=true arduino-cli lib install --git-url https://github.com/ESP32Async/ESPAsyncTCP#v2.0.0
 
       - name: Install AsyncTCP (RP2040)
         if: ${{ matrix.core == 'rp2040:rp2040' }}

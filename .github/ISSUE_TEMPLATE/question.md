@@ -6,4 +6,4 @@ labels: question
 assignees: ""
 ---
 
-**For questions: please go to the [discussions section](https://github.com/mathieucarbou/ESPAsyncWebServer/discussions)!**
+**For questions: please go to the [discussions section](https://github.com/ESP32Async/ESPAsyncWebServer/discussions)!**

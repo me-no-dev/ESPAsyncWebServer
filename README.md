@@ -1,14 +1,14 @@
 # ESPAsyncWebServer
 
-[![Latest Release](https://img.shields.io/github/release/mathieucarbou/ESPAsyncWebServer.svg)](https://GitHub.com/mathieucarbou/ESPAsyncWebServer/releases/)
-[![PlatformIO Registry](https://badges.registry.platformio.org/packages/mathieucarbou/library/ESPAsyncWebServer.svg)](https://registry.platformio.org/libraries/mathieucarbou/ESPAsyncWebServer)
+[![Latest Release](https://img.shields.io/github/release/ESP32Async/ESPAsyncWebServer.svg)](https://GitHub.com/ESP32Async/ESPAsyncWebServer/releases/)
+[![PlatformIO Registry](https://badges.registry.platformio.org/packages/ESP32Async/library/ESPAsyncWebServer.svg)](https://registry.platformio.org/libraries/ESP32Async/ESPAsyncWebServer)
 
 [![License: LGPL 3.0](https://img.shields.io/badge/License-LGPL%203.0-yellow.svg)](https://opensource.org/license/lgpl-3-0/)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
 
-[![Build](https://github.com/mathieucarbou/ESPAsyncWebServer/actions/workflows/ci.yml/badge.svg)](https://github.com/mathieucarbou/ESPAsyncWebServer/actions/workflows/ci.yml)
-[![GitHub latest commit](https://badgen.net/github/last-commit/mathieucarbou/ESPAsyncWebServer)](https://GitHub.com/mathieucarbou/ESPAsyncWebServer/commit/)
-[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/mathieucarbou/ESPAsyncWebServer)
+[![Build](https://github.com/ESP32Async/ESPAsyncWebServer/actions/workflows/ci.yml/badge.svg)](https://github.com/ESP32Async/ESPAsyncWebServer/actions/workflows/ci.yml)
+[![GitHub latest commit](https://badgen.net/github/last-commit/ESP32Async/ESPAsyncWebServer)](https://GitHub.com/ESP32Async/ESPAsyncWebServer/commit/)
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ESP32Async/ESPAsyncWebServer)
 
 Asynchronous HTTP and WebSocket Server Library for ESP32, ESP8266 and RP2040
 Supports: WebSocket, SSE, Authentication, Arduino Json 7, File Upload, Static File serving, URL Rewrite, URL Redirect, etc.
@@ -42,7 +42,7 @@ This fork is based on [yubox-node-org/ESPAsyncWebServer](https://github.com/yubo
 - (feat) **Resumable download** support using HEAD and bytes range
 - (feat) `StreamConcat` example to show how to stream multiple files in one response
 - (feat) Removed ESPIDF Editor (this is not the role of a web server library to do that - get the source files from the original repos if required)
-- (perf) [AsyncTCPSock](https://github.com/mathieucarbou/AsyncTCPSock) support: AsyncTCP can be ignored and AsyncTCPSock used instead
+- (perf) [AsyncTCPSock](https://github.com/ESP32Async/AsyncTCPSock) support: AsyncTCP can be ignored and AsyncTCPSock used instead
 - (perf) `char*` overloads to avoid using `String`
 - (perf) `DEFAULT_MAX_WS_CLIENTS` to change the number of allows WebSocket clients and use `cleanupClients()` to help cleanup resources about dead clients
 - (perf) `setCloseClientOnQueueFull(bool)` which can be set on a client to either close the connection or discard messages but not close the connection when the queue is full
@@ -83,18 +83,18 @@ If you are an ESP8266 user and want to help improve current 3.x, you are more th
 ```ini
 lib_compat_mode = strict
 lib_ldf_mode = chain
-lib_deps = mathieucarbou/ESPAsyncWebServer @ 3.6.0
+lib_deps = ESP32Async/ESPAsyncWebServer @ 3.6.0
 ```
 
 **Dependencies:**
 
-- **ESP32 with AsyncTCP**: `mathieucarbou/AsyncTCP @ 3.3.2`
-  Arduino IDE: [https://github.com/mathieucarbou/AsyncTCP#v3.3.2](https://github.com/mathieucarbou/AsyncTCP/releases)
+- **ESP32 with AsyncTCP**: `ESP32Async/AsyncTCP @ 3.3.2`
+  Arduino IDE: [https://github.com/ESP32Async/AsyncTCP#v3.3.2](https://github.com/ESP32Async/AsyncTCP/releases)
 
-- **ESP32 with AsyncTCPSock**: `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`
+- **ESP32 with AsyncTCPSock**: `https://github.com/ESP32Async/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`
 
-- **ESP8266**: `esphome/ESPAsyncTCP-esphome @ 2.0.0`
-  Arduino IDE: [https://github.com/mathieucarbou/esphome-ESPAsyncTCP#v2.0.0](https://github.com/mathieucarbou/esphome-ESPAsyncTCP/releases/tag/v2.0.0)
+- **ESP8266**: `ESP32Async/ESPAsyncTCP @ 2.0.0`
+  Arduino IDE: [https://github.com/ESP32Async/ESPAsyncTCP#v2.0.0](https://github.com/ESP32Async/ESPAsyncTCP/releases/tag/v2.0.0)
 
 - **RP2040**: `khoih-prog/AsyncTCP_RP2040W @ 1.2.0`
   Arduino IDE: [https://github.com/khoih-prog/AsyncTCP_RP2040W#v1.2.0](https://github.com/khoih-prog/AsyncTCP_RP2040W/releases/tag/v1.2.0)
@@ -107,28 +107,28 @@ AsyncTCPSock can be used instead of AsyncTCP by excluding AsyncTCP from the libr
 lib_compat_mode = strict
 lib_ldf_mode = chain
 lib_deps =
-  ; mathieucarbou/AsyncTCP @ 3.3.2
-  https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip
-  mathieucarbou/ESPAsyncWebServer @ 3.6.0
+  ; ESP32Async/AsyncTCP @ 3.3.2
+  https://github.com/ESP32Async/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip
+  ESP32Async/ESPAsyncWebServer @ 3.6.0
 lib_ignore =
   AsyncTCP
-  mathieucarbou/AsyncTCP
+  ESP32Async/AsyncTCP
 ```
 
 ## Performance
 
-Performance of `mathieucarbou/ESPAsyncWebServer @ 3.6.0`:
+Performance of `ESP32Async/ESPAsyncWebServer @ 3.6.0`:
 
 ```bash
 > brew install autocannon
 > autocannon -c 10 -w 10 -d 20 http://192.168.4.1
 ```
 
-With `mathieucarbou/AsyncTCP @ 3.3.2`
+With `ESP32Async/AsyncTCP @ 3.3.2`
 
 <img width="629" alt="perf-c10" src="https://github.com/user-attachments/assets/b4b7f953-c24d-4e04-8d87-ba3f26805737" />
 
-With `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`:
+With `https://github.com/ESP32Async/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`:
 
 <img width="654" alt="perf-c10-asynctcpsock" src="https://github.com/user-attachments/assets/0dacf133-ca47-40be-939b-e6f60fc95b81" />
 
@@ -253,7 +253,7 @@ Middleware is a way to intercept requests to perform some operations on them, li
 Middleware can either be attached to individual handlers, attached at the server level (thus applied to all handlers), or both.
 They will be executed in the order they are attached, and they can stop the request processing by sending a response themselves.
 
-You can have a look at the [SimpleServer.ino](https://github.com/mathieucarbou/ESPAsyncWebServer/blob/main/examples/SimpleServer/SimpleServer.ino) example for some use cases.
+You can have a look at the [SimpleServer.ino](https://github.com/ESP32Async/ESPAsyncWebServer/blob/main/examples/SimpleServer/SimpleServer.ino) example for some use cases.
 
 For example, such middleware would handle authentication and set some attributes on the request to make them available for the next middleware and for the handler which will process the request.
 
@@ -320,15 +320,6 @@ myHandler.addMiddleware(&authMiddleware); // add authentication to a specific ha
 - `ArUploadHandlerFunction` and `ArBodyHandlerFunction` => these callbacks receiving body data and upload and not calling anymore the authentication code for performance reasons.
   These callbacks can be called multiple times during request parsing, so this is up to the user to now call the `AsyncAuthenticationMiddleware.allowed(request)` if needed and ideally when the method is called for the first time.
   These callbacks are also not triggering the whole middleware chain since they are not part of the request processing workflow (they are not the final handler).
-
-
-## Maintainers
-This fork of ESPAsyncWebServer and dependend libs are maintained as an opensource project at best effort level.
- - [Mathieu Carbou](https://github.com/mathieucarbou)
- - [Emil Muratov](https://github.com/vortigont)
-
-Thanks to all who contributed by providing PRs, testing and reporting issues.
-
 
 ## Original Documentation
 <!-- no toc -->
