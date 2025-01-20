@@ -126,11 +126,11 @@ Performance of `mathieucarbou/ESPAsyncWebServer @ 3.6.0`:
 
 With `mathieucarbou/AsyncTCP @ 3.3.2`
 
-[![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10.png)
+<img width="629" alt="perf-c10" src="https://github.com/user-attachments/assets/b4b7f953-c24d-4e04-8d87-ba3f26805737" />
 
 With `https://github.com/mathieucarbou/AsyncTCPSock/archive/refs/tags/v1.0.3-dev.zip`:
 
-[![](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)](https://mathieu.carbou.me/ESPAsyncWebServer/perf-c10-asynctcpsock.png)
+<img width="654" alt="perf-c10-asynctcpsock" src="https://github.com/user-attachments/assets/0dacf133-ca47-40be-939b-e6f60fc95b81" />
 
 **SSE performance**
 
