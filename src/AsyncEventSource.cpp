@@ -18,356 +18,450 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #include "Arduino.h"
+#if defined(ESP32)
+  #include <rom/ets_sys.h>
+#endif
 #include "AsyncEventSource.h"
-#ifdef ESP32
-#if ESP_IDF_VERSION_MAJOR >= 5
-#include "rom/ets_sys.h"
-#endif
-#endif
 
-static String generateEventMessage(const char *message, const char *event, uint32_t id, uint32_t reconnect){
-  String ev = "";
+#define ASYNC_SSE_NEW_LINE_CHAR (char)0xa
 
-  if(reconnect){
-    ev += "retry: ";
-    ev += String(reconnect);
-    ev += "\r\n";
+using namespace asyncsrv;
+
+static String generateEventMessage(const char* message, const char* event, uint32_t id, uint32_t reconnect) {
+  String str;
+  size_t len{0};
+  if (message)
+    len += strlen(message);
+
+  if (event)
+    len += strlen(event);
+
+  len += 42; // give it some overhead
+
+  str.reserve(len);
+
+  if (reconnect) {
+    str += T_retry_;
+    str += reconnect;
+    str += ASYNC_SSE_NEW_LINE_CHAR; // '\n'
   }
 
-  if(id){
-    ev += "id: ";
-    ev += String(id);
-    ev += "\r\n";
+  if (id) {
+    str += T_id__;
+    str += id;
+    str += ASYNC_SSE_NEW_LINE_CHAR; // '\n'
   }
 
-  if(event != NULL){
-    ev += "event: ";
-    ev += String(event);
-    ev += "\r\n";
+  if (event != NULL) {
+    str += T_event_;
+    str += event;
+    str += ASYNC_SSE_NEW_LINE_CHAR; // '\n'
   }
 
-  if(message != NULL){
-    size_t messageLen = strlen(message);
-    char * lineStart = (char *)message;
-    char * lineEnd;
-    do {
-      char * nextN = strchr(lineStart, '\n');
-      char * nextR = strchr(lineStart, '\r');
-      if(nextN == NULL && nextR == NULL){
-        size_t llen = ((char *)message + messageLen) - lineStart;
-        char * ldata = (char *)malloc(llen+1);
-        if(ldata != NULL){
-          memcpy(ldata, lineStart, llen);
-          ldata[llen] = 0;
-          ev += "data: ";
-          ev += ldata;
-          ev += "\r\n\r\n";
-          free(ldata);
-        }
-        lineStart = (char *)message + messageLen;
+  if (!message)
+    return str;
+
+  size_t messageLen = strlen(message);
+  char* lineStart = (char*)message;
+  char* lineEnd;
+  do {
+    char* nextN = strchr(lineStart, '\n');
+    char* nextR = strchr(lineStart, '\r');
+    if (nextN == NULL && nextR == NULL) {
+      // a message is a single-line string
+      str += T_data_;
+      str += message;
+      str += T_nn;
+      return str;
+    }
+
+    // a message is a multi-line string
+    char* nextLine = NULL;
+    if (nextN != NULL && nextR != NULL) { // windows line-ending \r\n
+      if (nextR + 1 == nextN) {
+        // normal \r\n sequense
+        lineEnd = nextR;
+        nextLine = nextN + 1;
       } else {
-        char * nextLine = NULL;
-        if(nextN != NULL && nextR != NULL){
-          if(nextR < nextN){
-            lineEnd = nextR;
-            if(nextN == (nextR + 1))
-              nextLine = nextN + 1;
-            else
-              nextLine = nextR + 1;
-          } else {
-            lineEnd = nextN;
-            if(nextR == (nextN + 1))
-              nextLine = nextR + 1;
-            else
-              nextLine = nextN + 1;
-          }
-        } else if(nextN != NULL){
-          lineEnd = nextN;
-          nextLine = nextN + 1;
-        } else {
-          lineEnd = nextR;
-          nextLine = nextR + 1;
-        }
-
-        size_t llen = lineEnd - lineStart;
-        char * ldata = (char *)malloc(llen+1);
-        if(ldata != NULL){
-          memcpy(ldata, lineStart, llen);
-          ldata[llen] = 0;
-          ev += "data: ";
-          ev += ldata;
-          ev += "\r\n";
-          free(ldata);
-        }
-        lineStart = nextLine;
-        if(lineStart == ((char *)message + messageLen))
-          ev += "\r\n";
+        // some abnormal \n \r mixed sequence
+        lineEnd = std::min(nextR, nextN);
+        nextLine = lineEnd + 1;
       }
-    } while(lineStart < ((char *)message + messageLen));
-  }
+    } else if (nextN != NULL) { // Unix/Mac OS X LF
+      lineEnd = nextN;
+      nextLine = nextN + 1;
+    } else { // some ancient garbage
+      lineEnd = nextR;
+      nextLine = nextR + 1;
+    }
 
-  return ev;
+    str += T_data_;
+    str.concat(lineStart, lineEnd - lineStart);
+    str += ASYNC_SSE_NEW_LINE_CHAR; // \n
+
+    lineStart = nextLine;
+  } while (lineStart < ((char*)message + messageLen));
+
+  // append another \n to terminate message
+  str += ASYNC_SSE_NEW_LINE_CHAR; // '\n'
+
+  return str;
 }
 
 // Message
 
-AsyncEventSourceMessage::AsyncEventSourceMessage(const char * data, size_t len)
-: _data(nullptr), _len(len), _sent(0), _acked(0)
-{
-  _data = (uint8_t*)malloc(_len+1);
-  if(_data == nullptr){
-    _len = 0;
-  } else {
-    memcpy(_data, data, len);
-    _data[_len] = 0;
-  }
-}
-
-AsyncEventSourceMessage::~AsyncEventSourceMessage() {
-     if(_data != NULL)
-        free(_data);
-}
-
-size_t AsyncEventSourceMessage::ack(size_t len, uint32_t time) {
-  (void)time;
+size_t AsyncEventSourceMessage::ack(size_t len, __attribute__((unused)) uint32_t time) {
   // If the whole message is now acked...
-  if(_acked + len > _len){
-     // Return the number of extra bytes acked (they will be carried on to the next message)
-     const size_t extra = _acked + len - _len;
-     _acked = _len;
-     return extra;
+  if (_acked + len > _data->length()) {
+    // Return the number of extra bytes acked (they will be carried on to the next message)
+    const size_t extra = _acked + len - _data->length();
+    _acked = _data->length();
+    return extra;
   }
   // Return that no extra bytes left.
   _acked += len;
   return 0;
 }
 
-size_t AsyncEventSourceMessage::send(AsyncClient *client) {
-  const size_t len = _len - _sent;
-  if(client->space() < len){
+size_t AsyncEventSourceMessage::write(AsyncClient* client) {
+  if (!client)
+    return 0;
+
+  if (_sent >= _data->length() || !client->canSend()) {
     return 0;
   }
-  size_t sent = client->add((const char *)_data, len);
-  if(client->canSend())
-    client->send();
-  _sent += sent;
-  return sent; 
+
+  size_t len = std::min(_data->length() - _sent, client->space());
+  /*
+    add() would call lwip's tcp_write() under the AsyncTCP hood with apiflags argument.
+    By default apiflags=ASYNC_WRITE_FLAG_COPY
+    we could have used apiflags with this flag unset to pass data by reference and avoid copy to socket buffer,
+    but looks like it does not work for Arduino's lwip in ESP32/IDF
+    it is enforced in https://github.com/espressif/esp-lwip/blob/0606eed9d8b98a797514fdf6eabb4daf1c8c8cd9/src/core/tcp_out.c#L422C5-L422C30
+    if LWIP_NETIF_TX_SINGLE_PBUF is set, and it is set indeed in IDF
+    https://github.com/espressif/esp-idf/blob/a0f798cfc4bbd624aab52b2c194d219e242d80c1/components/lwip/port/include/lwipopts.h#L744
+
+    So let's just keep it enforced ASYNC_WRITE_FLAG_COPY and keep in mind that there is no zero-copy
+  */
+  size_t written = client->add(_data->c_str() + _sent, len, ASYNC_WRITE_FLAG_COPY); //  ASYNC_WRITE_FLAG_MORE
+  _sent += written;
+  return written;
+}
+
+size_t AsyncEventSourceMessage::send(AsyncClient* client) {
+  size_t sent = write(client);
+  return sent && client->send() ? sent : 0;
 }
 
 // Client
 
-AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest *request, AsyncEventSource *server)
-: _messageQueue(LinkedList<AsyncEventSourceMessage *>([](AsyncEventSourceMessage *m){ delete  m; }))
-{
-  _client = request->client();
-  _server = server;
-  _lastId = 0;
-  if(request->hasHeader("Last-Event-ID"))
-    _lastId = atoi(request->getHeader("Last-Event-ID")->value().c_str());
-    
+AsyncEventSourceClient::AsyncEventSourceClient(AsyncWebServerRequest* request, AsyncEventSource* server)
+    : _client(request->client()), _server(server) {
+
+  if (request->hasHeader(T_Last_Event_ID))
+    _lastId = atoi(request->getHeader(T_Last_Event_ID)->value().c_str());
+
   _client->setRxTimeout(0);
   _client->onError(NULL, NULL);
-  _client->onAck([](void *r, AsyncClient* c, size_t len, uint32_t time){ (void)c; ((AsyncEventSourceClient*)(r))->_onAck(len, time); }, this);
-  _client->onPoll([](void *r, AsyncClient* c){ (void)c; ((AsyncEventSourceClient*)(r))->_onPoll(); }, this);
+  _client->onAck([](void* r, AsyncClient* c, size_t len, uint32_t time) { (void)c; static_cast<AsyncEventSourceClient*>(r)->_onAck(len, time); }, this);
+  _client->onPoll([](void* r, AsyncClient* c) { (void)c; static_cast<AsyncEventSourceClient*>(r)->_onPoll(); }, this);
   _client->onData(NULL, NULL);
-  _client->onTimeout([this](void *r, AsyncClient* c __attribute__((unused)), uint32_t time){ ((AsyncEventSourceClient*)(r))->_onTimeout(time); }, this);
-  _client->onDisconnect([this](void *r, AsyncClient* c){ ((AsyncEventSourceClient*)(r))->_onDisconnect(); delete c; }, this);
+  _client->onTimeout([this](void* r, AsyncClient* c __attribute__((unused)), uint32_t time) { static_cast<AsyncEventSourceClient*>(r)->_onTimeout(time); }, this);
+  _client->onDisconnect([this](void* r, AsyncClient* c) { static_cast<AsyncEventSourceClient*>(r)->_onDisconnect(); delete c; }, this);
 
   _server->_addClient(this);
   delete request;
+
+  _client->setNoDelay(true);
 }
 
-AsyncEventSourceClient::~AsyncEventSourceClient(){
-   _messageQueue.free();
+AsyncEventSourceClient::~AsyncEventSourceClient() {
+#ifdef ESP32
+  std::lock_guard<std::mutex> lock(_lockmq);
+#endif
+  _messageQueue.clear();
   close();
 }
 
-void AsyncEventSourceClient::_queueMessage(AsyncEventSourceMessage *dataMessage){
-  if(dataMessage == NULL)
-    return;
-  if(!connected()){
-    delete dataMessage;
-    return;
+bool AsyncEventSourceClient::_queueMessage(const char* message, size_t len) {
+  if (_messageQueue.size() >= SSE_MAX_QUEUED_MESSAGES) {
+#ifdef ESP8266
+    ets_printf(String(F("ERROR: Too many messages queued\n")).c_str());
+#elif defined(ESP32)
+    log_e("Event message queue overflow: discard message");
+#endif
+    return false;
   }
-  if(_messageQueue.length() >= SSE_MAX_QUEUED_MESSAGES){
-      ets_printf("ERROR: Too many messages queued\n");
-      delete dataMessage;
-  } else {
-      _messageQueue.add(dataMessage);
+
+#ifdef ESP32
+  // length() is not thread-safe, thus acquiring the lock before this call..
+  std::lock_guard<std::mutex> lock(_lockmq);
+#endif
+
+  _messageQueue.emplace_back(message, len);
+
+  /*
+    throttle queue run
+    if Q is filled for >25% then network/CPU is congested, since there is no zero-copy mode for socket buff
+    forcing Q run will only eat more heap ram and blow the buffer, let's just keep data in our own queue
+    the queue will be processed at least on each onAck()/onPoll() call from AsyncTCP
+  */
+  if (_messageQueue.size() < SSE_MAX_QUEUED_MESSAGES >> 2 && _client->canSend()) {
+    _runQueue();
   }
-  if(_client->canSend())
+
+  return true;
+}
+
+bool AsyncEventSourceClient::_queueMessage(AsyncEvent_SharedData_t&& msg) {
+  if (_messageQueue.size() >= SSE_MAX_QUEUED_MESSAGES) {
+#ifdef ESP8266
+    ets_printf(String(F("ERROR: Too many messages queued\n")).c_str());
+#elif defined(ESP32)
+    log_e("Event message queue overflow: discard message");
+#endif
+    return false;
+  }
+
+#ifdef ESP32
+  // length() is not thread-safe, thus acquiring the lock before this call..
+  std::lock_guard<std::mutex> lock(_lockmq);
+#endif
+
+  _messageQueue.emplace_back(std::move(msg));
+
+  /*
+    throttle queue run
+    if Q is filled for >25% then network/CPU is congested, since there is no zero-copy mode for socket buff
+    forcing Q run will only eat more heap ram and blow the buffer, let's just keep data in our own queue
+    the queue will be processed at least on each onAck()/onPoll() call from AsyncTCP
+  */
+  if (_messageQueue.size() < SSE_MAX_QUEUED_MESSAGES >> 2 && _client->canSend()) {
+    _runQueue();
+  }
+  return true;
+}
+
+void AsyncEventSourceClient::_onAck(size_t len __attribute__((unused)), uint32_t time __attribute__((unused))) {
+#ifdef ESP32
+  // Same here, acquiring the lock early
+  std::lock_guard<std::mutex> lock(_lockmq);
+#endif
+
+  // adjust in-flight len
+  if (len < _inflight)
+    _inflight -= len;
+  else
+    _inflight = 0;
+
+  // acknowledge as much messages's data as we got confirmed len from a AsyncTCP
+  while (len && _messageQueue.size()) {
+    len = _messageQueue.front().ack(len);
+    if (_messageQueue.front().finished()) {
+      // now we could release full ack'ed messages, we were keeping it unless send confirmed from AsyncTCP
+      _messageQueue.pop_front();
+    }
+  }
+
+  // try to send another batch of data
+  if (_messageQueue.size())
     _runQueue();
 }
 
-void AsyncEventSourceClient::_onAck(size_t len, uint32_t time){
-  while(len && !_messageQueue.isEmpty()){
-    len = _messageQueue.front()->ack(len, time);
-    if(_messageQueue.front()->finished())
-      _messageQueue.remove(_messageQueue.front());
-  }
-
-  _runQueue();
-}
-
-void AsyncEventSourceClient::_onPoll(){
-  if(!_messageQueue.isEmpty()){
+void AsyncEventSourceClient::_onPoll() {
+  if (_messageQueue.size()) {
+#ifdef ESP32
+    // Same here, acquiring the lock early
+    std::lock_guard<std::mutex> lock(_lockmq);
+#endif
     _runQueue();
   }
 }
 
-
-void AsyncEventSourceClient::_onTimeout(uint32_t time __attribute__((unused))){
-  _client->close(true);
+void AsyncEventSourceClient::_onTimeout(uint32_t time __attribute__((unused))) {
+  if (_client)
+    _client->close(true);
 }
 
-void AsyncEventSourceClient::_onDisconnect(){
-  _client = NULL;
+void AsyncEventSourceClient::_onDisconnect() {
+  if (!_client)
+    return;
+  _client = nullptr;
   _server->_handleDisconnect(this);
 }
 
-void AsyncEventSourceClient::close(){
-  if(_client != NULL)
+void AsyncEventSourceClient::close() {
+  if (_client)
     _client->close();
 }
 
-void AsyncEventSourceClient::write(const char * message, size_t len){
-  _queueMessage(new AsyncEventSourceMessage(message, len));
+bool AsyncEventSourceClient::send(const char* message, const char* event, uint32_t id, uint32_t reconnect) {
+  if (!connected())
+    return false;
+  return _queueMessage(std::make_shared<String>(generateEventMessage(message, event, id, reconnect)));
 }
 
-void AsyncEventSourceClient::send(const char *message, const char *event, uint32_t id, uint32_t reconnect){
-  String ev = generateEventMessage(message, event, id, reconnect);
-  _queueMessage(new AsyncEventSourceMessage(ev.c_str(), ev.length()));
-}
+void AsyncEventSourceClient::_runQueue() {
+  if (!_client)
+    return;
 
-void AsyncEventSourceClient::_runQueue(){
-  while(!_messageQueue.isEmpty() && _messageQueue.front()->finished()){
-    _messageQueue.remove(_messageQueue.front());
+  // there is no need to lock the mutex here, 'cause all the calls to this method must be already lock'ed
+  size_t total_bytes_written = 0;
+  for (auto i = _messageQueue.begin(); i != _messageQueue.end(); ++i) {
+    if (!i->sent()) {
+      const size_t bytes_written = i->write(_client);
+      total_bytes_written += bytes_written;
+      _inflight += bytes_written;
+      if (bytes_written == 0 || _inflight > _max_inflight) {
+        // Serial.print("_");
+        break;
+      }
+    }
   }
 
-  for(auto i = _messageQueue.begin(); i != _messageQueue.end(); ++i)
-  {
-    if(!(*i)->sent())
-      (*i)->send(_client);
-  }
+  // flush socket
+  if (total_bytes_written)
+    _client->send();
 }
 
-
-// Handler
-
-AsyncEventSource::AsyncEventSource(const String& url)
-  : _url(url)
-  , _clients(LinkedList<AsyncEventSourceClient *>([](AsyncEventSourceClient *c){ delete c; }))
-  , _connectcb(NULL)
-{}
-
-AsyncEventSource::~AsyncEventSource(){
-  close();
+void AsyncEventSourceClient::set_max_inflight_bytes(size_t value) {
+  if (value >= SSE_MIN_INFLIGH && value <= SSE_MAX_INFLIGH)
+    _max_inflight = value;
 }
 
-void AsyncEventSource::onConnect(ArEventHandlerFunction cb){
-  _connectcb = cb;
+/*  AsyncEventSource  */
+
+void AsyncEventSource::authorizeConnect(ArAuthorizeConnectHandler cb) {
+  AsyncAuthorizationMiddleware* m = new AsyncAuthorizationMiddleware(401, cb);
+  m->_freeOnRemoval = true;
+  addMiddleware(m);
 }
 
-void AsyncEventSource::_addClient(AsyncEventSourceClient * client){
-  /*char * temp = (char *)malloc(2054);
-  if(temp != NULL){
-    memset(temp+1,' ',2048);
-    temp[0] = ':';
-    temp[2049] = '\r';
-    temp[2050] = '\n';
-    temp[2051] = '\r';
-    temp[2052] = '\n';
-    temp[2053] = 0;
-    client->write((const char *)temp, 2053);
-    free(temp);
-  }*/
-  
-  _clients.add(client);
-  if(_connectcb)
+void AsyncEventSource::_addClient(AsyncEventSourceClient* client) {
+  if (!client)
+    return;
+#ifdef ESP32
+  std::lock_guard<std::mutex> lock(_client_queue_lock);
+#endif
+  _clients.emplace_back(client);
+  if (_connectcb)
     _connectcb(client);
+
+  _adjust_inflight_window();
 }
 
-void AsyncEventSource::_handleDisconnect(AsyncEventSourceClient * client){
-  _clients.remove(client);
+void AsyncEventSource::_handleDisconnect(AsyncEventSourceClient* client) {
+  if (_disconnectcb)
+    _disconnectcb(client);
+#ifdef ESP32
+  std::lock_guard<std::mutex> lock(_client_queue_lock);
+#endif
+  for (auto i = _clients.begin(); i != _clients.end(); ++i) {
+    if (i->get() == client)
+      _clients.erase(i);
+  }
+  _adjust_inflight_window();
 }
 
-void AsyncEventSource::close(){
-  for(const auto &c: _clients){
-    if(c->connected())
+void AsyncEventSource::close() {
+  // While the whole loop is not done, the linked list is locked and so the
+  // iterator should remain valid even when AsyncEventSource::_handleDisconnect()
+  // is called very early
+#ifdef ESP32
+  std::lock_guard<std::mutex> lock(_client_queue_lock);
+#endif
+  for (const auto& c : _clients) {
+    if (c->connected())
       c->close();
   }
 }
 
 // pmb fix
 size_t AsyncEventSource::avgPacketsWaiting() const {
-  if(_clients.isEmpty())
+  size_t aql = 0;
+  uint32_t nConnectedClients = 0;
+#ifdef ESP32
+  std::lock_guard<std::mutex> lock(_client_queue_lock);
+#endif
+  if (!_clients.size())
     return 0;
-  
-  size_t    aql=0;
-  uint32_t  nConnectedClients=0;
-  
-  for(const auto &c: _clients){
-    if(c->connected()) {
-      aql+=c->packetsWaiting();
+
+  for (const auto& c : _clients) {
+    if (c->connected()) {
+      aql += c->packetsWaiting();
       ++nConnectedClients;
     }
   }
-//  return aql / nConnectedClients;
-  return ((aql) + (nConnectedClients/2))/(nConnectedClients); // round up
+  return ((aql) + (nConnectedClients / 2)) / (nConnectedClients); // round up
 }
 
-void AsyncEventSource::send(const char *message, const char *event, uint32_t id, uint32_t reconnect){
-
-
-  String ev = generateEventMessage(message, event, id, reconnect);
-  for(const auto &c: _clients){
-    if(c->connected()) {
-      c->write(ev.c_str(), ev.length());
-    }
+AsyncEventSource::SendStatus AsyncEventSource::send(
+  const char* message, const char* event, uint32_t id, uint32_t reconnect) {
+  AsyncEvent_SharedData_t shared_msg = std::make_shared<String>(generateEventMessage(message, event, id, reconnect));
+#ifdef ESP32
+  std::lock_guard<std::mutex> lock(_client_queue_lock);
+#endif
+  size_t hits = 0;
+  size_t miss = 0;
+  for (const auto& c : _clients) {
+    if (c->write(shared_msg))
+      ++hits;
+    else
+      ++miss;
   }
+  return hits == 0 ? DISCARDED : (miss == 0 ? ENQUEUED : PARTIALLY_ENQUEUED);
 }
 
 size_t AsyncEventSource::count() const {
-  return _clients.count_if([](AsyncEventSourceClient *c){
-    return c->connected();
-  });
+#ifdef ESP32
+  std::lock_guard<std::mutex> lock(_client_queue_lock);
+#endif
+  size_t n_clients{0};
+  for (const auto& i : _clients)
+    if (i->connected())
+      ++n_clients;
+
+  return n_clients;
 }
 
-bool AsyncEventSource::canHandle(AsyncWebServerRequest *request){
-  if(request->method() != HTTP_GET || !request->url().equals(_url)) {
-    return false;
-  }
-  request->addInterestingHeader("Last-Event-ID");
-  return true;
+bool AsyncEventSource::canHandle(AsyncWebServerRequest* request) const {
+  return request->isSSE() && request->url().equals(_url);
 }
 
-void AsyncEventSource::handleRequest(AsyncWebServerRequest *request){
-  if((_username != "" && _password != "") && !request->authenticate(_username.c_str(), _password.c_str()))
-    return request->requestAuthentication();
+void AsyncEventSource::handleRequest(AsyncWebServerRequest* request) {
   request->send(new AsyncEventSourceResponse(this));
 }
 
-// Response
-
-AsyncEventSourceResponse::AsyncEventSourceResponse(AsyncEventSource *server){
-  _server = server;
-  _code = 200;
-  _contentType = "text/event-stream";
-  _sendContentLength = false;
-  addHeader("Cache-Control", "no-cache");
-  addHeader("Connection","keep-alive");
+void AsyncEventSource::_adjust_inflight_window() {
+  if (_clients.size()) {
+    size_t inflight = SSE_MAX_INFLIGH / _clients.size();
+    for (const auto& c : _clients)
+      c->set_max_inflight_bytes(inflight);
+    // Serial.printf("adjusted inflight to: %u\n", inflight);
+  }
 }
 
-void AsyncEventSourceResponse::_respond(AsyncWebServerRequest *request){
-  String out = _assembleHead(request->version());
+/*  Response  */
+
+AsyncEventSourceResponse::AsyncEventSourceResponse(AsyncEventSource* server) {
+  _server = server;
+  _code = 200;
+  _contentType = T_text_event_stream;
+  _sendContentLength = false;
+  addHeader(T_Cache_Control, T_no_cache);
+  addHeader(T_Connection, T_keep_alive);
+}
+
+void AsyncEventSourceResponse::_respond(AsyncWebServerRequest* request) {
+  String out;
+  _assembleHead(out, request->version());
   request->client()->write(out.c_str(), _headLength);
   _state = RESPONSE_WAIT_ACK;
 }
 
-size_t AsyncEventSourceResponse::_ack(AsyncWebServerRequest *request, size_t len, uint32_t time __attribute__((unused))){
-  if(len){
+size_t AsyncEventSourceResponse::_ack(AsyncWebServerRequest* request, size_t len, uint32_t time __attribute__((unused))) {
+  if (len) {
     new AsyncEventSourceClient(request, _server);
   }
   return 0;
 }
-
